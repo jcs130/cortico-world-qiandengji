@@ -12,7 +12,7 @@ export function assertMymcReady(cfg: MymcConfigSection, botDir?: string): void {
   const config = JSON.parse(readFileSync(file, 'utf8')) as {
     worlds?: { minecraft?: { enabled?: boolean } };
   };
-  if (config.worlds?.minecraft?.enabled !== false) {
+  if (config.worlds?.minecraft?.enabled === true) {
     throw new Error('先停用 Minecraft World，再启用千灯纪；两个 World 共用游戏连接');
   }
 }

@@ -95,6 +95,8 @@ describe('Mymc World contract', () => {
       expect(() => assertMymcReady(cfg, dir)).toThrow('先停用 Minecraft World');
       writeFileSync(join(dir, 'config.json'), JSON.stringify({ worlds: { minecraft: { enabled: false } } }));
       expect(() => assertMymcReady(cfg, dir)).not.toThrow();
+      writeFileSync(join(dir, 'config.json'), JSON.stringify({ worlds: { mymc: { enabled: true } } }));
+      expect(() => assertMymcReady(cfg, dir)).not.toThrow();
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
