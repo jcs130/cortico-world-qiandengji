@@ -1,0 +1,5 @@
+packages:
+  - .
+
+overrides:
+  vec3: 0.2.0
