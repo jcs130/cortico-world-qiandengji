@@ -205,7 +205,8 @@ export class MymcWorld implements World {
 
   constructor(private readonly opts: Omit<MinecraftWorldOptions, 'cfg'> & { cfg: MymcConfigSection; botDir?: string }, engine?: MinecraftWorldProxy) {
     this.requireProtectSupport = engine === undefined;
-    this.engine = engine ?? new MinecraftWorldProxy({ ...opts, agentFriendEnabled: true });
+    // The local engine supports this capability; the published Cortico 0.1.4 type has not caught up.
+    this.engine = engine ?? new MinecraftWorldProxy({ ...opts, agentFriendEnabled: true } as MinecraftWorldOptions);
     this.catalog = new SkillCatalog(`${opts.cfg.host}:${opts.cfg.port}`, opts.dataDir);
     this.trialProgress = new TrialProgress(`${opts.cfg.host}:${opts.cfg.port}:${opts.cfg.username}`, opts.dataDir);
   }
