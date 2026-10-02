@@ -23,6 +23,8 @@ import {
 import { assertMymcReady } from './guard.ts';
 import { SkillCatalog } from './skill-catalog.ts';
 import { startsTrialFight, trialMeleeReadiness } from './trial-readiness.ts';
+import { TrialProgress, trialGoalLimitNote } from './trial-status.ts';
+import { ProspectEvidence } from './prospect-evidence.ts';
 
 const ENV_PROMPT_FILE = fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url));
 const CAMERA_NOTE_FILE = fileURLToPath(new URL('./ENV_PROMPT_CAMERA.md', import.meta.url));
@@ -146,12 +148,15 @@ export function routeViaServerCommand(args: Record<string, unknown>): { args: Re
   return { args: { ...args, steps: rewritten }, note };
 }
 
-function mymcHost(host: WorldHost, catalog: SkillCatalog): WorldHost {
+function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgress,
+  prospect: ProspectEvidence): WorldHost {
   const bridge = Object.create(host) as WorldHost;
   bridge.pushEvent = async (event, options) => {
     const mapped = toMymcEvent(event);
     const saved = await host.pushEvent(mapped, options);
     if (mapped.type === 'mymc.chat') {
+      prospect.observe(mapped.text, mapped.ts);
+      progress.observe(mapped.text, mapped.ts);
       const heading = catalog.observe(mapped.text, mapped.ts);
       if (heading) {
         await host.pushEvent({
@@ -194,12 +199,15 @@ export class MymcWorld implements World {
   readonly id = 'mymc';
   private readonly engine: MinecraftWorldProxy;
   private readonly catalog: SkillCatalog;
+  private readonly trialProgress: TrialProgress;
+  private readonly prospect = new ProspectEvidence();
   private readonly requireProtectSupport: boolean;
 
   constructor(private readonly opts: Omit<MinecraftWorldOptions, 'cfg'> & { cfg: MymcConfigSection; botDir?: string }, engine?: MinecraftWorldProxy) {
     this.requireProtectSupport = engine === undefined;
-    this.engine = engine ?? new MinecraftWorldProxy({ ...opts, agentFriendProtect: true } as MinecraftWorldOptions);
+    this.engine = engine ?? new MinecraftWorldProxy({ ...opts, agentFriendEnabled: true });
     this.catalog = new SkillCatalog(`${opts.cfg.host}:${opts.cfg.port}`, opts.dataDir);
+    this.trialProgress = new TrialProgress(`${opts.cfg.host}:${opts.cfg.port}:${opts.cfg.username}`, opts.dataDir);
   }
 
   envPromptVars(): Record<string, string> {
@@ -207,6 +215,9 @@ export class MymcWorld implements World {
     const mymc = Object.fromEntries(Object.entries(vars)
       .map(([key, value]) => [key.replace(/^minecraft\./, 'mymc.'), toMymcText(value)]));
     mymc['mymc.version'] = this.opts.cfg.version;
+    mymc['mymc.trial_progress'] = this.trialProgress.clear
+      ? `历史实证：${this.trialProgress.clear.at} 已通关第 ${this.trialProgress.clear.floor}/${this.trialProgress.clear.maxFloor} 层。最新一次 lastOutcome 可能被新开或中断的一局覆盖，不撤销这次通关。`
+      : '尚未留存试炼全通的服务端回执。';
     mymc['mymc.camera'] = this.opts.cfg.client.enabled
       ? readFileSync(CAMERA_NOTE_FILE, 'utf8').trim()
       : '';
@@ -222,6 +233,10 @@ export class MymcWorld implements World {
       description: toMymcText(tool.description),
       parameters: mapSchema(tool.parameters) as Record<string, unknown>,
       handler: async (args, ctx) => {
+        if (tool.name === 'mc_goal') {
+          const limit = trialGoalLimitNote(args as Record<string, unknown>, this.trialProgress.status, this.trialProgress.clear);
+          if (limit) return { text: `[mymc_goal 未受理] ${limit}`, failed: true, endsTurn: true, retryAfterMs: 30_000 };
+        }
         if (tool.name === 'mc_do' && startsTrialFight(args as Record<string, unknown>)) {
           // An internal read skips the per-round display gate. A prior mymc_bag
           // call in this round must not hide the current loadout from the guard.
@@ -236,6 +251,10 @@ export class MymcWorld implements World {
               : '无法确认当前随身武器；等物品栏同步后重试。';
             return `[mymc_do 未受理] 入塔装备检查：${reason}\n${toMymcText(bag)}`;
           }
+        }
+        if (tool.name === 'mc_do') {
+          const reason = this.prospect.redundantProbe(args as Record<string, unknown>);
+          if (reason) return { text: `[mymc_do 未受理] ${reason}`, failed: true, endsTurn: true };
         }
         const planned = tool.name === 'mc_do'
           ? routeViaServerCommand(args as Record<string, unknown>)
@@ -270,6 +289,7 @@ export class MymcWorld implements World {
             { name: 'mymc.camera', description: '观察者摄像机说明；未启用时为空。', multiline: true },
             { name: 'mymc.current_task', description: '引擎同步的当前任务；状态变动后约一秒更新。' },
             { name: 'mymc.goals', description: '引擎同步的目标摘要；状态变动后约一秒更新。' },
+            { name: 'mymc.trial_progress', description: '历史服务端全通回执；与最近一次试炼状态分开记录。' },
           ],
         },
         {
@@ -307,7 +327,7 @@ export class MymcWorld implements World {
         throw new Error('当前 Cortico 构建缺少 AgentFriend 方块保护预检；请先升级 Minecraft 引擎');
       }
     }
-    await this.engine.start(mymcHost(host, this.catalog));
+    await this.engine.start(mymcHost(host, this.catalog, this.trialProgress, this.prospect));
   }
 
   stop(): Promise<void> {

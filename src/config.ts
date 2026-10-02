@@ -16,6 +16,7 @@ export const MYMC_DEFAULTS: MymcConfigSection = {
   host: '',
   username: '',
   viewerPort: 7793,
+  escapeCommand: '/mycli goto arena',
   local: { ...MINECRAFT_DEFAULTS.local, serverEnabled: false, cheats: false },
   player: { ...MINECRAFT_DEFAULTS.player, teleportToBot: false },
 } as MymcConfigSection;

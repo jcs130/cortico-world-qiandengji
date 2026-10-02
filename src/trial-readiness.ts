@@ -16,6 +16,19 @@ export function startsTrialFight(args: Record<string, unknown>): boolean {
   });
 }
 
+/** Entrance actions start a new run; `arena next` continues an existing one. */
+export function startsTrialRun(args: Record<string, unknown>): boolean {
+  if (!Array.isArray(args.steps)) return false;
+  return args.steps.some((raw) => {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false;
+    const step = raw as Record<string, unknown>;
+    if (step.skill === 'chat' && typeof step.text === 'string') {
+      return /^\/mycli\s+arena\s+start\s*$/i.test(step.text.trim());
+    }
+    return startsTrialFight({ steps: [step] }) && step.skill === 'use';
+  });
+}
+
 export function trialMeleeReadiness(bag: string): 'ready' | 'missing' | 'unknown' {
   const list = bag.match(/^工具物品名:([^\r\n]*)/m)?.[1];
   if (!list) return 'unknown';
