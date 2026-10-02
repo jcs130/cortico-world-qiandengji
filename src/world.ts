@@ -93,6 +93,8 @@ function mapRendered(rendered: DeferredRendered | null): DeferredRendered | null
 const FAST_TRAVEL = [
   { name: '试炼场入口', target: { x: -594, y: 91, z: -313 }, radius: 4,
     landing: [-590, 91, -322], command: '/mycli goto arena' },
+  { name: '出生村庄', target: { x: -544, y: 66, z: -440 }, radius: 5,
+    landing: [-544, 66, -440], command: '/mycli goto village' },
 ] as const;
 
 export function routeViaServerCommand(args: Record<string, unknown>): { args: Record<string, unknown>; note: string | null } {

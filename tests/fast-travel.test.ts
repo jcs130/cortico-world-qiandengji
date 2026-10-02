@@ -43,4 +43,12 @@ describe('千灯纪服务端快捷抵达', () => {
       { ...target, needs: [1] },
     ]);
   });
+
+  it('去出生村庄时先走服务端路标，避免远距离徒步', () => {
+    const target = { skill: 'goto', at: [-544, 66, -440] };
+    expect(routeViaServerCommand({ steps: [target] }).args.steps).toEqual([
+      { skill: 'server_travel', command: '/mycli goto village', at: [-544, 66, -440], within: 3 },
+      { ...target, needs: [1] },
+    ]);
+  });
 });
