@@ -2,6 +2,33 @@ import { describe, expect, it } from 'vitest';
 import { routeViaServerCommand } from '../src/world.ts';
 
 describe('千灯纪服务端快捷抵达', () => {
+  it('个人奖励箱单独打开改查待入箱奖励，并说明不是箱内清单；组合取物仍打开 GUI', () => {
+    const standalone = routeViaServerCommand({ steps: [{ skill: 'chat', text: '/mycli arena rewards' }] });
+    expect(standalone.args.steps).toEqual([{ skill: 'chat', text: '/mycli arena rewards list' }]);
+    expect(standalone.note).toContain('不反映个人箱内物品或空位');
+    const combined = [
+      { skill: 'chat', text: '/mycli arena rewards' },
+      { skill: 'take', item: 'emerald', count: 1, from: 'open' },
+    ];
+    expect(routeViaServerCommand({ steps: combined }).args.steps).toEqual(combined);
+  });
+
+  it('个人箱里的发光浆果使用真实物品 ID，保留存取步骤和目标箱', () => {
+    const steps = [
+      { skill: 'chat', text: '/mycli arena rewards' },
+      { skill: 'take', item: 'glowing_berries', count: 4, from: 'open' },
+      { skill: 'stow', item: '发光浆果', count: 4, at: [-473, 67, -491] },
+    ];
+    const result = routeViaServerCommand({ steps });
+    expect(result.args.steps).toEqual([
+      steps[0],
+      { ...steps[1], item: 'glow_berries' },
+      { ...steps[2], item: 'glow_berries' },
+    ]);
+    expect(result.note).toContain('glow_berries');
+    expect(steps[1].item).toBe('glowing_berries');
+  });
+
   it('远程去试炼场入口先使用已验证命令，随后仍核验目标坐标', () => {
     const target = { skill: 'goto', at: [-594, 91, -313], dimension: 'minecraft:overworld' };
     const result = routeViaServerCommand({ steps: [target] });

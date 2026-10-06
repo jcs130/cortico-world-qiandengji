@@ -13,6 +13,7 @@ import type {
 } from 'cortico/core/types.ts';
 import { MINECRAFT_PANEL_DECLS, MINECRAFT_TOOL_DECLS, type MinecraftWorldOptions } from 'cortico/worlds/minecraft/world.ts';
 import { MinecraftWorldProxy } from 'cortico/worlds/minecraft/proxy.ts';
+import { renderTemplate } from 'cortico/core/template.ts';
 import {
   MYMC_CLIENT_CONFIG_GROUP,
   MYMC_CONFIG_GROUP,
@@ -25,6 +26,7 @@ import { SkillCatalog } from './skill-catalog.ts';
 import { startsTrialFight, trialMeleeReadiness } from './trial-readiness.ts';
 import { TrialProgress, trialGoalLimitNote } from './trial-status.ts';
 import { ProspectEvidence } from './prospect-evidence.ts';
+import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from './server-guide.ts';
 
 const ENV_PROMPT_FILE = fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url));
 const CAMERA_NOTE_FILE = fileURLToPath(new URL('./ENV_PROMPT_CAMERA.md', import.meta.url));
@@ -57,8 +59,15 @@ export const MYMC_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [...MINE
 })), {
   name: 'mymc_skills',
   tags: ['read'],
-  description: 'Read the latest server skill listings observed in game chat. This is an observation cache; use /mycli help or /mycli goddess skills to refresh it, then verify learning or casting from server receipts.',
-  parameters: { type: 'object', properties: {}, required: [] },
+  description: 'Read the latest observed Qiandengji spell directory. Pass id for a cached full MC_SPELL_DETAIL; use /mycli spells list and /mycli spells explain <ID> to refresh server facts. Current mana and remaining cooldown come from mcagent:state.',
+  parameters: { type: 'object', properties: { id: { type: 'string', description: 'Optional stable spell ID, e.g. flight or frostnova.' } }, required: [] },
+}, {
+  name: 'mymc_guide',
+  tags: ['read'],
+  description: 'Read one Qiandengji manual topic when needed. Omit topic for the index. Local guidance records observed mechanisms; current server replies decide rules, locations, costs and availability. Generic Minecraft action parameters are available through mymc_help.',
+  parameters: { type: 'object', additionalProperties: false, properties: {
+    topic: { type: 'string', enum: ['index', ...MYMC_GUIDE_TOPICS.map(({ id }) => id)] },
+  }, required: [] },
 }];
 
 function toMymcEvent<T extends { source: string; type: string; text: string; senderKey?: string }>(event: T): T {
@@ -99,7 +108,34 @@ const FAST_TRAVEL = [
 
 export function routeViaServerCommand(args: Record<string, unknown>): { args: Record<string, unknown>; note: string | null } {
   if (!Array.isArray(args.steps)) return { args, note: null };
-  const steps = args.steps as unknown[];
+  let correctedGlowBerries = false;
+  const steps = (args.steps as unknown[]).map((raw) => {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw;
+    const step = raw as Record<string, unknown>;
+    if (typeof step.item !== 'string'
+      || !['glowing_berries', 'minecraft:glowing_berries', '发光浆果'].includes(step.item)) return raw;
+    correctedGlowBerries = true;
+    return { ...step, item: 'glow_berries' };
+  });
+  const itemNote = correctedGlowBerries
+    ? '已把发光浆果的物品名改为原版 ID glow_berries；glowing_berries 不是真实物品 ID。'
+    : null;
+  // The bare command opens a GUI, then the task boundary closes it before the
+  // agent can inspect it. The text fallback reports only rewards queued by a
+  // full chest, not the current contents of the private chest.
+  if (steps.length === 1) {
+    const only = steps[0];
+    if (only && typeof only === 'object' && !Array.isArray(only)) {
+      const step = only as Record<string, unknown>;
+      if (step.skill === 'chat' && typeof step.text === 'string'
+        && /^\/mycli\s+arena\s+rewards\s*$/i.test(step.text)) {
+        return {
+          args: { ...args, steps: [{ ...step, text: '/mycli arena rewards list' }] },
+          note: '单独打开个人奖励箱只会闪现界面；已改查箱满后尚未入箱的奖励。此清单不反映个人箱内物品或空位；取物时把打开窗口和 take from:"open" 放在同一单。',
+        };
+      }
+    }
+  }
   const out: Array<{ step: unknown; origin: number | null; needs: number[] | null; travel: number | null }> = [];
   const originalToNew = new Map<number, number>();
   let note: string | null = null;
@@ -139,7 +175,7 @@ export function routeViaServerCommand(args: Record<string, unknown>): { args: Re
       travel });
     originalToNew.set(original, out.length);
   }
-  if (!note) return { args, note: null };
+  if (!note && !itemNote) return { args, note: null };
   const rewritten = out.map(({ step, needs, travel }) => {
     if (!step || typeof step !== 'object' || Array.isArray(step)) return step;
     if (needs === null && travel === null) return step;
@@ -147,7 +183,7 @@ export function routeViaServerCommand(args: Record<string, unknown>): { args: Re
     if (travel !== null && !mapped.includes(travel)) mapped.push(travel);
     return { ...step, needs: mapped };
   });
-  return { args: { ...args, steps: rewritten }, note };
+  return { args: { ...args, steps: rewritten }, note: [itemNote, note].filter(Boolean).join('\n') };
 }
 
 function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgress,
@@ -218,6 +254,7 @@ export class MymcWorld implements World {
     const mymc = Object.fromEntries(Object.entries(vars)
       .map(([key, value]) => [key.replace(/^minecraft\./, 'mymc.'), toMymcText(value)]));
     mymc['mymc.version'] = this.opts.cfg.version;
+    mymc['mymc.guide_index'] = serverGuideIndex();
     mymc['mymc.trial_progress'] = this.trialProgress.clear
       ? `历史实证：${this.trialProgress.clear.at} 已通关第 ${this.trialProgress.clear.floor}/${this.trialProgress.clear.maxFloor} 层。最新一次 lastOutcome 可能被新开或中断的一局覆盖，不撤销这次通关。`
       : '尚未留存试炼全通的服务端回执。';
@@ -225,6 +262,24 @@ export class MymcWorld implements World {
       ? readFileSync(CAMERA_NOTE_FILE, 'utf8').trim()
       : '';
     return mymc;
+  }
+
+  verifiedFacts(): string | null {
+    const clear = this.trialProgress.clear;
+    return clear
+      ? `服务端回执 ${clear.at}：试炼已通关第 ${clear.floor}/${clear.maxFloor} 层。`
+      : null;
+  }
+
+  requestFacts() {
+    const engine = this.engine as MinecraftWorldProxy & {
+      requestFacts?: () => { text: string; snapshotTypes: readonly string[] } | null;
+    };
+    const facts = engine.requestFacts?.();
+    return facts ? {
+      text: `${toMymcText(facts.text)}\n${this.catalog.compactIndex()}`,
+      snapshotTypes: facts.snapshotTypes.map((type) => type.replace(/^minecraft\./, 'mymc.')),
+    } : null;
   }
 
   tools(): ToolDef[] {
@@ -236,6 +291,19 @@ export class MymcWorld implements World {
       description: toMymcText(tool.description),
       parameters: mapSchema(tool.parameters) as Record<string, unknown>,
       handler: async (args, ctx) => {
+        if (tool.name === 'mc_cast' && typeof args.spell === 'string') {
+          const required = this.catalog.requiredArgumentCount(args.spell);
+          const supplied = Array.isArray(args.arguments) ? args.arguments.length : 0;
+          if (required !== null && supplied < required) {
+            return { text: `[mymc_cast 未发送] 服务端已观测的 ${args.spell} 用法需要至少 ${required} 个参数；`
+              + `用 mymc_skills {"id":"${args.spell}"} 或 /mycli spells explain ${args.spell} 核对完整说明，按实际值填写 arguments。`, failed: true };
+          }
+          const maximum = this.catalog.maximumArgumentCount(args.spell);
+          if (maximum !== null && supplied > maximum) {
+            return { text: `[mymc_cast 未发送] 服务端已观测的 ${args.spell} 用法最多接受 ${maximum} 个参数，本次给了 ${supplied} 个；`
+              + `用 mymc_skills {"id":"${args.spell}"} 或 /mycli spells explain ${args.spell} 核对完整说明；目录更新后按新用法调用。`, failed: true };
+          }
+        }
         if (tool.name === 'mc_goal') {
           const limit = trialGoalLimitNote(args as Record<string, unknown>, this.trialProgress.status, this.trialProgress.clear);
           if (limit) return { text: `[mymc_goal 未受理] ${limit}`, failed: true, endsTurn: true, retryAfterMs: 30_000 };
@@ -268,7 +336,16 @@ export class MymcWorld implements World {
           ? addNote(toMymcText(result))
           : { ...result, text: addNote(toMymcText((result as ToolOutcome).text)) };
       },
-    })), { ...MYMC_TOOL_DECLS[MYMC_TOOL_DECLS.length - 1], handler: async () => this.catalog.readout() }];
+    })), {
+      ...MYMC_TOOL_DECLS.find((decl) => decl.name === 'mymc_skills')!,
+      handler: async (args) => this.catalog.readout(typeof args.id === 'string' ? args.id : undefined),
+    }, {
+      ...MYMC_TOOL_DECLS.find((decl) => decl.name === 'mymc_guide')!,
+      handler: async (args) => {
+        const outcome = readServerGuide(args.topic);
+        return { ...outcome, text: renderTemplate(outcome.text, this.envPromptVars()) };
+      },
+    }];
   }
 
   console(): WorldConsoleDecl {
@@ -286,6 +363,7 @@ export class MymcWorld implements World {
           role: 'envPrompt',
           vars: [
             { name: 'mymc.version', description: '连接的协议版本。' },
+            { name: 'mymc.guide_index', description: '按需读取的服务器玩法主题。', multiline: true },
             { name: 'mymc.world', description: '当前服务器或存档的身份。' },
             { name: 'mymc.explored', description: '探索覆盖摘要。' },
             { name: 'mymc.policy', description: '与默认值不同的常驻规则。' },

@@ -69,6 +69,52 @@ function fakeHost() {
 }
 
 describe('Mymc World contract', () => {
+  it('maps complete observed facts and their snapshot coverage without changing engine data', () => {
+    const fake = fakeEngine();
+    const observed = { text: '[Minecraft 观察于 2026-01-01T00:00:00Z] mc_queue: 工作中，背包已同步',
+      snapshotTypes: ['minecraft.world.snapshot', 'minecraft.task.queue'] };
+    Object.assign(fake.engine, { requestFacts: () => observed });
+    const before = structuredClone(observed);
+    const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
+    const facts = world.requestFacts()!;
+    expect(facts.snapshotTypes).toEqual(['mymc.world.snapshot', 'mymc.task.queue']);
+    expect(facts.text).toContain('mymc_queue');
+    expect(facts.text).toContain('2026-01-01T00:00:00Z');
+    expect(facts.text).toContain('/mycli help');
+    expect(facts.text).toContain('/mycli spells list 1');
+    expect(facts.text).toContain('尚未核验分页目录是否完整');
+    expect(observed).toEqual(before);
+  });
+
+  it('returns no current facts with an engine that has no complete cache', () => {
+    const fake = fakeEngine();
+    const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
+    expect(world.requestFacts()).toBeNull();
+  });
+
+  it('projects the persisted skill index into fresh facts without replaying skill chat history', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'mymc-facts-'));
+    try {
+      const cfg = { ...structuredClone(MYMC_DEFAULTS), host: 'example.test' };
+      const catalog = new SkillCatalog(`${cfg.host}:${cfg.port}`, dir);
+      catalog.observe('[MC 系统] MC_SPELL_LIST {"schemaVersion":1,"page":1,"pages":1,"total":1}', '2026-01-01T00:00:00Z');
+      catalog.observe('[MC 系统] MC_SPELL_DETAIL {"id":"give","name":"造物术","category":"creation","mana":4,"cooldownMs":20000,"command":"/mycli cast give <物品>","effect":"详细配方只按需读取"}', '2026-01-01T00:00:00Z');
+      catalog.observe('[MC 系统] MC_SPELL_ITEM {"id":"give","name":"造物术","category":"creation","mana":4,"cooldownMs":20000,"command":"/mycli cast give <物品>"}', '2026-01-01T00:00:00Z');
+      const fake = fakeEngine();
+      Object.assign(fake.engine, { requestFacts: () => ({ text: '当前饱食度20/20，常规口粮0个', snapshotTypes: [] }) });
+      const world = new MymcWorld({ cfg, dataDir: dir }, fake.engine);
+      const facts = world.requestFacts()!;
+      expect(facts.text).toContain('当前饱食度20/20，常规口粮0个');
+      expect(facts.text).toContain('本次目录完整');
+      expect(facts.text).toContain('give:造物术');
+      expect(facts.text).toContain('/mycli help');
+      expect(facts.text).not.toContain('详细配方只按需读取');
+      const detail = await world.tools().find((tool) => tool.name === 'mymc_skills')!
+        .handler({ id: 'give' }, { role: 'main', log: {} as never });
+      expect(typeof detail === 'string' ? detail : detail.text).toContain('详细配方只按需读取');
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
   it('初次登录把连发目录当基线，之后新增的技能标题仍通知', () => {
     const catalog = new SkillCatalog('example.test:25565');
     expect(catalog.observe('[MC 插件] 可学习：羽落 已学', '2026-10-01T00:00:00+08:00')).toBeNull();
@@ -106,7 +152,7 @@ describe('Mymc World contract', () => {
     const fake = fakeEngine();
     const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
     const tools = world.tools();
-    expect(tools.map((tool) => tool.name)).toEqual(['mymc_do', 'mymc_cast', 'mymc_skills']);
+    expect(tools.map((tool) => tool.name)).toEqual(['mymc_do', 'mymc_cast', 'mymc_skills', 'mymc_guide']);
     expect(tools[0].description).toBe('mymc_do emits mymc.task');
     expect((tools[0].parameters.properties as Record<string, { description: string }>).text.description).toBe('Use mymc_do');
     expect(await tools[0].handler({}, { role: 'main', log: {} as never })).toBe('[mymc_do] 已受理');
@@ -117,12 +163,46 @@ describe('Mymc World contract', () => {
     expect(decl.storage?.[0].key).toBe('mymc-chests');
     expect(decl.storage?.[0].clear()).toBe('已清空');
     const prompt = await renderWorldEnvPrompt(world);
-    expect(prompt.text).toContain('mymc_do');
+    expect(prompt.text).toContain('mymc_guide');
+    expect(prompt.text).toContain('mymc_help');
     expect(prompt.text).toContain('/mycli help');
+    expect(prompt.text).toContain('/mycli spells list 1');
+    expect(prompt.text).toContain('不因中途位置变化反复 stop/do');
     expect(prompt.text).toContain('当前任务：任务#7 正在整理背包');
     expect(prompt.text).toContain('目标摘要：先清理奖励箱');
     expect(prompt.text).not.toContain('{{mymc.');
     expect(prompt.sourceKey).toBe('worlds.mymc.envPrompt');
+  });
+
+  it('reads only the requested manual topic and renders current observed state', async () => {
+    const fake = fakeEngine();
+    const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
+    const tool = world.tools().find((entry) => entry.name === 'mymc_guide')!;
+    const index = await tool.handler({}, { role: 'main', log: {} as never });
+    expect(index).toMatchObject({ text: expect.stringContaining('flight：') });
+    expect(index).toMatchObject({ text: expect.not.stringContaining('熟练度 1/2/3') });
+    const flight = await tool.handler({ topic: 'flight' }, { role: 'main', log: {} as never });
+    expect(flight).toMatchObject({ text: expect.stringContaining('熟练度 1/2/3') });
+    expect(flight).toMatchObject({ text: expect.not.stringContaining('个人奖励箱') });
+    const current = await tool.handler({ topic: 'state' }, { role: 'main', log: {} as never });
+    expect(current).toMatchObject({ text: expect.stringContaining('任务#7 正在整理背包') });
+    expect(JSON.stringify(current)).not.toContain('{{mymc.');
+    const invalid = await tool.handler({ topic: '../world' }, { role: 'main', log: {} as never });
+    expect(invalid).toMatchObject({ failed: true });
+  });
+
+  it('supplies an observed full-clear receipt to context summaries', async () => {
+    const fake = fakeEngine();
+    const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
+    expect(world.verifiedFacts()).toBeNull();
+    await world.start(fakeHost().host);
+    await fake.bridge().pushEvent({
+      ts: '2026-10-03T14:38:43+08:00', source: 'minecraft', type: 'minecraft.chat',
+      text: '[MC 系统] 第 15/15 层已通关！',
+    });
+    expect(world.verifiedFacts()).toContain('2026-10-03T14:38:43+08:00');
+    expect(world.verifiedFacts()).toContain('第 15/15 层');
+    await world.stop();
   });
 
   it('maps child events and cognition requests to mymc before they reach Core', async () => {
