@@ -273,11 +273,14 @@ export class MymcWorld implements World {
 
   requestFacts() {
     const engine = this.engine as MinecraftWorldProxy & {
-      requestFacts?: () => { text: string; snapshotTypes: readonly string[] } | null;
+      requestFacts?: () => { text: string; snapshotTypes: readonly string[];
+        parts?: readonly { key: string; text: string }[] } | null;
     };
     const facts = engine.requestFacts?.();
     return facts ? {
       text: `${toMymcText(facts.text)}\n${this.catalog.compactIndex()}`,
+      ...(facts.parts?.length ? { parts: [...facts.parts.map(part => ({ ...part, text: toMymcText(part.text) })),
+        { key: 'skillCatalog', text: this.catalog.compactIndex() }] } : {}),
       snapshotTypes: facts.snapshotTypes.map((type) => type.replace(/^minecraft\./, 'mymc.')),
     } : null;
   }

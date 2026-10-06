@@ -92,6 +92,21 @@ describe('Mymc World contract', () => {
     expect(world.requestFacts()).toBeNull();
   });
 
+  it('preserves complete fact parts and keeps the skill entry index in its own part', () => {
+    const fake = fakeEngine();
+    const observed = { text: '采样 00:00:01\nmc_queue: 空闲', snapshotTypes: ['minecraft.task.queue'],
+      parts: [{ key: 'sample', text: '采样 00:00:01' }, { key: 'queue', text: 'mc_queue: 空闲' }, { key: 'nearby', text: '' }] };
+    Object.assign(fake.engine, { requestFacts: () => observed });
+    const before = structuredClone(observed);
+    const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
+    const facts = world.requestFacts()!;
+    expect(facts.parts?.find(part => part.key === 'queue')?.text).toBe('mymc_queue: 空闲');
+    expect(facts.parts?.find(part => part.key === 'nearby')?.text).toBe('');
+    expect(facts.parts?.find(part => part.key === 'skillCatalog')?.text).toContain('/mycli help');
+    expect(facts.parts?.map(part => part.text).filter(Boolean).join('\n')).toBe(facts.text);
+    expect(observed).toEqual(before);
+  });
+
   it('projects the persisted skill index into fresh facts without replaying skill chat history', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'mymc-facts-'));
     try {
