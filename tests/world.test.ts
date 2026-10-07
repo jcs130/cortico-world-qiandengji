@@ -69,6 +69,32 @@ function fakeHost() {
 }
 
 describe('Mymc World contract', () => {
+  it('supplies current commissions and completion receipts to requests and memory summaries', async () => {
+    const fake = fakeEngine();
+    Object.assign(fake.engine, { requestFacts: () => ({ text: '当前在地面', snapshotTypes: [],
+      parts: [{ key: 'sample', text: '当前在地面' }] }) });
+    const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
+    await world.start(fakeHost().host);
+    try {
+      for (const [at, text] of [
+        ['2026-01-01T12:00:00Z', '[MC 系统] 已接公会委托：采集委托。'],
+        ['2026-01-01T12:01:00Z', '[MC 系统] 正在进行：采集委托 [16/16]；可交付领取'],
+        ['2026-01-01T12:02:00Z', '[MC 系统] 委托交付成功！'],
+        ['2026-01-01T12:03:00Z', '[MC 系统] 当前没有在办的委托。'],
+      ]) await fake.bridge().pushEvent({ ts: at, source: 'minecraft', type: 'minecraft.chat', text });
+      const facts = world.requestFacts()!;
+      expect(facts.text).toContain('当前没有在办的委托');
+      expect(facts.text).toContain('2026-01-01T12:02:00Z 服务端确认交付：采集委托');
+      expect(facts.text).not.toContain('在办：采集委托');
+      expect(facts.parts?.map(part => part.text).filter(Boolean).join('\n')).toBe(facts.text);
+      expect(facts.parts?.find(part => part.key === 'guildState')?.text).toContain('服务端确认交付：采集委托');
+      expect(world.verifiedFacts()).toContain('服务端确认交付：采集委托');
+      const guide = await world.tools().find(tool => tool.name === 'mymc_guide')!
+        .handler({ topic: 'guild' }, { role: 'main', log: {} as never });
+      expect(typeof guide === 'string' ? guide : guide.text).toContain('当前没有在办的委托');
+    } finally { await world.stop(); }
+  });
+
   it('maps complete observed facts and their snapshot coverage without changing engine data', () => {
     const fake = fakeEngine();
     const observed = { text: '[Minecraft 观察于 2026-01-01T00:00:00Z] mc_queue: 工作中，背包已同步',

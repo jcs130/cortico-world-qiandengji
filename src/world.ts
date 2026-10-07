@@ -26,6 +26,7 @@ import { SkillCatalog } from './skill-catalog.ts';
 import { startsTrialFight, trialMeleeReadiness } from './trial-readiness.ts';
 import { TrialProgress, trialGoalLimitNote } from './trial-status.ts';
 import { ProspectEvidence } from './prospect-evidence.ts';
+import { GuildProgress } from './guild-progress.ts';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from './server-guide.ts';
 
 const ENV_PROMPT_FILE = fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url));
@@ -187,7 +188,7 @@ export function routeViaServerCommand(args: Record<string, unknown>): { args: Re
 }
 
 function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgress,
-  prospect: ProspectEvidence): WorldHost {
+  prospect: ProspectEvidence, guild: GuildProgress): WorldHost {
   const bridge = Object.create(host) as WorldHost;
   bridge.pushEvent = async (event, options) => {
     const mapped = toMymcEvent(event);
@@ -195,6 +196,7 @@ function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgres
     if (mapped.type === 'mymc.chat') {
       prospect.observe(mapped.text, mapped.ts);
       progress.observe(mapped.text, mapped.ts);
+      guild.observe(mapped.text, mapped.ts);
       const heading = catalog.observe(mapped.text, mapped.ts);
       if (heading) {
         await host.pushEvent({
@@ -238,6 +240,7 @@ export class MymcWorld implements World {
   private readonly engine: MinecraftWorldProxy;
   private readonly catalog: SkillCatalog;
   private readonly trialProgress: TrialProgress;
+  private readonly guildProgress: GuildProgress;
   private readonly prospect = new ProspectEvidence();
   private readonly requireProtectSupport: boolean;
 
@@ -247,6 +250,7 @@ export class MymcWorld implements World {
     this.engine = engine ?? new MinecraftWorldProxy({ ...opts, agentFriendEnabled: true } as MinecraftWorldOptions);
     this.catalog = new SkillCatalog(`${opts.cfg.host}:${opts.cfg.port}`, opts.dataDir);
     this.trialProgress = new TrialProgress(`${opts.cfg.host}:${opts.cfg.port}:${opts.cfg.username}`, opts.dataDir);
+    this.guildProgress = new GuildProgress(`${opts.cfg.host}:${opts.cfg.port}:${opts.cfg.username}`, opts.dataDir);
   }
 
   envPromptVars(): Record<string, string> {
@@ -255,6 +259,7 @@ export class MymcWorld implements World {
       .map(([key, value]) => [key.replace(/^minecraft\./, 'mymc.'), toMymcText(value)]));
     mymc['mymc.version'] = this.opts.cfg.version;
     mymc['mymc.guide_index'] = serverGuideIndex();
+    mymc['mymc.guild_state'] = this.guildProgress.facts();
     mymc['mymc.trial_progress'] = this.trialProgress.clear
       ? `历史实证：${this.trialProgress.clear.at} 已通关第 ${this.trialProgress.clear.floor}/${this.trialProgress.clear.maxFloor} 层。最新一次 lastOutcome 可能被新开或中断的一局覆盖，不撤销这次通关。`
       : '尚未留存试炼全通的服务端回执。';
@@ -266,9 +271,8 @@ export class MymcWorld implements World {
 
   verifiedFacts(): string | null {
     const clear = this.trialProgress.clear;
-    return clear
-      ? `服务端回执 ${clear.at}：试炼已通关第 ${clear.floor}/${clear.maxFloor} 层。`
-      : null;
+    return [clear ? `服务端回执 ${clear.at}：试炼已通关第 ${clear.floor}/${clear.maxFloor} 层。` : '',
+      this.guildProgress.facts()].filter(Boolean).join('\n') || null;
   }
 
   requestFacts() {
@@ -277,10 +281,12 @@ export class MymcWorld implements World {
         parts?: readonly { key: string; text: string }[] } | null;
     };
     const facts = engine.requestFacts?.();
+    const additions = [{ key: 'skillCatalog', text: this.catalog.compactIndex() },
+      { key: 'guildState', text: this.guildProgress.facts() }].filter(part => part.text);
     return facts ? {
-      text: `${toMymcText(facts.text)}\n${this.catalog.compactIndex()}`,
+      text: [toMymcText(facts.text), ...additions.map(part => part.text)].join('\n'),
       ...(facts.parts?.length ? { parts: [...facts.parts.map(part => ({ ...part, text: toMymcText(part.text) })),
-        { key: 'skillCatalog', text: this.catalog.compactIndex() }] } : {}),
+        ...additions] } : {}),
       snapshotTypes: facts.snapshotTypes.map((type) => type.replace(/^minecraft\./, 'mymc.')),
     } : null;
   }
@@ -374,6 +380,7 @@ export class MymcWorld implements World {
             { name: 'mymc.current_task', description: '引擎同步的当前任务；状态变动后约一秒更新。' },
             { name: 'mymc.goals', description: '引擎同步的目标摘要；状态变动后约一秒更新。' },
             { name: 'mymc.trial_progress', description: '历史服务端全通回执；与最近一次试炼状态分开记录。' },
+            { name: 'mymc.guild_state', description: '带时间的服务端在办委托与近期完成证据。' },
           ],
         },
         {
@@ -411,7 +418,7 @@ export class MymcWorld implements World {
         throw new Error('当前 Cortico 构建缺少 AgentFriend 方块保护预检；请先升级 Minecraft 引擎');
       }
     }
-    await this.engine.start(mymcHost(host, this.catalog, this.trialProgress, this.prospect));
+    await this.engine.start(mymcHost(host, this.catalog, this.trialProgress, this.prospect, this.guildProgress));
   }
 
   stop(): Promise<void> {
