@@ -1,4 +1,4 @@
-<!-- Owner: src/world.ts, src/server-guide.ts, src/ENV_PROMPT.md -->
+<!-- Owner: src/world.ts, src/server-guide.ts, src/ENV_PROMPT.md, references/server-technical/index.json -->
 
 # cortico-world-qiandengji
 
@@ -52,3 +52,5 @@ pnpm typecheck
 将本包作为 World 扩展安装，在部署配置中启用 `worlds.mymc`，填写服务器地址、端口、协议版本与普通玩家账号。先停用 `worlds.minecraft`，避免同一账号双开。环境提示词通过本包的 `src/ENV_PROMPT.md` 提供，服务端新增技能由游戏内 `/mycli` 回执观察、核验后使用。
 
 在 Cortico 的 `extensions/package.json` 中加入本包的 `link:` 路径后，于 `extensions/` 运行 `pnpm --ignore-workspace install`，再运行 `pnpm check:extension <本目录>`。构建后的网页目录由 `worlds.mymc.viewerAssetsDir` 指定；它来自 `mc-visual-console` 的源码和本地 1.20.6 客户端资源。
+
+另一台机器的仓库分支、构建顺序、技术资料导入和私有资产迁移见 [DEPLOYMENT.md](DEPLOYMENT.md)。`references/server-technical/` 随包分发，由部署者导入文件工作区；World 不写入 Persona Memory。

@@ -14,7 +14,7 @@
     "displayName": "千灯纪",
     "consoleClient": "dist/console.js"
   },
-  "files": ["src", "dist", "README.md", "LICENSE"],
+  "files": ["src", "dist", "references", "README.md", "DEPLOYMENT.md", "LICENSE"],
   "scripts": {
     "build": "node scripts/build-console.mjs",
     "test": "vitest run",
