@@ -11,6 +11,7 @@ export const MYMC_GUIDE_TOPICS = [
   { id: 'tasks', title: '任务执行与受阻', description: '队列、依赖、终态、材料与失败后的调整' },
   { id: 'skills', title: '技能学习与施法', description: '命令目录、技能说明、魔力、冷却与罗盘' },
   { id: 'flight', title: '飞行术', description: '限时飞行、落脚点与同单施法飞行' },
+  { id: 'control', title: '直接控制与方法试验', description: '短时按键、斜飞、跃空反馈与自主修订动作序列' },
   { id: 'combat', title: '战斗与补给', description: '连招、回血、盾牌图腾、进食与撤离' },
   { id: 'mining', title: '探矿与挖掘', description: '绝对定位、隐藏矿石、安全井口与保护' },
   { id: 'living', title: '种植钓鱼与烹饪', description: '生长回访、岸上钓鱼、熔炉与睡觉' },
