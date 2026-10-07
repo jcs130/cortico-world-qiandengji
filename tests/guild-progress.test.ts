@@ -5,6 +5,48 @@ import { describe, expect, it } from 'vitest';
 import { GuildProgress } from '../src/guild-progress.ts';
 
 describe('GuildProgress', () => {
+  it('preserves the server acceptance conditions through progress updates and obtains the exact ID from an in-progress board entry', () => {
+    const progress = new GuildProgress('example.test:25565:visitor');
+    const accepted = '[MC 系统] 已接公会委托：登高看远方 · 1/1 登高。到达高度至少 120 的地方；服务器记录实际到达。；完成后领取奖励。';
+    progress.observe(accepted, '2026-01-01T12:00:00Z');
+    progress.observe('[MC 系统] 正在进行：登高看远方 · 1/1 登高 [0/1]', '2026-01-01T12:01:00Z');
+    progress.observe('[MC 系统] tm_hill_walk 登高看远方 · 选一个喜欢的山顶。 [in_progress] · 声望+6', '2026-01-01T12:02:00Z');
+    const facts = progress.facts();
+    expect(facts).toContain('在办：登高看远方 [0/1]');
+    expect(facts).toContain('精确ID：tm_hill_walk');
+    expect(facts).toContain('2026-01-01T12:00:00Z');
+    expect(facts).toContain('到达高度至少 120 的地方；服务器记录实际到达。');
+    expect(facts).toContain('验收要求原文');
+    expect(facts).not.toContain('在办：登高看远方 · 1/1 登高');
+  });
+
+  it('clears old acceptance evidence on a different commission and refuses unmatched or non-active ID listings', () => {
+    const progress = new GuildProgress('example.test:25565:visitor');
+    progress.observe('[MC 系统] 已接公会委托：旧采集。需要16份材料。', '2026-01-01T12:00:00Z');
+    progress.observe('[MC 系统] 正在进行：新建造 [0/4]', '2026-01-01T12:01:00Z');
+    progress.observe('[MC 系统] old_collect 旧采集 · 交付材料。 [in_progress] · 声望+6', '2026-01-01T12:02:00Z');
+    progress.observe('[MC 系统] new_build 新建造 · 搭建。 [available] · 声望+6', '2026-01-01T12:02:01Z');
+    expect(progress.facts()).toContain('在办：新建造 [0/4]');
+    expect(progress.facts()).not.toContain('需要16份材料');
+    expect(progress.facts()).not.toContain('精确ID');
+  });
+
+  it('retains acceptance evidence and ID after reload but removes them after delivery, including a repeated quest name', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'guild-acceptance-'));
+    try {
+      const progress = new GuildProgress('example.test:25565:visitor', dir);
+      progress.observe('[MC 系统] 已接公会委托：修路。先完成一条可通行的道路。', '2026-01-01T12:00:00Z');
+      progress.observe('[MC 系统] road_build 修路 · 建造道路。 [in_progress] · 声望+6', '2026-01-01T12:00:01Z');
+      const restored = new GuildProgress('example.test:25565:visitor', dir);
+      expect(restored.facts()).toContain('可通行的道路');
+      expect(restored.facts()).toContain('精确ID：road_build');
+      restored.observe('[MC 系统] 委托交付成功！', '2026-01-01T12:02:00Z');
+      restored.observe('[MC 系统] 正在进行：修路 [0/2]', '2026-01-02T12:00:00Z');
+      expect(restored.facts()).not.toContain('可通行的道路');
+      expect(restored.facts()).not.toContain('精确ID');
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
   it('retains delivery evidence after current state is cleared and another commission is accepted', () => {
     const progress = new GuildProgress('example.test:25565:visitor');
     expect(progress.facts()).toBe('');
