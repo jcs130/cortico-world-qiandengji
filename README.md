@@ -1,4 +1,4 @@
-<!-- Owner: src/world.ts, src/server-guide.ts, src/ENV_PROMPT.md, references/server-technical/index.json -->
+<!-- Owner: src/world.ts, src/guild-progress.ts, src/server-guide.ts, src/ENV_PROMPT.md, references/server-technical/index.json -->
 
 # cortico-world-qiandengji
 
@@ -25,6 +25,7 @@
 施法前按已观测命令中的必填和可选占位符校验参数数量；无参数命令拒绝多余坐标。
 未知、可变参数或无法解析的语法交给服务端裁决，目录更新后使用新参数约束。
 `src/guild-progress.ts` 保留服务端接单与验收原文及其观察时间，同一委托的进度更新继续携带该证据。
+进度同时读取状态查询和交付时的“还需完成”回执，按观察时间更新，允许实测数下降；进度不是累计捐赠量或完成证明。
 在办看板按同一委托名称补充精确 ID；切换、交付或确认无在办委托时清除旧要求，重载按服务器与账号恢复。
 看板描述、台词和请求次数不能替代验收回执。
 
