@@ -1,6 +1,6 @@
 {
   "name": "cortico-world-qiandengji",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "千灯纪 Minecraft server World for Cortico",
   "repository": { "type": "git", "url": "git+https://github.com/jcs130/cortico-world-qiandengji.git" },

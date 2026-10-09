@@ -5,7 +5,7 @@
 ## 安装 World
 
 1. 准备支持 World API 5 的 Cortico（本包以官方 0.1.8 SDK 检查，推荐 Node.js 24）。
-2. 在控制台扩展页安装 `cortico-world-qiandengji`，或填写 [Releases](https://github.com/jcs130/cortico-world-qiandengji/releases) 中 `.tgz` 的下载地址。
+2. npm 发布版在控制台扩展页填写 `cortico-world-qiandengji` 安装。使用 GitHub 安装包时，按 README 的 pnpm 命令将 [Releases](https://github.com/jcs130/cortico-world-qiandengji/releases) 中的 `.tgz` 安装到 Cortico 的扩展目录，再重启 Cortico；扩展页不能直接填写压缩包地址。
 3. 停用原 Minecraft World，在千灯纪页面填写服务器地址、端口、协议版本和账号，启用千灯纪。配置段为 `worlds.mymc`，示例见 [README](README.md)。
 4. 游戏连接后打开画面链接。默认端口 7793，第一人称 `/`、第三人称 `/third/`、2.5D `/dungeon/`；多实例分配不同端口。
 

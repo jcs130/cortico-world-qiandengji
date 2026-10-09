@@ -10,7 +10,13 @@
 
 ## 安装与配置
 
-在 Cortico 控制台的扩展页安装 `cortico-world-qiandengji`，或使用 [GitHub Releases](https://github.com/jcs130/cortico-world-qiandengji/releases) 中构建好的 `.tgz` 下载地址。Git 仓库源码尚未包含生成的引擎和画面，源码安装前须按下方步骤构建。
+npm 发布版可在 Cortico 控制台的扩展页填写 `cortico-world-qiandengji` 安装。扩展页不接受网页或 `.tgz` 地址；使用 [GitHub Releases](https://github.com/jcs130/cortico-world-qiandengji/releases) 的安装包时，通过 pnpm 安装到宿主的扩展目录：
+
+```powershell
+pnpm --dir 'C:\Cortico\extensions' add 'https://github.com/jcs130/cortico-world-qiandengji/releases/download/v0.1.1/cortico-world-qiandengji-0.1.1.tgz' --ignore-workspace
+```
+
+将示例目录替换为自己的 Cortico `extensions` 目录；若设置了 `CORTICO_EXTENSIONS_DIR`，使用该目录。目录尚不存在时先创建。安装后重启 Cortico，扩展页会列出千灯纪。Git 仓库源码尚未包含生成的引擎和画面，源码安装前须按下方步骤构建。
 
 在「千灯纪 · 连接」填写服务器地址、端口和账号，并启用本 World。默认不自动连接。已有 Minecraft World 时先停用它，避免重复连接。对应配置示例：
 
