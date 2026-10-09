@@ -1,0 +1,489 @@
+diff --git a/containers.ts b/containers.ts
+--- a/containers.ts
++++ b/containers.ts
+@@ -11,7 +11,8 @@
+ import { blockAtCell, cellText, dimensionOf } from './cell-facts.ts';
+ import { zhName } from './names.ts';
+ import { moveExactSlot, playerInvIn, type InvPred } from './inventory.ts';
+-import { readDurability, readEnchants, readPotionName, type EnchantRegistry } from './item-facts.ts';
++import { readDurability, readEnchants, readPotionName, type EnchantRegistry, type ItemLike } from './item-facts.ts';
++import { itemCustomName } from './item-display.ts';
+ import {
+   CONTAINER_FIND, ChestBook, FURNACE_KINDS, chestBlockName, hasItem, hasRoom, type ChestRecord,
+ } from './chests.ts';
+@@ -86,7 +87,7 @@
+ ): Promise<void> {
+   const occupying = win.slots[destSlot];
+   if (occupying) {
+-    throw new SkillBlocked(`工作站输入格 ${destSlot + 1} 已有${zhName(occupying.name)}，不能再放${asked}；先关窗等物品回包并核对窗口，不要为此丢背包物品`, [], 'server');
++    throw new SkillBlocked(`工作站输入格 ${destSlot + 1} 已有${itemCustomName(occupying) ?? zhName(occupying.name)}，不能再放${asked}；先关窗等物品回包并核对窗口，不要为此丢背包物品`, [], 'server');
+   }
+   const item = playerInvIn(bot, win).items().find((i) => pred(i.name, i));
+   if (!item) throw new SkillBlocked(`包里没有${asked}`);
+@@ -106,7 +107,7 @@
+     const now = win.slots[destSlot];
+     throw new SkillBlocked(
+       `工作站输入格 ${destSlot + 1} 放不进${asked}`
+-      + (now ? `，格里现在是${zhName(now.name)}` : '，窗口槽位状态可能还没同步')
++      + (now ? `，格里现在是${itemCustomName(now) ?? zhName(now.name)}` : '，窗口槽位状态可能还没同步')
+       + '；这不是背包空位的判据，不要丢物品腾格。先关窗等服务端回灌再核对',
+       [], 'server',
+     );
+@@ -172,23 +173,26 @@
+  * 于是也点不了名(见 item-pick)。
+  */
+ export function containerStacks(win: {
+-  containerItems?: () => Array<{ name: string; count: number }>;
+-  slots?: Array<{ name: string; count: number } | null>;
++  containerItems?: () => Array<ItemLike & { count: number }>;
++  slots?: Array<(ItemLike & { count: number }) | null>;
+   inventoryStart?: number;
+ }, registry?: EnchantRegistry | null): { items: ItemStack[]; usedSlots: number; slots: number } {
+   const raw = typeof win.containerItems === 'function'
+     ? win.containerItems()
+-    : (win.slots ?? []).slice(0, win.inventoryStart ?? 27).filter((s): s is { name: string; count: number } => s != null);
++    : (win.slots ?? []).slice(0, win.inventoryStart ?? 27).filter((s): s is ItemLike & { count: number } => s != null);
+   const merged = new Map<string, ItemStack>();
+   for (const it of raw) {
+     const ench = readEnchants(it as never, registry as never);
+     const potion = readPotionName(it as never);
+-    const key = `${it.name}|${ench.map((e) => `${e.name}${e.level}`).join(',')}|${potion ?? ''}`;
++    const displayName = itemCustomName(it);
++    const durability = readDurability(it);
++    const key = JSON.stringify([it.name, displayName, ench, potion, durability]);
+     const cur = merged.get(key);
+     if (cur) cur.count += it.count;
+     else {
+       merged.set(key, {
+         name: it.name, count: it.count,
++        ...(displayName ? { displayName } : {}), ...(durability ? { durability } : {}),
+         ...(ench.length > 0 ? { enchantments: ench } : {}), ...(potion ? { potion } : {}),
+       });
+     }
+@@ -244,7 +248,7 @@
+   const slots = (win as { slots?: Array<{ name?: string; count?: number } | null> }).slots;
+   const s = slots?.[i];
+   return s && typeof s.name === 'string' && typeof s.count === 'number'
+-    ? { name: s.name, count: s.count }
++    ? containerStacks({ containerItems: () => [s as ItemLike & { count: number }] }).items[0] ?? null
+     : null;
+ }
+ 
+@@ -282,10 +286,10 @@
+ export const BREW_FUEL_SLOT = 4;
+ 
+ /** 一件药水念成「药水(水瓶)×1」;不是药水就只有名字和数量 */
+-export function potionText(stack: { name: string; count: number } | null): string {
++export function potionText(stack: ItemLike & { count: number } | null): string {
+   if (!stack) return '空';
+   const potion = readPotionName(stack as never);
+-  return `${zhName(stack.name)}${potion === null ? '' : `(${potion})`}×${stack.count}`;
++  return `${itemCustomName(stack) ?? zhName(stack.name)}${potion === null ? '' : `(${potion})`}×${stack.count}`;
+ }
+ 
+ /** 酿造台现在的样子:三个瓶位、材料、燃料轮数、在不在酿;右键看台与 brew 回执共用 */
+@@ -297,7 +301,7 @@
+   const brewTicks = windowProp(bot, win, BREW_PROP_TIME);
+   const fuelSlot = win.slots[BREW_FUEL_SLOT];
+   const fuel = `燃料${fuelLeft === null ? '读数没收到' : `还能烧 ${fuelLeft}/20 轮`}`
+-    + (fuelSlot ? `(燃料位另有${zhName(fuelSlot.name)}×${fuelSlot.count})` : '(燃料位空)');
++    + (fuelSlot ? `(燃料位另有${itemCustomName(fuelSlot) ?? zhName(fuelSlot.name)}×${fuelSlot.count})` : '(燃料位空)');
+   const brewing = brewTicks === null
+     ? '酿造进度读数没收到'
+     : brewTicks > 0 ? `正在酿,还剩约 ${Math.ceil(brewTicks / 20)} 秒` : '没在酿';
+@@ -332,7 +336,7 @@
+     const now = Date.now();
+     const expected = furnaceDoneAt(win, state.input, blockName, now);
+     ctx.chests?.rememberFurnace(dimensionOf(bot), cell, blockName, state, now, expected);
+-    const slot = (s: ItemStack | null): string => (s ? `${zhName(s.name)}×${s.count}` : '空');
++    const slot = (s: ItemStack | null): string => (s ? `${s.displayName ?? zhName(s.name)}×${s.count}` : '空');
+     return `。炉里:输入${slot(state.input)},燃料${slot(state.fuel)},输出${slot(state.output)}`
+       + `。装料点火用 smelt 的 input、fuel 和 at:[${cell.x},${cell.y},${cell.z}]；`
+       + '手持材料右键是打开窗口，不是写入输入槽或燃料槽。'
+diff --git a/inventory.ts b/inventory.ts
+--- a/inventory.ts
++++ b/inventory.ts
+@@ -124,9 +124,10 @@
+   return `${zhName(item)}${pick ? `(带「${pick}」的)` : ''}`;
+ }
+ 
+-/** 回执里怎么念这一件:点名挑过就念全标签(带附魔括号),没挑就念 id 的中文名 */
++/** 有实际物品时优先显示名称；挑选回执同时附上附魔与耐久。 */
+ export function askedLabel(bot: Bot, name: string, pick?: string, item?: ItemLike | null): string {
+-  return pick && item ? pickLabel(pickTargetOf(item, bot.registry as never)) : zhName(name);
++  if (!item) return zhName(name);
++  return pick ? pickLabel(pickTargetOf(item, bot.registry as never)) : itemCustomName(item) ?? zhName(item.name);
+ }
+ 
+ /**
+@@ -315,7 +316,7 @@
+     if (d <= 0) continue;
+     const it = bot.inventory.items().find((i) => variantKey(i as ItemLike) === key)!;
+     const mapId = readMapId(it as ItemLike);
+-    out.push(`${zhName(it.name)}×${d}(换成了新的一份${mapId !== null ? `,地图编号 #${mapId}` : ''})`);
++    out.push(`${itemCustomName(it) ?? zhName(it.name)}×${d}(换成了新的一份${mapId !== null ? `,地图编号 #${mapId}` : ''})`);
+   }
+   return out;
+ }
+diff --git a/item-display.ts b/item-display.ts
+--- a/item-display.ts
++++ b/item-display.ts
+@@ -1,14 +1,18 @@
+ /** Display text carried by an individual item, separate from its registry ID. */
+ export function itemCustomName(item: {
++  name?: string;
+   customName?: unknown;
+   componentMap?: Map<string, { data?: unknown }>;
+   components?: Array<{ type?: string; data?: unknown }>;
+   nbt?: unknown;
+ }): string | null {
+   const nbt = item.nbt as { value?: { display?: { value?: { Name?: { value?: unknown } } } } } | undefined;
+-  const value = item.customName ?? componentData(item, 'custom_name') ?? componentData(item, 'item_name')
+-    ?? nbt?.value?.display?.value?.Name?.value;
+-  return chatText(unwrapNbt(value))?.slice(0, 80) ?? null;
++  for (const value of [item.customName, componentData(item, 'custom_name'), componentData(item, 'item_name'),
++    nbt?.value?.display?.value?.Name?.value]) {
++    const text = chatText(unwrapNbt(value))?.replace(/§[0-9a-fk-orx]/gi, '').trim();
++    if (text) return text.slice(0, 80);
++  }
++  return null;
+ }
+ 
+ type ComponentItem = {
+diff --git a/readouts.ts b/readouts.ts
+--- a/readouts.ts
++++ b/readouts.ts
+@@ -22,7 +22,7 @@
+ 
+ function gearPhrase(p: GearPiece): string {
+   const dura = p.durability ? ` ${p.durability.left}/${p.durability.max}` : '';
+-  return `${GEAR_SLOT_ZH[p.slot]}${zhName(p.name)}${enchantSuffix(p.enchantments)}${dura}`;
++  return `${GEAR_SLOT_ZH[p.slot]}${p.displayName ?? zhName(p.name)}${enchantSuffix(p.enchantments)}${dura}`;
+ }
+ 
+ /**
+@@ -64,7 +64,9 @@
+     && normalize(stack.displayName) === normalize(item);
+   const matches = (stack: ItemStack) => matchItemName(item, stack.name, registry)
+     || zhName(stack.name) === item || displayMatch(stack);
+-  const carried = s.inventory.filter(matches)
++  const carriedStacks: ItemStack[] = [...s.inventory,
++    ...s.equipment.map((piece) => ({ ...piece, count: piece.count ?? 1, durability: piece.durability ?? undefined }))];
++  const carried = carriedStacks.filter(matches)
+     .reduce((total, stack) => total + stack.count, 0);
+   const cursor = s.cursorItem && matches(s.cursorItem) ? narrateCursor(s) : '';
+   const label = zhName(item);
+@@ -72,7 +74,7 @@
+     ? `当前打开的「${openWindow.title}」里${label}×${openWindow.items.filter(matches)
+       .reduce((total, stack) => total + stack.count, 0)}（现读）；`
+     : '虚拟大背包等未开窗容器未计入；';
+-  const ids = [...new Set([...s.inventory, ...(s.cursorItem ? [s.cursorItem] : []), ...(openWindow?.items ?? [])]
++  const ids = [...new Set([...carriedStacks, ...(s.cursorItem ? [s.cursorItem] : []), ...(openWindow?.items ?? [])]
+     .filter(displayMatch).map((stack) => stack.name))];
+   const names = ids.length ? `当前匹配名称的工具物品名:${ids.join('、')}。` : '';
+   const found = records.flatMap((record) => {
+@@ -139,7 +141,7 @@
+       + `${i.durability ? `:${i.durability.left}/${i.durability.max}` : ''}×${i.count}`).sort().join(','),
+     `${s.heldItem ?? 'bare'}:${s.heldItemDisplayName ?? ''}`,
+     narrateCursor(s),
+-    [...s.equipment].map((p) => `${p.slot}:${p.name}`).sort().join(','),
++    [...s.equipment].map((p) => `${p.slot}:${p.name}:${p.displayName ?? ''}`).sort().join(','),
+   ].join('|');
+ }
+ 
+diff --git a/skills-craft.ts b/skills-craft.ts
+--- a/skills-craft.ts
++++ b/skills-craft.ts
+@@ -460,20 +460,21 @@
+ export async function emptyHand(bot: Bot): Promise<string> {
+   const held = bot.heldItem;
+   if (!held) return '主手本来就是空的';
++  const label = itemCustomName(held) ?? zhName(held.name);
+   const slots = bot.inventory.slots;
+   const emptyQuickBar = slots.slice(36, 45).some((item) => !item);
+   if (!emptyQuickBar && bot.inventory.firstEmptyInventorySlot() == null) {
+     throw new SkillBlocked(
+-      `主手拿着${zhName(held.name)}，快捷栏和背包都没有空格；先把其他物品存入箱子，再腾空主手`,
++      `主手拿着${label}，快捷栏和背包都没有空格；先把其他物品存入箱子，再腾空主手`,
+     );
+   }
+   const before = invCount(bot, (n) => n === held.name);
+   await bot.unequip('hand');
+   const left = invCount(bot, (n) => n === held.name);
+   if (left < before) {
+-    return `主手腾空了;包是满的,${zhName(held.name)}×${before - left}被扔在了脚下`;
+-  }
+-  return `主手腾空了(原来拿的是${zhName(held.name)})`;
++    return `主手腾空了;包是满的,${label}×${before - left}被扔在了脚下`;
++  }
++  return `主手腾空了(原来拿的是${label})`;
+ }
+ 
+ /**
+@@ -483,6 +484,7 @@
+ async function emptyOffHand(bot: Bot): Promise<string> {
+   const held = offHandItem(bot);
+   if (!held) return '副手本来就是空的';
++  const label = itemCustomName(held) ?? zhName(held.name);
+   const bag = bot.inventory.items();
+   if (bag.length >= INVENTORY_SLOTS && !bag.some((i) => i.type === held.type && i.count < i.stackSize)) {
+     throw new SkillBlocked(
+@@ -494,9 +496,9 @@
+   await clearOffHandConfirmed(bot);
+   const left = invCount(bot, (n) => n === held.name);
+   if (left < before + held.count) {
+-    return `副手腾空了;包是满的,${zhName(held.name)}×${before + held.count - left}被扔在了脚下`;
+-  }
+-  return `副手腾空了(原来挂的是${zhName(held.name)})`;
++    return `副手腾空了;包是满的,${label}×${before + held.count - left}被扔在了脚下`;
++  }
++  return `副手腾空了(原来挂的是${label})`;
+ }
+ 
+ /** item 缺省时腾空 hand 指的那只手(默认主手)；air 别名由 parseEquip 归一化。 */
+@@ -509,7 +511,7 @@
+   const item = invItemNamed(bot, want, call.pick);
+   const fromOffHand = !!item && item === offHandItem(bot);
+   const worn = item && !fromOffHand ? null : equippedAlready(bot, want, call.hand, call.pick);
+-  if (worn) return `${zhName(worn.name)}本来就${worn.where}`;
++  if (worn) return `${worn.displayName ?? zhName(worn.name)}本来就${worn.where}`;
+   if (!item) {
+     const same = items.filter((i) => namedLike(want, i.name, bot?.registry));
+     if (call.pick && same.length > 0) throw noSuchItem(bot, want, call.pick, same);
+diff --git a/skills-interact.ts b/skills-interact.ts
+--- a/skills-interact.ts
++++ b/skills-interact.ts
+@@ -73,7 +73,7 @@
+ function assertUseHand(bot: Bot, hand: UseHand, ctx: SkillContext): void {
+   checkAbort(ctx);
+   if (!isDeepStrictEqual(useHandOf(bot.heldItem), hand)) {
+-    throw new SkillBlocked(`右键发送前主手已改变，需要${hand ? zhName(hand.name) : '空手'}；没有发送这次使用`,
++    throw new SkillBlocked(`右键发送前主手已改变，需要${hand ? hand.customName ?? zhName(hand.name) : '空手'}；没有发送这次使用`,
+       [], 'local', 'use-hand-changed');
+   }
+ }
+@@ -84,7 +84,7 @@
+     if (!hand) await clearHandForBlockInteraction(bot, true);
+     else {
+       const item = bot.inventory.items().find((candidate) => isDeepStrictEqual(useHandOf(candidate), hand));
+-      if (!item) throw new SkillBlocked(`右键前包里已没有本次选定的${zhName(hand.name)}；没有发送使用`);
++      if (!item) throw new SkillBlocked(`右键前包里已没有本次选定的${hand.customName ?? zhName(hand.name)}；没有发送使用`);
+       await bot.equip(item, 'hand');
+     }
+   }
+@@ -949,7 +949,7 @@
+       await clearHandForBlockInteraction(bot, !needsBareHandToInteract(target.name));
+       hand = useHandOf(bot.heldItem);
+       held = null;
+-      label = hand ? zhName(hand.name) : '空手';
++      label = hand ? hand.customName ?? zhName(hand.name) : '空手';
+     }
+     // 船由 BoatItem 的 use 沿玩家视线生成，不能通过 use_item_on 放置。
+     if (held && isBoat(held)) return await useBoat(bot, cell, held, label, activateItem);
+@@ -2061,8 +2061,8 @@
+     }
+   }
+   const product = landed
+-    ? `${zhName(landed.name)}(${stationItemFacts(bot, landed)})`
+-    : `${zhName(out.name)}(${stationItemFacts(bot, out)};这是取出前产出槽的读数,没看到它落进包里哪一格)`;
++    ? `${itemCustomName(landed) ?? zhName(landed.name)}(${stationItemFacts(bot, landed)})`
++    : `${itemCustomName(out) ?? zhName(out.name)}(${stationItemFacts(bot, out)};这是取出前产出槽的读数,没看到它落进包里哪一格)`;
+   const anvilNow = blockAtCell(bot, cell)?.name ?? null;
+   const wear = anvilNow === blockName
+     ? ''
+diff --git a/terrain.ts b/terrain.ts
+--- a/terrain.ts
++++ b/terrain.ts
+@@ -119,6 +119,7 @@
+ export interface GearPiece {
+   slot: GearSlot;
+   name: string;
++  displayName?: string;
+   count?: number;
+   /** 不带耐久的物品(南瓜头)、或损耗读不到时为 null */
+   durability: Durability | null;
+@@ -353,7 +354,7 @@
+     narrateCursor(s),
+     // 穿着什么、身上有什么效果:一件盔甲耗尽消失、中毒开始与抗火到期都不是她下的令,
+     // 快照不报她就无从知道。耐久与剩余秒不进(每秒都在动,进了这道闸就等于没有)
+-    s.equipment.map((p) => `${p.slot}:${p.name}x${p.count ?? '?'}`).sort().join(','),
++    s.equipment.map((p) => `${p.slot}:${p.name}:${p.displayName ?? ''}x${p.count ?? '?'}`).sort().join(','),
+     s.effects.map((e) => `${e.name}${e.level}`).sort().join(','),
+     s.standingOn ?? 'air', s.biome,
+     `hostile${hostiles.length}${nearest ? `@${nearest.direction ?? '-'}${distBucket(nearest.distance)}` : ''}`,
+@@ -431,7 +432,7 @@
+   segs.push({
+     key: 'gear',
+     text: gear,
+-    cmp: s.invSynced ? `${s.heldItem ?? 'bare'}|${bagFull}|${narrateCursor(s)}` : 'nosync',
++    cmp: s.invSynced ? `${s.heldItem ?? 'bare'}:${s.heldItemDisplayName ?? ''}|${bagFull}|${narrateCursor(s)}` : 'nosync',
+   });
+ 
+   // 装备与状态自成一段:背包每挖一块土就变,盔甲与效果几十分钟才动一次,
+@@ -549,7 +550,7 @@
+ }
+ 
+ function dropLabel(stack: ItemStack | undefined): string {
+-  const name = stack?.name && stack.name !== 'item' ? zhName(stack.name) : zhEntity('item');
++  const name = stack?.displayName ?? (stack?.name && stack.name !== 'item' ? zhName(stack.name) : zhEntity('item'));
+   return `${name}×${stack?.count ?? 1}`;
+ }
+ 
+@@ -571,14 +572,18 @@
+   return [...groups.values()]
+     .map((group) => {
+       const nearest = group.reduce((a, b) => (a.distance <= b.distance ? a : b));
+-      const merged = new Map<string, number>();
++      const merged = new Map<string, ItemStack>();
+       for (const e of group) {
+         const name = e.item?.name ?? 'item';
+-        merged.set(name, (merged.get(name) ?? 0) + (e.item?.count ?? 1));
++        const displayName = e.item?.displayName;
++        const key = JSON.stringify([name, displayName]);
++        const previous = merged.get(key);
++        merged.set(key, { name, ...(displayName ? { displayName } : {}),
++          count: (previous?.count ?? 0) + (e.item?.count ?? 1) });
+       }
+-      const list = [...merged.entries()]
+-        .sort((a, b) => b[1] - a[1])
+-        .map(([name, count]) => dropLabel({ name, count }))
++      const list = [...merged.values()]
++        .sort((a, b) => b.count - a.count)
++        .map(dropLabel)
+         .join('、');
+       return { d: nearest.distance, text: `${dropWhere(nearest)}：${list}。` };
+     })
+@@ -658,7 +663,7 @@
+ 
+ function gearPhrase(p: GearPiece): string {
+   const dura = p.durability ? ` ${p.durability.left}/${p.durability.max}` : '';
+-  return `${GEAR_SLOT_ZH[p.slot]}${zhName(p.name)}${enchantSuffix(p.enchantments)}${dura}`;
++  return `${GEAR_SLOT_ZH[p.slot]}${p.displayName ?? zhName(p.name)}${enchantSuffix(p.enchantments)}${dura}`;
+ }
+ 
+ function effectPhrase(e: StatusEffect): string {
+@@ -688,7 +693,7 @@
+   const gear = s.equipment
+     .map((p) => {
+       const wear = p.durability ? Math.round((p.durability.left / p.durability.max) * 10) : '-';
+-      return `${p.slot}:${p.name}${enchantSuffix(p.enchantments)}:${wear}`;
++      return `${p.slot}:${p.name}:${p.displayName ?? ''}${enchantSuffix(p.enchantments)}:${wear}`;
+     })
+     .sort()
+     .join(',');
+@@ -748,6 +753,12 @@
+   return merged;
+ }
+ 
++function inventoryLabel(items: ItemStack[], name: string): string {
++  const labels = [...new Set(items.filter((item) => item.name === name)
++    .map((item) => item.displayName ?? zhName(name)))];
++  return labels.length > 1 ? `${labels.join(' / ')}（同ID合计）` : labels[0] ?? zhName(name);
++}
++
+ /**
+  * 物品栏变化独立核对执行器回执，并附带变化后的总数；无变化时返回 null。
+  * 总数不受事件迟到或合批影响，可直接判断目标数量是否满足。
+@@ -759,11 +770,11 @@
+   const lost: string[] = [];
+   for (const [name, n] of after) {
+     const d = n - (before.get(name) ?? 0);
+-    if (d > 0) gained.push(`${zhName(name)}×${d}(共 ${n})`);
++    if (d > 0) gained.push(`${inventoryLabel(cur, name)}×${d}(共 ${n})`);
+   }
+   for (const [name, n] of before) {
+     const d = n - (after.get(name) ?? 0);
+-    if (d > 0) lost.push(`${zhName(name)}×${d}(剩 ${after.get(name) ?? 0})`);
++    if (d > 0) lost.push(`${inventoryLabel(prev, name)}×${d}(剩 ${after.get(name) ?? 0})`);
+   }
+   const parts: string[] = [];
+   if (gained.length > 0) parts.push(`包里多了 ${gained.join('、')}`);
+@@ -1548,6 +1559,10 @@
+   return visited.size;
+ }
+ 
++type DroppedItemData = Parameters<typeof itemCustomName>[0] & {
++  name?: string; count?: number; itemId?: number; itemCount?: number;
++};
++
+ /**
+  * 掉落物实体上的物品。优先 `getDroppedItem()`(prismarine-entity 的口径);
+  * 没有元数据时记成不明掉落物,不猜。
+@@ -1555,16 +1570,16 @@
+ export function droppedStackOf(
+   e: {
+     name?: string;
+-    getDroppedItem?: () => { name?: string; count?: number; itemId?: number; itemCount?: number } | null;
+-    heldItem?: { name?: string; count?: number };
+-    item?: { name?: string; count?: number };
++    getDroppedItem?: () => DroppedItemData | null;
++    heldItem?: DroppedItemData;
++    item?: DroppedItemData;
+     metadata?: unknown;
+   },
+   items?: Record<number, { name: string }>,
+ ): ItemStack | null {
+   const n = e.name;
+   if (n !== 'item' && n !== 'Item' && n !== 'item_stack') return null;
+-  let raw: { name?: string; count?: number; itemId?: number; itemCount?: number } | null = null;
++  let raw: DroppedItemData | null = null;
+   if (typeof e.getDroppedItem === 'function') {
+     try { raw = e.getDroppedItem(); } catch { raw = null; }
+   }
+@@ -1582,7 +1597,8 @@
+   const count = typeof raw.count === 'number' ? raw.count
+     : typeof raw.itemCount === 'number' ? raw.itemCount
+     : 1;
+-  return { name, count };
++  const displayName = itemCustomName(raw);
++  return { name, count, ...(displayName ? { displayName } : {}) };
+ }
+ 
+ /**
+@@ -1692,8 +1708,10 @@
+   for (const [slot, idx] of GEAR_SLOT_INDEX) {
+     const it = slots[idx] as ItemLike | null | undefined;
+     if (!it?.name) continue;
++    const displayName = itemCustomName(it);
+     out.push({
+       slot, name: it.name, durability: readDurability(it), enchantments: readEnchants(it, bot.registry),
++      ...(displayName ? { displayName } : {}),
+       ...(typeof it.count === 'number' && Number.isInteger(it.count) && it.count > 0 ? { count: it.count } : {}),
+     });
+   }
+diff --git a/tools.ts b/tools.ts
+--- a/tools.ts
++++ b/tools.ts
+@@ -11,6 +11,7 @@
+ import { SkillBlocked, type ReserveHit, type SkillContext, type ToolTrace } from './skill-context.ts';
+ import { matchItemName } from './chests.ts';
+ import { zhName } from './names.ts';
++import { itemCustomName } from './item-display.ts';
+ 
+ /**
+  * 工具材质的等级序,好的在前;倒着读就是等级序的低往高。
+@@ -350,7 +351,7 @@
+   b: { name: string; canHarvest?: (t: number | null) => boolean },
+ ): string | null {
+   if (typeof b.canHarvest !== 'function' || b.canHarvest(bot.heldItem?.type ?? null)) return null;
+-  const hand = bot.heldItem ? zhName(bot.heldItem.name) : '空手';
++  const hand = bot.heldItem ? itemCustomName(bot.heldItem) ?? zhName(bot.heldItem.name) : '空手';
+   const need = minHarvestTool(bot, b.name);
+   return `${hand}挖${zhName(b.name)}不掉东西${need ? `,要${zhName(need)}及以上` : ''}`;
+ }
+@@ -362,12 +363,13 @@
+  */
+ export function equippedAlready(
+   bot: Bot, item: string, hand?: 'main' | 'off', pick?: string,
+-): { name: string; where: string } | null {
++): { name: string; displayName?: string; where: string } | null {
+   const dest = hand === 'off' ? 'off-hand' : hand === 'main' ? 'hand' : equipDestOf(item, bot.registry);
+   if (dest === 'hand') return null;
+   const slot = bot.inventory?.slots?.[bot.getEquipmentDestSlot(dest)];
+   if (!slot || !namedLike(item, slot.name, bot?.registry) || !itemMatchesPick(pick, slot, bot.registry as never)) return null;
+-  return { name: slot.name, where: dest === 'off-hand' ? '挂在副手' : '穿在身上' };
++  const displayName = pickTargetOf(slot, bot.registry as never).displayName;
++  return { name: slot.name, ...(displayName ? { displayName } : {}), where: dest === 'off-hand' ? '挂在副手' : '穿在身上' };
+ }
+ 
+ export const HANDHELD_SUFFIXES = ['_pickaxe', '_axe', '_shovel', '_hoe', '_sword'];

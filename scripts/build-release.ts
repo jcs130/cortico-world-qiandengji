@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sources = JSON.parse(await readFile(join(root, 'release-sources.json'), 'utf8')) as {
-  cortico: { repository: string; commit: string };
+  cortico: { repository: string; commit: string; patches?: string[] };
   viewer: { repository: string; commit: string; assetPack: string; preset: string };
 };
 
@@ -55,7 +55,14 @@ async function buildEngine(): Promise<void> {
       .replaceAll('../../../web/shared/client-panel.ts', 'cortico/web/shared/client-panel.ts'));
   }
   await cp(join(coreRoot, 'LICENSE'), join(engineRoot, 'LICENSE-Cortico.txt'));
-  await writeFile(join(engineRoot, 'source.json'), JSON.stringify(sources.cortico, null, 2) + '\n');
+  const patches = [];
+  for (const file of sources.cortico.patches ?? []) {
+    const patch = await readFile(join(root, file));
+    execFileSync('git', ['apply', '--check', '--directory=engine', file], { cwd: root, stdio: 'pipe' });
+    execFileSync('git', ['apply', '--directory=engine', file], { cwd: root, stdio: 'pipe' });
+    patches.push({ file, sha256: createHash('sha256').update(patch).digest('hex') });
+  }
+  await writeFile(join(engineRoot, 'source.json'), JSON.stringify({ ...sources.cortico, patches }, null, 2) + '\n');
   console.log(`Engine: ${sources.cortico.commit}`);
 }
 

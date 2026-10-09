@@ -25,6 +25,8 @@ Agent 登录名自动补 `ag_` 前缀，填 `Alice` 时以 `ag_Alice` 登录，�
 
 源码构建步骤见 README。生成的 `engine/`、`dist/` 不在 Git 中，发布 `.tgz` 包包含它们；直接从源码链接安装时，须先完成构建。发布前构建、运行测试和类型检查，再上传安装包和校验和。`examples/github-release.yml` 是供维护者安装的自动发布工作流模板。
 
+`release-sources.json` 同时锁定引擎源码和 `patches/` 中的客户端修复。构建时逐项检查并应用补丁，`engine/source.json` 记录补丁哈希；发布检查会核对这些记录，避免重建时遗漏装备、容器及掉落物的自定义名称修复。物品显示名称优先使用服务器实例名称，操作和数量统计仍使用原注册表 ID。
+
 ## 技术资料与角色迁移
 
 `references/server-technical/` 是带来源、适用范围和更新时间的项目问答。需要给角色查询时，将整个目录复制到 `<部署>/workspace/references/server-technical/`；已有资料先比较版本，保留订正后的内容。Persona 提示只需保留入口：

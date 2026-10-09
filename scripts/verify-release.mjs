@@ -11,6 +11,13 @@ const viewer = await json('dist/viewer/source.json');
 const assets = await json('dist/viewer/viewer-assets.json');
 if (engine.commit !== sources.cortico.commit || viewer.commit !== sources.viewer.commit)
   throw new Error('RELEASE_SOURCE_MISMATCH');
+const patches = sources.cortico.patches ?? [];
+if ((engine.patches ?? []).length !== patches.length) throw new Error('RELEASE_ENGINE_PATCH_MISMATCH');
+for (const [index, file] of patches.entries()) {
+  const actual = engine.patches[index];
+  if (actual.file !== file || actual.sha256 !== createHash('sha256').update(await readFile(join(root, file))).digest('hex'))
+    throw new Error('RELEASE_ENGINE_PATCH_MISMATCH: ' + file);
+}
 if (assets.minecraftVersion !== '1.20.6') throw new Error('RELEASE_ASSET_VERSION_MISMATCH');
 for (const file of ['engine/proxy.ts', 'engine/engine-child.ts', 'engine/dependency-patches.ts',
   'engine/method-worker.mjs', 'engine/support/typed-decision.ts', 'engine/support/host-contract.ts',

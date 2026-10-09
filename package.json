@@ -18,7 +18,7 @@
     "consoleClient": "dist/console.js",
     "consoleStyle": "dist/console.css"
   },
-  "files": ["src", "engine", "dist", "references/server-technical/index.json", "references/server-technical/server-access.json", "release-sources.json", "README.md", "DEPLOYMENT.md", "LICENSE"],
+  "files": ["src", "engine", "dist", "patches", "references/server-technical/index.json", "references/server-technical/server-access.json", "release-sources.json", "README.md", "DEPLOYMENT.md", "LICENSE"],
   "scripts": {
     "build": "pnpm run build:engine && pnpm run build:console && pnpm run build:viewer && pnpm run verify:release",
     "build:engine": "tsx scripts/build-release.ts engine",
