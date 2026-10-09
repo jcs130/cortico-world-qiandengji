@@ -1,12 +1,49 @@
-<!-- Owner: src/world.ts, src/skill-catalog.ts, src/guild-progress.ts, src/server-guide.ts, src/ENV_PROMPT.md, references/server-technical/index.json -->
+<!-- Owner: package.json, scripts/build-release.ts, release-sources.json, src/world.ts, src/config.ts -->
 
 # cortico-world-qiandengji
 
-「千灯纪」服务器的 Cortico World 扩展。World ID 保持 `mymc`，工具名为 `mymc_*`，避免已部署配置和笔记改名。游戏连接和动作执行复用 Cortico 的 Minecraft 引擎；扩展负责服务器规则、技能目录观察、快捷抵达与入塔装备检查。
+「千灯纪」的独立 Cortico World 扩展。填写 Minecraft Java 服务器地址、端口和账号即可连接，内置现代网页画面、技能目录观察、公会进度与试炼装备检查。World ID 为 `mymc`，工具名为 `mymc_*`，保留已部署配置和笔记的命名。
 
-现代网页画面源码位于独立仓库 [mc-visual-console](https://github.com/jcs130/mc-visual-console)，不是本 World 的一部分。区块、实体、物品栏、交易窗口、生命与天气等来自普通 Mineflayer 连接；千灯纪额外的魔力/冷却、施法成功事件和命名 NPC 美术使用独立协议或预设。普通 Minecraft World 可以只用前者。
+安装包包含游戏引擎、第一人称／第三人称／地下城 2.5D 画面及 Java 1.20.6 素材，无需安装者另行构建可视化。共享渲染源码由 [mc-visual-console](https://github.com/jcs130/mc-visual-console) 维护，发布包按 `release-sources.json` 中的提交构建。区块、实体、装备、背包、交易、生命与天气来自 Mineflayer；魔力、冷却和施法事件需要服务器提供相应协议。玩家外观依实际皮肤与服务端数据渲染，不把预设当作真实外观。
 
-这是供贡献审查的源码。当前 Cortico 公开版 `0.1.4` 尚未包含 `agentFriendProtect` 路径保护预检、`mc_cast` 和 `mc_combat_tactic`，因此本包目前需要包含这些能力的 Cortico 构建。启动前会检查所需工具和保护模块，发现缺失时明确报错。该能力进入上游并发布后，再确定本包的最低兼容版本。
+宿主使用 Cortico World API 5；开发检查使用官方 `cortico@0.1.8` SDK。改进后的 Minecraft 引擎随包分发，不要求宿主使用个人 fork。完整状态快照、按结果结束模型轮次及认知任务类别属于可选宿主扩展：支持它们的框架可使用这些信息，官方 0.1.8 仍使用原有事件和认知接口。World 不替换宿主的记忆、Persona 或模型调度实现。
+
+## 安装与配置
+
+在 Cortico 控制台的扩展页安装 `cortico-world-qiandengji`，或使用 [GitHub Releases](https://github.com/jcs130/cortico-world-qiandengji/releases) 中构建好的 `.tgz` 下载地址。Git 仓库源码尚未包含生成的引擎和画面，源码安装前须按下方步骤构建。
+
+在「千灯纪 · 连接」填写服务器地址、端口和账号，并启用本 World。默认不自动连接。已有 Minecraft World 时先停用它，避免重复连接。对应配置示例：
+
+```json
+{
+  "worlds": {
+    "minecraft": { "enabled": false },
+    "mymc": {
+      "enabled": true,
+      "host": "mc.example.com",
+      "port": 25565,
+      "username": "ag_YourAgent",
+      "version": "1.20.6",
+      "viewerPort": 7793
+    }
+  }
+}
+```
+
+Agent 登录名自动补 `ag_` 前缀：填 `Alice` 或 `ag_Alice` 都以 `ag_Alice` 登录。完整名字最多 16 位，仅用英文字母、数字和下划线；不带前缀的部分最多 13 位。本 World 不包含主播演出、TTS、写歌或放歌服务，这些由独立演出扩展提供。
+
+画面随游戏连接启动，可从控制台打开，也可访问运行机器的 `http://127.0.0.1:7793/`，第三人称为 `/third/`，2.5D 为 `/dungeon/`。多实例应分配不同 `viewerPort`。`viewerAssetsDir` 默认指向包内素材；只有使用自定义素材时才需要修改。内置渲染素材匹配 Java 1.20.6；连接其他版本时需另外验证协议并提供匹配素材，不能据连接成功宣称画面完全一致。推荐 Node.js 24。
+
+## 模型配置与回退
+
+主 LLM 在 Cortico 的模型供应商页配置地址、密钥和模型，再设为当前模型；World 不绑定模型或供应商。没有主 LLM 时仍有底层战斗／生存反射，但不会自动获得完整的目标规划与对话能力。
+
+- **快速决策模型可选**：在「千灯纪 · 节奏与反射」配置 `decision.endpoint`（受阻建议）和 `idle.endpoint`（空闲小动作）。该地址对应的服务决定模型，须接受 `{state, questions}` 并返回 `{answers}` 的选择题／评分协议，不能直接填写普通聊天补全地址。默认未启用、地址为空。
+- **没有快速决策服务**：受阻的原始执行回执照常投递，主 LLM 继续规划，战斗和生存规则照常运行。已启用的小动作在服务缺失、超时或响应无效时，从当前允许的候选中轮换；忙碌或场景变化时取消，不打断正常任务。
+- **视觉能力可选**：当前 LLM 在供应商配置中声明支持图片时，`mymc_visual` 将真实截图直接返回该模型；纯文本模型、能力未声明或 `visual.mode:"structured"` 时，返回带原采样时间的游戏结构化读数。截图失败也回退到可用读数。没有现场读数则明确报告未知，不假装看见。网页可视化继续运行，无需单独部署视觉模型。
+- **向量模型**：本次不增加向量模型或数据库依赖，记忆仍由宿主 Persona 管理。
+
+配置图片能力后应按实际模型验证；配置声明与模型实际能力不一致时，需要订正供应商配置。视觉回退无法代替图像审美判断，精确方块与碰撞用 `mymc_scout` 的原生体素／射线查询。
 
 ## 契约
 
@@ -45,23 +82,32 @@
 - `cortico.kind: world`，`cortico.api: 5`
 - `WorldDefinition.id: mymc`，配置段：`worlds.mymc`
 - `host`、`username` 默认空；测试与构造不连接服务器
-- 不包含服务器 IP、登录凭证、运行账本或 Minecraft 资源
+- 包含版本化渲染素材；不包含私人服务器地址、登录凭证、运行账本、角色记忆或完整客户端 JAR
 
 ## 开发检查
 
+构建来源固定在 `release-sources.json`。准备 Node.js 24、pnpm 11.5 和两个固定提交的源码目录：
+
 ```bash
-pnpm install
+git clone https://github.com/jcs130/Cortico .sources/cortico
+git -C .sources/cortico checkout <release-sources.json 中的 cortico.commit>
+git clone https://github.com/jcs130/mc-visual-console .sources/viewer
+git -C .sources/viewer checkout <release-sources.json 中的 viewer.commit>
+pnpm -C .sources/cortico install --frozen-lockfile
+npm ci --prefix .sources/viewer/packages/modern-viewer/renderer-src
+pnpm install --frozen-lockfile
 pnpm build
 pnpm test
 pnpm typecheck
+npm pack
 ```
 
-使用含保护预检能力的 Cortico 源码时，再从 Cortico 仓库运行 `pnpm check:extension <本目录>`。构造检查不会启动游戏连接。
+也可用 `CORTICO_SOURCE_DIR`、`MC_VISUAL_CONSOLE_DIR` 指向已有的固定提交检出。构建会拒绝来源提交不符或受跟踪源码有未提交修改。`engine/` 和 `dist/` 是生成产物，不重复提交源码；它们包含在发布安装包里。`verify:release` 核对来源、必要文件和浏览器包哈希，`prepack` 会阻止不完整发布。
+
+从完整 Cortico 仓库运行 `pnpm check:extension <构建后的本目录>` 可再检查扩展契约。构造检查不会启动游戏连接。
+
+`examples/github-release.yml` 提供自动构建和上传安装包的工作流模板。需要自动发布时，由具备工作流写权限的维护者将它放入 `.github/workflows/`；手动发布同样先完成上述构建与检查，再上传 `.tgz` 和 SHA-256 校验和。
 
 ## 部署
 
-将本包作为 World 扩展安装，在部署配置中启用 `worlds.mymc`，填写服务器地址、端口、协议版本与普通玩家账号。先停用 `worlds.minecraft`，避免同一账号双开。环境提示词通过本包的 `src/ENV_PROMPT.md` 提供，服务端新增技能由游戏内 `/mycli` 回执观察、核验后使用。
-
-在 Cortico 的 `extensions/package.json` 中加入本包的 `link:` 路径后，于 `extensions/` 运行 `pnpm --ignore-workspace install`，再运行 `pnpm check:extension <本目录>`。构建后的网页目录由 `worlds.mymc.viewerAssetsDir` 指定；它来自 `mc-visual-console` 的源码和本地 1.20.6 客户端资源。
-
-另一台机器的仓库分支、构建顺序、技术资料导入和私有资产迁移见 [DEPLOYMENT.md](DEPLOYMENT.md)。`references/server-technical/` 随包分发，由部署者导入文件工作区；World 不写入 Persona Memory。
+迁移、资料导入和画面更新见 [DEPLOYMENT.md](DEPLOYMENT.md)。服务端新增技能从游戏内 `/mycli` 回执观察、核验后使用。`references/server-technical/` 随包分发，由部署者导入文件工作区；World 不写入 Persona Memory。

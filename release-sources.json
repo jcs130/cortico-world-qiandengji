@@ -1,0 +1,12 @@
+{
+  "cortico": {
+    "repository": "https://github.com/jcs130/Cortico",
+    "commit": "8c00fbb022ea82fc9725301fde0437ccc00fdcc9"
+  },
+  "viewer": {
+    "repository": "https://github.com/jcs130/mc-visual-console",
+    "commit": "0deacf36b156e20d282b23453d607845f604893b",
+    "assetPack": "java-1.20.6",
+    "preset": "qiandengji"
+  }
+}

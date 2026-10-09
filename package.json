@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "type": "module",
   "description": "千灯纪 Minecraft server World for Cortico",
+  "repository": { "type": "git", "url": "git+https://github.com/jcs130/cortico-world-qiandengji.git" },
+  "homepage": "https://github.com/jcs130/cortico-world-qiandengji#readme",
+  "bugs": { "url": "https://github.com/jcs130/cortico-world-qiandengji/issues" },
   "license": "MIT",
   "keywords": ["cortico-world", "cortico", "minecraft"],
   "engines": { "node": ">=22" },
@@ -12,23 +15,34 @@
     "kind": "world",
     "api": 5,
     "displayName": "千灯纪",
-    "consoleClient": "dist/console.js"
+    "consoleClient": "dist/console.js",
+    "consoleStyle": "dist/console.css"
   },
-  "files": ["src", "dist", "references", "README.md", "DEPLOYMENT.md", "LICENSE"],
+  "files": ["src", "engine", "dist", "references/server-technical/index.json", "references/server-technical/server-access.json", "release-sources.json", "README.md", "DEPLOYMENT.md", "LICENSE"],
   "scripts": {
-    "build": "node scripts/build-console.mjs",
+    "build": "pnpm run build:engine && pnpm run build:console && pnpm run build:viewer && pnpm run verify:release",
+    "build:engine": "tsx scripts/build-release.ts engine",
+    "build:console": "node scripts/build-console.mjs",
+    "build:viewer": "tsx scripts/build-release.ts viewer",
+    "verify:release": "node scripts/verify-release.mjs",
+    "prepack": "node scripts/verify-release.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "mineflayer": "^4.37.1",
-    "mineflayer-pathfinder": "^2.4.5",
-    "prismarine-viewer": "^1.33.0",
-    "vec3": "^0.2.0"
+    "minecraft-data": "3.112.0",
+    "mineflayer": "4.37.1",
+    "mineflayer-pathfinder": "2.4.5",
+    "playwright-core": "1.63.0",
+    "prismarine-block": "1.23.0",
+    "prismarine-viewer": "1.33.0",
+    "ses": "2.3.0",
+    "socket.io": "4.8.3",
+    "vec3": "0.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
-    "cortico": "^0.1.4",
+    "cortico": "0.1.8",
     "esbuild": "^0.28.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",

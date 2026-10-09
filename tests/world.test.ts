@@ -9,7 +9,7 @@ import { MYMC_CONFIG_GROUP, MYMC_DEFAULTS } from '../src/config.ts';
 import { assertMymcReady } from '../src/guard.ts';
 import { MYMC_TOOL_DECLS, MymcWorld } from '../src/world.ts';
 import { SkillCatalog } from '../src/skill-catalog.ts';
-import type { MinecraftWorldProxy } from 'cortico/worlds/minecraft/proxy.ts';
+import type { MinecraftWorldProxy } from '../engine/proxy.ts';
 
 function fakeEngine() {
   let bridge: WorldHost | undefined;
@@ -166,7 +166,8 @@ describe('Mymc World contract', () => {
   it('has an independent disabled config and only remote server settings', () => {
     expect(MYMC.id).toBe('mymc');
     expect(MYMC_DEFAULTS.enabled).toBe(false);
-    expect(MYMC_DEFAULTS.local.serverEnabled).toBe(false);
+    expect(MYMC_DEFAULTS.local.startWithWorld).toBe(false);
+    expect(MYMC_DEFAULTS.local.serverDir).toBe('');
     expect(MYMC_DEFAULTS.local.cheats).toBe(false);
     expect(MYMC_TOOL_DECLS.some((tool) => tool.name === 'mymc_escape')).toBe(false);
     expect(Object.keys(MYMC_CONFIG_GROUP.schema.properties)).toContain('worlds.mymc.host');

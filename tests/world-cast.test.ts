@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ToolOutcome } from 'cortico/core/types.ts';
-import type { MinecraftWorldProxy } from 'cortico/worlds/minecraft/proxy.ts';
+import type { MinecraftWorldProxy } from '../engine/proxy.ts';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 import { SkillCatalog } from '../src/skill-catalog.ts';
 import { MymcWorld } from '../src/world.ts';

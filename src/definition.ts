@@ -3,9 +3,10 @@ import { MYMC_DEFAULTS, type MymcConfigSection } from './config.ts';
 import { assertMymcReady } from './guard.ts';
 import { MymcWorld } from './world.ts';
 
-export const MYMC: WorldDefinition<MymcConfigSection> = {
+export const MYMC: WorldDefinition<MymcConfigSection> & { exclusiveResource: string } = {
   id: 'mymc',
   label: '千灯纪',
+  exclusiveResource: 'minecraft-client',
   defaults: () => structuredClone(MYMC_DEFAULTS),
   preflight: (ctx) => assertMymcReady(ctx.cfg, ctx.botDir),
   create: (ctx) => new MymcWorld({

@@ -1,0 +1,75 @@
+# Owner: scripts/build-release.ts, scripts/verify-release.mjs, release-sources.json
+name: Build World release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Read pinned inputs
+        id: sources
+        run: |
+          node --input-type=module -e "import fs from 'node:fs'; const s=JSON.parse(fs.readFileSync('release-sources.json')); fs.appendFileSync(process.env.GITHUB_OUTPUT, 'core='+s.cortico.commit+'\nviewer='+s.viewer.commit+'\n');"
+      - uses: actions/checkout@v4
+        with:
+          repository: jcs130/Cortico
+          ref: ${{ steps.sources.outputs.core }}
+          path: .sources/cortico
+      - uses: actions/checkout@v4
+        with:
+          repository: jcs130/mc-visual-console
+          ref: ${{ steps.sources.outputs.viewer }}
+          path: .sources/viewer
+      - name: Install build dependencies
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.5.0 --activate
+          pnpm install --frozen-lockfile
+          pnpm -C .sources/cortico install --frozen-lockfile
+          npm ci --prefix .sources/viewer/packages/modern-viewer/renderer-src
+      - name: Build and check
+        run: |
+          pnpm build
+          pnpm test
+          pnpm typecheck
+      - name: Create installation archive
+        run: |
+          npm pack
+          sha256sum cortico-world-qiandengji-*.tgz > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qiandengji-world
+          path: |
+            cortico-world-qiandengji-*.tgz
+            SHA256SUMS.txt
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: qiandengji-world
+      - name: Upload installable World
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            exit 0
+          fi
+          gh release create "$GITHUB_REF_NAME" cortico-world-qiandengji-*.tgz SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --title "千灯纪 $GITHUB_REF_NAME" --generate-notes

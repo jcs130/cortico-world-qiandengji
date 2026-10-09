@@ -3,3 +3,7 @@ dist/
 coverage/
 .env
 *.log
+engine/
+.sources/
+scratch/
+*.tgz

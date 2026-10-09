@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 import { MymcWorld } from '../src/world.ts';
 import { startsTrialFight, trialMeleeReadiness } from '../src/trial-readiness.ts';
-import type { MinecraftWorldProxy } from 'cortico/worlds/minecraft/proxy.ts';
+import type { MinecraftWorldProxy } from '../engine/proxy.ts';
 
 describe('trial melee readiness', () => {
   it('recognizes trial entry actions and ignores travel or ordinary interaction', () => {

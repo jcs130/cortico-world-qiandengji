@@ -10,15 +10,17 @@ import type {
   WorldConsoleDecl,
   WorldHost,
   WorldPanelDecl,
-} from 'cortico/core/types.ts';
-import { MINECRAFT_PANEL_DECLS, MINECRAFT_TOOL_DECLS, type MinecraftWorldOptions } from 'cortico/worlds/minecraft/world.ts';
-import { MinecraftWorldProxy } from 'cortico/worlds/minecraft/proxy.ts';
+} from './host-contract.ts';
+import { MINECRAFT_PANEL_DECLS, MINECRAFT_TOOL_DECLS, type MinecraftWorldOptions } from '../engine/world.ts';
+import { MinecraftWorldProxy } from '../engine/proxy.ts';
 import { renderTemplate } from 'cortico/core/template.ts';
 import {
   MYMC_CLIENT_CONFIG_GROUP,
   MYMC_CONFIG_GROUP,
   MYMC_PLAYER_CONFIG_GROUP,
   MYMC_RHYTHM_CONFIG_GROUP,
+  mymcEngineConfig,
+  mymcLoginName,
   type MymcConfigSection,
 } from './config.ts';
 import { assertMymcReady } from './guard.ts';
@@ -28,6 +30,7 @@ import { TrialProgress, trialGoalLimitNote } from './trial-status.ts';
 import { ProspectEvidence } from './prospect-evidence.ts';
 import { GuildProgress } from './guild-progress.ts';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from './server-guide.ts';
+import { mymcAcceptsImages, mymcStructuredVisual, mymcVisualArgumentError } from './visual-fallback.ts';
 
 const ENV_PROMPT_FILE = fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url));
 const CAMERA_NOTE_FILE = fileURLToPath(new URL('./ENV_PROMPT_CAMERA.md', import.meta.url));
@@ -50,13 +53,34 @@ function mapSchema(value: unknown): unknown {
   return value;
 }
 
+function toolDescription(name: string, description: string): string {
+  return name === 'mc_visual'
+    ? 'Observe the current Minecraft scene. If the current provider supports images, return the actual screenshot '
+      + 'for that provider to inspect; no separate vision service is required. Otherwise, or when structured mode '
+      + 'is configured, return bounded game observations with their original sampling time, without image analysis. '
+      + 'The web viewer remains available in both modes. Screenshot failure also falls back to available game readings. '
+      + 'A background screenshot is only accepted initially; its actual result arrives later as a mymc.visual event. '
+      + 'Readings do not establish unseen geometry, appearance or player intent. Use mymc_scout observe for local voxels '
+      + 'and collision rays, and mymc_bag for item data. This tool does not move the player or change the world.'
+    : toMymcText(description);
+}
+
+function toolParameters(name: string, parameters: Record<string, unknown>): Record<string, unknown> {
+  const mapped = mapSchema(parameters) as Record<string, unknown>;
+  if (name !== 'mc_visual') return mapped;
+  return { ...mapped, properties: { ...(mapped.properties as Record<string, unknown>),
+    raw: { type: 'boolean', description: 'Compatibility option. Image-capable providers receive the actual screenshot; other providers receive structured game readings.' },
+    background: { type: 'boolean', description: 'Accept a background screenshot job and deliver the actual result later. Structured fallback returns immediately. Omitted follows visual.background.' },
+  } };
+}
+
 export const MYMC_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [...MINECRAFT_TOOL_DECLS
   .filter((decl) => decl.name !== 'mc_escape')
   .map((decl) => ({
   ...decl,
   name: decl.name.replace(/^mc_/, 'mymc_'),
-  description: toMymcText(decl.description),
-  parameters: mapSchema(decl.parameters) as Record<string, unknown>,
+  description: toolDescription(decl.name, decl.description),
+  parameters: toolParameters(decl.name, decl.parameters),
 })), {
   name: 'mymc_skills',
   tags: ['read'],
@@ -243,14 +267,14 @@ export class MymcWorld implements World {
   private readonly guildProgress: GuildProgress;
   private readonly prospect = new ProspectEvidence();
   private readonly requireProtectSupport: boolean;
+  private host: WorldHost | null = null;
 
   constructor(private readonly opts: Omit<MinecraftWorldOptions, 'cfg'> & { cfg: MymcConfigSection; botDir?: string }, engine?: MinecraftWorldProxy) {
     this.requireProtectSupport = engine === undefined;
-    // The local engine supports this capability; the published Cortico 0.1.4 type has not caught up.
-    this.engine = engine ?? new MinecraftWorldProxy({ ...opts, agentFriendEnabled: true } as MinecraftWorldOptions);
+    this.engine = engine ?? new MinecraftWorldProxy({ ...opts, cfg: mymcEngineConfig(opts.cfg), agentFriendEnabled: true });
     this.catalog = new SkillCatalog(`${opts.cfg.host}:${opts.cfg.port}`, opts.dataDir);
-    this.trialProgress = new TrialProgress(`${opts.cfg.host}:${opts.cfg.port}:${opts.cfg.username}`, opts.dataDir);
-    this.guildProgress = new GuildProgress(`${opts.cfg.host}:${opts.cfg.port}:${opts.cfg.username}`, opts.dataDir);
+    this.trialProgress = new TrialProgress(`${opts.cfg.host}:${opts.cfg.port}:${mymcLoginName(opts.cfg.username)}`, opts.dataDir);
+    this.guildProgress = new GuildProgress(`${opts.cfg.host}:${opts.cfg.port}:${mymcLoginName(opts.cfg.username)}`, opts.dataDir);
   }
 
   envPromptVars(): Record<string, string> {
@@ -297,9 +321,26 @@ export class MymcWorld implements World {
     return [...engineTools.filter((tool) => tool.name !== 'mc_escape').map((tool): ToolDef => ({
       ...tool,
       name: tool.name.replace(/^mc_/, 'mymc_'),
-      description: toMymcText(tool.description),
-      parameters: mapSchema(tool.parameters) as Record<string, unknown>,
+      description: toolDescription(tool.name, tool.description),
+      parameters: toolParameters(tool.name, tool.parameters),
       handler: async (args, ctx) => {
+        if (tool.name === 'mc_visual') {
+          const invalid = mymcVisualArgumentError(args);
+          if (invalid) return invalid;
+          if (ctx.signal?.aborted) return { text: '[mymc_visual 未受理] 本次观察已取消', failed: true };
+          const structured = this.opts.cfg.visual.mode === 'structured';
+          const fallback = (reason: string) => mymcStructuredVisual(this.requestFacts(), reason, args.include_hud === true);
+          if (structured || !mymcAcceptsImages(this.host))
+            return fallback(structured ? '已选择结构化观察' : '当前模型未声明支持图片');
+          // The public API 5 host need not forward image blobs to cognition.
+          // Return the actual screenshot to the image-capable main provider.
+          const result = await tool.handler({ ...args, raw: true }, ctx);
+          const text = typeof result === 'string' ? result : result.text;
+          const failed = (typeof result !== 'string' && result.failed)
+            || /\[mc_visual (?:失败|暂不可用)\]/.test(text);
+          if (failed && !ctx.signal?.aborted) return fallback(`截图未完成：${toMymcText(text).slice(0, 300)}`);
+          return typeof result === 'string' ? toMymcText(result) : { ...result, text: toMymcText(text) };
+        }
         if (tool.name === 'mc_cast' && typeof args.spell === 'string') {
           const id = args.spell.trim().toLowerCase();
           const command = this.catalog.commandFor(id);
@@ -418,17 +459,20 @@ export class MymcWorld implements World {
       if (missingTools.length > 0) {
         throw new Error(`当前 Cortico Minecraft 引擎缺少千灯纪使用的工具：${missingTools.join(', ')}`);
       }
-      const protectionModule = 'cortico/worlds/minecraft/agentfriend-protection.ts';
+      const protectionModule = '../engine/agentfriend-protection.ts';
       try {
         await import(protectionModule);
       } catch {
         throw new Error('当前 Cortico 构建缺少 AgentFriend 方块保护预检；请先升级 Minecraft 引擎');
       }
     }
-    await this.engine.start(mymcHost(host, this.catalog, this.trialProgress, this.prospect, this.guildProgress));
+    this.host = host;
+    try { await this.engine.start(mymcHost(host, this.catalog, this.trialProgress, this.prospect, this.guildProgress)); }
+    catch (error) { this.host = null; throw error; }
   }
 
   stop(): Promise<void> {
+    this.host = null;
     return this.engine.stop();
   }
 }
