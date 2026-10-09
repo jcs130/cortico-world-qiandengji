@@ -9,7 +9,7 @@
 | [Cortico](https://github.com/jcs130/Cortico/tree/feat/cortiv-runtime-20261006) | `feat/cortiv-runtime-20261006` | 主框架、上下文、记忆、规划、Minecraft 执行器 |
 | [cortico-world-vtuber](https://github.com/jcs130/cortico-world-vtuber/tree/feat/live-music-20261006) | `feat/live-music-20261006` | 演出、托管 IndexTTS 适配器、歌曲生成与播放 |
 | [cortico-world-qiandengji](https://github.com/jcs130/cortico-world-qiandengji/tree/main) | `main` | 千灯纪技能、公会、试炼和按需玩法说明 |
-| [mc-visual-console](https://github.com/jcs130/mc-visual-console/tree/feat/modern-viewer-source-1206) | `feat/modern-viewer-source-1206` | 网页渲染、背包、钓鱼、音效和遮挡显示 |
+| [mc-visual-console](https://github.com/jcs130/mc-visual-console/tree/main) | `main` | 共享网页渲染、背包、钓鱼、音效和遮挡显示 |
 
 ## 安装代码
 
@@ -19,7 +19,7 @@
 git clone --branch feat/cortiv-runtime-20261006 https://github.com/jcs130/Cortico.git BOT
 git clone --branch feat/live-music-20261006 https://github.com/jcs130/cortico-world-vtuber.git
 git clone https://github.com/jcs130/cortico-world-qiandengji.git
-git clone --branch feat/modern-viewer-source-1206 https://github.com/jcs130/mc-visual-console.git
+git clone --branch main https://github.com/jcs130/mc-visual-console.git
 ```
 
 在 `BOT` 中执行 `pnpm install --frozen-lockfile`。在两个 World 扩展中分别执行 `pnpm install --frozen-lockfile`、`pnpm test`、`pnpm typecheck` 和 `pnpm build`。
@@ -40,7 +40,9 @@ git clone --branch feat/modern-viewer-source-1206 https://github.com/jcs130/mc-v
 
 在 `BOT/extensions` 执行 `pnpm --ignore-workspace install`。回到 `BOT`，用 `pnpm check:extension <扩展绝对路径>` 分别检查两个扩展，再执行 `pnpm start --new`，选择 `cortiv` 创建部署。模型服务、凭证和 World 开关在网页控制台配置。启用 `worlds.mymc`，停用 `worlds.minecraft`，填写服务器和玩家账号。
 
-网页游戏画面按 [渲染器说明](https://github.com/jcs130/mc-visual-console/blob/feat/modern-viewer-source-1206/packages/modern-viewer/renderer-src/README.md) 用本地合法持有的 Java 1.20.6 客户端 JAR 导出资源；千灯纪画面选择 `--preset=qiandengji`。将 `worlds.mymc.viewerAssetsDir` 指向生成目录。
+网页画面与按版本提交的素材来自可视化仓库 `main`。在该仓库根目录执行 `npm ci --prefix packages/modern-viewer/renderer-src`，再执行 `node tools/prepare-viewer-assets.mjs java-1.20.6 <输出目录> --preset=qiandengji --sounds`；无需其他机器上的素材目录。将 `worlds.mymc.viewerAssetsDir` 指向生成目录。自定义资源导出与原生模组版本接入见 [渲染器说明](https://github.com/jcs130/mc-visual-console/blob/main/packages/modern-viewer/renderer-src/README.md)。
+
+画面优化统一从可视化仓库的 `main` 获取。更新源码后重新构建并同步到配置中的实际静态资源目录，记录源码提交与 `viewer-client.json` 的 bundle 哈希，再刷新页面；仅更新本 World 不会更新已经复制的画面文件。原资源版本未变时无需重新导出 JAR。
 
 ## 导入技术资料
 
