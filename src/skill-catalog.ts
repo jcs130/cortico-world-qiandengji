@@ -112,7 +112,7 @@ export class SkillCatalog {
   }
 
   observe(text: string, at: string): string | null {
-    const line = /^\[MC (?:系统|插件)\] (.+)$/.exec(text)?.[1]?.trim();
+    const line = /^\[MC (?:系统|插件|登录消息)\] (.+)$/.exec(text)?.[1]?.trim();
     if (!line) return null;
     const list = /^MC_SPELL_LIST\s+(\{.*\})$/.exec(line);
     if (list) {

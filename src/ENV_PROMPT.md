@@ -36,6 +36,8 @@
 
 ## 按需资料
 
+公告/私信查 mymc_messages。
+
 需要服务器玩法细则时用 mymc_guide 只读相关 topic；省略 topic 返回索引。原版动作参数查 mymc_help。资料中的坐标和成本需与现场及当前服务端核对，不在每轮重复阅读全手册。
 {{mymc.guide_index}}
 

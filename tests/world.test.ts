@@ -194,7 +194,7 @@ describe('Mymc World contract', () => {
     const fake = fakeEngine();
     const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
     const tools = world.tools();
-    expect(tools.map((tool) => tool.name)).toEqual(['mymc_do', 'mymc_cast', 'mymc_skills', 'mymc_guide']);
+    expect(tools.map((tool) => tool.name)).toEqual(['mymc_do', 'mymc_cast', 'mymc_skills', 'mymc_messages', 'mymc_guide']);
     expect(tools[0].description).toBe('mymc_do emits mymc.task');
     expect((tools[0].parameters.properties as Record<string, { description: string }>).text.description).toBe('Use mymc_do');
     expect(await tools[0].handler({}, { role: 'main', log: {} as never })).toBe('[mymc_do] 已受理');
