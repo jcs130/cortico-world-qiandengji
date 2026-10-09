@@ -3,6 +3,7 @@ import minecraftBundle from '../engine/console/client.ts';
 
 const bundle: ConsoleClientBundle = {
   panels: {
+    mount: minecraftBundle.panels.mount,
     skin: minecraftBundle.panels.skin,
     log: minecraftBundle.panels.log,
   },

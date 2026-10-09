@@ -36,7 +36,7 @@ const ENV_PROMPT_FILE = fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url
 const CAMERA_NOTE_FILE = fileURLToPath(new URL('./ENV_PROMPT_CAMERA.md', import.meta.url));
 
 export const MYMC_PANEL_DECLS: readonly WorldPanelDecl[] = MINECRAFT_PANEL_DECLS
-  .filter((panel) => panel.id === 'skin' || panel.id === 'log');
+  .filter((panel) => ['mount', 'skin', 'log'].includes(panel.id));
 
 function toMymcText(text: string): string {
   return text.replace(/\bmc_([a-z][a-z0-9_]*)\b/g, 'mymc_$1')
