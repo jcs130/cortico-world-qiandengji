@@ -11,7 +11,7 @@
   },
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
-    "commit": "1681f3cbea36b522639ab018a72f2d288f7109a2",
+    "commit": "0001c0061048b09c9162341f2e32f694cc2d046a",
     "assetPack": "java-1.20.6",
     "preset": "qiandengji"
   }

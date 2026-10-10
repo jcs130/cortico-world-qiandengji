@@ -41,6 +41,12 @@ describe('packaged viewer content', () => {
       const photo = await photoResponse.text();
       expect(photo).toContain('globalThis.__photoReady');
       expect(photo).not.toContain('/speech-bubble.js');
+      const assetBase = new URL(photo.match(/<base\s+href="([^"]+)"/)![1], photoResponse.url);
+      for (const [asset, type] of [['mesher.js', 'javascript'], ['textures/entity/zombie/zombie.png', 'image/png']]) {
+        const assetResponse = await fetch(new URL(asset, assetBase));
+        expect(assetResponse.status).toBe(200);
+        expect(assetResponse.headers.get('content-type')).toContain(type);
+      }
       const readyScript = photo.match(/<script>([\s\S]*?)<\/script>/)![1];
       const scriptHash = createHash('sha256').update(readyScript).digest('base64');
       expect(photoResponse.headers.get('content-security-policy')).toContain(`script-src 'self' 'unsafe-eval' 'sha256-${scriptHash}'`);
