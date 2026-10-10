@@ -8,7 +8,8 @@
       "patches/minecraft-viewer-appearance.patch",
       "patches/minecraft-spatial-budget.patch",
       "patches/minecraft-recipe-protocol.patch",
-      "patches/minecraft-route-diagnostics.patch"
+      "patches/minecraft-route-diagnostics.patch",
+      "patches/minecraft-flight-timing.patch"
     ]
   },
   "viewer": {

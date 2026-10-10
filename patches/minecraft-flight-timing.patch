@@ -1,0 +1,160 @@
+diff --git a/flight.ts b/flight.ts
+--- a/flight.ts
++++ b/flight.ts
+@@ -37,6 +37,8 @@
+   distance: number;
+   estimatedDurationMs: number;
+   speedSource: 'server' | 'default';
++  /** Ability speed is a protocol value; timing describes actual client execution separately. */
++  timing: { source: 'nominal' | 'runtime'; tickMs: number; samples: number; observedAtMs: number | null };
+   allowed: boolean;
+   remainingMs: number | null;
+   timeEnough: boolean | null;
+@@ -44,8 +46,11 @@
+ const abilities = new WeakMap<Bot, FlightAbilities>();
+ const controls = new WeakMap<Bot, FlightControl>();
+ const moving = new WeakSet<Bot>();
++const timings = new WeakMap<Bot, { elapsedMs: number; ticks: number; atMs: number }[]>();
++const timingEpochs = new WeakMap<Bot, object>();
+ export const MAX_FLIGHT_DISTANCE = 12;
+ const FLIGHT_TICK_MS = 50;
++const TIMING_MAX_AGE_MS = 5 * 60_000;
+ const MAX_FLIGHT_MOVE_MS = 10_000;
+ const DEFAULT_FLYING_SPEED = 0.05;
+ const HALF_WIDTH = 0.3;
+@@ -55,10 +60,15 @@
+
+ /** Permission remains valid until the server revokes it or an adapter supplies an expiry. */
+ export function watchFlightAbilities(bot: Bot): () => void {
++  timingEpochs.set(bot, {});
+   const onAbilities = (packet: { flags?: number; flyingSpeed?: number }): void => {
+     const old = abilities.get(bot);
+     const flags = Number(packet.flags ?? 0);
+     const speedObserved = !!packet.flyingSpeed && Number.isFinite(packet.flyingSpeed) && packet.flyingSpeed > 0;
++    if (!timingEpochs.has(bot) || (speedObserved && old?.flyingSpeed !== packet.flyingSpeed)) {
++      timings.delete(bot);
++      timingEpochs.set(bot, {});
++    }
+     const state: FlightAbilities = {
+       flags, observedAtMs: Date.now(),
+       flyingSpeed: speedObserved ? packet.flyingSpeed! : old?.flyingSpeed ?? DEFAULT_FLYING_SPEED,
+@@ -80,6 +90,8 @@
+     const state = abilities.get(bot);
+     if (state?.expiryTimer) clearTimeout(state.expiryTimer);
+     abilities.delete(bot);
++    timings.delete(bot);
++    timingEpochs.delete(bot);
+   };
+   const forcedMove = (): void => releaseFlight(bot, '服务端修正了位置，已停止飞行移动', true);
+   bot._client.on('abilities', onAbilities);
+@@ -311,6 +323,27 @@
+     + '总航程另由服务端实际许可、速度和期限决定，须核对总耗时';
+ }
+
++function flightTiming(bot: Bot): FlightPreview['timing'] {
++  const recent = (timings.get(bot) ?? []).filter(sample => Date.now() - sample.atMs <= TIMING_MAX_AGE_MS);
++  const ticks = recent.reduce((sum, sample) => sum + sample.ticks, 0);
++  const elapsed = recent.reduce((sum, sample) => sum + sample.elapsedMs, 0);
++  return { source: ticks ? 'runtime' : 'nominal',
++    tickMs: ticks ? Math.max(FLIGHT_TICK_MS, Math.ceil(elapsed / ticks * 10) / 10) : FLIGHT_TICK_MS,
++    samples: ticks, observedAtMs: recent.at(-1)?.atMs ?? null };
++}
++
++function flightDurationMs(bot: Bot, ticks: number): number {
++  return Math.ceil(ticks * flightTiming(bot).tickMs) + 500;
++}
++
++function recordFlightTiming(bot: Bot, elapsedMs: number, ticks: number): void {
++  if (ticks < 5) return;
++  const now = Date.now();
++  const recent = (timings.get(bot) ?? []).filter(sample => now - sample.atMs <= TIMING_MAX_AGE_MS);
++  recent.push({ elapsedMs, ticks, atMs: now });
++  timings.set(bot, recent.slice(-4));
++}
++
+ /** Inspect loaded geometry from the observed or explicitly projected origin without side effects. */
+ export function previewFlight(bot: Bot, targetAt: { x: number; y: number; z: number },
+   options: FlightMoveOptions = {}, origin?: { x: number; y: number; z: number }): FlightPreview {
+@@ -321,11 +354,12 @@
+   const route = flightPlan(bot, start, target, options);
+   const state = flightState(bot);
+   const remainingMs = state.expiresAtMs === undefined ? null : Math.max(0, state.expiresAtMs - Date.now());
+-  const estimatedDurationMs = route.length * FLIGHT_TICK_MS + 500;
++  const estimatedDurationMs = flightDurationMs(bot, route.length);
+   return {
+     from: [start.x, start.y, start.z], at: [target.x, target.y, target.z],
+     land: options.land === true, distance: start.distanceTo(target), estimatedDurationMs,
+     speedSource: abilities.get(bot)?.speedObserved ? 'server' : 'default', allowed: state.allowed, remainingMs,
++    timing: flightTiming(bot),
+     timeEnough: state.allowed && remainingMs !== null ? remainingMs >= estimatedDurationMs : null,
+   };
+ }
+@@ -338,6 +372,9 @@
+   if (moving.has(bot)) throw new SkillBlocked('另一段飞行移动尚未结束');
+   moving.add(bot);
+   let control: FlightControl | undefined;
++  let elapsedTickMs = 0;
++  let ticks = 0;
++  let timingEpoch: object | undefined;
+   try {
+     const target = new Vec3(targetAt.x, targetAt.y, targetAt.z);
+     let start = bot.entity.position.clone();
+@@ -350,12 +387,14 @@
+     if (distance > MAX_FLIGHT_DISTANCE) throw new SkillBlocked(`等待飞行许可时位置已变化；${flightDistanceNote(start, target)}`);
+     const route = flightPlan(bot, start, target, options);
+     const expiresAt = abilities.get(bot)?.expiresAtMs;
+-    if (expiresAt !== undefined && expiresAt - Date.now() < route.length * FLIGHT_TICK_MS + 500) {
++    if (expiresAt !== undefined && expiresAt - Date.now() < flightDurationMs(bot, route.length)) {
+       throw new SkillBlocked('服务端声明的飞行剩余时间不足以抵达目标；先就近落地');
+     }
+     if (aborted()) throw new SkillBlocked('飞行任务已取消');
+     control = beginFlight(bot);
++    timingEpoch = timingEpochs.get(bot);
+     for (const pos of route) {
++      const tickAtMs = Date.now();
+       if (aborted()) throw new SkillBlocked('飞行任务已取消，保持当前位置悬停；可调用落地');
+       if (control.interrupted) throw new SkillBlocked(control.interrupted, [], 'server');
+       if (!(flightFlags(bot) & 4)) throw new SkillBlocked('服务端飞行许可已结束', [], 'server');
+@@ -365,6 +404,8 @@
+       bot.entity.onGround = false;
+       bot.entity.position = pos;
+       await sleep(FLIGHT_TICK_MS);
++      elapsedTickMs += Date.now() - tickAtMs;
++      ticks++;
+     }
+     // Position packets continue through Mineflayer with local gravity simulation disabled.
+     await sleep(150);
+@@ -378,6 +419,9 @@
+     const actual = bot.entity.position;
+     return `${options.land ? '飞到平台并落地' : '飞到目标并悬停'}，实际在 (${actual.x.toFixed(1)},${actual.y.toFixed(1)},${actual.z.toFixed(1)})`;
+   } finally {
++    // Excludes permission waits, model latency and settling. Completed ticks from
++    // an interrupted leg still measure the scheduler; an unstarted leg does not.
++    if (timingEpoch && timingEpoch === timingEpochs.get(bot)) recordFlightTiming(bot, elapsedTickMs, ticks);
+     moving.delete(bot);
+   }
+ }
+diff --git a/world.ts b/world.ts
+--- a/world.ts
++++ b/world.ts
+@@ -4247,7 +4247,7 @@
+         try {
+           const result = previewFlightPlan(bot, parsed.steps, parsed.budgetMs, parsed.subdivide);
+           return { text: this.toolLog('mc_flight_plan', args,
+-            `整段飞行试算（未施法、未移动；后续起点是假定上一段到达，实际执行重验；估时仅含所列移动，每段含500毫秒余量；allowed仅表示采样时许可；null为未知，悬停不表示有支撑。steps为可整体提交的绝对坐标与needs，未核验完整路线或超预算时为null；施法不包含在steps中，合并前置步骤须重编号needs。起点变化后应重算）：${JSON.stringify(result)}`),
++            `整段飞行试算（未施法、未移动；后续起点是假定上一段到达，实际执行重验；估时仅含所列移动，每段含500毫秒余量。timing.source为nominal时按标称50毫秒周期估算，为runtime时按近期实际控制周期耗时校准；speedSource:server只表示标称速度来源，不保证耗时。施法、排队、模型和截图等待另计；allowed仅表示采样时许可；null为未知，悬停不表示有支撑。steps为可整体提交的绝对坐标与needs，未核验完整路线或超预算时为null；施法不包含在steps中，合并前置步骤须重编号needs。起点变化后应重算）：${JSON.stringify(result)}`),
+           ...(!result.complete || result.fitsBudget === false ? { failed: true } : {}) };
+         } catch (error) {
+           if (!(error instanceof SkillBlocked)) throw error;
+diff --git a/executor.ts b/executor.ts
+--- a/executor.ts
++++ b/executor.ts
+@@ -844,7 +844,7 @@
+     }
+     case 'flight': {
+       const at = resolveAt(bot, call.at);
+-      if (call.dryRun) return `飞行试算（未移动、未施法；仅核对当前已加载地形，执行时重验；allowed只表示采样时是否已有飞行许可，false不表示几何试算失败，remainingMs/timeEnough为null表示未知）：${JSON.stringify(previewFlight(
++      if (call.dryRun) return `飞行试算（未移动、未施法；仅核对当前已加载地形，执行时重验；timing.source为nominal时未校准运行调度，为runtime时使用近期实际控制周期；标称速度不保证耗时，排队、模型和截图等待另计；allowed只表示采样时是否已有飞行许可，false不表示几何试算失败，remainingMs/timeEnough为null表示未知）：${JSON.stringify(previewFlight(
+         bot, { x: at.x + 0.5, y: at.y, z: at.z + 0.5 }, { land: call.land !== false },
+       ))}`;
+       return call.land === false
