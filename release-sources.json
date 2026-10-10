@@ -2,11 +2,11 @@
   "cortico": {
     "repository": "https://github.com/jcs130/Cortico",
     "commit": "8c00fbb022ea82fc9725301fde0437ccc00fdcc9",
-    "patches": ["patches/minecraft-item-names.patch"]
+    "patches": ["patches/minecraft-item-names.patch", "patches/minecraft-viewer-content.patch"]
   },
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
-    "commit": "34539ced98c60401490feacc10b94cc290570e42",
+    "commit": "c95ee32bf558ca002ffec9ab675b405fe1f536cb",
     "assetPack": "java-1.20.6",
     "preset": "qiandengji"
   }

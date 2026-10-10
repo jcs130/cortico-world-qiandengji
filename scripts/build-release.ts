@@ -21,6 +21,7 @@ function sourceRoot(variable: string, fallback: string, expected: string): strin
 
 async function buildEngine(): Promise<void> {
   const coreRoot = sourceRoot('CORTICO_SOURCE_DIR', 'cortico', sources.cortico.commit);
+  const viewerRoot = sourceRoot('MC_VISUAL_CONSOLE_DIR', 'viewer', sources.viewer.commit);
   const planner = await import(pathToFileURL(join(coreRoot, 'scripts/publish-worlds.ts')).href) as {
     planWorldPackage: (id: string) => { sources: Map<string, string>; externals: string[]; problems: string[] };
   };
@@ -62,7 +63,15 @@ async function buildEngine(): Promise<void> {
     execFileSync('git', ['apply', '--directory=engine', file], { cwd: root, stdio: 'pipe' });
     patches.push({ file, sha256: createHash('sha256').update(patch).digest('hex') });
   }
-  await writeFile(join(engineRoot, 'source.json'), JSON.stringify({ ...sources.cortico, patches }, null, 2) + '\n');
+  const viewerFiles = [];
+  for (const file of ['viewer-content.mjs', 'viewer-content.d.mts', 'text-display.mjs']) {
+    const bytes = await readFile(join(viewerRoot, 'packages/modern-viewer/renderer-src/host', file));
+    await writeFile(join(engineRoot, file), bytes);
+    viewerFiles.push({ file, sha256: createHash('sha256').update(bytes).digest('hex') });
+  }
+  await writeFile(join(engineRoot, 'source.json'), JSON.stringify({ ...sources.cortico, patches,
+    viewerContent: { commit: sources.viewer.commit, files: viewerFiles },
+  }, null, 2) + '\n');
   console.log(`Engine: ${sources.cortico.commit}`);
 }
 

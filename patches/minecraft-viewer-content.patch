@@ -1,0 +1,89 @@
+diff --git a/modern-viewer.ts b/modern-viewer.ts
+--- a/modern-viewer.ts
++++ b/modern-viewer.ts
+@@ -27,6 +27,7 @@
+ import { observeViewerFishingCatch, viewerDroppedItem } from './viewer-fishing.ts';
+ import { viewerPageCss, viewerPageHtml } from './viewer-page-assets.ts';
+ import { serveViewerAsset } from './viewer-asset-server.ts';
++import { createViewerContentBridge } from './viewer-content.mjs';
+ import { minecraftTextComponent } from './text-component.ts';
+ import type { EventEmitter } from 'node:events';
+ import { isRaining } from './terrain.ts';
+@@ -439,6 +440,7 @@
+   const speakerScript = speechBubbleScript.replace("'__VIEWER_SPEAKER_NAME__'",
+     JSON.stringify(options.speakerName || bot.username));
+   const speechRelay = new ViewerSpeechRelay(options.speechSourceId || bot.username);
++  const content = bot.version === '1.20.6' ? createViewerContentBridge(bot) : null;
+ 
+   const origin = `http://127.0.0.1:${options.port}`;
+   const sessions = new Set<() => void>();
+@@ -569,7 +571,7 @@
+   let particleWindowAt = 0;
+   let particleCount = 0;
+   const onParticle = (packet: unknown) => {
+-    if (closed || !viewerSockets.size) return;
++    if (content || closed || !viewerSockets.size) return;
+     const now = Date.now();
+     if (now - particleWindowAt >= 1_000) { particleWindowAt = now; particleCount = 0; }
+     if (++particleCount > 96) return;
+@@ -708,7 +710,7 @@
+       if (await speechRelay.handle(req, res, pathname)) return;
+       if (pathname === '/healthz') {
+         res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+-        res.end(JSON.stringify({ ok: !closed, version: bot.version, ...sessionSlots.status() })); return;
++        res.end(JSON.stringify({ ok: !closed, version: bot.version, ...sessionSlots.status(), content: content?.stats() ?? null })); return;
+       }
+       if (pathname === '/capture-lease') {
+         const key = req.headers['x-mc-viewer-capture-key'];
+@@ -793,6 +795,7 @@
+       socket.emit('viewerBusy', { maximum: capture ? MAX_CAPTURE_SESSIONS : MAX_SESSIONS });
+       socket.disconnect(true); return;
+     }
++    const stopContent = content?.subscribeSocket(socket);
+     // WorldView owns chunks and block updates. Its stock entity packets omit villager
+     // metadata, so the bounded stream below publishes entities separately.
+     const biomeIds = biomeIdMap(bot.registry, vanillaBiomes);
+@@ -925,7 +928,7 @@
+     const lightTimer = setInterval(publishLight, 500);
+     const pendingEntities = new Map<string, { entity: ViewerEntity; full: boolean }>();
+     const knownEntities = new Set<string>();
+-    const nearby = (entity: ViewerEntity) => entity !== bot.entity && entity.position && bot.entity?.position &&
++    const nearby = (entity: ViewerEntity) => entity !== bot.entity && entity.name !== 'text_display' && entity.position && bot.entity?.position &&
+       Math.hypot(entity.position.x - bot.entity.position.x, entity.position.z - bot.entity.position.z) <= VIEW_DISTANCE * 16;
+     const removeEntity = (entity: ViewerEntity) => {
+       const id = String(entity.id);
+@@ -1125,6 +1128,7 @@
+     const stop = () => {
+       if (!active) return;
+       active = false;
++      stopContent?.();
+       captureLease?.stop();
+       if (captureKey && captureLeases.get(captureKey) === captureLease) captureLeases.delete(captureKey);
+       releaseSlot();
+@@ -1205,6 +1209,7 @@
+       server.listen(options.port, '127.0.0.1', () => { server.off('error', reject); resolve(); });
+     });
+   } catch (error) {
++    content?.dispose();
+     first.close(); third.close();
+     throw error;
+   }
+@@ -1284,6 +1289,7 @@
+     async close() {
+       if (closed) return;
+       closed = true;
++      content?.dispose();
+       speechRelay.close();
+       stopInventoryPreview();
+       (bot as unknown as EventEmitter).off('path_update', onPathUpdate);
+diff --git a/viewer-asset-server.ts b/viewer-asset-server.ts
+--- a/viewer-asset-server.ts
++++ b/viewer-asset-server.ts
+@@ -9,6 +9,7 @@
+   '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',
+   '.png': 'image/png', '.ogg': 'audio/ogg', '.wasm': 'application/wasm', '.glb': 'model/gltf-binary',
+   '.vrm': 'model/gltf-binary', '.webp': 'image/webp', '.jpg': 'image/jpeg',
++  '.zip': 'application/zip',
+ };
+ 
+ export function viewerByteRange(range: string, size: number): { start: number; end: number } | null {

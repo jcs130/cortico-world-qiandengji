@@ -18,6 +18,14 @@ for (const [index, file] of patches.entries()) {
   if (actual.file !== file || actual.sha256 !== createHash('sha256').update(await readFile(join(root, file))).digest('hex'))
     throw new Error('RELEASE_ENGINE_PATCH_MISMATCH: ' + file);
 }
+const bridgeFiles = ['viewer-content.mjs', 'viewer-content.d.mts', 'text-display.mjs'];
+if (engine.viewerContent?.commit !== sources.viewer.commit || engine.viewerContent.files?.length !== bridgeFiles.length)
+  throw new Error('RELEASE_VIEWER_BRIDGE_MISMATCH');
+for (const [index, file] of bridgeFiles.entries()) {
+  const actual = engine.viewerContent.files[index];
+  if (actual.file !== file || actual.sha256 !== createHash('sha256').update(await readFile(join(root, 'engine', file))).digest('hex'))
+    throw new Error('RELEASE_VIEWER_BRIDGE_MISMATCH: ' + file);
+}
 if (assets.minecraftVersion !== '1.20.6') throw new Error('RELEASE_ASSET_VERSION_MISMATCH');
 for (const file of ['engine/proxy.ts', 'engine/engine-child.ts', 'engine/dependency-patches.ts',
   'engine/method-worker.mjs', 'engine/support/typed-decision.ts', 'engine/support/host-contract.ts',
@@ -32,4 +40,16 @@ if (createHash('sha256').update(client).digest('hex') !== viewer.viewerClientMan
 const bundle = await readFile(join(root, 'dist/viewer/dist/modern-viewer.js'));
 if (createHash('sha256').update(bundle).digest('hex') !== JSON.parse(client).browserBundleSha256)
   throw new Error('RELEASE_VIEWER_BUNDLE_MISMATCH');
+const fontBytes = await readFile(join(root, 'dist/viewer/public/text-display-font.json'));
+const font = JSON.parse(fontBytes);
+if (font.minecraftVersion !== assets.minecraftVersion || font.clientJarSha256 !== JSON.parse(client).clientJarSha256
+    || createHash('sha256').update(fontBytes).digest('hex') !== JSON.parse(client).textDisplays?.manifestSha256)
+  throw new Error('RELEASE_VIEWER_FONT_MISMATCH');
+for (const [file, expected] of Object.entries(font.files)) {
+  if (!/^(?:fonts\/1\.20\.6\/(?:default\.json|include\/(?:default|space|unifont)\.json|unifont\.zip)|textures\/1\.20\.6\/font\/[a-z_]+\.png)$/.test(file))
+    throw new Error('RELEASE_VIEWER_FONT_PATH: ' + file);
+  const bytes = await readFile(join(root, 'dist/viewer/public', file));
+  if (bytes.length !== expected.bytes || createHash('sha256').update(bytes).digest('hex') !== expected.sha256)
+    throw new Error('RELEASE_VIEWER_FONT_MISMATCH: ' + file);
+}
 console.log('Release engine, modern viewer, assets and console are present.');
