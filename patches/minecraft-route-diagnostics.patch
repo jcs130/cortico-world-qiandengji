@@ -1,0 +1,18 @@
+diff --git a/executor.ts b/executor.ts
+--- a/executor.ts
++++ b/executor.ts
+@@ -714,8 +714,12 @@
+         throw withRouteScene(
+           bot, travelContext, err, sceneTarget,
+           [...digBackoffScene(ctx, startedAt), ...(note ? [note] : []),
+-            ...(sceneTarget !== target ? [`长途最终目标 ${cellText(target)}，这一段先去 ${cellText(sceneTarget)}`] : [])],
+-          call.groundY || call.exact ? (sceneTarget === target ? finalGoal : levelTravelGoal(sceneTarget.x, sceneTarget.z)) : undefined,
++            ...(sceneTarget !== target ? [
++              `长途最终目标 ${cellText(target)}，这一段先去 ${cellText(sceneTarget)}`,
++              "本次受阻发生在途中，尚未核实最终目标的落脚条件",
++            ] : [])],
++          sceneTarget !== target ? levelTravelGoal(sceneTarget.x, sceneTarget.z)
++            : call.groundY || call.exact ? finalGoal : undefined,
+         );
+       } finally {
+         releaseWalkOnly?.();
