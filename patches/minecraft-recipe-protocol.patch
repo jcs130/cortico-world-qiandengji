@@ -1,34 +1,21 @@
 diff --git a/mineflayer-fixes.ts b/mineflayer-fixes.ts
 --- a/mineflayer-fixes.ts
 +++ b/mineflayer-fixes.ts
-@@ -30,6 +30,7 @@
- import { assertInventoryClicksReady, clickInventoryConfirmed, installInventoryClickSync,
-   inventoryClickState, isInventoryClickError, isInventoryCursorPacket, sameInventoryStack } from './inventory-click-sync.ts';
- import { PLACE_REACH } from './cell-facts.ts';
-+import { repairRecipeSerializers } from './recipe-protocol.ts';
- 
- /** 摆好材料之后等产出槽被服务端填上的上限 */
- const RESULT_WAIT_MS = 1_500;
-@@ -153,6 +154,9 @@
-   installInventoryWindowSyncGuard(bot, diag);
-   fixFoodComponentSchema(bot, log);
+@@ -155,2 +155,5 @@
    fixPotionContentsSchema(bot, log);
 +  if (repairRecipeSerializers(bot.registry)) {
 +    log.info('协议表修正:1.20.5/6 配方序号摘除 banneraddpattern，保持熔炼、切石与锻造包对齐');
 +  }
    fixToolTierMaterials(bot, log);
-   installComponentDigTime(bot);
-   installStateIdGuard(bot, diag, () => tracing > 0);
-diff --git a/recipe-protocol.ts b/recipe-protocol.ts
-new file mode 100644
---- /dev/null
-+++ b/recipe-protocol.ts
-@@ -0,0 +1,25 @@
-+type Field = { name: string; type: unknown };
+@@ -332,2 +335,28 @@
+   log.info('寻路选工具修正:只有严格加快挖掘才换手,同速原样回报手上那把(计价按它算,执行侧不换手)');
++}
++
++type RecipeField = { name: string; type: unknown };
 +type RecipeRegistry = {
 +  version: { minecraftVersion: string };
 +  protocol: { play: { toClient: { types: { packet_declare_recipes: [string, Array<{
-+    name: string; type: [string, { type: [string, Field[]] }];
++    name: string; type: [string, { type: [string, RecipeField[]] }];
 +  }>] } } } };
 +};
 +
@@ -48,4 +35,4 @@ new file mode 100644
 +  type[1].mappings = Object.fromEntries(entries.filter(([key]) => key !== removed[0])
 +    .map(([key, name]) => [Number(key) > index ? String(Number(key) - 1) : key, name]));
 +  return true;
-+}
+ }
