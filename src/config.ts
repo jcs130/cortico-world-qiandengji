@@ -17,13 +17,15 @@ type RepeatSuccessFallback = {
 };
 
 export type MymcConfigSection = MinecraftConfigSection & {
+  preserveLoginName?: boolean;
   repeatSuccessFallback: RepeatSuccessFallback;
   visual: MinecraftConfigSection['visual'] & { mode: 'auto' | 'structured' };
 };
 
-export function mymcLoginName(value: string): string {
+export function mymcLoginName(value: string, preserveLoginName = false): string {
   const name = value.trim();
   if (!name) return '';
+  if (preserveLoginName) return name;
   return /^ag_/i.test(name) ? `ag_${name.slice(3)}` : `ag_${name}`;
 }
 
@@ -31,7 +33,7 @@ export function mymcLoginName(value: string): string {
 export function mymcEngineConfig(cfg: MymcConfigSection): MymcConfigSection {
   return new Proxy(cfg, {
     get(target, key, receiver) {
-      return key === 'username' ? mymcLoginName(target.username) : Reflect.get(target, key, receiver);
+      return key === 'username' ? mymcLoginName(target.username, target.preserveLoginName) : Reflect.get(target, key, receiver);
     },
   });
 }
@@ -54,6 +56,7 @@ export const MYMC_DEFAULTS: MymcConfigSection = {
   enabled: false,
   host: '',
   username: '',
+  preserveLoginName: false,
   viewerPort: 7793,
   viewerAssetsDir: fileURLToPath(new URL('../dist/viewer/', import.meta.url)),
   visual: { ...MINECRAFT_DEFAULTS.visual, mode: 'auto' },
@@ -86,6 +89,10 @@ export const MYMC_CONFIG_GROUP: ConfigGroup = {
       ...connectionGroup.schema.properties['worlds.mymc.username'],
       type: 'string', title: 'Agent 登录名', 'x-hot': false,
       description: '自动补 ag_ 前缀；例如 Alice 登录为 ag_Alice。完整名称最多 16 位，只能使用英文字母、数字和下划线。',
+    },
+    'worlds.mymc.preserveLoginName': {
+      type: 'boolean', title: '保留已有账号名', 'x-hot': false,
+      description: '迁移已有角色时按原登录名连接，保留服务器端的角色身份。默认关闭，新账号自动补 ag_ 前缀。',
     },
     'worlds.mymc.visual.mode': {
       type: 'string', enum: ['auto', 'structured'], title: '现场观察方式', 'x-hot': true,

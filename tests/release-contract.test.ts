@@ -47,6 +47,14 @@ describe('installable World', () => {
       .toThrow('登录名');
   });
 
+  it('preserves an existing account through child IPC only with explicit migration configuration', () => {
+    const cfg = { ...structuredClone(MYMC_DEFAULTS), host: 'example.test', username: 'ExistingUser', preserveLoginName: true };
+    assertMymcReady(cfg);
+    expect(JSON.parse(JSON.stringify(mymcEngineConfig(cfg))).username).toBe('ExistingUser');
+    cfg.preserveLoginName = false;
+    expect(JSON.parse(JSON.stringify(mymcEngineConfig(cfg))).username).toBe('ag_ExistingUser');
+  });
+
   it('uses packaged modern assets with all three camera pages and an original asset manifest', () => {
     const viewer = MYMC_DEFAULTS.viewerAssetsDir;
     expect(viewer).toBe(fileURLToPath(new URL('../dist/viewer/', import.meta.url)));

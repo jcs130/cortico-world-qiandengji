@@ -10,8 +10,11 @@ export function assertMymcReady(cfg: MymcConfigSection, botDir?: string): void {
   if (!Number.isInteger(cfg.port) || cfg.port < 1 || cfg.port > 65535) {
     throw new Error('千灯纪服务器端口须为 1–65535 的整数');
   }
-  if (!/^ag_[A-Za-z0-9_]{1,13}$/.test(mymcLoginName(cfg.username))) {
-    throw new Error('Agent 登录名加 ag_ 前缀后须为 4–16 位英文字母、数字或下划线');
+  const pattern = cfg.preserveLoginName ? /^[A-Za-z0-9_]{1,16}$/ : /^ag_[A-Za-z0-9_]{1,13}$/;
+  if (!pattern.test(mymcLoginName(cfg.username, cfg.preserveLoginName))) {
+    throw new Error(cfg.preserveLoginName
+      ? '已有角色登录名须为 1–16 位英文字母、数字或下划线'
+      : 'Agent 登录名加 ag_ 前缀后须为 4–16 位英文字母、数字或下划线');
   }
   if (!botDir) return;
   const file = join(botDir, 'config.json');

@@ -297,9 +297,10 @@ export class MymcWorld implements World {
     this.requireProtectSupport = engine === undefined;
     this.engine = engine ?? new MinecraftWorldProxy({ ...opts, cfg: mymcEngineConfig(opts.cfg), agentFriendEnabled: true });
     this.catalog = new SkillCatalog(`${opts.cfg.host}:${opts.cfg.port}`, opts.dataDir);
-    this.messages = new MessageInbox(`${opts.cfg.host}:${opts.cfg.port}:${mymcLoginName(opts.cfg.username)}`, opts.dataDir);
-    this.trialProgress = new TrialProgress(`${opts.cfg.host}:${opts.cfg.port}:${mymcLoginName(opts.cfg.username)}`, opts.dataDir);
-    this.guildProgress = new GuildProgress(`${opts.cfg.host}:${opts.cfg.port}:${mymcLoginName(opts.cfg.username)}`, opts.dataDir);
+    const identity = `${opts.cfg.host}:${opts.cfg.port}:${mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName)}`;
+    this.messages = new MessageInbox(identity, opts.dataDir);
+    this.trialProgress = new TrialProgress(identity, opts.dataDir);
+    this.guildProgress = new GuildProgress(identity, opts.dataDir);
   }
 
   envPromptVars(): Record<string, string> {
