@@ -1,0 +1,64 @@
+diff --git a/tools.ts b/tools.ts
+--- a/tools.ts
++++ b/tools.ts
+@@ -251,9 +251,11 @@
+ ): void {
+   const trace = ctx.toolTrace;
+   if (!trace) return;
+-  const pick = decision.pick ? toolLabel(bot, decision.pick) : null;
++  const target = decision.pick ? pickTargetOf(decision.pick, bot.registry as never) : null;
++  const pick = target ? pickLabel({ ...target, durability: null }) : null;
++  const key = target ? JSON.stringify([target.name, pick]) : null;
+   const first = trace.last === undefined;
+-  const changed = !first && trace.last !== pick;
++  const changed = !first && trace.last !== key;
+   if (first || changed) {
+     if (pick === null) {
+       trace.notes.push(first
+@@ -266,19 +268,28 @@
+     } else {
+       trace.notes.push(`${first ? '节约模式选' : `挖到${zhName(block)}时换成`}:${pick}`);
+     }
+-    trace.last = pick;
+-  }
+-  if (decision.pick && pick) {
++    trace.last = key;
++  }
++  if (decision.pick && pick && key) {
++    if (target?.durability) {
++      const readings = trace.readings ??= new Map();
++      const old = readings.get(key);
++      readings.set(key, { label: pick, first: old?.first ?? target.durability.left,
++        latest: target.durability.left, max: target.durability.max });
++    }
+     const d = nearBreak(decision.pick);
+-    if (d && !trace.near.has(pick)) {
+-      trace.near.add(pick);
++    if (d && !trace.near.has(key)) {
++      trace.near.add(key);
+       trace.notes.push(`${pick}临近损坏,只剩 ${d.left}/${d.max} 耐久`);
+     }
+   }
+ }
+
+ export function toolTraceNote(trace: ToolTrace | undefined): string {
+-  return trace && trace.notes.length > 0 ? `;工具:${trace.notes.join(';')}` : '';
++  if (!trace || trace.notes.length === 0) return '';
++  const readings = [...(trace.readings?.values() ?? [])].map(d =>
++    `${d.label} ${d.first === d.latest ? d.latest : `${d.first}→${d.latest}`}/${d.max}`);
++  return `;工具:${trace.notes.join(';')}` + (readings.length ? `;选具时耐久:${readings.join('、')}` : '');
+ }
+
+ /** harvestTools 限定能产出掉落的工具；没有此限制时，material 的 mineable/tool 只决定速度。 */
+diff --git a/skill-context.ts b/skill-context.ts
+--- a/skill-context.ts
++++ b/skill-context.ts
+@@ -387,6 +387,8 @@
+   last: string | null | undefined;
+   notes: string[];
+   near: Set<string>;
++  /** First and latest readings at tool selection, independent of selection identity. */
++  readings?: Map<string, { label: string; first: number; latest: number; max: number }>;
+ }
+
+ /** 收着的工具被选中时的回执事实。 */
