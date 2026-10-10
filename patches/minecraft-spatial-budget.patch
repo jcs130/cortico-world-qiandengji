@@ -1,0 +1,116 @@
+diff --git a/spatial-slices.ts b/spatial-slices.ts
+--- a/spatial-slices.ts
++++ b/spatial-slices.ts
+@@ -5,6 +5,29 @@
+ export type SpatialSliceAxis = typeof SPATIAL_SLICE_AXES[number];
+ export const PROBE_SLICE_CELL_CAP = 512;
+ export const PROBE_SLICE_TEXT_CAP = 12_000;
++
++/** Inclusive integer bounds; chunk sizes describe a complete Cartesian partition. */
++export function partitionSpatialBox(bounds: readonly number[], cap: number) {
++  const sizes = [0, 1, 2].map(i => bounds[i + 3] - bounds[i] + 1);
++  const chunkSizes = [...sizes];
++  while (chunkSizes.reduce((a, b) => a * b, 1) > cap) {
++    const axis = chunkSizes.indexOf(Math.max(...chunkSizes));
++    chunkSizes[axis] = Math.ceil(chunkSizes[axis] / 2);
++  }
++  return { sizes, chunkSizes, cells: sizes.reduce((a, b) => a * b, 1),
++    chunks: sizes.reduce((n, size, i) => n * Math.ceil(size / chunkSizes[i]), 1) };
++}
++
++export function spatialBoxBudgetNote(bounds: readonly number[], cap: number): string | null {
++  const sizes = [0, 1, 2].map(i => bounds[i + 3] - bounds[i] + 1);
++  const cells = sizes.reduce((a, b) => a * b, 1);
++  if (cells <= cap) return null;
++  const head = `请求尺寸 ${sizes.join('×')}=${cells} 格(含端点)，一单上限 ${cap}`;
++  if (!Number.isSafeInteger(cells)) return head;
++  const plan = partitionSpatialBox(bounds, cap);
++  const axes = ['x', 'y', 'z'].map((axis, i) => `${axis}=${bounds[i]}..${bounds[i + 3]}，每段至多 ${plan.chunkSizes[i]} 格`);
++  return `${head}。可保持原范围按区间组合分 ${plan.chunks} 批读取：${axes.join('；')}；各轴末段止于原上界。尚未读取；也可按问题缩小范围`;
++}
+ 
+ export interface SpatialSliceCell {
+   c: Cell;
+diff --git a/spatial-observation.ts b/spatial-observation.ts
+--- a/spatial-observation.ts
++++ b/spatial-observation.ts
+@@ -3,6 +3,7 @@
+ import { Vec3 } from 'vec3';
+ import { AIR_NAMES, LIQUIDS } from './cell-facts.ts';
+ import { SkillBlocked } from './skill-context.ts';
++import { spatialBoxBudgetNote } from './spatial-slices.ts';
+ 
+ type Point = [number, number, number];
+ type Box = [number, number, number, number, number, number];
+@@ -25,10 +26,13 @@
+     if (!Array.isArray(b) || b.length !== 6 || b.some(n => !Number.isInteger(n) || Math.abs(n) > SPATIAL_OBSERVATION_LIMITS.offset)) {
+       return { error: `bounds 要六个 -${SPATIAL_OBSERVATION_LIMITS.offset}..${SPATIAL_OBSERVATION_LIMITS.offset} 的整数，顺序 xmin,ymin,zmin,xmax,ymax,zmax；相对脚下格` };
+     }
+-    if (b.slice(0, 3).some((n, i) => n > b[i + 3])) return { error: 'bounds 的最小值不能大于最大值' };
+-    if ((b[3] - b[0] + 1) * (b[4] - b[1] + 1) * (b[5] - b[2] + 1) > SPATIAL_OBSERVATION_LIMITS.cells) {
+-      return { error: `voxels 最多 ${SPATIAL_OBSERVATION_LIMITS.cells} 格；请缩小 bounds` };
+-    }
++    if (b.slice(0, 3).some((n, i) => n > b[i + 3])) {
++      const ordered = [0, 1, 2].map(i => Math.min(b[i], b[i + 3]))
++        .concat([0, 1, 2].map(i => Math.max(b[i], b[i + 3])));
++      return { error: `bounds 的最小值不能大于最大值；同一区域的升序边界为 ${JSON.stringify(ordered)}，请核对相对坐标后重新提交；尚未读取` };
++    }
++    const budget = spatialBoxBudgetNote(b, SPATIAL_OBSERVATION_LIMITS.cells);
++    if (budget) return { error: `voxels ${budget}` };
+     return { mode: 'voxels', bounds: [...b] as Box };
+   }
+   if (c.mode === 'rays') {
+diff --git a/cell-facts.ts b/cell-facts.ts
+--- a/cell-facts.ts
++++ b/cell-facts.ts
+@@ -11,6 +11,7 @@
+ } from './geometry.ts';
+ import { SkillBlocked } from './skill-context.ts';
+ import { WATER_BLOCKS, cropAgeAt } from './terrain.ts';
++import { spatialBoxBudgetNote } from './spatial-slices.ts';
+ 
+ /** 竖井遇到这些方块时停止下挖。 */
+ export const LIQUIDS = new Set(['water', 'lava', 'bubble_column']);
+@@ -126,7 +127,11 @@
+   if (shape === 'box' && (fill === undefined || fill === 'solid') && resolved.length === 2) {
+     const [a, b] = resolved;
+     const volume = (Math.abs(a.x - b.x) + 1) * (Math.abs(a.y - b.y) + 1) * (Math.abs(a.z - b.z) + 1);
+-    if (volume > cap) throw new SkillBlocked(`这个${SHAPE_ZH[shape]}有 ${volume} 格,一单上限 ${cap}`);
++    if (volume > cap) {
++      const bounds = [Math.min(a.x, b.x), Math.min(a.y, b.y), Math.min(a.z, b.z),
++        Math.max(a.x, b.x), Math.max(a.y, b.y), Math.max(a.z, b.z)];
++      throw new SkillBlocked(spatialBoxBudgetNote(bounds, cap)!);
++    }
+   }
+   const cells = rasterize(shape, resolved, fill ?? 'solid');
+   if (!Array.isArray(cells)) throw new SkillBlocked(cells.error);
+diff --git a/skills.ts b/skills.ts
+--- a/skills.ts
++++ b/skills.ts
+@@ -1357,7 +1357,7 @@
+         doc: '数量由 shape 定',
+       },
+       { key: 'fill', kind: 'enum', values: ['solid', 'outline', 'edges'], error: 'fill 只认 solid/outline/edges', doc: '只对 box 有意义' },
+-      { key: 'slice', kind: 'enum', values: SPATIAL_SLICE_AXES, error: 'slice 只认 x/y/z', doc: `box 空间切片，最多 ${PROBE_SLICE_CELL_CAP} 格，不与 where 同用` },
++      { key: 'slice', kind: 'enum', values: SPATIAL_SLICE_AXES, error: 'slice 只认 x/y/z', doc: `box 空间切片；体积=(|dx|+1)(|dy|+1)(|dz|+1)≤${PROBE_SLICE_CELL_CAP}，不与 where 同用` },
+       {
+         key: 'where', kind: 'names', hint: `方块英文 id 或类别 ${UNTIL_CATEGORY_DOC};实体 id 按收到的实体表报`,
+         doc: '只报这几样在这片里的坐标(不看视线)',
+@@ -1369,7 +1369,7 @@
+     doc: `{"skill":"observe","mode":"voxels","bounds":[-2,-1,-2,2,3,2]}
+                                                  按 MineDojo 的局部体素观测方式，直接读当前连接已加载方块，不需图像估深。
+                                                  bounds 是相对执行时脚下格的 [xmin,ymin,zmin,xmax,ymax,zmax]，含端点；省略为 [-1,-1,-1,1,2,1]。
+-                                                 每项 ±${SPATIAL_OBSERVATION_LIMITS.offset}，最多 ${SPATIAL_OBSERVATION_LIMITS.cells} 格；返回绝对坐标范围、读取时间、维度、眼位、朝向。
++                                                 每项 ±${SPATIAL_OBSERVATION_LIMITS.offset}；体积=(xmax-xmin+1)(ymax-ymin+1)(zmax-zmin+1)≤${SPATIAL_OBSERVATION_LIMITS.cells}，不是每个轴都可铺满。返回绝对坐标范围、读取时间、维度、眼位、朝向。
+                                                  palette 保留方块状态、属性与真实格内碰撞箱；cells 按 y,z,x 展开(x 最快)，-1 是未知；无碰撞不证明安全可走或有支撑。
+ {"skill":"observe","mode":"rays","rays":[[0,0,24],[15,30,16],[-15,-30,16]]}
+                                                  从执行时眼位发射碰撞射线，每组 [相对pitch角,相对yaw角,最大距离]；角度用度，pitch 正值向上，yaw 正值向左，yaw=0 朝北。
+@@ -1384,7 +1384,7 @@
+     fields: [
+       { key: 'mode', kind: 'enum', values: ['voxels', 'rays'], required: true, error: 'mode 要 voxels/rays' },
+       { key: 'bounds', kind: 'opaque', schema: { type: 'array', minItems: 6, maxItems: 6,
+-        items: { type: 'integer', minimum: -SPATIAL_OBSERVATION_LIMITS.offset, maximum: SPATIAL_OBSERVATION_LIMITS.offset } }, doc: 'voxels 相对脚下格的六个边界，含端点' },
++        items: { type: 'integer', minimum: -SPATIAL_OBSERVATION_LIMITS.offset, maximum: SPATIAL_OBSERVATION_LIMITS.offset } }, doc: `voxels 相对脚下格 [xmin,ymin,zmin,xmax,ymax,zmax]，含端点；三轴长度相乘≤${SPATIAL_OBSERVATION_LIMITS.cells}` },
+       { key: 'rays', kind: 'opaque', schema: { type: 'array', minItems: 1, maxItems: SPATIAL_OBSERVATION_LIMITS.rays,
+         items: { type: 'array', minItems: 3, maxItems: 3, items: { type: 'number' } } }, doc: 'rays 的 [pitch角,yaw角,距离] 列表' },
+     ],

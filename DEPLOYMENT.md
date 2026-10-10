@@ -27,6 +27,8 @@ Agent 登录名自动补 `ag_` 前缀，填 `Alice` 时以 `ag_Alice` 登录，�
 
 `release-sources.json` 同时锁定引擎源码和 `patches/` 中的客户端修复。构建时逐项检查并应用补丁，`engine/source.json` 记录补丁哈希；发布检查会核对这些记录，避免重建时遗漏装备、容器及掉落物的自定义名称修复。物品显示名称优先使用服务器实例名称，操作和数量统计仍使用原注册表 ID。
 
+`minecraft-spatial-budget.patch` 为超范围空间读取补充含端点的实际体积和覆盖原范围的分批说明；不会自动裁剪地图或执行建议批次。体素、切片与碰撞射线入口见 `mymc_guide vision`。构建完成只证明文件包含修复；加载后的实际参数修正和行动效果须另外核验。
+
 文字气泡、粒子和地图照片使用共享仓库中同一提交的宿主桥与网页。构建会将桥接模块原样复制到 `engine/`，在 `engine/source.json.viewerContent` 记录提交和文件哈希；发布检查同时校验桥、网页 bundle 与中文字体。自定义 `viewerAssetsDir` 也必须更新匹配的 `text-display-font.json`、`fonts/1.20.6/` 和原版 font PNG。只替换网页文件无法给旧宿主增加气泡事件。
 
 ## 技术资料与角色迁移

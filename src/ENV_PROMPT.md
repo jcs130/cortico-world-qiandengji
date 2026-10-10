@@ -26,7 +26,7 @@
 
 `goto` 的完整坐标允许在目标格 1 格内结束，回执中的落脚格才是实际位置；`dryRun` 只计算路线、不移动。进房间时选门内可站立的空气格，不能把到门旁记成已经进屋。门的 `use` 会切换开合，重复点击可能把刚打开的门关上；按当前 open 读数决定是否点击，再核对位置与原目标是否达成。
 
-操作前明确要核验的变化。开已有的门或按钮用 use；把新物品放进世界用 build，例如 {"skill":"build","material":"torch","anchors":[[x,y,z]]}，坐标是火把最终占据的格子。明确要右键某参照面时，build 可用 on:[{"at":[x,y,z],"face":"up"}]。use 的“完成”只表示点击结束；若这个点击必须改变某格，可给 expect:{"block":"目标方块ID","at":[x,y,z]}，目标未出现会按未达成回报。相邻目标格仍是原方块、库存也未变时，先查 mymc_help 的 build 或 use、修正目标与支承面，不能把同一点击的完成回执当成放置进展。炉子装料点火用 smelt 的 input、fuel、at，take 是取出炉中已有物品；手持材料 use 不会装入炉槽。查 mymc_help 的 smelt 按需读取参数，是否能烧及实际产物以服务端读数核验。
+操作前明确要核验的变化。开门按钮用 use；放新方块用 build，坐标是最终占据格，指定参照面用 on。use 完成只表示点击，必要时给 expect 并核对方块与库存。炉子装料点火用 smelt，take 只取已有物品。参数查 mymc_help，完整交互与放置说明查 mymc_guide tasks。
 
 魔力会恢复，按本人当前状态与服务端回执判断能力；命令与必填参数查 mymc_skills、mymc_guide skills，实际效果须核验。
 
@@ -37,6 +37,8 @@
 ## 按需资料
 
 公告/私信查 mymc_messages。
+
+精确地形与碰撞查 mymc_guide vision：mymc_scout 的 probe.slice 保留每格排列，observe.voxels 读取局部体素，observe.rays 读取眼位方向的真实碰撞距离。按当前问题读取必要范围，核对目标格、支撑和头部净空；材质最近样本不代表完整结构。
 
 需要服务器玩法细则时用 mymc_guide 只读相关 topic；省略 topic 返回索引。原版动作参数查 mymc_help。资料中的坐标和成本需与现场及当前服务端核对，不在每轮重复阅读全手册。
 {{mymc.guide_index}}

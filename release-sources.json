@@ -2,7 +2,11 @@
   "cortico": {
     "repository": "https://github.com/jcs130/Cortico",
     "commit": "8c00fbb022ea82fc9725301fde0437ccc00fdcc9",
-    "patches": ["patches/minecraft-item-names.patch", "patches/minecraft-viewer-content.patch"]
+    "patches": [
+      "patches/minecraft-item-names.patch",
+      "patches/minecraft-viewer-content.patch",
+      "patches/minecraft-spatial-budget.patch"
+    ]
   },
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",

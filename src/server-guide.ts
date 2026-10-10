@@ -17,7 +17,7 @@ export const MYMC_GUIDE_TOPICS = [
   { id: 'living', title: '种植钓鱼与烹饪', description: '生长回访、岸上钓鱼、熔炉与睡觉' },
   { id: 'building', title: '家与建造', description: '布局、蓝图、施工核验与设计经验' },
   { id: 'social', title: '玩家交往与动作', description: '附近感知、公屏私聊、拜访、挥手与赠物' },
-  { id: 'vision', title: '现场视觉观察', description: '按问题选视角、菜单路况与画面证据边界' },
+  { id: 'vision', title: '现场视觉与空间几何', description: '体素切片、碰撞射线、落点净空、按问题选视角与证据边界' },
   { id: 'broadcast', title: '直播与加入方式', description: '介绍玩法、内测 QQ 群、事实解说与语音节奏' },
   { id: 'state', title: '当前环境读数', description: '任务、目标、探索、规则与摄像机当前采样' },
 ] as const;
