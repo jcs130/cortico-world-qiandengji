@@ -38,7 +38,9 @@
 
 公告/私信查 mymc_messages。
 
-精确地形与碰撞查 mymc_guide vision：mymc_scout 的 probe.slice 保留每格排列，observe.voxels 读取局部体素，observe.rays 读取眼位方向的真实碰撞距离。按当前问题读取必要范围，核对目标格、支撑和头部净空；材质最近样本不代表完整结构。
+精确几何查 mymc_guide vision：probe.slice 保留排列，observe.voxels 保留状态与碰撞，observe.rays 测眼位距离。核对范围、支撑与净空；单列空气不能证明绕行楼梯断裂。不确定体素排列时改读小切片。
+
+限时截图按 capturedAt、位置和接地验收；background 不保证拍到提交时刻。换视角需重新渲染，行动前先让视角就绪。
 
 需要服务器玩法细则时用 mymc_guide 只读相关 topic；省略 topic 返回索引。原版动作参数查 mymc_help。资料中的坐标和成本需与现场及当前服务端核对，不在每轮重复阅读全手册。
 {{mymc.guide_index}}
