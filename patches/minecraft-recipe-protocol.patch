@@ -1,0 +1,51 @@
+diff --git a/mineflayer-fixes.ts b/mineflayer-fixes.ts
+--- a/mineflayer-fixes.ts
++++ b/mineflayer-fixes.ts
+@@ -30,6 +30,7 @@
+ import { assertInventoryClicksReady, clickInventoryConfirmed, installInventoryClickSync,
+   inventoryClickState, isInventoryClickError, isInventoryCursorPacket, sameInventoryStack } from './inventory-click-sync.ts';
+ import { PLACE_REACH } from './cell-facts.ts';
++import { repairRecipeSerializers } from './recipe-protocol.ts';
+ 
+ /** 摆好材料之后等产出槽被服务端填上的上限 */
+ const RESULT_WAIT_MS = 1_500;
+@@ -153,6 +154,9 @@
+   installInventoryWindowSyncGuard(bot, diag);
+   fixFoodComponentSchema(bot, log);
+   fixPotionContentsSchema(bot, log);
++  if (repairRecipeSerializers(bot.registry)) {
++    log.info('协议表修正:1.20.5/6 配方序号摘除 banneraddpattern，保持熔炼、切石与锻造包对齐');
++  }
+   fixToolTierMaterials(bot, log);
+   installComponentDigTime(bot);
+   installStateIdGuard(bot, diag, () => tracing > 0);
+diff --git a/recipe-protocol.ts b/recipe-protocol.ts
+new file mode 100644
+--- /dev/null
++++ b/recipe-protocol.ts
+@@ -0,0 +1,25 @@
++type Field = { name: string; type: unknown };
++type RecipeRegistry = {
++  version: { minecraftVersion: string };
++  protocol: { play: { toClient: { types: { packet_declare_recipes: [string, Array<{
++    name: string; type: [string, { type: [string, Field[]] }];
++  }>] } } } };
++};
++
++/** Protocol 766 omits banneraddpattern; later serializers retain contiguous wire IDs. */
++export function repairRecipeSerializers(value: unknown): boolean {
++  const registry = value as RecipeRegistry;
++  if (!['1.20.5', '1.20.6'].includes(registry.version.minecraftVersion)) return false;
++  const recipes = registry.protocol.play.toClient.types.packet_declare_recipes[1]
++    .find(field => field.name === 'recipes');
++  const type = recipes?.type[1].type[1].find(field => field.name === 'type')?.type as
++    [string, { mappings: Record<string, string> }] | undefined;
++  if (type?.[0] !== 'mapper') return false;
++  const entries = Object.entries(type[1].mappings);
++  const removed = entries.find(([, name]) => name === 'minecraft:crafting_special_banneraddpattern');
++  if (!removed) return false;
++  const index = Number(removed[0]);
++  type[1].mappings = Object.fromEntries(entries.filter(([key]) => key !== removed[0])
++    .map(([key, name]) => [Number(key) > index ? String(Number(key) - 1) : key, name]));
++  return true;
++}

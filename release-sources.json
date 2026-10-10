@@ -6,7 +6,8 @@
       "patches/minecraft-item-names.patch",
       "patches/minecraft-viewer-content.patch",
       "patches/minecraft-viewer-appearance.patch",
-      "patches/minecraft-spatial-budget.patch"
+      "patches/minecraft-spatial-budget.patch",
+      "patches/minecraft-recipe-protocol.patch"
     ]
   },
   "viewer": {
