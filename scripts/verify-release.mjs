@@ -18,7 +18,9 @@ for (const [index, file] of patches.entries()) {
   if (actual.file !== file || actual.sha256 !== createHash('sha256').update(await readFile(join(root, file))).digest('hex'))
     throw new Error('RELEASE_ENGINE_PATCH_MISMATCH: ' + file);
 }
-const bridgeFiles = ['viewer-content.mjs', 'viewer-content.d.mts', 'text-display.mjs'];
+const bridgeFiles = ['viewer-content.mjs', 'viewer-content.d.mts', 'text-display.mjs',
+  'viewer-appearance.mjs', 'viewer-appearance.d.mts', 'viewer-ysm-assets.mjs',
+  'viewer-photo-page.mjs', 'viewer-page-assets.mjs'];
 if (engine.viewerContent?.commit !== sources.viewer.commit || engine.viewerContent.files?.length !== bridgeFiles.length)
   throw new Error('RELEASE_VIEWER_BRIDGE_MISMATCH');
 for (const [index, file] of bridgeFiles.entries()) {

@@ -31,6 +31,10 @@ Agent 登录名自动补 `ag_` 前缀，填 `Alice` 时以 `ag_Alice` 登录，�
 
 文字气泡、粒子和地图照片使用共享仓库中同一提交的宿主桥与网页。构建会将桥接模块原样复制到 `engine/`，在 `engine/source.json.viewerContent` 记录提交和文件哈希；发布检查同时校验桥、网页 bundle 与中文字体。自定义 `viewerAssetsDir` 也必须更新匹配的 `text-display-font.json`、`fonts/1.20.6/` 和原版 font PNG。只替换网页文件无法给旧宿主增加气泡事件。
 
+YSM 外观同样使用当前玩家连接收到的 `mcagent:appearance` 与 `mcagent:ysm_asset` 协议，按 UUID、实体 ID、修订哈希校验后显示服务器公开的原模型。当前支持 Paper 1.20.6、YSM 2.4.1 / 协议 2.4.0；私有加密模型、完整装备与未支持动画仍须另行验收。只更新静态目录不会让旧宿主开始接收 YSM 外观，须加载对应 World 引擎。
+
+`/photo/?photo=1&distance=2` 是共用现有连接的只读拍照画面，会隐藏 HUD 与手持物；`__photoReady()` 等待真实区块、字体、皮肤与已声明的 YSM 模型就绪。页面本身不创建相机账号、不移动玩家，也不把未就绪画面视为拍摄成功。
+
 ## 技术资料与角色迁移
 
 `references/server-technical/` 是带来源、适用范围和更新时间的项目问答。需要给角色查询时，将整个目录复制到 `<部署>/workspace/references/server-technical/`；已有资料先比较版本，保留订正后的内容。Persona 提示只需保留入口：

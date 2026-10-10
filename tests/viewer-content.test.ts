@@ -34,7 +34,16 @@ describe('packaged viewer content', () => {
         const response = await fetch(viewer.url + page);
         expect(response.status).toBe(200);
         expect(await response.text()).toContain('/index.js');
+        expect(response.headers.get('content-security-policy')).not.toContain("script-src 'self' 'unsafe-eval' 'sha256-");
       }
+      const photoResponse = await fetch(viewer.url + '/photo/?photo=1&distance=2');
+      expect(photoResponse.status).toBe(200);
+      const photo = await photoResponse.text();
+      expect(photo).toContain('globalThis.__photoReady');
+      expect(photo).not.toContain('/speech-bubble.js');
+      const readyScript = photo.match(/<script>([\s\S]*?)<\/script>/)![1];
+      const scriptHash = createHash('sha256').update(readyScript).digest('base64');
+      expect(photoResponse.headers.get('content-security-policy')).toContain(`script-src 'self' 'unsafe-eval' 'sha256-${scriptHash}'`);
       const fontResponse = await fetch(viewer.url + '/text-display-font.json');
       expect(fontResponse.status).toBe(200);
       const font = await fontResponse.json() as { files: Record<string, { sha256: string }> };

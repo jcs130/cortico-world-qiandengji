@@ -64,7 +64,10 @@ async function buildEngine(): Promise<void> {
     patches.push({ file, sha256: createHash('sha256').update(patch).digest('hex') });
   }
   const viewerFiles = [];
-  for (const file of ['viewer-content.mjs', 'viewer-content.d.mts', 'text-display.mjs']) {
+  await cp(join(root, 'src/viewer-photo-page.d.mts'), join(engineRoot, 'viewer-photo-page.d.mts'));
+  for (const file of ['viewer-content.mjs', 'viewer-content.d.mts', 'text-display.mjs',
+    'viewer-appearance.mjs', 'viewer-appearance.d.mts', 'viewer-ysm-assets.mjs',
+    'viewer-photo-page.mjs', 'viewer-page-assets.mjs']) {
     const bytes = await readFile(join(viewerRoot, 'packages/modern-viewer/renderer-src/host', file));
     await writeFile(join(engineRoot, file), bytes);
     viewerFiles.push({ file, sha256: createHash('sha256').update(bytes).digest('hex') });
