@@ -3,7 +3,7 @@
 
 千灯纪有技能系统，入口 /mycli help。/mycli spells list 1 按 MC_SPELL_NEXT 翻页，单项 /mycli spells explain <ID>，缓存 mymc_skills。同 ID 的 cast 命令用 mymc_cast；其他命令按服务端语法由 mymc_do chat 发送。限时移动先规划与试算，再将完整施法命令及后续动作同单编排，用 needs 连接依赖。队友传送查 mymc_guide social。
 
-直接按键和斜飞查 mymc_guide control，参数查现役 mymc_help。
+直接按键、斜飞与自写 JavaScript 方法查 mymc_guide control。mymc_script 可逐次 await 真实终态并按反馈分支；明确的连续动作放入同一组，参数查现役 mymc_help。
 
 战斗救急用 `queue:"now"`，首步 eat/flee/surface；默认提交会等待并撤旧待办。
 
