@@ -8,7 +8,7 @@ import { equipNamed, skillEquip } from '../engine/skills-craft.ts';
 import { useOnce } from '../engine/skills-interact.ts';
 import { precheckStep, precheckSteps, type PrecheckDeps } from '../engine/precheck.ts';
 import { Executor, type TaskReport } from '../engine/executor.ts';
-import { type SkillCall } from '../engine/skills.ts';
+import { parseSteps, type SkillCall } from '../engine/skills.ts';
 
 const require = createRequire(import.meta.url);
 const dependency = createRequire(require.resolve('mineflayer'));
@@ -60,6 +60,24 @@ function rig(name = 'water_bucket', offhand = false) {
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
+
+describe('coordinate intent at collection admission', () => {
+  it.each([{ at: [1, 64, 0] }, { at: [[1, 64, 0]] }])('rejects the entire batch instead of collecting a different block for %j', ({ at }) => {
+    const parsed = parseSteps([{ skill: 'goto', at: [0, 64, 0] },
+      { skill: 'collect', block: 'dirt', count: 1, at }]);
+    expect(parsed).toEqual({ error: expect.stringContaining('第 2 步 collect 不支持 at') });
+    expect(parsed).not.toHaveProperty('steps');
+    expect('error' in parsed && parsed.error).toContain('excavate');
+  });
+
+  it('retains unlocated collection and exact excavation, including null fields from the flat schema', () => {
+    expect(parseSteps([{ skill: 'collect', block: 'dirt', count: 2, at: null }]))
+      .toEqual({ steps: [{ skill: 'collect', block: 'dirt', count: 2 }] });
+    const exact = { skill: 'excavate', shape: 'box', anchors: [[1, 64, 0], [1, 64, 0]] };
+    const parsed = parseSteps([exact]);
+    expect(parsed).toMatchObject({ steps: [exact] });
+  });
+});
 
 describe('item selection feedback follows the execution contract', () => {
   it.each(['use', 'equip'] as const)('rejects a localized label before %s and reports the real ID', async skill => {

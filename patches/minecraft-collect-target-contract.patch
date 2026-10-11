@@ -1,0 +1,27 @@
+--- a/skills.ts
++++ b/skills.ts
+@@ -14,6 +14,7 @@
+   type Anchor, type BlockFace, type BoxFill, type ShapeName,
+ } from './geometry.ts';
+ import { DIRECTIONS, type Direction } from './terrain.ts';
++import { collectTargetError } from '../src/collect-contract.ts';
+ import { normalizeDimension } from './escape.ts';
+ import type { PositionXYZ } from './blueprint.ts';
+ import { PROBE_SLICE_CELL_CAP, SPATIAL_SLICE_AXES, type SpatialSliceAxis } from './spatial-slices.ts';
+@@ -1192,6 +1193,7 @@
+                                                  加 "buried":true = 看得见但走不过去时,允许挖条路过去(最多 4 次)。
+                                                  作物默认只收 age 到顶的,没长成的留着；mature:true 也可显式写出。
+                                                  已开工蓝图中材质已对上的非作物格不作为采集来源；明确拆改用 excavate 指定形状和 anchors；单格用 shape:"box" 加两个相同坐标。
++                                                 collect 不支持 at，带指定坐标时整单拒绝；精确挖掘用 excavate 或 mymc_script 的原生 bot.dig。
+                                                  tool 不写=节约耐久;"fastest"=本步最快;物品 id=本步精确指定,都不改长期设置`,
+     fields: [
+       { key: 'block', kind: 'string', required: true, hint: '方块英文 id' },
+@@ -2023,6 +2025,8 @@
+         if (error) return { error: `${at} ${error}` };
+       }
+     }
++    const targetError = collectTargetError(c);
++    if (targetError) return { error: `${at} ${targetError}` };
+     const parsed = spec.parse ? spec.parse(c, at, marks) : parseByFields(spec, c, at, marks);
+     if ('error' in parsed) return parsed;
+     const step = parsed.step;
