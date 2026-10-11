@@ -12,7 +12,8 @@
       "patches/minecraft-flight-timing.patch",
       "patches/minecraft-tool-trace.patch",
       "patches/minecraft-probe-coverage.patch",
-      "patches/minecraft-hand-equipment.patch"
+      "patches/minecraft-hand-equipment.patch",
+      "patches/minecraft-idle-context.patch"
     ]
   },
   "viewer": {

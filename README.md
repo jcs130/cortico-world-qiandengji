@@ -1,4 +1,4 @@
-<!-- Owner: package.json, scripts/build-release.ts, release-sources.json, src/world.ts, src/config.ts -->
+<!-- Owner: package.json, scripts/build-release.ts, release-sources.json, patches/minecraft-idle-context.patch, src/world.ts, src/config.ts -->
 
 # cortico-world-qiandengji
 
@@ -49,6 +49,7 @@ Java 1.20.6 画面支持当前玩家连接实际收到的玩家／NPC 头顶文�
 主 LLM 在 Cortico 的模型供应商页配置地址、密钥和模型，再设为当前模型；World 不绑定模型或供应商。没有主 LLM 时仍有底层战斗／生存反射，但不会自动获得完整的目标规划与对话能力。
 
 - **快速决策模型可选**：在「千灯纪 · 节奏与反射」配置 `decision.endpoint`（受阻建议）和 `idle.endpoint`（空闲小动作）。该地址对应的服务决定模型，须接受 `{state, questions}` 并返回 `{answers}` 的选择题／评分协议，不能直接填写普通聊天补全地址。默认未启用、地址为空。
+- **小动作的现场依据**：空闲选择只读当前可见目标、最多两项目标摘要、近期任务终态及 20 秒内的最多三条玩家聊天／姿态观察；目标与回执分别标明意图和过去结果。可看向实际可见的近期交流者，远处私聊不会凭空产生视线目标，摄像机账号不作社交对象。正常身体任务、战斗、使用物品和真实容器仍优先；迟到结果或已换人的观察目标作废。选择日志记录请求长度与往返耗时，不写入长期记忆。
 - **没有快速决策服务**：受阻的原始执行回执照常投递，主 LLM 继续规划，战斗和生存规则照常运行。已启用的小动作在服务缺失、超时或响应无效时，从当前允许的候选中轮换；忙碌或场景变化时取消，不打断正常任务。
 - **视觉能力可选**：当前 LLM 在供应商配置中声明支持图片时，`mymc_visual` 将真实截图直接返回该模型；纯文本模型、能力未声明或 `visual.mode:"structured"` 时，返回带原采样时间的游戏结构化读数。截图失败也回退到可用读数。没有现场读数则明确报告未知，不假装看见。网页可视化继续运行，无需单独部署视觉模型。
 - **向量模型**：本次不增加向量模型或数据库依赖，记忆仍由宿主 Persona 管理。
