@@ -1,0 +1,657 @@
+diff --git a/ENV_PROMPT.md b/ENV_PROMPT.md
+index a6702c2..8bc9e68 100644
+--- a/ENV_PROMPT.md
++++ b/ENV_PROMPT.md
+@@ -3,6 +3,8 @@
+ 游戏内昼夜和现实时间分别判断：睡觉、刷怪与光照依据游戏状态；观众作息和直播时段依据现实时间。事件时间戳是现实记录时间，不能用游戏天黑推断现实已深夜，也不能用现实夜晚推断游戏可睡。
+ 活是排着队做的：受理回执只说这件事收下了、开始做了，做没做成要等它自己的结果送过来。
+ `mc_script` 可运行你编写的 JavaScript 方法：逐次 await 现场读取、路线试算与真实任务终态，按结果分支；已明确的连续动作放进同一 mc.do 组。脚本与普通任务共用身体优先级，新的身体任务会取消旧脚本；当前任务和 mc_queue 会标出仍在运行的方法。源码和学习结论保存在自己的工作区，World 的 runId、哈希及调用链用于核验，脚本结束不证明原目标完成。
++
++`mc_combat_tactic` 的 program 可安装你编写的即时候选程序，按直接战场构造动作和快模型选择说明，独立于主模型持续运行。{}查源码与错误，battlefield查当前事实，decisions/decision查选择及实际位移、生命与控制权；比较战斗终态后再保存、检索、修订方法。当前权限与身体控制权仍需核对。
+ 原版下界传送门用 `transit` 踏入并等维度切换。`goto` 到门边、`use` 右键都不能确认穿门；只有实际维度变化的回执证明穿门完成，之后按新维度核对坐标。
+ `goto` 的完整坐标允许在目标格 1 格内结束，回执中的落脚格才是实际位置；`dryRun` 只计算路线、不移动。进房间时选门内可站立的空气格，不能把到门旁记成已经进屋。门的 `use` 会切换开合，重复点击可能把刚打开的门关上；按当前 open 读数决定是否点击，再核对位置与原目标是否达成。
+ `use` 是右键交互，空手右键不会挖掘或清除普通方块。采集、挖掘和放置各用对应技能；不知道怎样清场或替换一格时，用 `mc_help` 按需查询 `collect`、`excavate` 或 `build`。核对操作后的实际方块，不能把右键完成、装备变化或转头当成原目标已改变。
+diff --git a/README.md b/README.md
+index 6931782..cdf23ce 100644
+--- a/README.md
++++ b/README.md
+@@ -2,6 +2,8 @@
+ 
+ # worlds/minecraft
+ 
++`mc_combat_tactic.program` 保存模型编写的同步 JavaScript 候选程序及 JSON 参数。`combat-program.ts` 与 `combat-program-worker.mjs` 在独立 SES Worker 评估 `frame`，提供完整可执行动作池；程序返回候选和快模型选择说明，可自行生成0.5–1.6格的安全短步。程序短步不采用默认的无命中等待，身体租约、碰撞、能力、生命危机和版本仍重检。源码12000字符、参数4096字符、输出24000字符、候选16项、选择说明1200字符；Worker 初始化最多2秒、每次评估50毫秒，无原始 bot、导入、文件或网络。失败后停止采用该程序并保留默认候选回退；显式更新可恢复试验。最近八次选择可用 decisions/decision 按需读取，保留程序哈希、版本、真实模型输入、选择结果和一秒后的位移/生命/目标读数；跨连接或维度的后观测标为未验证。观测不证明因果或整场胜利，学习结论、源码与版本检索由 Persona 的方法库负责。
++
+ `mc_script` 执行模型编写的 JavaScript 异步函数体，独立 Worker 内使用 SES Compartment；只提供 JSON `params` 与 `mc.state()`、`mc.flightPlan(args)`、`mc.do(steps)`，不提供原始 bot、模块导入、文件、网络或进程入口。`mc.do` 共用普通受理检查、执行器与身体优先级，并等待对应任务的实际终态；返回受理状态、任务编号、各步结果、完整回执与新采样。语法校验不执行脚本。源码上限12000字符，参数4096字符，单次JSON消息24000字符；最多32次串行SDK调用、16组动作，默认60秒、最多120秒（含排队）。超时、取消、死亡、断线、World停止或新的已受理身体任务撤销方法及其自己的一单，保留其他工作和救生冻结。最近八次运行仅在本进程保留，含源码哈希、时间及调用链；Persona 自行保存源码、经验与验证证据。脚本完成不等于原目标已实现。
+ 
+ `mc.state()` 返回 `{sampledAt, connectionGeneration, snapshot, flight, queue, combatActive, combat, method}`。位置、维度、生命、饥饿、物品与装备在 `snapshot.position/dimension/health/food/inventory/equipment`；`snapshot` 可为 `null`。实体是 `snapshot.entities` 数组，字段为 `entityId?`、`name`、`kind`、`distance`、`direction`、`dy`、`visible`，`entitiesOmitted` 表示未列出的数量。该调用不扫描方块或地形，`blocksScanned:false`，空列表不能证明水域深度或通路。字段缺失表示未观察到。首次使用某类 SDK 回执时，展开 `{runId,call}` 核对实际结构，再比较方法目标与观测结果、保存已验证范围。
+diff --git a/combat-decision.ts b/combat-decision.ts
+index cf5fc30..7251e8c 100644
+--- a/combat-decision.ts
++++ b/combat-decision.ts
+@@ -1,6 +1,7 @@
+ /** An asynchronous choice over a bounded, previously authored combat tactic. */
+ import { parseTypedChoice } from './support/typed-decision.ts';
+ import type { Battlefield } from './battlefield.ts';
++import type { CombatProgram } from './combat-program.ts';
+ 
+ export type CombatCandidate = { id: string; intent: string } & (
+   { kind: 'cast'; spell: string; manaCost: number; ruleId: string }
+@@ -16,6 +17,9 @@ export interface CombatDecisionFrame {
+     cooldownRemainingMs: number | null; block: string | null }>;
+   candidates: CombatCandidate[];
+   omittedCandidates: number;
++  program?: CombatProgram;
++  actionPool?: CombatCandidate[];
++  policy?: { name: string; sourceHash: string; instructions: string };
+ }
+ export interface CombatDecisionConfig {
+   enabled: boolean; mode: 'shadow' | 'act'; endpoint: string; timeoutMs: number;
+@@ -26,7 +30,8 @@ export interface CombatDecisionConfig {
+ export interface CombatDecisionOptions {
+   config: () => CombatDecisionConfig;
+   sample: () => CombatDecisionFrame | null;
+-  apply: (candidate: CombatCandidate) => boolean;
++  apply: (candidate: CombatCandidate, frame: CombatDecisionFrame) => boolean;
++  prepare?: (frame: CombatDecisionFrame) => Promise<CombatDecisionFrame>;
+   fallback?: () => void;
+   report: (event: string, data: Record<string, unknown>) => void;
+   fetchImpl?: typeof fetch;
+@@ -59,8 +64,15 @@ export class CombatDecisionLoop {
+   private inFlight = false;
+   private lastCheckedAtMs = -Infinity;
+   private lastEligible = false;
++  private serial = 0;
++  private readonly decisions: Array<Record<string, unknown>> = [];
+   constructor(private readonly options: CombatDecisionOptions) {}
+ 
++  inspect(id?: number): unknown {
++    if (id !== undefined) return structuredClone(this.decisions.find(d => d.id === id) ?? null);
++    return this.decisions.map(({ frame: _frame, ...entry }) => structuredClone(entry));
++  }
++
+   /** Called from the game clock. Neither this method nor the attack executor awaits inference. */
+   tick(): boolean {
+     const cfg = { ...this.options.config() };
+@@ -70,7 +82,7 @@ export class CombatDecisionLoop {
+     if (now - this.lastCheckedAtMs < cfg.minIntervalMs) return this.lastEligible;
+     this.lastCheckedAtMs = now;
+     const frame = this.options.sample();
+-    this.lastEligible = !!frame && !frame.battlefield.action.emergency && frame.candidates.length > 0;
++    this.lastEligible = !!frame && !frame.battlefield.action.emergency && (frame.candidates.length > 0 || !!frame.program);
+     if (!frame || !this.lastEligible) return false;
+     this.inFlight = true;
+     void this.choose(frame, cfg, now).finally(() => { this.inFlight = false; });
+@@ -81,17 +93,32 @@ export class CombatDecisionLoop {
+     const now = () => this.options.now?.() ?? Date.now();
+     const controller = new AbortController();
+     let timer: ReturnType<typeof setTimeout> | undefined;
++    const id = ++this.serial;
++    const entry: Record<string, unknown> = { id, startedAtMs, tacticRevision: frame.tacticRevision };
++    this.decisions.push(entry);
++    if (this.decisions.length > 8) this.decisions.shift();
++    try {
++      if (frame.program && this.options.prepare) frame = await this.options.prepare(frame);
++    } catch (error) {
++      entry.outcome = 'program-error'; entry.reason = String(error);
++      this.options.report('error', { ...entry }); this.options.fallback?.(); return;
++    }
++    if (!frame.candidates.length) { entry.outcome = 'program-idle'; return; }
+     const criteria: Record<string, string> = { keep: frame.battlefield.action.fighting
+       ? 'Continue the current attack and movement without an extra action.'
+       : 'Wait without engaging or moving. No attack is currently running.' };
+     frame.candidates.forEach((c, i) => { criteria[`option_${i}`] = c.kind === 'cast'
+       ? `${c.intent} Cast ${c.spell}, mana cost ${c.manaCost}.` : c.intent; });
+-    const body = JSON.stringify({ state: { ...frame, objective: 'Assist the party against eligible visible enemies, survive and preserve useful ongoing attacks.' }, questions: { tactic: {
+-      type: 'choice', instructions: 'Choose an immediate available combat action or keep the ongoing action. Use observed enemy and ally facts; null means unknown. Omitted entities may exist. Preserve health and useful ongoing attacks.', criteria,
++    const { program: _program, actionPool: _pool, ...publicFrame } = frame;
++    const body = JSON.stringify({ state: { ...publicFrame, objective: 'Assist the party against eligible visible enemies, survive and preserve useful ongoing attacks.' }, questions: { tactic: {
++      type: 'choice', instructions: 'Choose an immediate available combat action or keep the ongoing action. Use observed enemy and ally facts; null means unknown. Omitted entities may exist. Preserve health and useful ongoing attacks.'
++        + (frame.policy ? '\nAgent-authored tactic: ' + frame.policy.instructions : ''), criteria,
+     } } });
+-    const scope = { startedAtMs, connectionGeneration: frame.battlefield.connectionGeneration,
+-      sampledAtMs: frame.battlefield.sampledAtMs, tacticRevision: frame.tacticRevision };
+-    this.options.report('requested', { ...scope, mode: cfg.mode, frame, requestBytes: Buffer.byteLength(body) });
++    const scope = { id, startedAtMs, connectionGeneration: frame.battlefield.connectionGeneration,
++      sampledAtMs: frame.battlefield.sampledAtMs, tacticRevision: frame.tacticRevision,
++      program: frame.policy ? { name: frame.policy.name, sourceHash: frame.policy.sourceHash } : null };
++    Object.assign(entry, scope, { frame: publicFrame });
++    this.options.report('requested', { ...scope, mode: cfg.mode, frame: publicFrame, requestBytes: Buffer.byteLength(body) });
+     try {
+       const timeout = new Promise<never>((_, reject) => {
+         timer = setTimeout(() => { controller.abort(); reject(new Error('timeout')); }, cfg.timeoutMs);
+@@ -106,11 +133,13 @@ export class CombatDecisionLoop {
+       const answer = parseTypedChoice(payload.answers?.tactic, Object.keys(criteria));
+       if (!answer) throw new Error('invalid-response');
+       const liveCfg = this.options.config();
+-      const current = this.options.sample();
++      let current = this.options.sample();
++      if (current?.program && this.options.prepare) current = await this.options.prepare(current);
+       const elapsedMs = now() - startedAtMs;
+       const selected = answer.choice === 'keep' ? null : frame.candidates[Number(answer.choice.slice(7))];
+       const executable = selected && current?.candidates.find(c => c.id === selected.id && c.kind === selected.kind
+-        && (selected.kind !== 'cast' || c.intent === selected.intent));
++        && (selected.kind !== 'cast' || (c.kind === 'cast' && c.spell === selected.spell && c.ruleId === selected.ruleId))
++        && (selected.kind !== 'engage' || (c.kind === 'engage' && c.targetId === selected.targetId && c.uuid === selected.uuid)));
+       const changed = current ? sceneChanges(frame, current) : ['unavailable'];
+       let outcome: string;
+       if (!liveCfg.enabled || liveCfg.mode !== cfg.mode || liveCfg.endpoint !== cfg.endpoint) outcome = 'configuration-changed';
+@@ -122,19 +151,40 @@ export class CombatDecisionLoop {
+       else if (!executable) outcome = 'no-longer-executable';
+       else if (cfg.mode === 'shadow') outcome = 'shadow';
+       // Movement prose includes measured distance; apply the freshly checked candidate.
+-      else outcome = this.options.apply(executable) ? 'sent' : 'rejected';
++      else outcome = this.options.apply(executable, current) ? 'sent' : 'rejected';
+       if (outcome === 'uncertain' && cfg.mode === 'act') this.options.fallback?.();
+-      this.options.report('result', { ...scope, elapsedMs, choice: answer.choice,
++      const result = { ...scope, elapsedMs, choice: answer.choice,
+         probability: answer.choiceProbability, probabilities: answer.probabilities, outcome,
+         sceneChanges: changed,
+         modelMs: payload.latency_ms ?? null, usage: payload.usage ?? null,
+-        candidate: (outcome === 'sent' ? executable : selected) ?? null });
++        candidate: (outcome === 'sent' ? executable : selected) ?? null };
++      Object.assign(entry, result);
++      this.options.report('result', result);
++      if (outcome === 'sent') {
++        const before = current!.battlefield;
++        const targetId = executable?.kind === 'engage' ? executable.targetId : before.action.targetEntityId;
++        const timer = setTimeout(() => {
++          const after = this.options.sample()?.battlefield;
++          const observation = !after || after.connectionGeneration !== before.connectionGeneration || after.dimension !== before.dimension
++            ? { verified: false, reason: 'connection-or-dimension-changed' }
++            : { verified: true, sampledAtMs: after.sampledAtMs, positionBefore: before.self.position,
++              positionAfter: after.self.position, displacement: Math.hypot(...after.self.position.map((v, i) => v - before.self.position[i])),
++              healthBefore: before.self.health.current, healthAfter: after.self.health.current,
++              actionBefore: before.action, actionAfter: after.action,
++              targetBefore: before.actors.find(a => a.entityId === targetId) ?? null,
++              targetAfter: after.actors.find(a => a.entityId === targetId) ?? null };
++          entry.observation = observation;
++          this.options.report('observation', { ...scope, candidate: executable, observation });
++        }, 1000);
++        timer.unref?.();
++      }
+     } catch (error) {
+       const live = this.options.config();
+       if (cfg.mode === 'act' && live.enabled && live.mode === cfg.mode && live.endpoint === cfg.endpoint)
+         this.options.fallback?.();
+-      this.options.report('error', { ...scope, elapsedMs: now() - startedAtMs,
+-        reason: controller.signal.aborted ? 'timeout' : error instanceof Error ? error.message : 'transport' });
++      const failure = { ...scope, outcome: 'error', elapsedMs: now() - startedAtMs,
++        reason: controller.signal.aborted ? 'timeout' : error instanceof Error ? error.message : 'transport' };
++      Object.assign(entry, failure); this.options.report('error', failure);
+     } finally { if (timer !== undefined) clearTimeout(timer); }
+   }
+ }
+diff --git a/combat-reactions.ts b/combat-reactions.ts
+index d25be19..ec4d4ea 100644
+--- a/combat-reactions.ts
++++ b/combat-reactions.ts
+@@ -7,7 +7,7 @@ import { corridorSafe } from './idle-actions.ts';
+ 
+ export function combatReactions(bot: Bot, field: Battlefield, cfg: CombatDecisionConfig,
+   control: { bodyFree: boolean; canStep: boolean; targetId: number | null; sinceHitMs: number | null;
+-    fight: string; fleeHealth: number; chaseMax: number }): CombatCandidate[] {
++    fight: string; fleeHealth: number; chaseMax: number }, programmable = false): CombatCandidate[] {
+   if (field.action.emergency) return [];
+   const hostiles = field.actors.filter(e => e.relation === 'hostile' && e.health.current !== 0
+     && e.entityId !== null && e.lineOfSight === true && e.distance !== null);
+@@ -18,18 +18,20 @@ export function combatReactions(bot: Bot, field: Battlefield, cfg: CombatDecisio
+   const candidates: CombatCandidate[] = [];
+   if (cfg.allowEngage && control.bodyFree && control.fight !== 'off'
+     && (field.self.health.current ?? 0) >= control.fleeHealth + 3) {
+-    const enemy = hostiles.find(e => e.distance! <= control.chaseMax
++    const enemies = hostiles.filter(e => e.distance! <= control.chaseMax
+       && (cfg.engageScope === 'hostile' || (e.relationSource === 'server'
+         && e.targetEntityId !== null && partyIds.has(e.targetEntityId))));
+-    if (enemy) candidates.push({ id: `engage_${enemy.entityId}`, kind: 'engage', targetId: enemy.entityId!, uuid: enemy.uuid,
+-      intent: `Engage visible ${enemy.type ?? 'hostile'} #${enemy.entityId} at ${enemy.distance} blocks using the existing attack controller. Continue attacking and approaching without waiting for the main model.` });
++    for (const enemy of programmable ? enemies : enemies.slice(0, 1))
++      candidates.push({ id: `engage_${enemy.entityId}`, kind: 'engage', targetId: enemy.entityId!, uuid: enemy.uuid,
++        intent: `Engage visible ${enemy.type ?? 'hostile'} #${enemy.entityId} at ${enemy.distance} blocks using the existing attack controller. Continue attacking and approaching without waiting for the main model.` });
+   }
+   if (!cfg.allowMovement || !field.action.fighting || !control.canStep || target.position === null
+-    || (control.sinceHitMs ?? 0) < cfg.movementStallMs) return candidates;
++    || (!programmable && (control.sinceHitMs ?? 0) < cfg.movementStallMs)) return candidates;
+   const p = bot.entity.position, [x, , z] = target.position;
+   const dx = x - p.x, dz = z - p.z, len = Math.hypot(dx, dz);
+   if (len < 0.01) return candidates;
+-  const dirs = target.distance! > 4
++  const dirs = programmable ? Array.from({ length: 8 }, (_, i) => ({ x: Math.cos(i * Math.PI / 4),
++    z: Math.sin(i * Math.PI / 4), id: `direction_${i}`, intent: 'Take a collision-checked short step while continuing the current attack.' })) : target.distance! > 4
+     ? [{ x: dx / len, z: dz / len, id: 'approach', intent: 'Take a verified short step toward the visible enemy to get into attack range.' },
+       { x: -dz / len, z: dx / len, id: 'side', intent: 'Take a verified short side step to change the approach angle, continuing attacks.' }]
+     : [{ x: -dz / len, z: dx / len, id: 'side', intent: 'Take a verified short side step around the enemy, continuing attacks.' },
+diff --git a/combat-spells.ts b/combat-spells.ts
+index b7dd227..7289cd2 100644
+--- a/combat-spells.ts
++++ b/combat-spells.ts
+@@ -6,6 +6,7 @@ import { CombatTacticBook, type CombatCastAttempt, type CombatResult, type Comba
+ import { combatRuleBlock, type CombatRule, type CombatRuleFacts } from './combat-rules.ts';
+ import type { Battlefield } from './battlefield.ts';
+ import type { CombatDecisionFrame } from './combat-decision.ts';
++import type { CombatProgram } from './combat-program.ts';
+ 
+ export type CombatSpell = string;
+ export interface CombatTactic {
+@@ -13,6 +14,7 @@ export interface CombatTactic {
+   healAtOrBelow: number | null;
+   /** Nonempty rules replace the legacy spell list; an empty list restores that fallback. */
+   rules?: CombatRule[];
++  program?: CombatProgram | null;
+ }
+ 
+ const SPELLS: ReadonlyArray<CombatSpell> = ['golem', 'frostnova', 'flamewave', 'starbolt'];
+diff --git a/combat-tactics.ts b/combat-tactics.ts
+index 4e31b89..bbbba46 100644
+--- a/combat-tactics.ts
++++ b/combat-tactics.ts
+@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileS
+ import { dirname } from 'node:path';
+ import type { CombatTactic } from './combat-spells.ts';
+ import { validCombatRules } from './combat-rules.ts';
++import { validCombatProgram } from './combat-program.ts';
+ 
+ export interface CombatScene {
+   dimension: string | null;
+@@ -91,7 +92,8 @@ export function validCombatTactic(value: unknown): value is CombatTactic {
+     && v.spells.every((id) => typeof id === 'string' && /^[a-z][a-z0-9_:-]{0,63}$/.test(id) && id !== 'selfheal')
+     && new Set(v.spells).size === v.spells.length))
+     && (v.healAtOrBelow === null || (Number.isInteger(v.healAtOrBelow) && v.healAtOrBelow >= 1 && v.healAtOrBelow <= 20))
+-    && (v.rules === undefined || validCombatRules(v.rules));
++    && (v.rules === undefined || validCombatRules(v.rules))
++    && (v.program === undefined || v.program === null || validCombatProgram(v.program));
+ }
+ 
+ export class CombatTacticBook {
+diff --git a/world.ts b/world.ts
+index 79e1ae1..dae69ed 100644
+--- a/world.ts
++++ b/world.ts
+@@ -124,6 +124,8 @@ import { CombatSpells, type CombatSpell } from './combat-spells.ts';
+ import { BattlefieldObserver } from './battlefield.ts';
+ import { CombatDecisionLoop, type CombatCandidate, type CombatDecisionConfig, type CombatDecisionFrame } from './combat-decision.ts';
+ import { combatReactions } from './combat-reactions.ts';
++import { corridorSafe } from './idle-actions.ts';
++import { CombatProgramRunner, combatProgramCandidates, combatProgramHash, validCombatProgram } from './combat-program.ts';
+ import { CombatTacticBook } from './combat-tactics.ts';
+ import { COMBAT_RULES_SCHEMA, validCombatRules, type CombatRule } from './combat-rules.ts';
+ import { chooseRoutineFood, renderFoodReserveReadout } from './nutrition.ts';
+@@ -2178,11 +2180,18 @@ export const MINECRAFT_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [
+     name: 'mc_combat_tactic',
+     tags: ['write'],
+     description:
+-      'Read or update the immediate combat spell tactic. {} reads it; omitted fields keep their current values; '
++      'Read or update combat spell rules and an agent-authored fast tactic program. {} reads it; omitted fields keep their current values; '
+       + '{enabled:false} clears it. A spell list of server-listed combat spell IDs sets priority order while fighting; '
+       + 'healAtOrBelow casts selfheal at that health or lower before another attack. '
+       + 'Nonempty rules replace the unconditional spell priority: ordered observed conditions are rechecked each combat tick and the first ready match wins; no match means no automatic offensive cast. rules:[] restores spells/default priority. '
+        + 'When combatDecision is enabled, rules with intent may be selected asynchronously from direct battlefield facts. {battlefield:true} reads that bounded input without waiting for the main model. '
++      + 'program:{name,code,params?} installs your JavaScript synchronous function body with frame and params; return {candidates,instructions}. '
++      + 'frame.actionPool contains currently executable casts, engagements and collision-checked directions; you may select, reorder or relabel them, or construct step destinations 0.5 to 1.6 blocks away. '
++      + 'The program constructs choices from fresh battlefield facts independently of the main model; the fast model chooses and the combat controller executes. '
++      + 'Direct steps last at most 700ms and share the combat body lease; survival, task ownership and collisions remain checked. '
++      + 'Use program:null to remove it. No imports, files, network or raw bot; 50ms evaluation budget. Runtime failure revokes that program until updated; built-in choices remain a fallback. '
++      + '{decisions:true} lists recent fast choices and measured one-second outcomes; {decision:id} expands input and result. These observations do not prove causation or a successful encounter. '
++      + 'Keep source and previous versions in your own methods library; compare combat reports before calling a revision an improvement. '
+       + 'The World checks observed spell availability, mana, targets and announced cooldowns; '
+       + 'server replies still decide success. Settings and the last five observed combat receipts persist per world across restarts. '
+       + '{} also reads current capability constraints and recent receipt IDs; {report:id} expands one receipt. '
+@@ -2195,6 +2204,11 @@ export const MINECRAFT_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [
+           items: { type: 'string', pattern: '^[a-z][a-z0-9_:-]{0,63}$' } },
+         healAtOrBelow: { type: 'integer', minimum: 1, maximum: 20 },
+         rules: COMBAT_RULES_SCHEMA,
++        program: { anyOf: [{ type: 'null' }, { type: 'object', additionalProperties: false,
++          properties: { name: { type: 'string', minLength: 1, maxLength: 80 },
++            code: { type: 'string', minLength: 1, maxLength: 12000 }, params: { type: 'object' } }, required: ['name', 'code'] }] },
++        decisions: { type: 'boolean', description: 'Read the last eight decision summaries; use alone.' },
++        decision: { type: 'integer', minimum: 1, description: 'Expand one decision input, chosen action and subsequent physical observation; use alone.' },
+         battlefield: { type: 'boolean', description: 'Read the current programmatic battlefield, abilities and eligible choices; use alone. Missing health or party identity stays unknown.' },
+         report: { type: 'integer', minimum: 1, description: 'Read one observed combat receipt by its returned ID; do not combine with setting fields.' },
+       },
+@@ -2817,6 +2831,10 @@ export class MinecraftWorld implements World {
+   private readonly combatSpells: CombatSpells;
+   private readonly battlefield = new BattlefieldObserver();
+   private combatDecision: CombatDecisionLoop | null = null;
++  private readonly combatProgram = new CombatProgramRunner();
++  private combatProgramErrorHash: string | null = null;
++  private combatProgramError: string | null = null;
++  private lastCombatProgramFeedbackAt = 0;
+   private lastCombatDecision: { atMs: number; generation: number; outcome: unknown; elapsedMs: unknown } | null = null;
+   private arenaFloor: { floor: number; total: number } | null = null;
+   /** 每次真实 spawn 递增；断线前后的工具、事件与连接日志据此分代。 */
+@@ -4155,6 +4173,7 @@ export class MinecraftWorld implements World {
+ 
+   async stop(): Promise<void> {
+     this.shuttingDown = true;
++    this.combatProgram.close();
+     this.methods.stop('Minecraft World 已停止');
+     this.methodTerminals.clear();
+     this.visualInFlight?.controller.abort(new Error('Minecraft World 已停止'));
+@@ -4585,9 +4604,15 @@ export class MinecraftWorld implements World {
+     }
+   }
+ 
+-  private setCombatTactic(args: Record<string, unknown>): string {
++  private async setCombatTactic(args: Record<string, unknown>): Promise<string> {
+     const tool = 'mc_combat_tactic';
+     this.syncRealm();
++    if (args.decisions === true || args.decision !== undefined) {
++      if (Object.keys(args).length !== 1 || (args.decision !== undefined
++        && (!Number.isSafeInteger(args.decision) || Number(args.decision) < 1)))
++        return this.toolLog(tool, args, 'decisions或decision须单独使用。');
++      return this.toolLog(tool, args, JSON.stringify(this.combatDecision?.inspect(args.decision as number | undefined) ?? []));
++    }
+     if (args.battlefield === true) {
+       if (Object.keys(args).length !== 1) return this.toolLog(tool, args, '未读取：battlefield须单独使用。');
+       const frame = this.sampleCombatDecision();
+@@ -4607,16 +4632,20 @@ export class MinecraftWorld implements World {
+         : '当前使用默认即时战斗法术；低血撤退时尝试圣愈术。')
+         + (tactic?.rules?.length ? `\n条件分支启用，共${tactic.rules.length}项；上述法术列表仅为停用分支后的备用顺序。` : '')
+         + '\n' + this.combatSpells.readout(undefined, Date.now(), this.bridge?.bot ?? undefined)
+-        + '\n' + this.combatDecisionReadout());
++        + '\n' + this.combatDecisionReadout()
++        + '\n自主战术程序：' + JSON.stringify({ program: tactic?.program ?? null,
++          ...this.combatProgram.status(), error: this.combatProgramError ?? this.combatProgram.status().error }));
+     }
+     if (args.enabled === false) {
+       this.combatSpells.setTactic(null);
++      this.combatProgram.close(); this.combatProgramErrorHash = null; this.combatProgramError = null;
+       return this.toolLog(tool, args, '已清除并保存自定战术，恢复默认即时战斗法术。');
+     }
+     const rawSpells = args.spells;
+     const rawHeal = args.healAtOrBelow;
+     const rawRules = args.rules;
+-    if (rawSpells === undefined && rawHeal === undefined && rawRules === undefined) {
++    const rawProgram = args.program;
++    if (rawSpells === undefined && rawHeal === undefined && rawRules === undefined && rawProgram === undefined) {
+       return this.toolLog(tool, args, '未设置：请给 spells、rules 或 healAtOrBelow；用 enabled:false 清除。');
+     }
+     if (rawSpells !== undefined && (!Array.isArray(rawSpells) || rawSpells.length < 1
+@@ -4632,16 +4661,26 @@ export class MinecraftWorld implements World {
+     if (rawRules !== undefined && !validCombatRules(rawRules)) {
+       return this.toolLog(tool, args, '未设置：rules 最多16项，id须唯一；每项给 id、spell、when，条件须符合工具定义且上下界相容。selfheal 用 healAtOrBelow。');
+     }
++    if (rawProgram !== undefined && rawProgram !== null) {
++      if (!validCombatProgram(rawProgram)) return this.toolLog(tool, args, '未设置：program须给name、code及可选JSON对象params。');
++      try { await this.combatProgram.configure(rawProgram); }
++      catch (error) { return this.toolLog(tool, args, '未设置：程序编译失败。' + String(error)); }
++    }
+     const previous = this.combatSpells.getTactic();
+     const spells = rawSpells as CombatSpell[] | undefined ?? previous?.spells ?? null;
+     const healAtOrBelow = rawHeal as number | undefined ?? previous?.healAtOrBelow ?? null;
+     const rules = rawRules as CombatRule[] | undefined ?? previous?.rules;
+-    this.combatSpells.setTactic({ spells, healAtOrBelow, ...(rules !== undefined ? { rules } : {}) });
++    const program = rawProgram === undefined ? previous?.program : rawProgram as import('./combat-program.ts').CombatProgram | null;
++    this.combatSpells.setTactic({ spells, healAtOrBelow, ...(rules !== undefined ? { rules } : {}),
++      ...(program !== undefined ? { program } : {}) });
++    if (rawProgram === null) this.combatProgram.close();
++    if (rawProgram !== undefined) { this.combatProgramErrorHash = null; this.combatProgramError = null; }
+     return this.toolLog(tool, args,
+       `已设置战术：${spells?.join(' → ') ?? '默认法术顺序'}；`
+       + (healAtOrBelow === null ? '治疗血线未设置。'
+         : `生命 ≤${healAtOrBelow}/20 时先尝试圣愈术。`)
+       + (rules?.length ? `已启用${rules.length}项条件分支；法术列表仅作分支停用后的备用，未命中不自动进攻施法。` : '')
++      + (program ? `自主程序「${program.name}」SHA256 ${combatProgramHash(program)}；已编译，实战效果待核验。` : '')
+       + '已按当前世界保存，重载后继续使用；只在交战时按目标、魔力和冷却尝试，效果以服务端回执为准。'
+       + '\n' + this.combatSpells.readout(undefined, Date.now(), this.bridge?.bot ?? undefined));
+   }
+@@ -4689,7 +4728,8 @@ export class MinecraftWorld implements World {
+     if (cfg.enabled && cfg.endpoint) {
+       this.combatDecision ??= new CombatDecisionLoop({
+         config: () => this.combatDecisionConfig(), sample: () => this.sampleCombatDecision(),
+-        apply: candidate => this.applyCombatDecision(candidate),
++        prepare: frame => this.prepareCombatProgram(frame),
++        apply: (candidate, frame) => this.applyCombatDecision(candidate, frame.tacticRevision),
+         fallback: () => {
+           const current = this.sampleCombatDecision();
+           if (!current || current.battlefield.action.emergency || !current.battlefield.action.fighting) return;
+@@ -4699,9 +4739,18 @@ export class MinecraftWorld implements World {
+           if (fallback) this.sendAutoCombatSpell(liveBot, fallback);
+         },
+         report: (event, data) => {
+-          if (event !== 'requested') this.lastCombatDecision = { atMs: Date.now(), generation: data.connectionGeneration as number,
++          if (event === 'result' || event === 'error') this.lastCombatDecision = { atMs: Date.now(), generation: data.connectionGeneration as number,
+             outcome: data.outcome ?? data.reason, elapsedMs: data.elapsedMs };
+           this.diag.write({ lane: 'combat', event: `decision-${event}`, msg: `异步战斗选择 ${event}`, data });
++          if (event === 'observation' && data.program && Date.now() - this.lastCombatProgramFeedbackAt >= 5000) {
++            this.lastCombatProgramFeedbackAt = Date.now();
++            const o = data.observation as Record<string, unknown>;
++            this.emit('minecraft.tactic', `自主快战术选择#${data.id}，版本${data.tacticRevision}；`
++              + (o.verified ? `一秒后位移${Number(o.displacement).toFixed(2)}格，生命${o.healthBefore}→${o.healthAfter}。`
++                : `后续现场未验证：${o.reason}。`)
++              + `mc_combat_tactic {decision:${data.id}}可查输入与观测，结合战斗终态决定修订或复用；受理与位移不证明战术有效。`,
++              false, { trigger: 'piggyback', meta: { decisionId: data.id, tacticRevision: data.tacticRevision } });
++          }
+         },
+       });
+       const pending = this.combatDecision.tick();
+@@ -4737,25 +4786,56 @@ export class MinecraftWorld implements World {
+       taskId: queue?.running?.id ?? null, step: queue?.running?.step.slice(0, 120) ?? null,
+       targetEntityId: reaction?.targetId ?? null, sinceHitMs: reaction?.sinceHitMs ?? null,
+       canStep: reaction?.canStep ?? false }, cfg.maxEntities, now);
+-    const frame = this.combatSpells.decisionFrame(bot, battlefield, cfg.maxCandidates, now);
++    const program = this.combatSpells.getTactic()?.program;
++    const frame = this.combatSpells.decisionFrame(bot, battlefield, program ? 16 : cfg.maxCandidates, now);
+     if (!fighting) frame.candidates = [];
+-    const reactions = combatReactions(bot, battlefield, cfg, {
++    const control = {
+       bodyFree: !this.combat?.active && !queue?.running && !queue?.waiting.length && !queue?.hold
+         && !this.methods.current && !bot.currentWindow && !(this.executor?.eating ?? false),
+       canStep: (reaction?.canStep ?? false) && !bot.currentWindow && !(this.executor?.eating ?? false),
+       targetId: reaction?.targetId ?? null, sinceHitMs: reaction?.sinceHitMs ?? null,
+       fight: this.policy.get().fight, fleeHealth: this.cfg.reflex.fleeHealth, chaseMax: this.cfg.combat.chaseMax,
+-    });
++    };
++    const reactions = combatReactions(bot, battlefield, cfg, control);
++    if (program) {
++      frame.program = program;
++      frame.actionPool = [...combatReactions(bot, battlefield, cfg, control, true), ...frame.candidates];
++    }
+     const choices = [...reactions, ...frame.candidates];
+     frame.omittedCandidates += Math.max(0, choices.length - cfg.maxCandidates);
+     frame.candidates = choices.slice(0, cfg.maxCandidates);
+     return frame;
+   }
+ 
+-  private applyCombatDecision(candidate: CombatCandidate): boolean {
++  private async prepareCombatProgram(frame: CombatDecisionFrame): Promise<CombatDecisionFrame> {
++    const program = frame.program, bot = this.bridge?.bot;
++    if (!program || !bot) return frame;
++    const hash = combatProgramHash(program);
++    if (this.combatProgramErrorHash === hash) return frame;
++    try {
++      const result = combatProgramCandidates(await this.combatProgram.run(program, frame), frame,
++        to => this.combatDecisionConfig().allowMovement && corridorSafe(bot, new Vec3(...frame.battlefield.self.position), new Vec3(...to)));
++      const max = this.combatDecisionConfig().maxCandidates;
++      return { ...frame, candidates: result.candidates.slice(0, max),
++        omittedCandidates: Math.max(0, result.candidates.length - max),
++        policy: { name: program.name, sourceHash: hash, instructions: result.instructions } };
++    } catch (error) {
++      this.combatProgramErrorHash = hash;
++      this.combatProgramError = String(error);
++      this.emit('minecraft.tactic', `自主战术程序「${program.name}」SHA256 ${hash}已停止采用：${String(error)}。`
++        + '当前使用默认候选作为回退；请读取真实战场与回执，修订program后再验证。', false, { trigger: 'piggyback' });
++      return frame;
++    }
++  }
++
++  private applyCombatDecision(candidate: CombatCandidate, tacticRevision: number): boolean {
+     const current = this.sampleCombatDecision(), bot = this.bridge?.bot;
+-    if (!current || !bot || current.battlefield.action.emergency
+-      || !current.candidates.some(c => c.id === candidate.id && c.kind === candidate.kind)) return false;
++    if (!current || !bot || current.battlefield.action.emergency || current.tacticRevision !== tacticRevision) return false;
++    if (current.program) {
++      try { combatProgramCandidates({ candidates: [candidate], instructions: '' }, current,
++        to => this.combatDecisionConfig().allowMovement && corridorSafe(bot, bot.entity.position, new Vec3(...to))); }
++      catch { return false; }
++    } else if (!current.candidates.some(c => c.id === candidate.id && c.kind === candidate.kind)) return false;
+     if (candidate.kind === 'cast') {
+       if (!current.battlefield.action.fighting || this.combatSpells.manualCastBlock(candidate.spell)) return false;
+       return this.sendAutoCombatSpell(bot, candidate.spell, candidate.ruleId);
+diff --git a/combat-program.ts b/combat-program.ts
+new file mode 100644
+--- /dev/null
++++ b/combat-program.ts
+@@ -0,0 +1,140 @@
++/** Agent-authored candidate construction in a revocable, isolated worker. */
++import { createHash } from 'node:crypto';
++import { Worker } from 'node:worker_threads';
++import type { CombatCandidate, CombatDecisionFrame } from './combat-decision.ts';
++
++export interface CombatProgram { name: string; code: string; params?: Record<string, unknown> }
++export interface CombatProgramResult { candidates: CombatCandidate[]; instructions: string }
++export const COMBAT_PROGRAM_LIMITS = Object.freeze({ sourceChars: 12_000, paramsChars: 4096,
++  outputChars: 24_000, candidates: 16, startupMs: 2000, evaluationMs: 50, stepBlocks: 1.6 });
++
++export function validCombatProgram(value: unknown): value is CombatProgram {
++  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
++  const p = value as CombatProgram;
++  return Object.keys(p).every(k => ['name', 'code', 'params'].includes(k))
++    && typeof p.name === 'string' && p.name.trim().length > 0 && p.name.length <= 80
++    && typeof p.code === 'string' && p.code.trim().length > 0 && p.code.length <= COMBAT_PROGRAM_LIMITS.sourceChars
++    && (p.params === undefined || (!!p.params && typeof p.params === 'object' && !Array.isArray(p.params)
++      && JSON.stringify(p.params).length <= COMBAT_PROGRAM_LIMITS.paramsChars));
++}
++
++export function combatProgramHash(program: CombatProgram): string {
++  return createHash('sha256').update(program.code).digest('hex');
++}
++
++export class CombatProgramRunner {
++  private worker: Worker | null = null;
++  private key = '';
++  private ready: Promise<void> | null = null;
++  private failure: string | null = null;
++  private cancelStartup: ((reason: string) => void) | null = null;
++  private pending: { resolve: (value: CombatProgramResult) => void; reject: (error: Error) => void;
++    timer: ReturnType<typeof setTimeout> } | null = null;
++
++  status(): { sourceHash: string | null; error: string | null } {
++    return { sourceHash: this.key.split(':')[0] || null, error: this.failure };
++  }
++
++  async configure(program: CombatProgram): Promise<void> {
++    if (!validCombatProgram(program)) throw new Error('Invalid combat program');
++    const key = combatProgramHash(program) + ':' + JSON.stringify(program.params ?? {});
++    if (key === this.key) {
++      if (this.failure) throw new Error(this.failure);
++      await this.ready; return;
++    }
++    this.close();
++    this.key = key;
++    const worker = new Worker(new URL('./combat-program-worker.mjs', import.meta.url), {
++      workerData: { code: program.code, outputChars: COMBAT_PROGRAM_LIMITS.outputChars },
++      env: {}, execArgv: [], resourceLimits: { maxOldGenerationSizeMb: 64, stackSizeMb: 4 },
++    });
++    this.worker = worker;
++    worker.unref();
++    this.ready = new Promise<void>((resolve, reject) => {
++      const timer = setTimeout(() => fail('Combat program startup timed out'), COMBAT_PROGRAM_LIMITS.startupMs);
++      let initialized = false;
++      const fail = (reason: string) => {
++        if (this.worker !== worker) return;
++        this.cancelStartup = null;
++        clearTimeout(timer);
++        this.failure = reason;
++        this.pending?.reject(new Error(reason));
++        if (this.pending) clearTimeout(this.pending.timer);
++        this.pending = null;
++        this.worker = null;
++        void worker.terminate();
++        if (!initialized) reject(new Error(reason));
++      };
++      this.cancelStartup = fail;
++      worker.on('error', error => fail(String(error)));
++      worker.on('exit', code => fail(`Combat program worker exited (${code})`));
++      worker.on('message', message => {
++        if (this.worker !== worker) return;
++        if (message.kind === 'ready') { clearTimeout(timer); this.cancelStartup = null; initialized = true; resolve(); return; }
++        if (message.kind === 'error') { fail(String(message.error)); return; }
++        if (message.kind === 'result' && this.pending) {
++          const pending = this.pending; this.pending = null; clearTimeout(pending.timer);
++          pending.resolve(message.value);
++        }
++      });
++    });
++    await this.ready;
++  }
++
++  async run(program: CombatProgram, frame: CombatDecisionFrame): Promise<CombatProgramResult> {
++    await this.configure(program);
++    if (this.pending) throw new Error('Combat program already evaluating');
++    return await new Promise<CombatProgramResult>((resolve, reject) => {
++      this.pending = { resolve, reject, timer: setTimeout(() => {
++        this.failure = 'Combat program exceeded evaluation budget';
++        const pending = this.pending; this.pending = null;
++        const worker = this.worker; this.worker = null;
++        void worker?.terminate(); pending?.reject(new Error(this.failure));
++      }, COMBAT_PROGRAM_LIMITS.evaluationMs) };
++      const { program: _program, ...input } = frame;
++      this.worker!.postMessage({ frame: input, params: program.params ?? {} });
++    });
++  }
++
++  close(): void {
++    this.cancelStartup?.('Combat program revoked during startup');
++    if (this.pending) {
++      clearTimeout(this.pending.timer); this.pending.reject(new Error('Combat program revoked')); this.pending = null;
++    }
++    const worker = this.worker; this.worker = null; this.key = ''; this.failure = null; this.ready = null;
++    void worker?.terminate();
++  }
++}
++
++/** The program may choose tactics freely within the current executable capability set. */
++export function combatProgramCandidates(result: unknown, frame: CombatDecisionFrame,
++  safeStep: (to: [number, number, number]) => boolean): CombatProgramResult {
++  if (!result || typeof result !== 'object' || Array.isArray(result)) throw new Error('Program must return an object');
++  const r = result as CombatProgramResult;
++  if (!Array.isArray(r.candidates) || r.candidates.length > COMBAT_PROGRAM_LIMITS.candidates
++    || typeof r.instructions !== 'string' || r.instructions.length > 1200)
++    throw new Error('Program must return candidates (at most 16) and instructions (at most 1200 characters)');
++  const ids = new Set<string>();
++  const pool = frame.actionPool ?? frame.candidates;
++  const candidates = r.candidates.map(c => {
++    if (!c || !/^[a-z][a-z0-9_:-]{0,63}$/.test(c.id) || ids.has(c.id)
++      || typeof c.intent !== 'string' || !c.intent.trim() || c.intent.length > 240)
++      throw new Error('Program candidate needs a unique id and concise intent');
++    ids.add(c.id);
++    if (frame.battlefield.action.emergency) throw new Error('Emergency owns the body');
++    if (c.kind === 'step') {
++      const to = c.destination, from = frame.battlefield.self.position;
++      if (!frame.battlefield.action.canStep || !Array.isArray(to) || to.length !== 3
++        || !to.every(Number.isFinite) || Math.hypot(...to.map((v, i) => v - from[i])) > COMBAT_PROGRAM_LIMITS.stepBlocks
++        || !safeStep(to)) throw new Error(`Unsafe or unavailable step: ${c.id}`);
++      return { id: c.id, kind: c.kind, intent: c.intent, destination: [...to] as [number, number, number] };
++    }
++    const eligible = pool.find(a => a.kind === c.kind && (c.kind === 'cast'
++      ? a.kind === 'cast' && a.spell === c.spell && a.ruleId === c.ruleId
++      : c.kind === 'engage' ? a.kind === 'engage' && a.targetId === c.targetId && a.uuid === c.uuid
++        : c.kind === 'retreat'));
++    if (!eligible) throw new Error(`Unavailable candidate: ${c.id}`);
++    return { ...eligible, id: c.id, intent: c.intent };
++  });
++  return { candidates, instructions: r.instructions };
++}
+diff --git a/combat-program-worker.mjs b/combat-program-worker.mjs
+new file mode 100644
+--- /dev/null
++++ b/combat-program-worker.mjs
+@@ -0,0 +1,18 @@
++import { parentPort, workerData } from 'node:worker_threads';
++import 'ses';
++
++lockdown({ errorTaming: 'unsafe', consoleTaming: 'safe' });
++try {
++  const source = `(frame, params) => {\n${workerData.code}\n}`;
++  new Compartment().evaluate(source);
++  parentPort.on('message', ({ frame, params }) => {
++    try {
++      const result = new Compartment().evaluate(source)(harden(frame), harden(params));
++      if (result && typeof result.then === 'function') throw new Error('Combat program must be synchronous');
++      const text = JSON.stringify(result);
++      if (!text || text.length > workerData.outputChars) throw new Error('Combat program output exceeds budget');
++      parentPort.postMessage({ kind: 'result', value: JSON.parse(text) });
++    } catch (error) { parentPort.postMessage({ kind: 'error', error: String(error).slice(0, 1600) }); }
++  });
++  parentPort.postMessage({ kind: 'ready' });
++} catch (error) { parentPort.postMessage({ kind: 'error', error: String(error).slice(0, 1600) }); }

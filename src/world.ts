@@ -57,12 +57,12 @@ function mapSchema(value: unknown): unknown {
 
 function toolDescription(name: string, description: string): string {
   if (name === 'mc_combat_tactic') return toMymcText(description)
-    + ' This configures casts only; it does not initiate an attack or approach enemies. '
-    + 'Use mymc_do attack to choose and engage a currently observed target. '
+    + ' Spell rules run while fighting. An installed program can construct fast engagement and short movement choices when combatDecision is enabled. '
+    + 'Use mymc_do attack for a deliberate body task; preserve an existing useful attack instead of resubmitting it. '
     + 'Read selected checks and ruleChecks: a saved tactic can have every offensive spell blocked. '
     + 'Updating spells keeps existing rules; pass rules:[] to return to spell priority order.';
   if (name === 'mc_do') return toMymcText(description)
-    + ' attack approaches and attacks the selected target; combat_tactic alone does not initiate combat. '
+    + ' attack approaches and attacks the selected target; saving spell rules alone does not initiate combat. '
     + 'While automatic self-defense owns the body, default/append attack waits. '
     + 'An explicit queue:"now" attack can take control when health is sufficient; survival and environmental rescue may still defer it. '
     + 'Check the returned queue and terminal result before submitting another attack.';

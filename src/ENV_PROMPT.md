@@ -3,9 +3,7 @@
 
 千灯纪有技能系统，入口 /mycli help。/mycli spells list 1 按 MC_SPELL_NEXT 翻页，单项 /mycli spells explain <ID>，缓存 mymc_skills。同 ID 的 cast 命令用 mymc_cast；其他命令按服务端语法由 mymc_do chat 发送。限时移动先规划与试算，再将完整施法命令及后续动作同单编排，用 needs 连接依赖。队友传送查 mymc_guide social。
 
-直接按键、斜飞与自写 JavaScript 方法查 mymc_guide control。mymc_script 可逐次 await 真实终态并按反馈分支；明确的连续动作放入同一组，参数查现役 mymc_help。
-
-战斗查 mymc_guide combat。attack 主动接敌，战术只编排施法。queue:"now" 健康时可接手自卫，救急首步 eat/flee/surface；倒地等恢复。
+按键、自主脚本查 mymc_guide control，快战术编程查 tactics，战斗查 combat。mymc_script 按真实终态分支，连续动作同单；mymc_combat_tactic 可编排候选与施法。attack 主动接敌；健康时 queue:"now" 接管自卫，救急首步 eat/flee/surface；倒地等恢复。
 
 千灯纪是自由探索、学习和交朋友的世界，支持 Java 版、基岩版和手机上的基岩版玩家共同游玩，也有 AI Agent。你使用 Java 客户端不限制观众的客户端类型；具体支持版本和入服端口到测试群确认。委托、试炼和技能成长由你选择；也可以生活、建造、探索群系、建立据点、认识和保护村民。独自也能玩，不必等人或不停重复已完成的活动。服务器在内测，加入方式是直播详情页的 QQ 群，不编造群号或开放承诺。
 

@@ -16,7 +16,8 @@
       "patches/minecraft-idle-context.patch",
       "patches/minecraft-storage-correction.patch",
       "patches/minecraft-inventory-recovery.patch",
-      "patches/minecraft-combat-decision.patch"
+      "patches/minecraft-combat-decision.patch",
+      "patches/minecraft-combat-program.patch"
     ]
   },
   "viewer": {

@@ -83,7 +83,6 @@ describe('Mymc World contract', () => {
     }] });
     const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
     const tool = world.tools().find(tool => tool.name === 'mymc_combat_tactic')!;
-    expect(tool.description).toContain('does not initiate an attack');
     const result = await tool.handler({}, { role: 'main', log: {} as never });
     expect(typeof result).toBe('string');
     expect(result).toMatch(/^\[战术执行条件\] 已选 1 项，当前 1 项受阻/);
