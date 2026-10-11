@@ -1,0 +1,24 @@
+diff --git a/skills-gather.ts b/skills-gather.ts
+--- a/skills-gather.ts
++++ b/skills-gather.ts
+@@ -1711,13 +1711,16 @@
+     if (memo.entries && memo.entries.size > 128) memo.entries.delete(memo.entries.keys().next().value!);
+   };
+-
++
++  const coverage = call.shape === 'line'
++    ? `；范围仅${cellText(cells[0])}→${cellText(cells[cells.length - 1])}的线格，线外/线间未测，不能据此排除整层或半径内地形`
++    : '';
+   if (call.where !== undefined && locating) {
+-    const text = probeWhereText(bot, call, call.where, pre, unloaded);
++    const text = probeWhereText(bot, call, call.where, pre, unloaded) + coverage;
+     remember(text);
+     return text;
+   }
+-
++
+-  const head = `探查${SHAPE_ZH[call.shape]}(共 ${cells.length} 格)`;
++  const head = `探查${SHAPE_ZH[call.shape]}(共 ${cells.length} 格)${coverage}`;
+   const lines: string[] = [];
+   if (cells.length <= PROBE_CELLWISE_MAX) {
+     const listed = pre.filter((e) => e.name !== null && !AIR_NAMES.has(e.name));

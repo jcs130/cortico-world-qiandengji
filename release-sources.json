@@ -10,7 +10,8 @@
       "patches/minecraft-recipe-protocol.patch",
       "patches/minecraft-route-diagnostics.patch",
       "patches/minecraft-flight-timing.patch",
-      "patches/minecraft-tool-trace.patch"
+      "patches/minecraft-tool-trace.patch",
+      "patches/minecraft-probe-coverage.patch"
     ]
   },
   "viewer": {
