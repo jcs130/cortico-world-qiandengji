@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
@@ -19,7 +18,6 @@ import net.minecraft.class_642;
 import net.minecraft.class_412;
 import net.minecraft.class_419;
 import net.minecraft.class_639;
-import net.minecraft.class_9112;
 
 /** Submits a scoped private credential only after the server requests login. */
 public final class CorticoClientLogin implements ClientModInitializer {
@@ -114,8 +112,10 @@ public final class CorticoClientLogin implements ClientModInitializer {
                             current.method_1548().method_1676()));
                 if (!allowed) { reconnect.block(); return; }
                 System.out.println("[CorticoClientLogin] Reconnecting configured account, attempt " + reconnect.attempts());
+                // A non-null cookie storage marks the 1.20.6 handshake as TRANSFER.
+                // This is a fresh reconnect to the configured server, not a server-directed transfer.
                 class_412.method_36877(current.field_1755, current, class_639.method_2950(target.field_3761),
-                    target, false, new class_9112(Map.of()));
+                    target, false, null);
             } catch (Exception error) {
                 reconnect.block();
                 System.out.println("[CorticoClientLogin] Reconnect configuration unavailable; no retry");
