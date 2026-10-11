@@ -21,7 +21,8 @@
       "patches/minecraft-own-identity.patch",
       "patches/minecraft-combat-eligibility.patch",
       "patches/minecraft-combat-program-budget.patch",
-      "patches/minecraft-native-methods.patch"
+      "patches/minecraft-native-methods.patch",
+      "patches/minecraft-server-login.patch"
     ]
   },
   "viewer": {

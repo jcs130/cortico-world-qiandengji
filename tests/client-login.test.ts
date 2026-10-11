@@ -16,9 +16,13 @@ it.skipIf(!javaAvailable)('keeps authentication scoped and submits once until re
   mkdirSync(scratch, {recursive:true});
   const output = mkdtempSync(join(scratch, 'run-'));
   execFileSync(executable('javac'), ['--release','21','-encoding','UTF-8','-d',output,
-    join(root,'client-login/LoginSession.java'), join(root,'client-login/LoginSessionCheck.java')],
+    ...['LoginSession.java', 'LoginSessionCheck.java', 'ReconnectSession.java', 'ReconnectSessionCheck.java']
+      .map(file => join(root, 'client-login', file))],
     {stdio:'pipe', windowsHide:true});
   const result = execFileSync(executable('java'), ['-cp',output,'LoginSessionCheck'],
     {encoding:'utf8', windowsHide:true});
   expect(result).toContain('28 authentication checks passed');
+  const reconnect = execFileSync(executable('java'), ['-cp',output,'ReconnectSessionCheck'],
+    {encoding:'utf8', windowsHide:true});
+  expect(reconnect).toContain('15 checks passed');
 }, 20_000);
