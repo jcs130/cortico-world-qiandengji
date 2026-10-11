@@ -11,7 +11,8 @@
       "patches/minecraft-route-diagnostics.patch",
       "patches/minecraft-flight-timing.patch",
       "patches/minecraft-tool-trace.patch",
-      "patches/minecraft-probe-coverage.patch"
+      "patches/minecraft-probe-coverage.patch",
+      "patches/minecraft-hand-equipment.patch"
     ]
   },
   "viewer": {

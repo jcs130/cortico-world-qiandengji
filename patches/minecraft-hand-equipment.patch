@@ -1,0 +1,100 @@
+diff --git a/equipment.ts b/equipment.ts
+--- a/equipment.ts
++++ b/equipment.ts
+@@ -6,7 +6,7 @@
+ import { zhName } from './names.ts';
+ import { SkillBlocked } from './skill-context.ts';
+ 
+-type EquipmentDestination = 'head' | 'torso' | 'legs' | 'feet' | 'off-hand';
++type EquipmentDestination = 'head' | 'torso' | 'legs' | 'feet' | 'off-hand' | 'hand';
+ type Item = NonNullable<Bot['heldItem']>;
+ const itemText = (item: Item | null): string => item ? itemCustomName(item) ?? zhName(item.name) : '空';
+ 
+@@ -50,6 +50,32 @@
+   }
+ }
+ 
++/** Hotbar selection needs no inventory move; other hand swaps use the same server barrier as armor. */
++export async function equipHandConfirmed(bot: Bot, item: Item): Promise<void> {
++  requirePlayerInventory(bot);
++  if (bot.supportFeature?.('stateIdUsed') !== true) {
++    await bot.equip(item, 'hand');
++    if (!bot.heldItem || !sameInventoryStack(bot.heldItem, item)) {
++      throw new SkillBlocked('主手回读未确认拿起点名物品', [], 'server');
++    }
++    return;
++  }
++  await resumeInventoryCursor(bot);
++  const found = bot.inventory.slots[item.slot];
++  if (!found || !sameInventoryStack(found, item)) {
++    throw new SkillBlocked('待手持物品所在槽位已经变化，先重新核对背包');
++  }
++  const start = bot.inventory.hotbarStart;
++  if (item.slot >= start && item.slot < start + 9) {
++    bot.setQuickBarSlot(item.slot - start);
++  } else {
++    await equipSlotConfirmed(bot, item, 'hand');
++  }
++  if (!bot.heldItem || !sameInventoryStack(bot.heldItem, item) || bot.inventory.selectedItem) {
++    throw new SkillBlocked('主手回读未确认拿起点名物品，先核对库存和游标', [], 'server');
++  }
++}
++
+ /** The caller checks storage capacity; cursor recovery never drops the item. */
+ export async function clearOffHandConfirmed(bot: Bot): Promise<void> {
+   requirePlayerInventory(bot);
+diff --git a/placement.ts b/placement.ts
+--- a/placement.ts
++++ b/placement.ts
+@@ -28,6 +28,7 @@
+ import { isStableScaffoldMaterial } from './scaffold-material.ts';
+ import { prepareTemporaryScaffoldPlacement, recordTemporaryScaffold } from './temporary-scaffold.ts';
+ import { flightState } from './flight.ts';
++import { equipHandConfirmed } from './equipment.ts';
+ 
+ const { goals } = pathfinderPkg;
+ 
+@@ -187,7 +188,7 @@
+   if (bot.heldItem && fits(bot.heldItem.name)) return true;
+   const item = bot.inventory.items().find((i) => fits(i.name));
+   if (!item) return false;
+-  await bot.equip(item, 'hand');
++  await equipHandConfirmed(bot, item);
+   return true;
+ }
+ 
+diff --git a/skills-build.ts b/skills-build.ts
+--- a/skills-build.ts
++++ b/skills-build.ts
+@@ -245,7 +245,9 @@
+     const item = bot.inventory.items()
+       .find((i) => matchMaterialName(bot.registry, call.material, i.name));
+     if (!item) { halt = `${label}用完了`; haltCode = 'resource-unavailable'; break; }
+-    await bot.equip(item, 'hand');
++    if (!(await ensureHolding(bot, call.material))) {
++      halt = `${label}用完了`; haltCode = 'resource-unavailable'; break;
++    }
+     const me = bot.entity.position;
+     let feet = feetOf(bot);
+     // 边界:贴得住的那些格才放得上。指名了面就只认那一面的参照方块,没指名就看六个面里有没有实心的
+diff --git a/skills-craft.ts b/skills-craft.ts
+--- a/skills-craft.ts
++++ b/skills-craft.ts
+@@ -26,7 +26,7 @@
+ import { taggedCraftChoice } from './tagged-crafting.ts';
+ import { isInventoryClickError, resumeInventoryCursor } from './inventory-click-sync.ts';
+ import { inventoryReadConfirmed } from './inventory-window-sync.ts';
+-import { clearOffHandConfirmed, equipSlotConfirmed } from './equipment.ts';
++import { clearOffHandConfirmed, equipHandConfirmed, equipSlotConfirmed } from './equipment.ts';
+ 
+ /**
+  * `bot.craft` 吃的配方数据面(见 mineflayer-fixes 的覆写版):
+@@ -521,7 +521,7 @@
+     );
+   }
+   const dest = call.hand === 'off' ? 'off-hand' : call.hand === 'main' ? 'hand' : equipDestOf(item.name, bot.registry);
+-  if (dest === 'hand') await bot.equip(item, dest);
++  if (dest === 'hand') await equipHandConfirmed(bot, item);
+   else await equipSlotConfirmed(bot, item, dest);
+   // 点名拿的时候回执念全标签:「拿起了弓」答不了「拿的是无限那把吗」
+   const what = call.pick ? pickLabel(pickTargetOf(item, bot.registry as never)) : itemCustomName(item) ?? zhName(item.name);
