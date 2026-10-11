@@ -1,0 +1,65 @@
+diff --git a/README.md b/README.md
+index cdf23ce..a4c3d11 100644
+--- a/README.md
++++ b/README.md
+@@ -3,4 +3,6 @@
+ # worlds/minecraft
+ 
++快战术的接敌候选先复用战斗控制器的目标资格检查，包括中立生物是否已被激怒、危险目标、武器、生命、身体占用与冷却。现场关系读数保留原值；执行时再次检查，候选不保证迟到动作仍能执行。
++
+ `mc_combat_tactic.program` 保存模型编写的同步 JavaScript 候选程序及 JSON 参数。`combat-program.ts` 与 `combat-program-worker.mjs` 在独立 SES Worker 评估 `frame`，提供完整可执行动作池；程序返回候选和快模型选择说明，可自行生成0.5–1.6格的安全短步。程序短步不采用默认的无命中等待，身体租约、碰撞、能力、生命危机和版本仍重检。源码12000字符、参数4096字符、输出24000字符、候选16项、选择说明1200字符；Worker 初始化最多2秒、每次评估50毫秒，无原始 bot、导入、文件或网络。失败后停止采用该程序并保留默认候选回退；显式更新可恢复试验。最近八次选择可用 decisions/decision 按需读取，保留程序哈希、版本、真实模型输入、选择结果和一秒后的位移/生命/目标读数；跨连接或维度的后观测标为未验证。观测不证明因果或整场胜利，学习结论、源码与版本检索由 Persona 的方法库负责。
+ 
+diff --git a/combat.ts b/combat.ts
+index db25a4b..902061e 100644
+--- a/combat.ts
++++ b/combat.ts
+@@ -435,4 +435,16 @@ export class CombatSession {
+   }
+ 
++  /** Read-only target eligibility shared by candidate construction and execution. */
++  engagementTargets(): number[] {
++    const bot = this.opts.getBot(), t = this.opts.tuning();
++    if (!bot?.entity || this.active || !t.enabled || t.fight === 'off'
++      || this.opts.envBusy() || this.opts.taskEscaping?.() || this.opts.taskFighting?.()
++      || (bot.health ?? 0) < t.fleeHealth + ENGAGE_MARGIN
++      || (t.fight === 'armed' && !bestWeapon(bot) && !this.rangedReady(bot))
++      || Date.now() < this.capCooldownUntil
++      || (!t.arena && this.busyRatioNow() > t.busyRatio / 100)) return [];
++    return this.scan(bot, t, t.chaseMax).filter(f => f.visible && !NO_FIGHT.has(f.name)).map(f => f.id);
++  }
++
+   /** Reuses the combat body's existing lease, health gates and retreat controller. */
+   react(action: { kind: 'engage'; targetId: number } | { kind: 'retreat' }
+@@ -450,11 +462,7 @@ export class CombatSession {
+       return true;
+     }
+-    const t = this.opts.tuning();
+-    if (this.active || !t.enabled || t.fight === 'off'
+-      || (bot.health ?? 0) < t.fleeHealth + ENGAGE_MARGIN
+-      || (t.fight === 'armed' && !bestWeapon(bot) && !this.rangedReady(bot))) return false;
+-    const foe = this.scan(bot, t, t.chaseMax).find(f => f.id === action.targetId && f.visible && !NO_FIGHT.has(f.name));
+-    if (!foe || !this.engage(foe.name, false)) return false;
+-    if (this.fighting) this.targetId = foe.id;
++    const foe = bot.entities[action.targetId];
++    if (!foe || !this.engagementTargets().includes(action.targetId) || !this.engage(foe.name ?? '', false)) return false;
++    if (this.fighting) this.targetId = action.targetId;
+     return true;
+   }
+diff --git a/world.ts b/world.ts
+index dae69ed..8bd80da 100644
+--- a/world.ts
++++ b/world.ts
+@@ -4797,8 +4797,11 @@ export class MinecraftWorld implements World {
+       fight: this.policy.get().fight, fleeHealth: this.cfg.reflex.fleeHealth, chaseMax: this.cfg.combat.chaseMax,
+     };
+-    const reactions = combatReactions(bot, battlefield, cfg, control);
++    const engagementTargets = new Set(this.combat?.engagementTargets() ?? []);
++    const executableReaction = (candidate: CombatCandidate) => candidate.kind !== 'engage'
++      || engagementTargets.has(candidate.targetId);
++    const reactions = combatReactions(bot, battlefield, cfg, control).filter(executableReaction);
+     if (program) {
+       frame.program = program;
+-      frame.actionPool = [...combatReactions(bot, battlefield, cfg, control, true), ...frame.candidates];
++      frame.actionPool = [...combatReactions(bot, battlefield, cfg, control, true).filter(executableReaction), ...frame.candidates];
+     }
+     const choices = [...reactions, ...frame.candidates];
