@@ -18,12 +18,13 @@
     "consoleClient": "dist/console.js",
     "consoleStyle": "dist/console.css"
   },
-  "files": ["src", "engine", "dist", "patches", "references/battlefield-protocol.md", "references/server-technical/index.json", "references/server-technical/server-access.json", "release-sources.json", "README.md", "DEPLOYMENT.md", "LICENSE"],
+  "files": ["src", "engine", "dist", "patches", "client-login", "scripts/build-client-login.mjs", "references/battlefield-protocol.md", "references/server-technical/index.json", "references/server-technical/server-access.json", "release-sources.json", "README.md", "DEPLOYMENT.md", "LICENSE"],
   "scripts": {
     "build": "pnpm run build:engine && pnpm run build:console && pnpm run build:viewer && pnpm run verify:release",
     "build:engine": "tsx scripts/build-release.ts engine",
     "build:console": "node scripts/build-console.mjs",
     "build:viewer": "tsx scripts/build-release.ts viewer",
+    "build:client-login": "node scripts/build-client-login.mjs",
     "verify:release": "node scripts/verify-release.mjs",
     "prepack": "node scripts/verify-release.mjs",
     "test": "vitest run",
