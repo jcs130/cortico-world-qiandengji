@@ -25,6 +25,7 @@
 `mymc_railway {"bounds":[xmin,ymin,zmin,xmax,ymax,zmax],"start":[x,y,z],"end":[x,y,z],"detail":true}` 只读当前连接已加载的方块，不抢身体、不移动、不点红石。bounds 为绝对坐标、含端点，最多 4096 格、每轴 128 格、256 根轨道。覆盖路线、相邻格与上下接合高度即可，长线分段，保留共同的接合轨道和采样时间，不把大盒子全读进上下文。
 
 - `components` 是当前 shape/高度真正互接的连通分量；`route.path` 是本次样本内的端口路径，轨道数量达标不能替代它。
+- 判断这次指定的起终点，读 `route.status/path`；其他分量可能是另一股道或施工余段，不会撤销已经测得的这条连接。不要只因 `componentCount>1` 就拆改一条已连通的路径；它也不证明整个目标线路已完工。
 - `connected_in_sample` 仅证明样本内存在静态连接；`not_connected_in_sample` 表示没测到这样的路径；`unknown` 表示缺少端口/已加载区域等证据，不能宣称全局不可达。
 - `openPorts` 逐一给出朝向、接合高度、相邻实际方块或朝向不匹配；终点开口可能是有意设计。看 `openPortsOmitted`，示例不等于完整列表；需要时缩小到那个接头。
 - detail 的 `rails` 每行为 `[x,y,z,palette,component]`，palette 索引 `railPalette`；`edges` 的数字是 rails 数组的零起下标。它们可交给你自己的程序分析、做示意图和比较修订。
@@ -41,6 +42,8 @@
 ### 让经验变成你自己可修订的方法
 
 现有 Mineflayer 的 `bot.blockAt`、`getProperties`、挖掘和放置接口继续使用，查 control 资料与 `mymc_script {"api":"index"}`。铁路读数补的是整段网络关系，不代替这些原生动作，也不替你选择路线或自动施工。
+
+拆改指定格与采集同类材料不是一回事。现役 `collect` 没有 `at` 字段，额外传坐标不会锁定拆除对象；按帮助使用已有 `excavate` 的 shape/anchors（单格 box 的两个锚点相同），或用已暴露的原生 `blockAt→dig` 接口。之后回读被改格及相邻轨形，避免从别处拿走一根轨、目标格仍未变化。
 
 有重复、可评价的步骤时，你可以自己写有界 JavaScript：读取当前接头→检查端口/支撑与权限→选择少量可逆改动→执行→重新读相邻轨形状和路径→保留或回退。用 `validate:true` 做语法检查，再用运行号及完整 SDK 回执核对真实效果；稳定后通过现役 procedure 工具保存版本、依赖、适用条件和失败边界，按需检索。不要每轮全文重读或为了学习改动已在正常工作的线路。
 
