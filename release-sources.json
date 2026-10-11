@@ -23,7 +23,8 @@
       "patches/minecraft-combat-program-budget.patch",
       "patches/minecraft-native-methods.patch",
       "patches/minecraft-server-login.patch",
-      "patches/minecraft-procedures.patch"
+      "patches/minecraft-procedures.patch",
+      "patches/minecraft-chat-provenance.patch"
     ]
   },
   "viewer": {

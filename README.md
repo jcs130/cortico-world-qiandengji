@@ -1,4 +1,4 @@
-<!-- Owner: patches/minecraft-procedures.patch, scripts/verify-release.mjs, package.json, scripts/build-release.ts, release-sources.json, patches/minecraft-idle-context.patch, patches/minecraft-combat-decision.patch, patches/minecraft-storage-correction.patch, src/world.ts, src/config.ts -->
+<!-- Owner: src/chat-provenance.ts, patches/minecraft-chat-provenance.patch, patches/minecraft-procedures.patch, scripts/verify-release.mjs, package.json, scripts/build-release.ts, release-sources.json, patches/minecraft-idle-context.patch, patches/minecraft-combat-decision.patch, patches/minecraft-storage-correction.patch, src/world.ts, src/config.ts -->
 
 # cortico-world-qiandengji
 
@@ -95,6 +95,8 @@ Java 1.20.6 画面支持当前玩家连接实际收到的玩家／NPC 头顶文�
 
 `mymc_messages` 按频道和关键词查询收到的聊天、公告、登录说明与私信，按最近收到时间排序。`list/search` 默认列出未标记考虑的短条目，`read` 按 id 展开原文，`review` 明确标记已考虑的 ids；该标记不代表已回应、执行、学会或完成。完整当前读数只附加简短消息索引，正文按需读取。观察按服务器与账号隔离，最多保留 256 条，系统消息相同原文合并收取次数；超出范围在查询结果中明确说明，更早原文仍须查宿主事件账本。动作栏 HUD 和自己的发言回显不进入索引。
 系统聊天按正常批次计时投递，单独收到公告也能进入下一次决策；它不会取消当前模型调用或身体任务。私信保留现有投递方式，发言人名字不证明管理员权限。登录阶段的技能目录同样进入技能观察缓存。
+
+Mineflayer 的聊天正则可能把方括号公告识别为玩家。聊天身份因此保留原包频道与识别依据：有发送者 UUID 时须与玩家表中的名字一致；无 UUID 的格式化聊天须匹配已列出的玩家，并标为 `player-list-format`。未知名字保留系统原文或私信原文，不建立玩家身份；发出的私信确认不把收件人当作发言人。插件直接派发、没有关联原包的 `chat/whisper` 事件标为 `explicit-chat-event`。这些来源都不证明队友、管理员权限或消息内容真实。
 
 常驻环境提示提供权限、保护和事实核验边界；试炼、收纳、飞行、社交等细则通过
 `mymc_guide {"topic":"..."}` 按需读取。省略 `topic` 返回主题索引。原版动作参数由

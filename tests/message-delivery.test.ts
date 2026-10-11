@@ -44,10 +44,11 @@ async function rig() {
   const receiver = new MinecraftWorld({ cfg });
   Object.assign(receiver, { host: adapter });
   const bot = Object.assign(new EventEmitter(), { _client: new EventEmitter(), registry,
-    supportFeature: (feature: string) => registry.supportFeature(feature) });
+    supportFeature: (feature: string) => registry.supportFeature(feature),
+    players: { Alex: { username: 'Alex', uuid: '00000000-0000-0000-0000-000000000001' } } });
   injectChat(bot, {});
   (receiver as unknown as { hookMessageEvents(bot: unknown): void }).hookMessageEvents(bot);
-  return { bus, world, adapter, stored, triggers, preempt,
+  return { bus, world, adapter, stored, triggers, preempt, bot,
     send: async (component: object, positionId = 1) => {
       bot._client.emit('systemChat', { formattedMessage: JSON.stringify(component), positionId });
       await Promise.resolve();
@@ -59,6 +60,84 @@ async function rig() {
 afterEach(() => vi.useRealTimers());
 
 describe('server chat through Mineflayer, World adapter and WakeBus', () => {
+  it('retains bracketed server notices without inventing a player identity from the chat regex', async () => {
+    const r = await rig();
+    try {
+      await r.send({ text: '[SYSTEM_NOTICE] 新技能已经开放，请查技能目录。' });
+      expect(r.stored).toHaveLength(1);
+      expect(r.stored[0]).toMatchObject({ text: '[MC 登录消息] [SYSTEM_NOTICE] 新技能已经开放，请查技能目录。' });
+      expect(r.stored[0].meta?.uname).toBeUndefined();
+      expect(r.stored[0].senderKey).toBe('mymc');
+      const raw = await r.world.tools().find(tool => tool.name === 'mymc_messages')!
+        .handler({ channel: 'login' }, context);
+      expect(typeof raw === 'string' ? raw : raw.text).toContain('新技能已经开放');
+    } finally { await r.world.stop(); }
+  });
+
+  it('retains outgoing whisper confirmation without assigning the recipient as its speaker', async () => {
+    const r = await rig();
+    try {
+      await r.send({ translate: 'commands.message.display.outgoing', with: ['Alex', '带上材料再来。'] });
+      expect(r.stored).toHaveLength(1);
+      expect(r.stored[0].text).toContain('[MC 私聊发出]');
+      expect(r.stored[0].meta?.uname).toBeUndefined();
+      expect(r.stored[0].senderKey).toBe('mymc');
+    } finally { await r.world.stop(); }
+  });
+
+  it('keeps listed player whispers and public chat distinct, with the actual identity evidence', async () => {
+    const r = await rig();
+    try {
+      await r.send({ text: '<Alex> 我在村口。' });
+      await r.send({ text: 'Alex whispers to you: 新活动开了，一起去吗？' });
+      expect(r.stored).toHaveLength(2);
+      expect(r.stored.map(row => row.text)).toEqual([
+        '[MC] Alex: 我在村口。', '[MC 私聊] Alex: 新活动开了，一起去吗？',
+      ]);
+      for (const row of r.stored) expect(row).toMatchObject({ senderKey: 'Alex',
+        meta: { uname: 'Alex', chatTransport: 'system', identityEvidence: 'player-list-format' } });
+    } finally { await r.world.stop(); }
+  });
+
+  it('preserves unknown console messages and never turns an action bar into a player greeting', async () => {
+    const r = await rig();
+    try {
+      await r.send({ text: '[控制台 -> 我] 新活动已开放。' });
+      await r.send({ text: '[Alex] 魔力 50/100' }, 2);
+      expect(r.stored).toHaveLength(2);
+      expect(r.stored[0].text).toContain('[MC 私聊]');
+      expect(r.stored[1].text).toContain('[MC 动作栏]');
+      expect(r.stored.every(row => row.meta?.uname === undefined)).toBe(true);
+    } finally { await r.world.stop(); }
+  });
+
+  it('uses packet sender UUID to reject a mismatched format name while retaining the full message', async () => {
+    const r = await rig();
+    try {
+      const message = { toString: () => '<Other> 这是原文。' };
+      r.bot.emit('message', message, 'chat', r.bot.players.Alex.uuid);
+      r.bot.emit('messagestr', message.toString(), 'chat', message, r.bot.players.Alex.uuid);
+      await Promise.resolve();
+      expect(r.stored).toHaveLength(1);
+      expect(r.stored[0].text).toContain('<Other> 这是原文。');
+      expect(r.stored[0].meta?.uname).toBeUndefined();
+    } finally { await r.world.stop(); }
+  });
+
+  it('retains matching packet sender identity separately from player-list formatted system chat', async () => {
+    const r = await rig();
+    try {
+      const message = { toString: () => '<Alex> 我已经到了。' };
+      r.bot.emit('message', message, 'chat', r.bot.players.Alex.uuid);
+      r.bot.emit('messagestr', message.toString(), 'chat', message, r.bot.players.Alex.uuid);
+      await Promise.resolve();
+      expect(r.stored).toHaveLength(1);
+      expect(r.stored[0]).toMatchObject({ text: '[MC] Alex: 我已经到了。', senderKey: 'Alex',
+        meta: { uname: 'Alex', chatTransport: 'chat', identityEvidence: 'packet-sender',
+          senderUuid: r.bot.players.Alex.uuid } });
+    } finally { await r.world.stop(); }
+  });
+
   it('delivers an isolated server notice on the normal timer while preserving current work', async () => {
     vi.useFakeTimers();
     const r = await rig();

@@ -1,0 +1,49 @@
+--- a/world.ts
++++ b/world.ts
+@@ -41,6 +41,7 @@
+ import { RejectedRouteLedger, sameRejectedRouteOrigin, type RejectedRouteScope } from './rejected-route-ledger.ts';
+ import { classifyBossBarTitle } from './boss-bar.ts';
+ import { minecraftTextComponent } from './text-component.ts';
++import { MinecraftChatProvenance } from '../src/chat-provenance.ts';
+ import {
+   REPEATED_QUERY_RECEIPT, RoundOnceGate, roundTokenOf,
+ } from './round.ts';
+@@ -6992,6 +6993,9 @@
+     });
+ 
+     const matchedChatMessages = new WeakSet<object>();
++    const chatProvenance = new MinecraftChatProvenance();
++    bot.prependListener('message', (message: unknown, position: string, sender?: string | null) =>
++      chatProvenance.observe(message, position, sender));
+     const mentionedInChat = (message: string): boolean => {
+       const lower = message.toLocaleLowerCase();
+       return lower.includes(this.chatName().toLocaleLowerCase())
+@@ -7005,6 +7009,8 @@
+       return false;
+     };
+     bot.on('chat', (username: string, message: string, _translate: string, jsonMsg: unknown) => {
++      const identity = chatProvenance.identify(username, jsonMsg, bot.players);
++      if (!identity) return;
+       if (markMatched(jsonMsg)) return;
+       if (jsonMsg && typeof jsonMsg === 'object') this.chatClaimed.add(jsonMsg);
+       if (username === this.chatName()) {
+@@ -7014,15 +7020,17 @@
+       }
+       this.interruptIdle('chat');
+       this.emit('minecraft.chat', `[MC] ${username}: ${message}`, mentionedInChat(message),
+-        { meta: { uname: username, socialScope: 'minecraft-server' } }, username);
++        { meta: { uname: username, socialScope: 'minecraft-server', ...identity } }, username);
+     });
+     bot.on('whisper', (username: string, message: string, _translate: string, jsonMsg: unknown) => {
++      const identity = chatProvenance.identify(username, jsonMsg, bot.players);
++      if (!identity) return;
+       if (markMatched(jsonMsg)) return;
+       if (jsonMsg && typeof jsonMsg === 'object') this.chatClaimed.add(jsonMsg);
+       if (username === this.chatName()) return;
+       this.interruptIdle('whisper');
+       this.emit('minecraft.chat', `[MC 私聊] ${username}: ${message}`, true,
+-        { meta: { uname: username, socialScope: 'minecraft-server' } }, username);
++        { meta: { uname: username, socialScope: 'minecraft-server', ...identity } }, username);
+     });
+     bot.on('title', (text: unknown) => {
+       const t = minecraftTextComponent(text);
