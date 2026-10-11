@@ -10,6 +10,7 @@ import { assertMymcReady } from '../src/guard.ts';
 import { MYMC_TOOL_DECLS, MymcWorld } from '../src/world.ts';
 import { SkillCatalog } from '../src/skill-catalog.ts';
 import type { MinecraftWorldProxy } from '../engine/proxy.ts';
+import { CombatSpells } from '../engine/combat-spells.ts';
 
 function fakeEngine() {
   let bridge: WorldHost | undefined;
@@ -69,6 +70,27 @@ function fakeHost() {
 }
 
 describe('Mymc World contract', () => {
+  it('puts observed tactic blockers before the intact engine receipt', async () => {
+    const spells = new CombatSpells();
+    spells.setTactic({ spells: ['missing_bolt'], healAtOrBelow: 12 });
+    spells.noteMana(20);
+    const receipt = spells.readout();
+    const fake = fakeEngine();
+    const baseTools = fake.engine.tools();
+    Object.assign(fake.engine, { tools: () => [...baseTools, {
+      name: 'mc_combat_tactic', tags: ['act'], description: 'Configure combat casts',
+      parameters: { type: 'object' }, handler: async () => receipt,
+    }] });
+    const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
+    const tool = world.tools().find(tool => tool.name === 'mymc_combat_tactic')!;
+    expect(tool.description).toContain('does not initiate an attack');
+    const result = await tool.handler({}, { role: 'main', log: {} as never });
+    expect(typeof result).toBe('string');
+    expect(result).toMatch(/^\[战术执行条件\] 已选 1 项，当前 1 项受阻/);
+    expect(result).toContain('missing_bolt（本连接尚未确认该能力）');
+    expect(result).toContain(receipt);
+  });
+
   it('supplies current commissions and completion receipts to requests and memory summaries', async () => {
     const fake = fakeEngine();
     Object.assign(fake.engine, { requestFacts: () => ({ text: '当前在地面', snapshotTypes: [],
@@ -195,7 +217,9 @@ describe('Mymc World contract', () => {
     const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
     const tools = world.tools();
     expect(tools.map((tool) => tool.name)).toEqual(['mymc_do', 'mymc_cast', 'mymc_skills', 'mymc_messages', 'mymc_guide']);
-    expect(tools[0].description).toBe('mymc_do emits mymc.task');
+    expect(tools[0].description).toContain('mymc_do emits mymc.task');
+    expect(tools[0].description).toContain('attack approaches and attacks');
+    expect(tools[0].description).toContain('queue:"now"');
     expect((tools[0].parameters.properties as Record<string, { description: string }>).text.description).toBe('Use mymc_do');
     expect(await tools[0].handler({}, { role: 'main', log: {} as never })).toBe('[mymc_do] 已受理');
     expect(await tools[2].handler({}, { role: 'main', log: {} as never })).toContain('尚未收到服务端技能目录');

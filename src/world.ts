@@ -32,6 +32,7 @@ import { ProspectEvidence } from './prospect-evidence.ts';
 import { GuildProgress } from './guild-progress.ts';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from './server-guide.ts';
 import { mymcAcceptsImages, mymcStructuredVisual, mymcVisualArgumentError } from './visual-fallback.ts';
+import { combatTacticNote } from './combat-contract.ts';
 
 const ENV_PROMPT_FILE = fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url));
 const CAMERA_NOTE_FILE = fileURLToPath(new URL('./ENV_PROMPT_CAMERA.md', import.meta.url));
@@ -55,6 +56,16 @@ function mapSchema(value: unknown): unknown {
 }
 
 function toolDescription(name: string, description: string): string {
+  if (name === 'mc_combat_tactic') return toMymcText(description)
+    + ' This configures casts only; it does not initiate an attack or approach enemies. '
+    + 'Use mymc_do attack to choose and engage a currently observed target. '
+    + 'Read selected checks and ruleChecks: a saved tactic can have every offensive spell blocked. '
+    + 'Updating spells keeps existing rules; pass rules:[] to return to spell priority order.';
+  if (name === 'mc_do') return toMymcText(description)
+    + ' attack approaches and attacks the selected target; combat_tactic alone does not initiate combat. '
+    + 'While automatic self-defense owns the body, default/append attack waits. '
+    + 'An explicit queue:"now" attack can take control when health is sufficient; survival and environmental rescue may still defer it. '
+    + 'Check the returned queue and terminal result before submitting another attack.';
   return name === 'mc_visual'
     ? 'Observe the current Minecraft scene. If the current provider supports images, return the actual screenshot '
       + 'for that provider to inspect; no separate vision service is required. Otherwise, or when structured mode '
@@ -419,7 +430,10 @@ export class MymcWorld implements World {
           ? routeViaServerCommand(args as Record<string, unknown>)
           : { args, note: null };
         const result = await tool.handler(planned.args, ctx);
-        const addNote = (value: string): string => planned.note ? `${planned.note}\n${value}` : value;
+        const addNote = (value: string): string => {
+          const combatNote = tool.name === 'mc_combat_tactic' ? combatTacticNote(value) : null;
+          return [combatNote, planned.note, value].filter(Boolean).join('\n');
+        };
         return typeof result === 'string'
           ? addNote(toMymcText(result))
           : { ...result, text: addNote(toMymcText((result as ToolOutcome).text)) };
