@@ -1,0 +1,872 @@
+diff --git a/combat-rules.ts b/combat-rules.ts
+index 6efc7c7..497c9b4 100644
+--- a/combat-rules.ts
++++ b/combat-rules.ts
+@@ -2,6 +2,8 @@
+ export interface CombatRule {
+   id: string;
+   spell: string;
++  /** Meaning of this choice, authored after reading the server's skill contract. */
++  intent?: string;
+   when: {
+     within?: number;
+     enemyTypes?: string[];
+@@ -35,6 +37,8 @@ export const COMBAT_RULES_SCHEMA = {
+     properties: {
+       id: { type: 'string', pattern: ID.source, description: 'Unique rule ID, retained in cast observations.' },
+       spell: { type: 'string', pattern: ID.source, description: 'Server-listed offensive/support spell ID; selfheal uses healAtOrBelow.' },
++      intent: { type: 'string', minLength: 1, maxLength: 160,
++        description: 'Optional concise effect and tactical purpose from the skill documentation. Required to offer this rule to the asynchronous fast selector; does not prove the spell is learned.' },
+       when: { type: 'object', additionalProperties: false, properties: {
+         within: { type: 'number', minimum: 1, maximum: 16, description: 'Count matching enemies within this 3D distance; default 12. Not a claim about spell range or line of sight.' },
+         enemyTypes: { type: 'array', minItems: 1, maxItems: 16, uniqueItems: true, items: { type: 'string', pattern: ID.source }, description: 'Optional exact entity types to count; omitted counts all observed hostiles.' },
+@@ -56,9 +60,10 @@ export function validCombatRules(value: unknown): value is CombatRule[] {
+   const ids = new Set<string>();
+   for (const rule of value) {
+     if (!rule || typeof rule !== 'object' || Array.isArray(rule)
+-      || Object.keys(rule).some(k => !['id', 'spell', 'when'].includes(k))
++      || Object.keys(rule).some(k => !['id', 'spell', 'intent', 'when'].includes(k))
+       || typeof rule.id !== 'string' || !ID.test(rule.id) || ids.has(rule.id)
+       || typeof rule.spell !== 'string' || !ID.test(rule.spell) || rule.spell === 'selfheal'
++      || (rule.intent !== undefined && (typeof rule.intent !== 'string' || !rule.intent.trim().length || rule.intent.length > 160))
+       || !rule.when || typeof rule.when !== 'object' || Array.isArray(rule.when)) return false;
+     ids.add(rule.id);
+     const w = rule.when;
+diff --git a/combat-spells.ts b/combat-spells.ts
+index 7d8fe70..b7dd227 100644
+--- a/combat-spells.ts
++++ b/combat-spells.ts
+@@ -4,6 +4,8 @@ import { manaSnapshotFromText } from './viewer-state.ts';
+ import { viewerCastResult } from './viewer-cast.ts';
+ import { CombatTacticBook, type CombatCastAttempt, type CombatResult, type CombatReceipt } from './combat-tactics.ts';
+ import { combatRuleBlock, type CombatRule, type CombatRuleFacts } from './combat-rules.ts';
++import type { Battlefield } from './battlefield.ts';
++import type { CombatDecisionFrame } from './combat-decision.ts';
+ 
+ export type CombatSpell = string;
+ export interface CombatTactic {
+@@ -66,6 +68,33 @@ export class CombatSpells {
+     return structuredClone(this.tactic);
+   }
+ 
++  /** Builds model choices from current game facts without consuming a combat tick or issuing a command. */
++  decisionFrame(bot: Bot, battlefield: Battlefield, maxCandidates: number, now = Date.now()): CombatDecisionFrame {
++    const rules = this.tactic?.rules ?? [];
++    const skills = [...new Set(rules.map(r => r.spell))].map(spell => ({ spell,
++      available: this.available.has(spell), manaCost: this.costs.get(spell) ?? null,
++      cooldownRemainingMs: this.serverReadyAt.has(spell) ? Math.max(0, this.serverReadyAt.get(spell)! - now,
++        this.lastSent.has(spell) ? this.cooldownOf(spell) - (now - this.lastSent.get(spell)!) : 0) : null,
++      block: !this.available.has(spell) ? 'ability-not-observed'
++        : !this.costs.has(spell) ? 'mana-cost-unknown'
++        : !this.serverReadyAt.has(spell) ? 'cooldown-unknown'
++        : this.mana === null || this.manaLoading ? 'mana-unknown' : this.manualCastBlock(spell, now) }));
++    const facts: Omit<CombatRuleFacts, 'cost'> = { ...this.ruleFacts(bot),
++      enemies: battlefield.actors.flatMap(e => e.relation === 'hostile' && e.distance !== null
++        && e.distance <= 16 && e.health.current !== 0 ? [{ type: e.type ?? '', distance: e.distance }] : []) };
++    const candidates = rules.flatMap(rule => {
++      const skill = skills.find(s => s.spell === rule.spell)!;
++      const target = battlefield.actors.some(e => e.relation === 'hostile' && e.health.current !== 0
++        && e.lineOfSight === true && e.distance !== null && e.distance <= (rule.when.within ?? 12)
++        && (!rule.when.enemyTypes || rule.when.enemyTypes.includes(e.type ?? '')));
++      if (!rule.intent || skill.block || skill.manaCost === null || !target
++        || combatRuleBlock(rule, { ...facts, cost: skill.manaCost })) return [];
++      return [{ id: rule.id, kind: 'cast' as const, ruleId: rule.id, spell: rule.spell, intent: rule.intent, manaCost: skill.manaCost }];
++    });
++    return { battlefield, tacticRevision: this.book.current().revision, mana: this.mana, skills,
++      candidates: candidates.slice(0, maxCandidates), omittedCandidates: Math.max(0, candidates.length - maxCandidates) };
++  }
++
+   wantsHeal(health: number): boolean {
+     const line = this.tactic?.healAtOrBelow ?? 10;
+     return health > 0 && health <= line;
+@@ -110,8 +139,10 @@ export class CombatSpells {
+       if (ability.cooldownMs !== null) this.cooldowns.set(spell, ability.cooldownMs);
+       if (ability.cooldownRemainingMs !== undefined && ability.cooldownRemainingMs !== null)
+         this.serverReadyAt.set(spell, now + ability.cooldownRemainingMs);
++      else if (ability.cooldownRemainingMs === null) this.serverReadyAt.delete(spell);
+       if (ability.manaCost !== undefined && ability.manaCost !== null)
+         this.costs.set(spell, ability.manaCost);
++      else if (ability.manaCost === null) this.costs.delete(spell);
+     }
+   }
+ 
+@@ -203,9 +234,9 @@ export class CombatSpells {
+     return null;
+   }
+ 
+-  noteSent(spell: CombatSpell, now = Date.now(), source: CombatCastAttempt['source'] = 'automatic'): void {
+-    const ruleId = source === 'automatic' && this.decision?.spell === spell
+-      && now >= this.decision.at && now - this.decision.at <= CHECK_GAP_MS ? this.decision.ruleId : undefined;
++  noteSent(spell: CombatSpell, now = Date.now(), source: CombatCastAttempt['source'] = 'automatic', selectedRuleId?: string): void {
++    const ruleId = selectedRuleId ?? (source === 'automatic' && this.decision?.spell === spell
++      && now >= this.decision.at && now - this.decision.at <= CHECK_GAP_MS ? this.decision.ruleId : undefined);
+     this.casts.push({ spell, sentAt: new Date(now).toISOString(), source,
+       tacticRevision: this.book.current().revision, manaBefore: this.mana, ...(ruleId ? { ruleId } : {}) });
+     this.decision = null;
+diff --git a/combat.ts b/combat.ts
+index 250c5ca..db25a4b 100644
+--- a/combat.ts
++++ b/combat.ts
+@@ -40,6 +40,7 @@ import { zhEntity, zhName } from './names.ts';
+ import { zhErrorText } from './receipt.ts';
+ import { BURNING_BLOCKS, SCORCHING_FLOOR, bodyInWater, canSeeEntity, findBankCell, headInWater } from './terrain.ts';
+ import { piglinIsHostile } from './piglin.ts';
++import { corridorSafe } from './idle-actions.ts';
+ import { consumeHeldFood } from './skills-craft.ts';
+ import { itemsInReach } from './inventory.ts';
+ import { RISKY_FOODS } from './nutrition.ts';
+@@ -368,6 +369,7 @@ export class CombatSession {
+   private trajectoryAt = 0;
+   private trajectoryPos: { x: number; y: number; z: number } | null = null;
+   private movementIntent: { x: number; z: number } | null = null;
++  private tacticalMove: { origin: Vec3; destination: Vec3; expiresAtMs: number } | null = null;
+   private stallSince = 0;
+   private stallMode = '';
+   private pathRetryAfter = 0;
+@@ -425,6 +427,38 @@ export class CombatSession {
+     return this.state === 'fighting';
+   }
+ 
++  reactionState(): { targetId: number | null; canStep: boolean; sinceHitMs: number | null; retreating: boolean } {
++    return { targetId: this.targetId >= 0 ? this.targetId : null,
++      canStep: this.fighting && !this.eating && !this.pathing && this.swingPhase === 'idle' && this.hybridWeapon === 'melee',
++      sinceHitMs: this.fighting ? Date.now() - Math.max(this.lastLandedAt, this.startedAt) : null,
++      retreating: this.state === 'retreating' };
++  }
++
++  /** Reuses the combat body's existing lease, health gates and retreat controller. */
++  react(action: { kind: 'engage'; targetId: number } | { kind: 'retreat' }
++    | { kind: 'step'; destination: [number, number, number] }): boolean {
++    const bot = this.opts.getBot();
++    if (!bot?.entity || (bot.health ?? 0) <= 0 || this.opts.envBusy() || this.opts.taskEscaping?.() || this.opts.taskFighting?.()) return false;
++    if (action.kind === 'retreat') {
++      if (!this.fighting) return false;
++      this.tacticalMove = null; this.beginRetreat('flee'); return true;
++    }
++    if (action.kind === 'step') {
++      const to = new Vec3(...action.destination);
++      if (!this.reactionState().canStep || !corridorSafe(bot, bot.entity.position, to)) return false;
++      this.tacticalMove = { origin: bot.entity.position.clone(), destination: to, expiresAtMs: Date.now() + 700 };
++      return true;
++    }
++    const t = this.opts.tuning();
++    if (this.active || !t.enabled || t.fight === 'off'
++      || (bot.health ?? 0) < t.fleeHealth + ENGAGE_MARGIN
++      || (t.fight === 'armed' && !bestWeapon(bot) && !this.rangedReady(bot))) return false;
++    const foe = this.scan(bot, t, t.chaseMax).find(f => f.id === action.targetId && f.visible && !NO_FIGHT.has(f.name));
++    if (!foe || !this.engage(foe.name, false)) return false;
++    if (this.fighting) this.targetId = foe.id;
++    return true;
++  }
++
+   /** 这只怪的死由战斗会话来说,World 的「它死了」播报让位 */
+   claims(id: number): boolean {
+     return this.state !== 'idle' && this.struck.has(id);
+@@ -1164,6 +1198,13 @@ export class CombatSession {
+   // —— v7 移动:上下文图 ————————————————————————————————————————
+ 
+   private driveContext(bot: Bot, t: CombatTuning, target: Foe, mode: 'crit' | 'kb' | 'sweep', now: number, foes: Foe[]): void {
++    const shortMove = this.tacticalMove;
++    if (shortMove) {
++      const remaining = shortMove.destination.minus(bot.entity.position);
++      if (now >= shortMove.expiresAtMs || remaining.norm() < 0.22
++        || !corridorSafe(bot, shortMove.origin, shortMove.destination)) this.tacticalMove = null;
++      else { this.pressToward(bot, remaining.x, remaining.z, false); return; }
++    }
+     // 横扫要求出手那一 tick 几乎没动:站定期间任何移动都不许写
+     if (this.swingPhase === 'settle') {
+       for (const k of ['forward', 'back', 'left', 'right', 'sprint'] as const) bot.setControlState(k, false);
+@@ -1573,6 +1614,7 @@ export class CombatSession {
+ 
+     if (mode === 'crit') {
+       if (bot.entity.onGround) {
++        this.tacticalMove = null;
+         bot.setControlState('sprint', false);
+         bot.setControlState('jump', true);
+         this.swingPhase = 'hop';
+@@ -1582,6 +1624,9 @@ export class CombatSession {
+       return;
+     }
+     if (mode === 'sweep') {
++      this.tacticalMove = null;
++      for (const k of ['forward', 'back', 'left', 'right', 'sprint'] as const) bot.setControlState(k, false);
++      this.movementIntent = null;
+       this.swingPhase = 'settle';
+       this.phaseTargetId = target.id;
+       this.phaseUntil = now + 100;
+@@ -1998,6 +2043,7 @@ export class CombatSession {
+   }
+ 
+   private release(bot: Bot): void {
++    this.tacticalMove = null;
+     this.movementIntent = null;
+     // sneak 也在名单里:寻路器交互放置失败时是**故意**留着它的
+     // (index.js:557-566 只在放成那一支才 sneak=false),战斗夺手正好夹在中间,
+diff --git a/config.ts b/config.ts
+index 5c293af..fab9788 100644
+--- a/config.ts
++++ b/config.ts
+@@ -1,4 +1,5 @@
+ import type { ConfigGroup } from './support/host-contract.ts';
++import type { CombatDecisionConfig } from './combat-decision.ts';
+ 
+ export const MINECRAFT_DEFAULTS = {
+   // enabled 由Persona的装配层显式开启。
+@@ -70,6 +71,12 @@ export const MINECRAFT_DEFAULTS = {
+     minIntervalMs: 5_000,
+     minConfidence: 0.75,
+   },
++  combatDecision: {
++    enabled: false, mode: 'shadow' as const, endpoint: '', timeoutMs: 250,
++    minIntervalMs: 750, minConfidence: 0.75, maxAgeMs: 500, maxEntities: 12, maxCandidates: 2,
++    allowMovement: false, allowEngage: false, engageScope: 'party' as const,
++    movementStallMs: 1_500,
++  },
+   /** 空闲时授权的小动作；占用身体的任务与事件可随时取消。 */
+   idle: {
+     enabled: false,
+@@ -219,6 +226,7 @@ export interface MinecraftConfigSection {
+   };
+   /** 受阻任务的异步辅助判断。 */
+   decision: { enabled: boolean; endpoint: string; timeoutMs: number; minIntervalMs: number; minConfidence?: number };
++  combatDecision?: CombatDecisionConfig;
+   idle: {
+     enabled: boolean; selector: 'random' | 'decision'; endpoint: string; timeoutMs: number;
+     decisionPolicy?: 'choice' | 'sample';
+@@ -388,6 +396,55 @@ export const MINECRAFT_RHYTHM_CONFIG_GROUP: ConfigGroup = {
+         type: 'number', title: '辅助建议最低首选概率', minimum: 0, maximum: 1, 'x-hot': true,
+         description: '低于此值保留原任务回执，只记录不确定的判断，不追加行动建议。',
+       },
++      'worlds.minecraft.combatDecision.enabled': {
++        type: 'boolean', title: '战斗快速策略选择', 'x-hot': true,
++        description: '直接从游戏时钟采样战场并异步选择已编排法术；规则须填写 intent，攻击与移动继续运行。默认关闭。',
++      },
++      'worlds.minecraft.combatDecision.mode': {
++        type: 'string', enum: ['shadow', 'act'], title: '战斗选择模式', 'x-hot': true,
++        description: 'shadow 只记录选择，原战术继续；act 可发送通过现场复核的法术。低血自救先执行。',
++      },
++      'worlds.minecraft.combatDecision.endpoint': {
++        type: 'string', title: '战斗选择接口', 'x-hot': true,
++        description: '接收 state/questions 的 JSON POST 地址；留空不启用选择。',
++      },
++      'worlds.minecraft.combatDecision.timeoutMs': {
++        type: 'integer', title: '战斗选择超时', minimum: 50, maximum: 2000, 'x-suffix': 'ms', 'x-hot': true,
++      },
++      'worlds.minecraft.combatDecision.minIntervalMs': {
++        type: 'integer', title: '战斗选择最短间隔', minimum: 250, maximum: 10000, 'x-suffix': 'ms', 'x-hot': true,
++      },
++      'worlds.minecraft.combatDecision.minConfidence': {
++        type: 'number', title: '战斗选择最低首选概率', minimum: 0, maximum: 1, 'x-hot': true,
++      },
++      'worlds.minecraft.combatDecision.maxAgeMs': {
++        type: 'integer', title: '战斗选择最长有效时间', minimum: 50, maximum: 2000, 'x-suffix': 'ms', 'x-hot': true,
++        description: '返回后还须复核连接、战术、血量、魔力、目标、可见性与当前动作；过期结果作废。',
++      },
++      'worlds.minecraft.combatDecision.maxEntities': {
++        type: 'integer', title: '战场实体上限', minimum: 4, maximum: 64, 'x-hot': true,
++        description: '24格内按距离采样玩家和敌对类型，服务端确认的远处队友位置标未知；报告省略数量。',
++      },
++      'worlds.minecraft.combatDecision.maxCandidates': {
++        type: 'integer', title: '战斗候选动作上限', minimum: 1, maximum: 8, 'x-hot': true,
++        description: '受阻时优先提供已检查的移动，其后按已编排规则顺序保留法术，另有继续当前动作；报告省略数量。',
++      },
++      'worlds.minecraft.combatDecision.allowMovement': {
++        type: 'boolean', title: '快速战术短步与撤退', 'x-hot': true,
++        description: '允许战斗控制器执行经过落脚和碰撞检查的1.2格短步，或进入已有撤退控制器；不抢正常身体任务。',
++      },
++      'worlds.minecraft.combatDecision.allowEngage': {
++        type: 'boolean', title: '快速选择主动接敌', 'x-hot': true,
++        description: '身体空闲时可选择交战；仍遵守 fight 策略、装备和生存限制，不取消已有任务或脚本。',
++      },
++      'worlds.minecraft.combatDecision.engageScope': {
++        type: 'string', enum: ['party', 'hostile'], title: '快速接敌范围', 'x-hot': true,
++        description: 'party 只考虑服务端确认正在攻击自己或队友的目标；hostile 允许选择可见敌对生物。',
++      },
++      'worlds.minecraft.combatDecision.movementStallMs': {
++        type: 'integer', title: '无命中后允许战术短步', minimum: 500, maximum: 10000, 'x-suffix': 'ms', 'x-hot': true,
++        description: '正常连续命中时由原战斗控制器继续；超过此时长未命中才提供额外短步与撤退候选。',
++      },
+       'worlds.minecraft.idle.enabled': {
+         type: 'boolean', title: '空闲小动作', 'x-hot': true,
+         description: '空闲时穿插转头、姿态与只读背包预览；任务、战斗和交互开始时取消。默认关闭。',
+diff --git a/idle-actions.ts b/idle-actions.ts
+index 8e8d7a5..2b0cd19 100644
+--- a/idle-actions.ts
++++ b/idle-actions.ts
+@@ -61,7 +61,7 @@ function eye(bot: Bot): Vec3 {
+   return bot.entity.position.offset(0, height, 0);
+ }
+ 
+-function loadedSight(bot: Bot, to: Point): boolean {
++export function loadedSight(bot: Bot, to: Point): boolean {
+   if (typeof bot.blockAt !== 'function' || typeof bot.world?.raycast !== 'function') return false;
+   const from = eye(bot);
+   const length = distance(from, to);
+@@ -100,7 +100,7 @@ function safeFloor(bot: Bot, x: number, y: number, z: number): boolean {
+     && shape[3] === 1 && shape[4] === 1 && shape[5] === 1);
+ }
+ 
+-function corridorSafe(bot: Bot, from: Point, to: Point): boolean {
++export function corridorSafe(bot: Bot, from: Point, to: Point): boolean {
+   if (!bot.entity.onGround || Math.abs(from.y - Math.round(from.y)) > 0.04
+     || Math.abs(to.y - from.y) > 0.01) return false;
+   const length = distance(from, to);
+diff --git a/world.ts b/world.ts
+index c80c00e..1e2d267 100644
+--- a/world.ts
++++ b/world.ts
+@@ -121,6 +121,9 @@ import { ItemBreakDecoder, type ItemBreakFact } from './item-break.ts';
+ import { WorksBook } from './works.ts';
+ import { CombatSession } from './combat.ts';
+ import { CombatSpells, type CombatSpell } from './combat-spells.ts';
++import { BattlefieldObserver } from './battlefield.ts';
++import { CombatDecisionLoop, type CombatCandidate, type CombatDecisionConfig, type CombatDecisionFrame } from './combat-decision.ts';
++import { combatReactions } from './combat-reactions.ts';
+ import { CombatTacticBook } from './combat-tactics.ts';
+ import { COMBAT_RULES_SCHEMA, validCombatRules, type CombatRule } from './combat-rules.ts';
+ import { chooseRoutineFood, renderFoodReserveReadout } from './nutrition.ts';
+@@ -2179,6 +2182,7 @@ export const MINECRAFT_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [
+       + '{enabled:false} clears it. A spell list of server-listed combat spell IDs sets priority order while fighting; '
+       + 'healAtOrBelow casts selfheal at that health or lower before another attack. '
+       + 'Nonempty rules replace the unconditional spell priority: ordered observed conditions are rechecked each combat tick and the first ready match wins; no match means no automatic offensive cast. rules:[] restores spells/default priority. '
++       + 'When combatDecision is enabled, rules with intent may be selected asynchronously from direct battlefield facts. {battlefield:true} reads that bounded input without waiting for the main model. '
+       + 'The World checks observed spell availability, mana, targets and announced cooldowns; '
+       + 'server replies still decide success. Settings and the last five observed combat receipts persist per world across restarts. '
+       + '{} also reads current capability constraints and recent receipt IDs; {report:id} expands one receipt. '
+@@ -2191,6 +2195,7 @@ export const MINECRAFT_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [
+           items: { type: 'string', pattern: '^[a-z][a-z0-9_:-]{0,63}$' } },
+         healAtOrBelow: { type: 'integer', minimum: 1, maximum: 20 },
+         rules: COMBAT_RULES_SCHEMA,
++        battlefield: { type: 'boolean', description: 'Read the current programmatic battlefield, abilities and eligible choices; use alone. Missing health or party identity stays unknown.' },
+         report: { type: 'integer', minimum: 1, description: 'Read one observed combat receipt by its returned ID; do not combine with setting fields.' },
+       },
+       required: [],
+@@ -2810,6 +2815,9 @@ export class MinecraftWorld implements World {
+   /** 服务端本连接明确列出的自愈能力；重连后必须重新确认。 */
+   private selfHealAvailable = false;
+   private readonly combatSpells: CombatSpells;
++  private readonly battlefield = new BattlefieldObserver();
++  private combatDecision: CombatDecisionLoop | null = null;
++  private lastCombatDecision: { atMs: number; generation: number; outcome: unknown; elapsedMs: unknown } | null = null;
+   private arenaFloor: { floor: number; total: number } | null = null;
+   /** 每次真实 spawn 递增；断线前后的工具、事件与连接日志据此分代。 */
+   private connectionGeneration = 0;
+@@ -4580,6 +4588,12 @@ export class MinecraftWorld implements World {
+   private setCombatTactic(args: Record<string, unknown>): string {
+     const tool = 'mc_combat_tactic';
+     this.syncRealm();
++    if (args.battlefield === true) {
++      if (Object.keys(args).length !== 1) return this.toolLog(tool, args, '未读取：battlefield须单独使用。');
++      const frame = this.sampleCombatDecision();
++      return this.toolLog(tool, args, frame ? '[直接游戏战场采样；null是未知，发送与命中仍须回执]\n' + JSON.stringify(frame)
++        : '未连接或没有有效的当前实体读数；未返回旧战场。');
++    }
+     if (args.report !== undefined) {
+       if (Object.keys(args).length !== 1 || !Number.isInteger(args.report) || (args.report as number) < 1)
+         return this.toolLog(tool, args, '未读取：report 必须是回执编号，且不能与战术设置混用。');
+@@ -4592,7 +4606,8 @@ export class MinecraftWorld implements World {
+           + `生命线 ${tactic.healAtOrBelow ?? '未设置'}/20。`
+         : '当前使用默认即时战斗法术；低血撤退时尝试圣愈术。')
+         + (tactic?.rules?.length ? `\n条件分支启用，共${tactic.rules.length}项；上述法术列表仅为停用分支后的备用顺序。` : '')
+-        + '\n' + this.combatSpells.readout(undefined, Date.now(), this.bridge?.bot ?? undefined));
++        + '\n' + this.combatSpells.readout(undefined, Date.now(), this.bridge?.bot ?? undefined)
++        + '\n' + this.combatDecisionReadout());
+     }
+     if (args.enabled === false) {
+       this.combatSpells.setTactic(null);
+@@ -4670,20 +4685,92 @@ export class MinecraftWorld implements World {
+       this.tryAutoSelfHeal(bot);
+       return;
+     }
++    const cfg = this.combatDecisionConfig();
++    if (cfg.enabled && cfg.endpoint) {
++      this.combatDecision ??= new CombatDecisionLoop({
++        config: () => this.combatDecisionConfig(), sample: () => this.sampleCombatDecision(),
++        apply: candidate => this.applyCombatDecision(candidate),
++        fallback: () => {
++          const current = this.sampleCombatDecision();
++          if (!current || current.battlefield.action.emergency || !current.battlefield.action.fighting) return;
++          const liveBot = this.bridge?.bot;
++          if (!liveBot) return;
++          const fallback = this.combatSpells.next(liveBot, true);
++          if (fallback) this.sendAutoCombatSpell(liveBot, fallback);
++        },
++        report: (event, data) => {
++          if (event !== 'requested') this.lastCombatDecision = { atMs: Date.now(), generation: data.connectionGeneration as number,
++            outcome: data.outcome ?? data.reason, elapsedMs: data.elapsedMs };
++          this.diag.write({ lane: 'combat', event: `decision-${event}`, msg: `异步战斗选择 ${event}`, data });
++        },
++      });
++      const pending = this.combatDecision.tick();
++      if (cfg.mode === 'act' && pending) return;
++    }
+     const spell = this.combatSpells.next(bot, fighting);
+     if (!spell) return;
+     this.sendAutoCombatSpell(bot, spell);
+   }
+ 
+-  private sendAutoCombatSpell(bot: Bot, spell: CombatSpell): void {
++  private combatDecisionConfig(): CombatDecisionConfig {
++    return this.cfg.combatDecision ?? MINECRAFT_DEFAULTS.combatDecision;
++  }
++
++  private combatDecisionReadout(): string {
++    const cfg = this.combatDecisionConfig(), last = this.lastCombatDecision;
++    return `[快速战术] ${cfg.enabled && cfg.endpoint ? cfg.mode : '关闭'}；直接从游戏时钟采样；接敌 ${cfg.allowEngage ? cfg.engageScope : '关闭'}，短步 ${cfg.allowMovement ? '开启' : '关闭'}。`
++      + (last ? ` 最近选择 ${String(last.outcome)}，${String(last.elapsedMs)}ms，连接代次 ${last.generation}，时间 ${new Date(last.atMs).toISOString()}。` : ' 尚无选择回执。');
++  }
++
++  private sampleCombatDecision(): CombatDecisionFrame | null {
++    const bot = this.bridge?.bot;
++    if (!bot?.entity || !this.bridge?.connected || this.shuttingDown || (bot.health ?? 0) <= 0) return null;
++    const cfg = this.combatDecisionConfig(), now = Date.now();
++    const queue = this.executor?.status();
++    const reaction = this.combat?.reactionState();
++    const fighting = (this.combat?.fighting ?? false) || (this.executor?.attacking ?? false);
++    const emergency = (this.reflexes?.envActive ?? false) || now < this.escapeHoldUntil
++      || (this.executor?.escaping ?? false) || (reaction?.retreating ?? false)
++      || (bot.health ?? 0) <= this.cfg.reflex.fleeHealth
++      || (this.selfHealAvailable && this.combatSpells.wantsHeal(bot.health ?? 0));
++    const battlefield = this.battlefield.sample(bot, this.connectionGeneration, { fighting, emergency,
++      taskId: queue?.running?.id ?? null, step: queue?.running?.step.slice(0, 120) ?? null }, cfg.maxEntities, now);
++    const frame = this.combatSpells.decisionFrame(bot, battlefield, cfg.maxCandidates, now);
++    if (!fighting) frame.candidates = [];
++    const reactions = combatReactions(bot, battlefield, cfg, {
++      bodyFree: !this.combat?.active && !queue?.running && !queue?.waiting.length && !queue?.hold
++        && !this.methods.current && !bot.currentWindow && !(this.executor?.eating ?? false),
++      canStep: (reaction?.canStep ?? false) && !bot.currentWindow && !(this.executor?.eating ?? false),
++      targetId: reaction?.targetId ?? null, sinceHitMs: reaction?.sinceHitMs ?? null,
++      fight: this.policy.get().fight, fleeHealth: this.cfg.reflex.fleeHealth, chaseMax: this.cfg.combat.chaseMax,
++    });
++    const choices = [...reactions, ...frame.candidates];
++    frame.omittedCandidates += Math.max(0, choices.length - cfg.maxCandidates);
++    frame.candidates = choices.slice(0, cfg.maxCandidates);
++    return frame;
++  }
++
++  private applyCombatDecision(candidate: CombatCandidate): boolean {
++    const current = this.sampleCombatDecision(), bot = this.bridge?.bot;
++    if (!current || !bot || current.battlefield.action.emergency
++      || !current.candidates.some(c => c.id === candidate.id && c.kind === candidate.kind)) return false;
++    if (candidate.kind === 'cast') {
++      if (!current.battlefield.action.fighting || this.combatSpells.manualCastBlock(candidate.spell)) return false;
++      return this.sendAutoCombatSpell(bot, candidate.spell, candidate.ruleId);
++    }
++    this.interruptIdle('combat-decision');
++    return this.combat?.react(candidate) ?? false;
++  }
++
++  private sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): boolean {
+     const command = `/mycli cast ${spell}`;
+     try {
+       bot.chat(command);
+     } catch (error) {
+       this.diag.write({ lane: 'combat', event: 'auto-spell-send-failed', msg: `${spell}: ${String(error)}` });
+-      return;
++      return false;
+     }
+-    this.combatSpells.noteSent(spell);
++    this.combatSpells.noteSent(spell, Date.now(), 'automatic', ruleId);
+     publishViewerCastCommand(bot, command);
+     this.diag.write({
+       lane: 'combat', event: 'auto-spell', msg: `交战中尝试 ${spell}；效果待服务端确认`,
+@@ -4691,6 +4778,7 @@ export class MinecraftWorld implements World {
+     });
+     this.emit('minecraft.event', `[Minecraft] 试着施放 ${spell}，是否生效等服务端回执确认。`,
+       false, { trigger: 'piggyback' });
++    return true;
+   }
+ 
+   private recoveryFoodFact(bot: Bot): string {
+@@ -6278,7 +6366,8 @@ export class MinecraftWorld implements World {
+     const connectionGeneration = ++this.connectionGeneration;
+     this.idleContext.clear();
+     this.selfHealAvailable = false;
+     this.combatSpells.reset();
++    this.battlefield.reset();
+     this.arenaFloor = null;
+     this.resetBodyOwners();
+     this.bodyLease.bindGeneration(connectionGeneration, Date.now());
+@@ -6914,6 +7003,7 @@ export class MinecraftWorld implements World {
+   private hookBotEvents(bot: any): void {
+     if (this.hookedBots.has(bot)) return;
+     this.hookedBots.add(bot);
++    this.battlefield.bind(bot);
+     this.bossQuarter.clear();
+     observeStatusEffects(bot);
+     if (this.agentFriendEnabled) watchAgentFriendFlight(bot);
+diff --git a/battlefield.ts b/battlefield.ts
+new file mode 100644
+--- /dev/null
++++ b/battlefield.ts
+@@ -0,0 +1,192 @@
++/** Connection-scoped battle facts from native entities and optional server party telemetry. */
++import type { Bot } from 'mineflayer';
++import { metaOf } from './animal-state.ts';
++import { HOSTILE } from './melee.ts';
++import { piglinIsHostile } from './piglin.ts';
++import { canSeeEntity } from './terrain.ts';
++import { loadedSight } from './idle-actions.ts';
++
++export const BATTLEFIELD_CHANNEL = 'mcagent:battlefield';
++type Relation = 'ally' | 'hostile' | 'neutral' | 'unknown';
++type Health = { current: number | null; max: number | null; source: 'native' | 'server' | 'unknown'; updatedAtMs: number | null };
++export interface BattlefieldActor {
++  entityId: number | null;
++  uuid: string | null;
++  type: string | null;
++  name: string | null;
++  relation: Relation;
++  relationSource: 'server' | 'hostile-type' | 'unknown';
++  scoreboardTeam: string | null;
++  health: Health;
++  position: [number, number, number] | null;
++  distance: number | null;
++  lineOfSight: boolean | null;
++  targetEntityId: number | null;
++}
++export interface Battlefield {
++  sampledAtMs: number;
++  connectionGeneration: number;
++  dimension: string | null;
++  self: { entityId: number; health: Health; food: number | null; position: [number, number, number]; scoreboardTeam: string | null };
++  action: { fighting: boolean; emergency: boolean; taskId: number | null; step: string | null };
++  actors: BattlefieldActor[];
++  omitted: number;
++  server: { sequence: number; receivedAtMs: number; expiresAtMs: number } | null;
++}
++interface ServerActor {
++  entityId: number | null; uuid: string; type: string | null; name: string | null;
++  relation: Relation; health: { current: number | null; max: number | null }; targetEntityId: number | null;
++}
++interface ServerFrame {
++  sequence: number; dimension: string; receivedAtMs: number; expiresAtMs: number; actors: ServerActor[];
++}
++const number = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0;
++const reading = (v: unknown): v is number | null => v === null || number(v);
++const entityId = (v: unknown): v is number | null => v === null || (Number.isSafeInteger(v) && (v as number) >= 0);
++const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
++
++function serverFrame(data: unknown, now: number): ServerFrame | null {
++  if (!Buffer.isBuffer(data) || data.length > 32_768) return null;
++  try {
++    const v = JSON.parse(data.toString('utf8'));
++    if (v?.schemaVersion !== 1 || !Number.isSafeInteger(v.sequence) || v.sequence < 0
++      || typeof v.dimension !== 'string' || !v.dimension.length || v.dimension.length > 100
++      || !Number.isInteger(v.validForMs) || v.validForMs < 1 || v.validForMs > 5_000
++      || !Array.isArray(v.entities) || v.entities.length > 64) return null;
++    const identities = new Set<string>();
++    const ids = new Set<number>();
++    for (const e of v.entities) {
++      if (!e || typeof e.uuid !== 'string' || !uuid.test(e.uuid) || identities.has(e.uuid.toLowerCase())
++        || !entityId(e.entityId) || (e.entityId !== null && ids.has(e.entityId))
++        || !['ally', 'hostile', 'neutral', 'unknown'].includes(e.relation)
++        || !(e.type === null || (typeof e.type === 'string' && /^[a-z][a-z0-9_:]{0,63}$/.test(e.type)))
++        || !(e.name === null || (typeof e.name === 'string' && e.name.length <= 80))
++        || !e.health || !reading(e.health.current) || !reading(e.health.max)
++        || (e.health.max !== null && (e.health.max <= 0 || (e.health.current !== null && e.health.current > e.health.max)))
++        || !entityId(e.targetEntityId)) return null;
++      identities.add(e.uuid.toLowerCase());
++      if (e.entityId !== null) ids.add(e.entityId);
++    }
++    return { sequence: v.sequence, dimension: v.dimension, receivedAtMs: now,
++      expiresAtMs: now + v.validForMs, actors: v.entities.map((e: ServerActor) => ({
++        entityId: e.entityId, uuid: e.uuid, type: e.type, name: e.name, relation: e.relation,
++        health: { current: e.health.current, max: e.health.max }, targetEntityId: e.targetEntityId,
++      })) };
++  } catch { return null; }
++}
++
++/** Attribute values include the server's modifiers; an absent maximum stays unknown. */
++function maxHealth(entity: Bot['entity']): number | null {
++  const attrs = (entity as unknown as { attributes?: Record<string,
++    { value: number; modifiers?: Array<{ amount: number; operation: number }> }> }).attributes;
++  const attr = Object.entries(attrs ?? {}).find(([key]) => /(?:^|[.:])max_health$/.test(key))?.[1];
++  if (!attr || !number(attr.value)) return null;
++  const mods = attr.modifiers ?? [];
++  let value = attr.value + mods.filter(m => m.operation === 0).reduce((n, m) => n + m.amount, 0);
++  const base = value;
++  value += mods.filter(m => m.operation === 1).reduce((n, m) => n + base * m.amount, 0);
++  for (const m of mods) if (m.operation === 2) value *= 1 + m.amount;
++  return number(value) && value > 0 ? value : null;
++}
++
++/** No chat parsing, main-model output or proximity inference establishes party membership. */
++export class BattlefieldObserver {
++  private bot: Bot | null = null;
++  private server: ServerFrame | null = null;
++  private sequence = -1;
++  private readonly healthTimes = new Map<number, number>();
++  private ownHealthAtMs: number | null = null;
++  private detach: (() => void) | null = null;
++
++  reset(): void { this.server = null; this.sequence = -1; this.healthTimes.clear(); this.ownHealthAtMs = null; }
++
++  bind(bot: Bot): void {
++    if (this.bot === bot) return;
++    this.detach?.(); this.reset(); this.bot = bot;
++    const metadata = (packet: { entityId: number; metadata?: Array<{ key: number }> }) => {
++      const e = bot.entities[packet.entityId];
++      const keys = e?.name ? bot.registry.entitiesByName[e.name]?.metadataKeys : undefined;
++      if (packet.metadata?.some(m => keys?.[m.key] === 'health')) this.healthTimes.set(packet.entityId, Date.now());
++    };
++    const health = () => { this.ownHealthAtMs = Date.now(); };
++    const gone = (e: Bot['entity']) => {
++      this.healthTimes.delete(e.id);
++      if (this.server) this.server.actors = this.server.actors.filter(a => a.entityId !== e.id);
++    };
++    const payload = (packet: { channel?: unknown; data?: unknown }) => {
++      if (packet.channel === BATTLEFIELD_CHANNEL) this.noteServerPayload(packet.data);
++    };
++    const end = () => { this.reset(); this.detach?.(); this.bot = null; };
++    bot._client.on('entity_metadata', metadata);
++    bot._client.on('custom_payload', payload);
++    bot._client.on('end', end);
++    bot.on('health', health); bot.on('entityGone', gone);
++    this.detach = () => {
++      bot._client.removeListener('entity_metadata', metadata);
++      bot._client.removeListener('custom_payload', payload);
++      bot._client.removeListener('end', end);
++      bot.removeListener('health', health); bot.removeListener('entityGone', gone);
++      this.detach = null;
++    };
++  }
++
++  noteServerPayload(data: unknown, now = Date.now()): boolean {
++    const frame = serverFrame(data, now);
++    if (!frame || frame.sequence <= this.sequence) return false;
++    this.sequence = frame.sequence; this.server = frame;
++    return true;
++  }
++
++  sample(bot: Bot, generation: number, action: Battlefield['action'], maxEntities: number, now = Date.now()): Battlefield {
++    const dim = bot.game?.dimension ?? null;
++    const dimensionKey = (v: string | null) => v === null ? null : v.includes(':') ? v : `minecraft:${v}`;
++    const server = this.server && dimensionKey(this.server.dimension) === dimensionKey(dim)
++      && this.server.expiresAtMs > now ? this.server : null;
++    const rows = new Map((server?.actors ?? []).map(a => [a.uuid.toLowerCase(), a]));
++    const p = bot.entity.position;
++    const team = (name: string | undefined) => name ? bot.teamMap?.[name]?.team ?? null : null;
++    const actors: BattlefieldActor[] = [];
++    for (const e of Object.values(bot.entities ?? {})) {
++      if (!e?.position || e === bot.entity || e.id === bot.entity.id || e.isValid === false) continue;
++      const distance = Math.hypot(e.position.x - p.x, e.position.y - p.y, e.position.z - p.z);
++      if (distance > 24) continue;
++      const rawRow = e.uuid ? rows.get(e.uuid.toLowerCase()) : undefined;
++      const row = rawRow && (rawRow.entityId === null || rawRow.entityId === e.id) ? rawRow : undefined;
++      const hostile = e.type !== 'player' && (HOSTILE.has(e.name ?? '')
++        || (e.name === 'piglin' && piglinIsHostile(bot, e)));
++      if (!row && !hostile && e.type !== 'player') continue;
++      if (row) rows.delete(row.uuid.toLowerCase());
++      const native = metaOf(bot, e, 'health');
++      let visible: boolean | null = null;
++      if (typeof bot.world?.raycast === 'function' && typeof bot.blockAt === 'function') {
++        try {
++          const to = { x: e.position.x, y: e.position.y + (e.height ?? 1) * 0.5, z: e.position.z };
++          if (loadedSight(bot, to)) visible = canSeeEntity(bot, e);
++        } catch { /* An unloaded ray is unknown. */ }
++      }
++      actors.push({ entityId: e.id, uuid: e.uuid ?? null, type: e.name ?? row?.type ?? null,
++        name: e.username ?? row?.name ?? null, relation: row?.relation ?? (hostile ? 'hostile' : 'unknown'),
++        relationSource: row ? 'server' : hostile ? 'hostile-type' : 'unknown',
++        scoreboardTeam: team(e.username),
++        health: row ? { ...row.health, source: 'server', updatedAtMs: server!.receivedAtMs }
++          : { current: number(native) ? native : null, max: maxHealth(e), source: number(native) ? 'native' : 'unknown',
++            updatedAtMs: this.healthTimes.get(e.id) ?? null },
++        position: [e.position.x, e.position.y, e.position.z], distance: Math.round(distance * 10) / 10,
++        lineOfSight: visible, targetEntityId: row?.targetEntityId ?? null });
++    }
++    for (const row of rows.values()) {
++      if (row.relation !== 'ally' || row.uuid.toLowerCase() === bot.entity.uuid?.toLowerCase()) continue;
++      // Party members outside native entity tracking have no measured position or visibility.
++      actors.push({ ...row, scoreboardTeam: null, relationSource: 'server',
++        health: { ...row.health, source: 'server', updatedAtMs: server!.receivedAtMs },
++        position: null, distance: null, lineOfSight: null });
++    }
++    actors.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity) || (a.entityId ?? 0) - (b.entityId ?? 0));
++    return { sampledAtMs: now, connectionGeneration: generation, dimension: dim,
++      self: { entityId: bot.entity.id, health: { current: number(bot.health) ? bot.health : null,
++        max: maxHealth(bot.entity), source: number(bot.health) ? 'native' : 'unknown', updatedAtMs: this.ownHealthAtMs },
++        food: number(bot.food) ? bot.food : null, position: [p.x, p.y, p.z], scoreboardTeam: team(bot.username) },
++      action, actors: actors.slice(0, maxEntities), omitted: Math.max(0, actors.length - maxEntities),
++      server: server ? { sequence: server.sequence, receivedAtMs: server.receivedAtMs, expiresAtMs: server.expiresAtMs } : null };
++  }
++}
+diff --git a/combat-decision.ts b/combat-decision.ts
+new file mode 100644
+--- /dev/null
++++ b/combat-decision.ts
+@@ -0,0 +1,123 @@
++/** An asynchronous choice over a bounded, previously authored combat tactic. */
++import { parseTypedChoice } from './support/typed-decision.ts';
++import type { Battlefield } from './battlefield.ts';
++
++export type CombatCandidate = { id: string; intent: string } & (
++  { kind: 'cast'; spell: string; manaCost: number; ruleId: string }
++  | { kind: 'engage'; targetId: number; uuid: string | null }
++  | { kind: 'step'; destination: [number, number, number] }
++  | { kind: 'retreat' }
++);
++export interface CombatDecisionFrame {
++  battlefield: Battlefield;
++  tacticRevision: number;
++  mana: number | null;
++  skills: Array<{ spell: string; available: boolean; manaCost: number | null;
++    cooldownRemainingMs: number | null; block: string | null }>;
++  candidates: CombatCandidate[];
++  omittedCandidates: number;
++}
++export interface CombatDecisionConfig {
++  enabled: boolean; mode: 'shadow' | 'act'; endpoint: string; timeoutMs: number;
++  minIntervalMs: number; minConfidence: number; maxAgeMs: number; maxEntities: number; maxCandidates: number;
++  allowMovement: boolean; allowEngage: boolean; engageScope: 'party' | 'hostile';
++  movementStallMs: number;
++}
++export interface CombatDecisionOptions {
++  config: () => CombatDecisionConfig;
++  sample: () => CombatDecisionFrame | null;
++  apply: (candidate: CombatCandidate) => boolean;
++  fallback?: () => void;
++  report: (event: string, data: Record<string, unknown>) => void;
++  fetchImpl?: typeof fetch;
++  now?: () => number;
++}
++
++function sceneKey(frame: CombatDecisionFrame): string {
++  const f = frame.battlefield;
++  return JSON.stringify([f.connectionGeneration, f.dimension, frame.tacticRevision, frame.mana,
++    f.self.health.current, f.self.health.max, f.self.food, f.action,
++    frame.skills.map(s => [s.spell, s.available, s.manaCost, s.block,
++      s.cooldownRemainingMs === null ? null : s.cooldownRemainingMs > 0]),
++    f.actors.map(e => [e.entityId, e.uuid, e.type, e.relation,
++      e.health.current, e.health.max, e.lineOfSight, e.targetEntityId])]);
++}
++
++export class CombatDecisionLoop {
++  private inFlight = false;
++  private lastCheckedAtMs = -Infinity;
++  private lastEligible = false;
++  constructor(private readonly options: CombatDecisionOptions) {}
++
++  /** Called from the game clock. Neither this method nor the attack executor awaits inference. */
++  tick(): boolean {
++    const cfg = { ...this.options.config() };
++    const now = this.options.now?.() ?? Date.now();
++    if (!cfg.enabled || !cfg.endpoint) return false;
++    if (this.inFlight) return true;
++    if (now - this.lastCheckedAtMs < cfg.minIntervalMs) return this.lastEligible;
++    this.lastCheckedAtMs = now;
++    const frame = this.options.sample();
++    this.lastEligible = !!frame && !frame.battlefield.action.emergency && frame.candidates.length > 0;
++    if (!frame || !this.lastEligible) return false;
++    this.inFlight = true;
++    void this.choose(frame, cfg, now).finally(() => { this.inFlight = false; });
++    return true;
++  }
++
++  private async choose(frame: CombatDecisionFrame, cfg: CombatDecisionConfig, startedAtMs: number): Promise<void> {
++    const now = () => this.options.now?.() ?? Date.now();
++    const controller = new AbortController();
++    let timer: ReturnType<typeof setTimeout> | undefined;
++    const criteria: Record<string, string> = { keep: frame.battlefield.action.fighting
++      ? 'Continue the current attack and movement without an extra action.'
++      : 'Wait without engaging or moving. No attack is currently running.' };
++    frame.candidates.forEach((c, i) => { criteria[`option_${i}`] = c.kind === 'cast'
++      ? `${c.intent} Cast ${c.spell}, mana cost ${c.manaCost}.` : c.intent; });
++    const body = JSON.stringify({ state: { ...frame, objective: 'Assist the party against eligible visible enemies, survive and preserve useful ongoing attacks.' }, questions: { tactic: {
++      type: 'choice', instructions: 'Choose an immediate available combat action or keep the ongoing action. Use observed enemy and ally facts; null means unknown. Omitted entities may exist. Preserve health and useful ongoing attacks.', criteria,
++    } } });
++    const scope = { startedAtMs, connectionGeneration: frame.battlefield.connectionGeneration,
++      sampledAtMs: frame.battlefield.sampledAtMs, tacticRevision: frame.tacticRevision };
++    this.options.report('requested', { ...scope, mode: cfg.mode, frame, requestBytes: Buffer.byteLength(body) });
++    try {
++      const timeout = new Promise<never>((_, reject) => {
++        timer = setTimeout(() => { controller.abort(); reject(new Error('timeout')); }, cfg.timeoutMs);
++      });
++      const payload = await Promise.race([(async () => {
++        const response = await (this.options.fetchImpl ?? fetch)(cfg.endpoint, {
++          method: 'POST', headers: { 'content-type': 'application/json' }, body, signal: controller.signal,
++        });
++        if (!response.ok) throw new Error(`http-${response.status}`);
++        return await response.json() as { answers?: { tactic?: unknown }; latency_ms?: unknown; usage?: unknown };
++      })(), timeout]);
++      const answer = parseTypedChoice(payload.answers?.tactic, Object.keys(criteria));
++      if (!answer) throw new Error('invalid-response');
++      const liveCfg = this.options.config();
++      const current = this.options.sample();
++      const elapsedMs = now() - startedAtMs;
++      const selected = answer.choice === 'keep' ? null : frame.candidates[Number(answer.choice.slice(7))];
++      let outcome: string;
++      if (!liveCfg.enabled || liveCfg.mode !== cfg.mode || liveCfg.endpoint !== cfg.endpoint) outcome = 'configuration-changed';
++      else if (elapsedMs > Math.min(cfg.maxAgeMs, liveCfg.maxAgeMs)) outcome = 'expired';
++      else if (!current || sceneKey(current) !== sceneKey(frame)) outcome = 'scene-changed';
++      else if (Math.hypot(...current.battlefield.self.position.map((v, i) => v - frame.battlefield.self.position[i])) > 1.5) outcome = 'moved';
++      else if (answer.choiceProbability < Math.max(cfg.minConfidence, liveCfg.minConfidence)) outcome = 'uncertain';
++      else if (!selected) outcome = 'keep';
++      else if (!current.candidates.some(c => c.id === selected.id && c.kind === selected.kind && c.intent === selected.intent)) outcome = 'no-longer-executable';
++      else if (cfg.mode === 'shadow') outcome = 'shadow';
++      else outcome = this.options.apply(selected) ? 'sent' : 'rejected';
++      if (outcome === 'uncertain' && cfg.mode === 'act') this.options.fallback?.();
++      this.options.report('result', { ...scope, elapsedMs, choice: answer.choice,
++        probability: answer.choiceProbability, probabilities: answer.probabilities, outcome,
++        modelMs: payload.latency_ms ?? null, usage: payload.usage ?? null,
++        candidate: selected ?? null });
++    } catch (error) {
++      const live = this.options.config();
++      if (cfg.mode === 'act' && live.enabled && live.mode === cfg.mode && live.endpoint === cfg.endpoint)
++        this.options.fallback?.();
++      this.options.report('error', { ...scope, elapsedMs: now() - startedAtMs,
++        reason: controller.signal.aborted ? 'timeout' : error instanceof Error ? error.message : 'transport' });
++    } finally { if (timer !== undefined) clearTimeout(timer); }
++  }
++}
+diff --git a/combat-reactions.ts b/combat-reactions.ts
+new file mode 100644
+--- /dev/null
++++ b/combat-reactions.ts
+@@ -0,0 +1,45 @@
++/** Physically checked short moves and policy-scoped engagement candidates. */
++import type { Bot } from 'mineflayer';
++import { Vec3 } from 'vec3';
++import type { Battlefield } from './battlefield.ts';
++import type { CombatCandidate, CombatDecisionConfig } from './combat-decision.ts';
++import { corridorSafe } from './idle-actions.ts';
++
++export function combatReactions(bot: Bot, field: Battlefield, cfg: CombatDecisionConfig,
++  control: { bodyFree: boolean; canStep: boolean; targetId: number | null; sinceHitMs: number | null;
++    fight: string; fleeHealth: number; chaseMax: number }): CombatCandidate[] {
++  if (field.action.emergency) return [];
++  const hostiles = field.actors.filter(e => e.relation === 'hostile' && e.health.current !== 0
++    && e.entityId !== null && e.lineOfSight === true && e.distance !== null);
++  const partyIds = new Set([field.self.entityId, ...field.actors.filter(e => e.relation === 'ally'
++    && e.health.current !== 0 && e.entityId !== null).map(e => e.entityId!)]);
++  const target = hostiles.find(e => e.entityId === control.targetId) ?? hostiles[0];
++  if (!target) return [];
++  const candidates: CombatCandidate[] = [];
++  if (cfg.allowEngage && control.bodyFree && control.fight !== 'off'
++    && (field.self.health.current ?? 0) >= control.fleeHealth + 3) {
++    const enemy = hostiles.find(e => e.distance! <= control.chaseMax
++      && (cfg.engageScope === 'hostile' || (e.relationSource === 'server'
++        && e.targetEntityId !== null && partyIds.has(e.targetEntityId))));
++    if (enemy) candidates.push({ id: `engage_${enemy.entityId}`, kind: 'engage', targetId: enemy.entityId!, uuid: enemy.uuid,
++      intent: `Engage visible ${enemy.type ?? 'hostile'} #${enemy.entityId} at ${enemy.distance} blocks using the existing attack controller. Continue attacking and approaching without waiting for the main model.` });
++  }
++  if (!cfg.allowMovement || !field.action.fighting || !control.canStep || target.position === null
++    || (control.sinceHitMs ?? 0) < cfg.movementStallMs) return candidates;
++  const p = bot.entity.position, [x, , z] = target.position;
++  const dx = x - p.x, dz = z - p.z, len = Math.hypot(dx, dz);
++  if (len < 0.01) return candidates;
++  const dirs = target.distance! > 4
++    ? [{ x: dx / len, z: dz / len, id: 'approach', intent: 'Take a verified short step toward the visible enemy to get into attack range.' },
++      { x: -dz / len, z: dx / len, id: 'side', intent: 'Take a verified short side step to change the approach angle, continuing attacks.' }]
++    : [{ x: -dz / len, z: dx / len, id: 'side', intent: 'Take a verified short side step around the enemy, continuing attacks.' },
++      { x: -dx / len, z: -dz / len, id: 'back', intent: 'Take a verified short step away from the enemy to gain space, continuing attacks.' }];
++  for (const d of dirs) {
++    const to = new Vec3(p.x + d.x * 1.2, p.y, p.z + d.z * 1.2);
++    if (corridorSafe(bot, p, to)) candidates.push({ id: `step_${d.id}`, kind: 'step',
++      intent: d.intent, destination: [to.x, to.y, to.z] });
++  }
++  candidates.splice(candidates[0]?.kind === 'step' ? 1 : candidates.length, 0,
++    { id: 'retreat', kind: 'retreat', intent: 'Stop offensive pursuit and use the existing retreat controller to move away from danger.' });
++  return candidates;
++}

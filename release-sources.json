@@ -15,7 +15,8 @@
       "patches/minecraft-hand-equipment.patch",
       "patches/minecraft-idle-context.patch",
       "patches/minecraft-storage-correction.patch",
-      "patches/minecraft-inventory-recovery.patch"
+      "patches/minecraft-inventory-recovery.patch",
+      "patches/minecraft-combat-decision.patch"
     ]
   },
   "viewer": {

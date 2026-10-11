@@ -1,4 +1,4 @@
-<!-- Owner: package.json, scripts/build-release.ts, release-sources.json, patches/minecraft-idle-context.patch, patches/minecraft-storage-correction.patch, src/world.ts, src/config.ts -->
+<!-- Owner: package.json, scripts/build-release.ts, release-sources.json, patches/minecraft-idle-context.patch, patches/minecraft-combat-decision.patch, patches/minecraft-storage-correction.patch, src/world.ts, src/config.ts -->
 
 # cortico-world-qiandengji
 
@@ -63,6 +63,10 @@ Java 1.20.6 画面支持当前玩家连接实际收到的玩家／NPC 头顶文�
 `combat` 与环境提示声明 `queue:"now"` 的即时补给和撤离用法，默认提交继续等待战斗并替换旧待办。引擎须支持首步 eat/flee/surface 的低血控制权交接及进食主手保护；消费结果仍以实际库存、生命与效果回执为准。
 
 `combat` 说明按世界持久化的战术设置、按需读取的战斗观察与方法验证；`skills` 说明本人熟练度、实际学习或加点入口及调整后的回读。观察账本不自动成为亲历学习结论。
+
+`combatDecision` 从游戏时钟直接读取血量、敌我关系、怪物类型、目标、位置、视线、魔力和技能冷却，异步请求快模型。主模型推理期间已有攻击和导航继续。默认关闭；启用后的 `shadow` 仅记录建议，`act` 可执行有已知成本、冷却与 `intent` 说明的现有法术规则。`allowEngage` 允许空闲时接敌，`party` 范围须有服务端队伍与攻击目标证据；`allowMovement` 允许近战久未命中时选择有落脚和净空的短步或撤退，仍让出进食、逃生、出手相位和脚本的控制权。低血自保保持即时执行。
+
+原版无法提供的队友血量、RPG 队伍关系和怪物攻击目标标为未知；记分板同队不自动算作队友。服务端可按 [战场补充协议](references/battlefield-protocol.md) 单播实际读数。`mymc_combat_tactic {"battlefield":true}` 读取这条有界输入；连接变化、读数或可用动作改变时丢弃旧选择，发送命令仍须核对服务端终态。
 
 `flight` 指南说明施法前的整段只读路线试算、累计耗时与许可时长预算，以及施法、分段飞行和落地的同单编排。
 
