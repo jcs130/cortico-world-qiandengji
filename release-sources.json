@@ -19,7 +19,8 @@
       "patches/minecraft-combat-decision.patch",
       "patches/minecraft-combat-program.patch",
       "patches/minecraft-own-identity.patch",
-      "patches/minecraft-combat-eligibility.patch"
+      "patches/minecraft-combat-eligibility.patch",
+      "patches/minecraft-combat-program-budget.patch"
     ]
   },
   "viewer": {
