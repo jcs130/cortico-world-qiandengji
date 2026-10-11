@@ -75,6 +75,16 @@ it('relays verified original appearance assets over both existing viewer paths a
       expect(client.events[assetIndex].value).toEqual({ ...bundle, assetSha256 });
       expect(client.events[boundIndex].value).toMatchObject({ entityId: bot.entity.id,
         playerUuid: uuid, completeEntityParityVerified: false });
+      const avatar = client.events.find(e => e.name === 'avatarState')?.value.entity;
+      expect(avatar).toMatchObject({ id: row.entityId, uuid: row.playerUuid, isSelf: true });
+    }
+    const firstMoveStart = first.events.length;
+    const thirdMoveStart = third.events.length;
+    bot.emit('move');
+    for (const [client, event, start] of [[first, 'playerEntity', firstMoveStart], [third, 'entityMoved', thirdMoveStart]] as const) {
+      await vi.waitFor(() => expect(client.events.slice(start).some(e => e.name === event && e.value.id === row.entityId)).toBe(true));
+      expect(client.events.slice(start).find(e => e.name === event && e.value.id === row.entityId)?.value)
+        .toMatchObject({ id: row.entityId, uuid: row.playerUuid, isSelf: true });
     }
     const health = await (await fetch(viewer.url + '/healthz')).json();
     expect(health.appearance).toEqual({ states: 1 });

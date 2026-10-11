@@ -17,7 +17,8 @@
       "patches/minecraft-storage-correction.patch",
       "patches/minecraft-inventory-recovery.patch",
       "patches/minecraft-combat-decision.patch",
-      "patches/minecraft-combat-program.patch"
+      "patches/minecraft-combat-program.patch",
+      "patches/minecraft-own-identity.patch"
     ]
   },
   "viewer": {
