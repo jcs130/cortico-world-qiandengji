@@ -312,7 +312,7 @@ index 8e8d7a5..2b0cd19 100644
      || Math.abs(to.y - from.y) > 0.01) return false;
    const length = distance(from, to);
 diff --git a/world.ts b/world.ts
-index c80c00e..1e2d267 100644
+index c80c00e..79e1ae1 100644
 --- a/world.ts
 +++ b/world.ts
 @@ -121,6 +121,9 @@ import { ItemBreakDecoder, type ItemBreakFact } from './item-break.ts';
@@ -374,7 +374,7 @@ index c80c00e..1e2d267 100644
      }
      if (args.enabled === false) {
        this.combatSpells.setTactic(null);
-@@ -4670,20 +4685,92 @@ export class MinecraftWorld implements World {
+@@ -4670,20 +4685,94 @@ export class MinecraftWorld implements World {
        this.tryAutoSelfHeal(bot);
        return;
      }
@@ -428,7 +428,9 @@ index c80c00e..1e2d267 100644
 +      || (bot.health ?? 0) <= this.cfg.reflex.fleeHealth
 +      || (this.selfHealAvailable && this.combatSpells.wantsHeal(bot.health ?? 0));
 +    const battlefield = this.battlefield.sample(bot, this.connectionGeneration, { fighting, emergency,
-+      taskId: queue?.running?.id ?? null, step: queue?.running?.step.slice(0, 120) ?? null }, cfg.maxEntities, now);
++      taskId: queue?.running?.id ?? null, step: queue?.running?.step.slice(0, 120) ?? null,
++      targetEntityId: reaction?.targetId ?? null, sinceHitMs: reaction?.sinceHitMs ?? null,
++      canStep: reaction?.canStep ?? false }, cfg.maxEntities, now);
 +    const frame = this.combatSpells.decisionFrame(bot, battlefield, cfg.maxCandidates, now);
 +    if (!fighting) frame.candidates = [];
 +    const reactions = combatReactions(bot, battlefield, cfg, {
@@ -470,7 +472,7 @@ index c80c00e..1e2d267 100644
      publishViewerCastCommand(bot, command);
      this.diag.write({
        lane: 'combat', event: 'auto-spell', msg: `交战中尝试 ${spell}；效果待服务端确认`,
-@@ -4691,6 +4778,7 @@ export class MinecraftWorld implements World {
+@@ -4691,6 +4780,7 @@ export class MinecraftWorld implements World {
      });
      this.emit('minecraft.event', `[Minecraft] 试着施放 ${spell}，是否生效等服务端回执确认。`,
        false, { trigger: 'piggyback' });
@@ -478,7 +480,7 @@ index c80c00e..1e2d267 100644
    }
  
    private recoveryFoodFact(bot: Bot): string {
-@@ -6278,7 +6366,8 @@ export class MinecraftWorld implements World {
+@@ -6278,7 +6368,8 @@ export class MinecraftWorld implements World {
      const connectionGeneration = ++this.connectionGeneration;
      this.idleContext.clear();
      this.selfHealAvailable = false;
@@ -487,7 +489,7 @@ index c80c00e..1e2d267 100644
      this.arenaFloor = null;
      this.resetBodyOwners();
      this.bodyLease.bindGeneration(connectionGeneration, Date.now());
-@@ -6914,6 +7003,7 @@ export class MinecraftWorld implements World {
+@@ -6914,6 +7005,7 @@ export class MinecraftWorld implements World {
    private hookBotEvents(bot: any): void {
      if (this.hookedBots.has(bot)) return;
      this.hookedBots.add(bot);
@@ -499,7 +501,7 @@ diff --git a/battlefield.ts b/battlefield.ts
 new file mode 100644
 --- /dev/null
 +++ b/battlefield.ts
-@@ -0,0 +1,192 @@
+@@ -0,0 +1,193 @@
 +/** Connection-scoped battle facts from native entities and optional server party telemetry. */
 +import type { Bot } from 'mineflayer';
 +import { metaOf } from './animal-state.ts';
@@ -530,7 +532,8 @@ new file mode 100644
 +  connectionGeneration: number;
 +  dimension: string | null;
 +  self: { entityId: number; health: Health; food: number | null; position: [number, number, number]; scoreboardTeam: string | null };
-+  action: { fighting: boolean; emergency: boolean; taskId: number | null; step: string | null };
++  action: { fighting: boolean; emergency: boolean; taskId: number | null; step: string | null;
++    targetEntityId?: number | null; sinceHitMs?: number | null; canStep?: boolean };
 +  actors: BattlefieldActor[];
 +  omitted: number;
 +  server: { sequence: number; receivedAtMs: number; expiresAtMs: number } | null;
@@ -696,7 +699,7 @@ diff --git a/combat-decision.ts b/combat-decision.ts
 new file mode 100644
 --- /dev/null
 +++ b/combat-decision.ts
-@@ -0,0 +1,123 @@
+@@ -0,0 +1,124 @@
 +/** An asynchronous choice over a bounded, previously authored combat tactic. */
 +import { parseTypedChoice } from './support/typed-decision.ts';
 +import type { Battlefield } from './battlefield.ts';
@@ -735,7 +738,8 @@ new file mode 100644
 +function sceneKey(frame: CombatDecisionFrame): string {
 +  const f = frame.battlefield;
 +  return JSON.stringify([f.connectionGeneration, f.dimension, frame.tacticRevision, frame.mana,
-+    f.self.health.current, f.self.health.max, f.self.food, f.action,
++    f.self.health.current, f.self.health.max, f.self.food,
++    [f.action.fighting, f.action.emergency, f.action.taskId, f.action.step, f.action.targetEntityId, f.action.canStep],
 +    frame.skills.map(s => [s.spell, s.available, s.manaCost, s.block,
 +      s.cooldownRemainingMs === null ? null : s.cooldownRemainingMs > 0]),
 +    f.actors.map(e => [e.entityId, e.uuid, e.type, e.relation,

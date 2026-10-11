@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { cp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -33,6 +33,7 @@ async function buildEngine(): Promise<void> {
   }
   const engineRoot = join(root, 'engine');
   const source = join(coreRoot, 'src/worlds/minecraft');
+  await rm(engineRoot, { recursive: true, force: true });
   await cp(source, engineRoot, { recursive: true });
   for (const [relative, contents] of plan.sources) {
     const target = join(engineRoot, relative);
