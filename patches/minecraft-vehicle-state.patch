@@ -1,0 +1,66 @@
+--- a/terrain.ts
++++ b/terrain.ts
+@@ -7,6 +7,7 @@
+  * 渲染出口是 `narrateWorld`:一律中文、写成话,进世界快照事件与其余事件正文。
+  */
+ import { Vec3 } from 'vec3';
++import { vehicleStateFromBot, vehicleFingerprint, narrateVehicleState, type VehicleReading } from '../src/vehicle-state.ts';
+ import { nowIso } from 'cortico/core/util.ts';
+ import {
+   type Durability, type ItemEnchant, type ItemLike, readDurability, readEnchants, readPotionName,
+@@ -136,6 +137,8 @@
+ }
+ 
+ export interface WorldSnapshot {
++  /** Current client vehicle attachment; undefined=unobserved, null=no reported attachment. */
++  vehicle?: VehicleReading | null;
+   position: { x: number; y: number; z: number };
+   dimension: string;
+   /** 未收到生命或饥饿读数时为 null；0 是有效读数。 */
+@@ -283,6 +286,7 @@
+ }
+ 
+ function motionPhrase(s: WorldSnapshot): string {
++  if (s.vehicle) return '我正乘坐载具，移动以载具位置读数为准';
+   const where = s.heading ? `朝${DIRECTION_ZH[s.heading]}` : '';
+   switch (s.motion) {
+     case 'still': return '我站着没动';
+@@ -307,7 +311,7 @@
+  * 键不同才算"这段变了";显示文本在判定变了之后用当刻新鲜值。
+  */
+ interface SnapshotSegment {
+-  key: 'place' | 'flight' | 'clock' | 'realclock' | 'body' | 'gear' | 'equip' | 'life' | 'structure' | 'terrain' | 'players';
++  key: 'place' | 'vehicle' | 'flight' | 'clock' | 'realclock' | 'body' | 'gear' | 'equip' | 'life' | 'structure' | 'terrain' | 'players';
+   /** 完整句子;空串=本段当下无内容(目前只有 structure 可能为空) */
+   text: string;
+   cmp: string;
+@@ -340,7 +344,7 @@
+     ? hostiles.reduce((a, b) => (a.distance <= b.distance ? a : b))
+     : null;
+   return [
+-    s.dimension, s.gameMode, flightFingerprint(s.flight),
++    s.dimension, s.gameMode, flightFingerprint(s.flight), vehicleFingerprint(s.vehicle),
+     s.health === null ? 'hp?' : `hp${Math.ceil(s.health)}`,
+     s.food === null ? 'fd?' : `fd${Math.round(s.food)}`,
+     s.xpLevel === null ? 'xp?' : 'xp',
+@@ -382,10 +386,11 @@
+   // 目标尾行同一个待遇)。没有近处路标时这一段一个字都不占。
+   const place =
+     `我在${zhBiome(s.biome)}，脚下是${s.standingOn ? zhName(s.standingOn) : '空的'}，` +
+-    `站在格 (${Math.floor(p.x)}, ${Math.floor(p.y)}, ${Math.floor(p.z)})${near ? `，${near}` : ''}，` +
++    `${s.vehicle ? '位于格' : '站在格'} (${Math.floor(p.x)}, ${Math.floor(p.y)}, ${Math.floor(p.z)})${near ? `，${near}` : ''}，` +
+     `${zhDimension(s.dimension)}。` +
+     `${motionPhrase(s)}，面朝${DIRECTION_ZH[s.facing]}。`;
+   segs.push({ key: 'place', text: place, cmp: place });
++  segs.push({ key: 'vehicle', text: narrateVehicleState(s.vehicle), cmp: vehicleFingerprint(s.vehicle) });
+   const flight = s.flight;
+   const flightText = !flight || flight.observedAtMs === undefined
+     ? '飞行权限尚未从服务端核实。'
+@@ -1889,6 +1894,7 @@
+ 
+   return {
+     position: { x: pos.x, y: pos.y, z: pos.z },
++    vehicle: vehicleStateFromBot(bot),
+     dimension: String(bot.game.dimension ?? 'overworld'),
+     health: typeof bot.health === 'number' && Number.isFinite(bot.health) ? bot.health : null,
+     food: typeof bot.food === 'number' && Number.isFinite(bot.food) ? bot.food : null,

@@ -26,7 +26,8 @@
       "patches/minecraft-procedures.patch",
       "patches/minecraft-chat-provenance.patch",
       "patches/minecraft-mounted-look.patch",
-      "patches/minecraft-railway-observation.patch"
+      "patches/minecraft-railway-observation.patch",
+      "patches/minecraft-vehicle-state.patch"
     ]
   },
   "viewer": {
