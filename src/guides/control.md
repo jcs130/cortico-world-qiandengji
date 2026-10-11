@@ -36,6 +36,18 @@
 - `await mc.do(steps)` 通过同一执行器提交动作并等待该任务的真实终态，返回 `{accepted,taskId,kind,done,receipt,steps,state}`。先检查受理和各步结果，再用新 `state` 核对目标变化；`done` 不证明服务端委托完成。`needs` 只引用本组前面的步骤。
 - `await mc.flightPlan(args)` 只读试算飞行路线，不能代替移动；参数沿用 `mymc_flight_plan`。
 
-用条件、计算和有界循环根据回执选择后续步骤。已确定的连招或移动放在一次 `mc.do` 中；只有新回执才能决定的分支才拆开 await。未知地形、断线代际变化、维度改变、失败或未达目标时，返回已取得的证据供修订，不能在循环里原样重试。方法不提供导入、文件、网络或原始 bot，源码与验证记录由工作区工具保存。
+用条件、计算和有界循环根据回执选择后续步骤。已确定的连招或移动放在一次 `mc.do` 中；只有新回执才能决定的分支才拆开 await。未知地形、断线代际变化、维度改变、失败或未达目标时，返回已取得的证据供修订，不能在循环里原样重试。方法不提供导入、文件、网络或原始连接对象，源码与验证记录由工作区工具保存。
+
+### 直接编排 Mineflayer 公共接口
+
+先用 `mymc_script {api:"index"}` 读取现役入口，再用 `{api:"方法名"}` 按需查签名。可用 `bot` 与 `Vec3`，无需再设计一套挖掘、放置或按键 DSL。接口来自 Mineflayer 4.37.1；Worker 传输使所有 `bot` 方法都须逐个 `await`。只开放索引列出的接口，不能访问原始 bot、私有连接或任意属性。
+
+- `await bot.blockAt(new Vec3(x,y,z))` 返回方块或未加载的 `null`。随后同步调用 `block.getProperties()` 查看真实状态；属性值保留上游类型，例如水源核对 `block.name === 'water' && String(block.getProperties().level) === '0'`，流水不能算水源。`block.position.offset(...)` 和 `plus(...)` 可计算相邻格。
+- `await bot.inventory.items()`、`await bot.read('heldItem')`、`await bot.read('entity')` 读取当前物品实例和身体；注册表单项可读 `bot.read('registry.itemsByName.water_bucket')`。`bot.equip(itemOrNumericType,'hand')` 使用当前实例或数字物品 ID；旧槽位失效时重读库存。
+- `bot.lookAt(point)` 后 `bot.activateItem()` 使用当前手中物品；`bot.activateBlock(block,face,cursor)` 点击参照方块的指定面和位置，保持当前手持物。返回只证明调用发出，须重读目标格、手持物和库存核验效果。
+- `bot.dig(block)` 和 `bot.placeBlock(reference,faceVector)` 直接使用原生接口，不自动导航、选工具或补支承；放置目标为 `reference.position.plus(faceVector)`。保护、材料与服务端确认仍适用。
+- `bot.setControlState(key,true)`、`bot.waitForTicks(n)`、`bot.setControlState(key,false)` 可组合短步、跳跃与观察；普通物理和碰撞继续生效，不证明已到目标。飞行沿用现有 `flight/control` 契约。
+
+首次身体调用排入现有身体队列，程序持续持有身体直到结束。此后不要调用 `mc.do`，否则会等待自己的队列；需要混用时先完成 `mc.do`，或结束原生程序后另起方法。只读调用不占身体。完成、取消或救生/战斗接管时松开按键；死亡、断线、强制位置纠正、超时会撤销程序，不自动重放。调用回执保留采样时间、原生方法名和身体任务编号，展开 `{runId,call}` 可核对。按真实终态、世界变化和下一次检索复用评价方法，源码存在不代表学会。
 
 一次最多 32 次串行 SDK 调用、16 组动作，默认含排队 60 秒、最多 120 秒。新的已受理身体任务、明确取消、死亡、断线或超时会撤销方法及它自己的未完成任务。方法运行中可交谈或做不接管身体的事情；需要换身体任务时先决定是否取消，避免打断自己写好的后续分支。已有单次动作足够解决问题时，直接使用普通工具。

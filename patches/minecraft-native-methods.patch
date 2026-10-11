@@ -1,0 +1,637 @@
+diff --git a/README.md b/README.md
+index 1e9add1..84d43b7 100644
+--- a/README.md
++++ b/README.md
+@@ -8,3 +8,5 @@
+ 
+-`mc_script` 执行模型编写的 JavaScript 异步函数体，独立 Worker 内使用 SES Compartment；只提供 JSON `params` 与 `mc.state()`、`mc.flightPlan(args)`、`mc.do(steps)`，不提供原始 bot、模块导入、文件、网络或进程入口。`mc.do` 共用普通受理检查、执行器与身体优先级，并等待对应任务的实际终态；返回受理状态、任务编号、各步结果、完整回执与新采样。语法校验不执行脚本。源码上限12000字符，参数4096字符，单次JSON消息24000字符；最多32次串行SDK调用、16组动作，默认60秒、最多120秒（含排队）。超时、取消、死亡、断线、World停止或新的已受理身体任务撤销方法及其自己的一单，保留其他工作和救生冻结。最近八次运行仅在本进程保留，含源码哈希、时间及调用链；Persona 自行保存源码、经验与验证证据。脚本完成不等于原目标已实现。
++`mc_script` 执行模型编写的 JavaScript 异步函数体，独立 Worker 内使用 SES Compartment。提供 JSON `params`、`mc.state()`、`mc.flightPlan(args)`、`mc.do(steps)`，以及 Mineflayer 公共接口的受限 `bot` 传输和 `Vec3`；不提供原始连接对象、模块导入、文件、网络或进程入口。`mc.do` 共用普通受理检查、执行器与身体优先级，并等待对应任务的实际终态；返回受理状态、任务编号、各步结果、完整回执与新采样。语法校验不执行脚本。源码上限12000字符，参数4096字符，单次JSON消息24000字符；最多32次串行SDK调用、16组动作，默认60秒、最多120秒（含排队）。超时、取消、死亡、断线、World停止或新的已受理身体任务撤销方法及其自己的一单，保留其他工作和救生冻结。最近八次运行仅在本进程保留，含源码哈希、时间及调用链；Persona 自行保存源码、经验与验证证据。脚本完成不等于原目标已实现。
++
++`mc_script {api:"index"}` 列出当前开放的 Mineflayer 4.37.1 方法，`{api:"blockAt"}` 等按需查签名。所有 `bot` 方法经 Worker 传输，须串行 `await`；返回的 Vec3 运算和 Block.getProperties() 同步执行，属性值保留上游类型（例如水的 level 为字符串）。`bot.blockAt`、原生查找和库存读取不占身体；`bot.lookAt`、方向键、dig、placeBlock、equip、activateItem/activateBlock 等首次身体调用排入现有执行器，独占到程序结束，之后不能嵌套 `mc.do` 等待自己的队列。原生交互保留当前手持物；不自动寻路、换工具或补支承。放置与挖掘沿用已安装的服务端确认、保护和材料约束，装备沿用库存同步。每次调用记录方法名、采样时间、身体任务编号和实际结果；取消后的迟到调用不得继续发动作包。只有首次 spawn 后才把游戏连接交给执行器，登录阶段的临时实体不作为可行动状态。
+ 
+@@ -56,2 +58,4 @@
+ 
++`use.item` 与 `equip.item` 的预检查复用实际装备选择器。普通物品的本地化名称未命中时，回执报告库存中的对应 ID，区分选择器不匹配和实际缺货；自定义物品仍可用精确显示名。受理时若连续提交装备主手物品与省略 `item` 的 `use.at`，提示后一步会清空主手，保留调用方的原步骤与选择。
++
+ 空闲小动作由 `idle-actions.ts` 提供协议动作和可见目标，由 `idle-behavior.ts` 持有可取消的执行权。`idle.enabled` 默认关闭；启用后可选随机轮换或 `state/questions` 选择服务，后者失败会在诊断中记录并回退随机。`idle.decisionPolicy` 可使用模型首选 `choice`，也可按模型概率选择 `sample`，静止同样参与选择。连续空闲达到 `minIdleMs` 后开始，完成后等待 `minIntervalMs` 到 `maxIntervalMs`；最近三个动作避免重复。可选的 `idle.afterArrival` 在成功导航且队列清空后立即随机选择一次转头观察，不等待空闲门槛与动作间隔；其余安全检查和取消契约相同。任务、战斗、环境自救、聊天与真实窗口可同步撤销执行权，迟到的选择结果和镜头复位无效。
+@@ -543,3 +547,3 @@ AgentFriend 模式通过 `agentfriend-flight.ts` 接收本人最近三秒内发
+ 
+-`equip` 省略 `item` 或写 `air` 表示清空主手；`use` 省略 `item` 则沿用当前手持物。解析归一化进入受理回执。背包已满时，Mineflayer 的 `equipEmpty` 可能通过 `tossStack` 将主手物品扔到地上，回执需报告实际掉落。`hand:"off"` 腾副手时，包里既没空格也没有能并入的同种未满一摞就不腾，受阻说明物品还挂在副手。
++`equip` 省略 `item` 或写 `air` 表示清空主手；`use.at` 省略 `item` 会清空主手后右键该格，无 `at` 的 `use` 才沿用当前手持物。解析归一化进入受理回执。腾空主手前检查快捷栏和背包空格，无法放回时受阻；若实际发生掉落，回执报告数量。`hand:"off"` 腾副手时，包里既没空格也没有能并入的同种未满一摞就不腾，受阻说明物品还挂在副手。
+ 
+diff --git a/bridge.ts b/bridge.ts
+index d161dc9..80bf3a1 100644
+--- a/bridge.ts
++++ b/bridge.ts
+@@ -230,2 +230,4 @@ export class Bridge {
+   private _bot: mineflayer.Bot | null = null;
++  /** An entity can exist before login/first spawn; it is not yet an operable body. */
++  private spawnedBot: mineflayer.Bot | null = null;
+   private started = false;
+@@ -296,3 +298,4 @@ export class Bridge {
+   get connected(): boolean {
+-    return this._bot !== null && (this._bot as unknown as { entity?: unknown }).entity !== undefined;
++    return this._bot !== null && this.spawnedBot === this._bot
++      && (this._bot as unknown as { entity?: unknown }).entity !== undefined;
+   }
+@@ -358,2 +361,3 @@ export class Bridge {
+     this._bot = null;
++    this.spawnedBot = null;
+     this.agentMana = undefined;
+@@ -420,2 +424,3 @@ export class Bridge {
+     this._bot = bot;
++    this.spawnedBot = null;
+     this.opts.onBotCreated?.(bot);
+@@ -596,2 +601,3 @@ export class Bridge {
+       if (this.stopped || this._bot !== bot || this.generation !== gen) return;
++      this.spawnedBot = bot;
+       this.reconnectAttempt = 0;
+@@ -611,2 +617,3 @@ export class Bridge {
+       this._bot = null;
++      this.spawnedBot = null;
+       this.agentMana = undefined;
+diff --git a/equipment.ts b/equipment.ts
+index bfa89fb..315ec1e 100644
+--- a/equipment.ts
++++ b/equipment.ts
+@@ -53,8 +53,8 @@ export async function equipSlotConfirmed(bot: Bot, item: Item, dest: EquipmentDe
+ /** The caller checks storage capacity; cursor recovery never drops the item. */
+-export async function clearOffHandConfirmed(bot: Bot): Promise<void> {
++export async function unequipSlotConfirmed(bot: Bot, dest: EquipmentDestination): Promise<void> {
+   requirePlayerInventory(bot);
+-  const slot = bot.getEquipmentDestSlot('off-hand');
++  const slot = bot.getEquipmentDestSlot(dest);
+   await equipmentMove(bot, slot, async () => {
+     if (bot.supportFeature?.('stateIdUsed') !== true) {
+-      await bot.unequip('off-hand');
++      await bot.unequip(dest);
+       return;
+@@ -66,4 +66,6 @@ export async function clearOffHandConfirmed(bot: Bot): Promise<void> {
+   if (bot.inventory.slots[slot] || bot.inventory.selectedItem) {
+-    throw new SkillBlocked(`腾空后副手回读为${itemText(bot.inventory.slots[slot])}，未确认收回背包`, [], 'server');
++    throw new SkillBlocked(`腾空后${dest === 'off-hand' ? '副手' : dest}回读为${itemText(bot.inventory.slots[slot])}，未确认收回背包`, [], 'server');
+   }
+ }
++
++export const clearOffHandConfirmed = (bot: Bot): Promise<void> => unequipSlotConfirmed(bot, 'off-hand');
+diff --git a/executor.ts b/executor.ts
+index 27aa677..b0aa001 100644
+--- a/executor.ts
++++ b/executor.ts
+@@ -1032,2 +1032,3 @@ interface QueuedTask {
+   steps: SkillCall[];
++  program?: ExecutorProgram;
+   /** 受理时的维度、站位和完整参数；失败回顾不能借用另一地点或方法的原因。 */
+@@ -1080,2 +1081,9 @@ interface QueuedTask {
+ 
++/** A program holds the same body as a skill task; cancellation revokes its host capability. */
++export interface ExecutorProgram {
++  name: string;
++  run(bot: Bot, context: SkillContext): Promise<void>;
++  cancel(reason: string): void;
++}
++
+ /**
+@@ -1238,2 +1246,3 @@ export function freezeFirstStep(
+ function labelOf(task: QueuedTask): string {
++  if (task.program) return task.program.name;
+   return task.steps.map((c) => describeSkill(c)).join(';');
+@@ -1248,2 +1257,3 @@ function cancelledNote(
+ ): string {
++  if (task.program) return `已叫停${who}「${task.program.name}」；原生程序不自动重放`;
+   const done = (task.stepLog ?? []).filter((entry) => entry.outcome === 'ok').length;
+@@ -1960,5 +1970,5 @@ export class Executor {
+             label: labelOf(t),
+-            step: describeSkill(t.steps[Math.min(t.stepIndex, t.steps.length - 1)]),
++            step: t.program?.name ?? describeSkill(t.steps[Math.min(t.stepIndex, t.steps.length - 1)]),
+             stepIndex: t.stepIndex,
+-            stepCount: t.steps.length,
++            stepCount: t.program ? 1 : t.steps.length,
+             elapsedMs: Date.now() - t.stepStartedAt,
+@@ -2056,2 +2066,12 @@ export class Executor {
+ 
++  enqueueProgram(program: ExecutorProgram): number {
++    if (this.stopped) throw new Error('World 未启动');
++    const id = this.opts.nextId();
++    this.queue.push({ id, steps: [], program, enqueuedAt: Date.now() });
++    this.opts.diag?.write({ lane: 'task', event: 'enqueue', taskId: id,
++      msg: `受理原生程序「${program.name}」`, data: { mode: 'append' } });
++    this.pump();
++    return id;
++  }
++
+   submitDetailed(steps: SkillCall[], mode: QueueMode = 'replace', wrote?: unknown,
+@@ -4255,2 +4275,3 @@ export class Executor {
+     this.abortTask(t, by);
++    if (t.program) { this.reportCancelled(t, by, null); return; }
+     const idem = reRunnable(t.steps[t.stepIndex]);
+@@ -4421,3 +4442,3 @@ export class Executor {
+     const at = Date.now();
+-    const step = describeSkill(task.steps[Math.min(task.stepIndex, task.steps.length - 1)]);
++    const step = task.program?.name ?? describeSkill(task.steps[Math.min(task.stepIndex, task.steps.length - 1)]);
+     const label = labelOf(task);
+@@ -4838,4 +4859,5 @@ export class Executor {
+   ): void {
++    task.program?.cancel(by);
+     const head = task.steps.length > 1 ? `任务#${task.id}「${labelOf(task)}」` : `任务#${task.id}`;
+-    const where = progress
++    const where = task.program ? '原生程序已撤销，不自动重放' : progress
+       ? `做到第 ${progress.step}/${task.steps.length} 步` +
+@@ -4907,2 +4929,3 @@ export class Executor {
+     releaseBody(this.opts.getBot(), `中止任务#${t.id}(${by})`, this.opts.diag);
++    t.program?.cancel(by);
+   }
+@@ -4968,2 +4991,3 @@ export class Executor {
+     if (!bot) {
++      task.program?.cancel('Minecraft 连接已结束，原生程序未执行');
+       this.finish(flag, { kind: 'blocked', text: `${span()}${label()}执行不了:当前没连上服务器。`, taskId: id });
+@@ -5053,2 +5077,17 @@ export class Executor {
+     };
++    if (task.program) {
++      let error: unknown;
++      try { await task.program.run(bot, ctx); checkAbort(ctx); }
++      catch (caught) { error = caught; }
++      finally {
++        bot.off('windowClose', onWindowClose);
++        if (!ctx.aborted() && this.task === task) {
++          closeHeldWindow();
++          releaseBody(bot, `原生程序#${id}结束`, this.opts.diag);
++        }
++      }
++      if (!ctx.aborted()) this.finish(flag, { taskId: id, kind: error ? 'blocked' : 'done',
++        text: `${span()}原生程序「${task.program.name}」${error ? `受阻：${String(error)}` : '结束；具体效果以原生调用读数和程序返回值核验'}` });
++      return;
++    }
+     const results: string[] = [];
+diff --git a/hand-interaction.ts b/hand-interaction.ts
+index 449a41d..f967c08 100644
+--- a/hand-interaction.ts
++++ b/hand-interaction.ts
+@@ -58,3 +58,3 @@ export function installNavigationBareHand(bot: Bot): void {
+   const original = bot.activateBlock.bind(bot);
+-  bot.activateBlock = async (block, direction) => {
++  bot.activateBlock = async (block, direction, cursorPos) => {
+     if (preparedInteractionHand.getStore() !== bot
+@@ -64,3 +64,3 @@ export function installNavigationBareHand(bot: Bot): void {
+     }
+-    return original(block, direction);
++    return original(block, direction, cursorPos);
+   };
+diff --git a/inventory.ts b/inventory.ts
+index 2dabe2c..bbe70a6 100644
+--- a/inventory.ts
++++ b/inventory.ts
+@@ -117,4 +117,7 @@ export function noSuchItem(
+   }
+-  const available = [...new Set(bot.inventory.items().map((i) => i.name))];
+-  return new SkillBlocked(`包里没有${zhName(item)}${itemIdHint(bot, item, bot.inventory.items())}${available.length > 0 ? `；可用工具物品名: ${available.join('、')}` : ''}`);
++  const stock = itemsInReach(bot);
++  const hint = itemIdHint(bot, item, stock);
++  const missing = hint ? `物品选择器「${item}」未命中当前库存${hint}` : `包里没有${zhName(item)}`;
++  const available = [...new Set(stock.map((i) => i.name))];
++  return new SkillBlocked(`${missing}${available.length > 0 ? `；可用工具物品名: ${available.join('、')}` : ''}`);
+ }
+diff --git a/method-runner.ts b/method-runner.ts
+index 9ecaca3..7572e91 100644
+--- a/method-runner.ts
++++ b/method-runner.ts
+@@ -6,3 +6,3 @@ export const METHOD_LIMITS = Object.freeze({ sourceChars: 12_000, paramsChars: 4
+ 
+-export type MethodOperation = 'state' | 'do' | 'flightPlan';
++export type MethodOperation = 'state' | 'do' | 'flightPlan' | 'mineflayer';
+ export interface MethodTrace {
+@@ -20,2 +20,3 @@ export interface MethodRequest {
+ export interface MethodHost {
++  nativeMethods?: string[];
+   call: (method: MethodOperation, args: Record<string, unknown>, signal: AbortSignal) => unknown | Promise<unknown>;
+@@ -83,3 +84,3 @@ export class MethodRunner {
+     const worker = new Worker(new URL('./method-worker.mjs', import.meta.url), {
+-      workerData: { code: request.code, params, validate: request.validate === true },
++      workerData: { code: request.code, params, validate: request.validate === true, nativeMethods: this.host.nativeMethods },
+       env: {}, execArgv: [], resourceLimits: { maxOldGenerationSizeMb: 64, stackSizeMb: 4 },
+@@ -121,3 +122,3 @@ export class MethodRunner {
+       }
+-      if (message.kind !== 'call' || !['state', 'do', 'flightPlan'].includes(message.method)) {
++      if (message.kind !== 'call' || !['state', 'do', 'flightPlan', 'mineflayer'].includes(message.method)) {
+         finish('failed', '脚本协议包含未知操作'); return;
+diff --git a/method-worker.mjs b/method-worker.mjs
+index 7650f2c..ada94a6 100644
+--- a/method-worker.mjs
++++ b/method-worker.mjs
+@@ -2,2 +2,3 @@ import { parentPort, workerData } from 'node:worker_threads';
+ import 'ses';
++import { Vec3 } from 'vec3';
+ 
+@@ -9,4 +10,4 @@ const rpc = harden((method, args = {}) => new Promise((resolve, reject) => {
+   const id = ++serial;
+-  pending.set(id, { resolve, reject });
+-  parentPort.postMessage({ kind: 'call', id, method, args });
++  pending.set(id, { resolve, reject, method });
++  parentPort.postMessage({ kind: 'call', id, method, args: JSON.parse(JSON.stringify(args)) });
+ }));
+@@ -17,5 +18,20 @@ parentPort.on('message', (message) => {
+   if (message.error) request.reject(new Error(message.error));
+-  else request.resolve(harden(message.value));
++  else request.resolve(harden(request.method === 'mineflayer' ? revive(message.value.value) : message.value));
+ });
+ 
++function revive(value) {
++  if (Array.isArray(value)) return value.map(revive);
++  if (!value || typeof value !== 'object') return value;
++  if (Object.keys(value).length === 3 && ['x', 'y', 'z'].every(key => typeof value[key] === 'number')) {
++    return new Vec3(value.x, value.y, value.z);
++  }
++  const result = Object.fromEntries(Object.entries(value).map(([key, child]) => [key, revive(child)]));
++  if (value.properties && value.stateId !== undefined && value.position) result.getProperties = () => result.properties;
++  return result;
++}
++
++const bot = workerData.nativeMethods ? Object.fromEntries(workerData.nativeMethods
++  .filter(name => name !== 'inventory.items').map(name => [name, (...args) => rpc('mineflayer', { name, args })])) : undefined;
++if (bot) bot.inventory = { items: () => rpc('mineflayer', { name: 'inventory.items', args: [] }) };
++
+ const mc = harden({
+@@ -27,3 +43,4 @@ const mc = harden({
+ try {
+-  const compartment = new Compartment({ mc, params: harden(workerData.params) });
++  const compartment = new Compartment({ mc, params: harden(workerData.params),
++    ...(bot ? { bot: harden(bot), Vec3: harden(Vec3) } : {}) });
+   const program = compartment.evaluate(`(async () => {\n${workerData.code}\n})`);
+diff --git a/precheck.ts b/precheck.ts
+index 044e158..3c41f8a 100644
+--- a/precheck.ts
++++ b/precheck.ts
+@@ -13,3 +13,3 @@ import type { BlockFace, Cell } from './geometry.ts';
+ import { matchItemName, type ChestBook } from './chests.ts';
+-import { equippedAlready } from './tools.ts';
++import { equipDestOf, equippedAlready } from './tools.ts';
+ import { itemsInReach, offHandItem } from './inventory.ts';
+@@ -19,3 +19,3 @@ import { itemMatchesPick, pickMissText, pickTargetOf } from './item-pick.ts';
+ import { zhDimension, zhEntity, zhName } from './names.ts';
+-import { invItemNamed } from './inventory.ts';
++import { invItemNamed, noSuchItem } from './inventory.ts';
+ import { itemCustomName } from './item-display.ts';
+@@ -43,3 +43,3 @@ function hasItem(bot: Bot, name: string, pick?: string): number {
+   for (const it of bot.inventory.items()) {
+-    if ((matchItemName(name, it.name, bot?.registry) || zhName(it.name) === name)
++    if (matchItemName(name, it.name, bot?.registry)
+       && itemMatchesPick(pick, it, bot.registry as never)) n += it.count;
+@@ -52,3 +52,3 @@ function offHandHas(bot: Bot, name: string, pick?: string): boolean {
+   const off = offHandItem(bot);
+-  return !!off && (matchItemName(name, off.name, bot?.registry) || zhName(off.name) === name)
++  return !!off && matchItemName(name, off.name, bot?.registry)
+     && itemMatchesPick(pick, off, bot.registry as never);
+@@ -248,3 +248,6 @@ function precheckHasItem(
+   if (!item) return null;
+-  if (hasItem(bot, item, pick) > 0 || (allowCustomName && invItemNamed(bot, item, pick))) return null;
++  if (allowCustomName ? invItemNamed(bot, item, pick) : hasItem(bot, item, pick) > 0) return null;
++  if (!inventoryReadConfirmed(bot)) {
++    return { level: 'soft', text: `背包玩家槽还没完整同步，${verb}之前需确认有没有${zhName(item)}`, rule: `${rule}.inventorySync` };
++  }
+   // 有同 id 的几件而挑选词一件没中:那几件各自是什么,当场摆出来
+@@ -260,3 +263,3 @@ function precheckHasItem(
+   const customHint = custom.length > 0 ? `;自定义物品请用背包显示名:${custom.join('、')}` : '';
+-  return { level: 'hard', text: `包里没有${zhName(item)},${verb}不了${hint}${customHint}`, rule };
++  return { level: 'hard', text: `${allowCustomName ? noSuchItem(bot, item, pick).message : `包里没有${zhName(item)},${verb}不了`}${hint}${customHint}`, rule };
+ }
+@@ -757,2 +760,10 @@ export function precheckSteps(bot: Bot, steps: SkillCall[], deps: PrecheckDeps):
+     const current = steps[i];
++    const previous = steps[i - 1];
++    if (current.skill === 'use' && current.at !== undefined && !current.item
++      && previous?.skill === 'equip' && previous.item && previous.hand !== 'off'
++      && (previous.hand === 'main' || equipDestOf(previous.item, bot.registry) === 'hand')) {
++      out.push({ index: i, note: { level: 'soft', rule: 'use.clearsEquippedHand',
++        text: `use.at 省略 item 会先清空主手，不会沿用前一步装备的「${previous.item}」。`
++          + `若要拿它右键，本步显式填写 item:"${previous.item}"；空手交互可保留原写法。` } });
++    }
+     const relativeTunnelAfterMove = current.skill === 'tunnel' && projectedStart !== undefined
+diff --git a/skills-craft.ts b/skills-craft.ts
+index 0f20401..19e9e66 100644
+--- a/skills-craft.ts
++++ b/skills-craft.ts
+@@ -450,3 +450,3 @@ export async function equipNamed(bot: Bot, name: string): Promise<string> {
+   const item = invItemNamed(bot, name);
+-  if (!item) throw new SkillBlocked(`包里没有${zhName(name)}`);
++  if (!item) throw noSuchItem(bot, name);
+   await bot.equip(item, 'hand');
+@@ -518,5 +518,4 @@ export async function skillEquip(bot: Bot, call: Extract<SkillCall, { skill: 'eq
+     const near = items.filter((i) => i.name.includes(want)).map((i) => zhName(i.name));
+-    throw new SkillBlocked(
+-      `包里没有${zhName(want)}` + (near.length > 0 ? `;名字带这几个字的有:${near.join('、')}` : ''),
+-    );
++    throw new SkillBlocked(noSuchItem(bot, want).message
++      + (near.length > 0 ? `;名字带这几个字的有:${near.join('、')}` : ''));
+   }
+diff --git a/world.ts b/world.ts
+index 943ecd3..87240e3 100644
+--- a/world.ts
++++ b/world.ts
+@@ -33,2 +33,3 @@ import { FLIGHT_PLAN_MAX_POINTS, parseFlightPlan, previewFlightPlan } from './fl
+ import { MethodRunner, METHOD_LIMITS, type MethodOperation, type MethodRun } from './method-runner.ts';
++import { MineflayerMethod, NATIVE_API, nativeApiHelp } from './method-mineflayer.ts';
+ import { flightState } from './flight.ts';
+@@ -2229,3 +2230,6 @@ export const MINECRAFT_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [
+       + 'Use JavaScript conditions, calculations and bounded loops to adapt to feedback. Prepare a timed route before casting; combine already-known cast/movement/blink steps with needs in one mc.do to avoid model delays. '
+-      + 'No imports, process, filesystem, network or raw bot access. Calls must be awaited serially. '
++      + 'bot and Vec3 expose a bounded asynchronous transport for Mineflayer public primitives; use {api:"index"} then {api:"blockAt"}, {api:"activateItem"}, etc. for native signatures and differences. '
++      + 'Native calls preserve the current hand and do not navigate or select tools. bot.blockAt returns Block|null with getProperties() for your own JavaScript result checks. '
++      + 'The first native body call queues a body lease held until program end; after it, mc.do is unavailable in that program. Read calls do not acquire the body. '
++      + 'No imports, process, filesystem, network or private raw bot access. Calls must be awaited serially. '
+       + `Limits: ${METHOD_LIMITS.sourceChars} source chars, ${METHOD_LIMITS.calls} SDK calls, ${METHOD_LIMITS.actions} action groups, default ${METHOD_LIMITS.durationMs}ms including queue waits, maximum ${METHOD_LIMITS.maxDurationMs}ms. `
+@@ -2242,2 +2246,3 @@ export const MINECRAFT_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [
+       validate: { type: 'boolean' }, runId: { type: 'integer', minimum: 1 },
++      api: { type: 'string', description: 'index lists the exposed Mineflayer public API; a method name returns only its signature, transport differences and result contract.' },
+       call: { type: 'integer', minimum: 1, maximum: METHOD_LIMITS.calls }, stop: { type: 'boolean' },
+@@ -2716,2 +2721,3 @@ export class MinecraftWorld implements World {
+   private readonly methods = new MethodRunner({
++    nativeMethods: Object.keys(NATIVE_API),
+     call: (method, args, signal) => this.methodCall(method, args, signal),
+@@ -2719,2 +2725,3 @@ export class MinecraftWorld implements World {
+   });
++  private nativeMethod: { runId: number; session: MineflayerMethod } | null = null;
+   private idleBehavior: IdleBehaviorController | null = null;
+@@ -4245,2 +4252,6 @@ export class MinecraftWorld implements World {
+         try {
++          if (args.api !== undefined) {
++            if (typeof args.api !== 'string' || ['code', 'runId', 'call', 'stop', 'validate'].some(key => args[key] !== undefined)) throw new Error('api 须单独使用');
++            return this.toolLog('mc_script', args, nativeApiHelp(args.api));
++          }
+           if (args.validate !== undefined && typeof args.validate !== 'boolean') throw new Error('validate须为布尔值');
+@@ -4323,2 +4334,15 @@ export class MinecraftWorld implements World {
+     if (method === 'state') return this.methodState();
++    if (method === 'mineflayer') {
++      if (typeof args.name !== 'string' || !Array.isArray(args.args)) throw new Error('原生调用须包含 name 与 args 数组');
++      const run = this.methods.current;
++      if (!run) throw new Error('自主程序权限已撤销');
++      if (this.nativeMethod?.runId !== run.id) {
++        this.nativeMethod = { runId: run.id, session: new MineflayerMethod({ executor: this.executor,
++          name: `方法#${run.id}「${run.name}」`, signal, getBot: () => this.bridge?.bot ?? null,
++          successful: () => this.methods.read(run.id)[0]?.status === 'completed',
++          revoke: reason => { if (this.methods.current?.id === run.id) this.methods.stop(reason); },
++          beforeEnqueue: () => this.interruptIdle('native-program') }) };
++      }
++      return this.nativeMethod.session.call(args.name, args.args);
++    }
+     if (method === 'flightPlan') {
+@@ -4328,2 +4352,3 @@ export class MinecraftWorld implements World {
+     }
++    if (this.nativeMethod?.session.ownsBody) throw new Error('当前原生程序已持有身体；mc.do 会等待自身，改用 bot 原生调用或结束后另起方法');
+     let decision: TaskAdmissionDecision | undefined;
+@@ -4360,2 +4385,3 @@ export class MinecraftWorld implements World {
+   private onMethodFinish(run: MethodRun): void {
++    if (this.nativeMethod?.runId === run.id) this.nativeMethod = null;
+     this.diag.write({ lane: 'task', event: 'method-terminal', msg: `方法#${run.id}「${run.name}」${run.status}`,
+diff --git a/method-mineflayer.ts b/method-mineflayer.ts
+new file mode 100644
+--- /dev/null
++++ b/method-mineflayer.ts
+@@ -0,0 +1,249 @@
++/** JSON transport for Mineflayer's public primitives; the executor owns the program's body. */
++import { AsyncLocalStorage } from 'node:async_hooks';
++import type { Bot, ControlState } from 'mineflayer';
++import { Vec3 } from 'vec3';
++import { createHash } from 'node:crypto';
++import type { Executor } from './executor.ts';
++import { checkAbort, type SkillContext } from './skill-context.ts';
++import { breakPermissionNote } from './travel.ts';
++import { permitPlacement } from './placement.ts';
++import { withPreparedInteractionHand } from './hand-interaction.ts';
++import { equipSlotConfirmed, unequipSlotConfirmed } from './equipment.ts';
++
++const nativeCalls = new AsyncLocalStorage<() => void>();
++const guarded = new WeakSet<object>();
++
++export const NATIVE_API = Object.freeze({
++  read: 'read(path): JSON read of entity, health, food, game, heldItem, inventory.slots, or registry.itemsByName.<id>/blocksByName.<id>. No client, credentials or private fields.',
++  blockAt: 'blockAt(point, extraInfos=true): Block|null. Unloaded is null. Block.getProperties() reads the returned native properties; re-read for current values.',
++  findBlocks: 'findBlocks({point?,matching,maxDistance?,count?,useExtraInfo?}): Vec3[]. matching is a numeric block id or array of ids; maxDistance 1..32 and count 1..64. Function predicates stay in the program: filter returned blocks there.',
++  findBlock: 'findBlock(options): Block|null, with the same options and bounds as findBlocks.',
++  canSeeBlock: 'canSeeBlock(block): boolean from Mineflayer visibility, using a fresh block at its position.',
++  canDigBlock: 'canDigBlock(block): boolean from Mineflayer reach and diggability; server permission is separately checked when digging.',
++  digTime: 'digTime(block): milliseconds for the currently held tool.',
++  'inventory.items': 'inventory.items(): current native inventory stacks, including slot and instance identity. Read heldItem or inventory.slots separately for equipment.',
++  getControlState: 'getControlState(control): boolean. forward/back/left/right/jump/sprint/sneak.',
++  look: 'look(yaw,pitch,force?): Promise<void>. Native radians; no relative angle or automatic navigation.',
++  lookAt: 'lookAt(point,force?): Promise<void>. Use Vec3 coordinates.',
++  setControlState: 'setControlState(control,state): native key input. Keys remain held across awaited calls in this program; all are released on completion or revocation. Normal collision physics applies; flight uses existing flight/control tools.',
++  clearControlStates: 'clearControlStates(): release all native movement keys held by this program.',
++  waitForTicks: 'waitForTicks(ticks): native physics ticks, 1..200. Await serially; cancellation revokes the entire program.',
++  dig: 'dig(block,forceLook=true,digFace="auto"): native dig with current tool and measured reach; no navigation or automatic tool selection. digFace is auto/raycast or a Vec3 face. Protected, unknown-permission or changed blocks are rejected.',
++  stopDigging: 'stopDigging(): interrupt current native digging.',
++  placeBlock: 'placeBlock(referenceBlock,faceVector): native server-confirmed placement at reference.position.plus(faceVector). Six cardinal faces only; current held item and normal material permission apply. No automatic equip or navigation; installed World confirmation and retry fixes still apply.',
++  equip: 'equip(itemOrNumericType,destination): native inventory equip, using a fresh item instance/slot. Destination hand/head/torso/legs/feet/off-hand; existing inventory synchronization remains active.',
++  unequip: 'unequip(destination): native removal; refuses when no inventory space is available, so native toss fallback cannot discard equipment.',
++  activateBlock: 'activateBlock(block,direction?,cursorPos?): native right click with the CURRENT hand, default up face and center cursor. Does not clear/equip the hand. Return confirms dispatch only; read actual block/inventory effects.',
++  activateItem: 'activateItem(offHand=false): native held-item use (including buckets). Aim with lookAt first. Return confirms dispatch only; re-read world and inventory. Does not clear/equip the hand.',
++  deactivateItem: 'deactivateItem(): native release of held use; releasing bow/crossbow/trident can fire it.',
++});
++type NativeName = keyof typeof NATIVE_API;
++const READ_ONLY = new Set<NativeName>(['read', 'blockAt', 'findBlocks', 'findBlock', 'canSeeBlock',
++  'canDigBlock', 'digTime', 'inventory.items', 'getControlState']);
++
++export function nativeApiHelp(name?: string): string {
++  const lead = 'mc_script 提供 bot 与 Vec3。Mineflayer 4.37.1 公共接口通过 Worker JSON 传输，所有 bot 调用须逐个 await；返回 Block.getProperties() 与 Vec3 运算在 Worker 内同步。'
++    + ' 首次身体调用排入现有身体队列并独占至程序结束；此后不能再调用 mc.do，防止等待自己的队列。读数不占身体。'
++    + ' 取消、战斗/环境接管、死亡、断线或超时均撤销原生程序，不自动重放。可用 api:<方法名> 按需查看签名；缺少的 API 明确不可用。';
++  if (name === undefined || name === 'index') return `${lead}\n${Object.keys(NATIVE_API).join(', ')}\n上游文档：https://github.com/PrismarineJS/mineflayer/blob/master/docs/api.md`;
++  if (!Object.hasOwn(NATIVE_API, name)) throw new Error(`未开放 Mineflayer API ${name}；api:"index" 查看当前入口`);
++  return `${lead}\n${name}: ${NATIVE_API[name as NativeName]}`;
++}
++
++function point(value: unknown): Vec3 {
++  const p = value as { x?: unknown; y?: unknown; z?: unknown } | null;
++  if (!p || ![p.x, p.y, p.z].every(n => typeof n === 'number' && Number.isFinite(n) && Math.abs(n) <= 30_000_000)) {
++    throw new Error('坐标须为有限 Vec3 {x,y,z}');
++  }
++  return new Vec3(p.x as number, p.y as number, p.z as number);
++}
++function block(bot: Bot, value: unknown, fresh = false): NonNullable<ReturnType<Bot['blockAt']>> {
++  const supplied = value as { position?: unknown; stateId?: number } | null;
++  const current = bot.blockAt(point(supplied?.position));
++  if (!current) throw new Error('目标区块未加载');
++  if (fresh && supplied?.stateId !== current.stateId) throw new Error('方块状态已变化；先重新 blockAt 再决定');
++  return current;
++}
++function packBlock(b: ReturnType<Bot['blockAt']>): unknown {
++  if (!b) return null;
++  return { name: b.name, type: b.type, stateId: b.stateId, metadata: b.metadata, position: b.position,
++    boundingBox: b.boundingBox, shapes: b.shapes, diggable: b.diggable, hardness: b.hardness,
++    properties: b.getProperties(), light: b.light, skyLight: b.skyLight };
++}
++function itemIdentity(item: NonNullable<Bot['heldItem']>): string {
++  return createHash('sha256').update(JSON.stringify([item.type, item.metadata, item.count, item.nbt,
++    (item as unknown as { components?: unknown }).components])).digest('hex');
++}
++function packItem(item: Bot['heldItem']): unknown {
++  return item ? { name: item.name, displayName: item.displayName, type: item.type, count: item.count,
++    metadata: item.metadata, slot: item.slot, customName: item.customName, enchants: item.enchants,
++    durabilityUsed: item.durabilityUsed, instanceHash: itemIdentity(item) } : null;
++}
++function control(value: unknown): ControlState {
++  if (!['forward', 'back', 'left', 'right', 'jump', 'sprint', 'sneak'].includes(String(value))) throw new Error('未知控制键');
++  return value as ControlState;
++}
++function destination(value: unknown): 'hand' | 'head' | 'torso' | 'legs' | 'feet' | 'off-hand' {
++  if (value == null) return 'hand';
++  if (!['hand', 'head', 'torso', 'legs', 'feet', 'off-hand'].includes(String(value))) throw new Error('未知装备槽');
++  return value as ReturnType<typeof destination>;
++}
++function face(value: unknown): Vec3 {
++  const p = point(value);
++  if (![p.x, p.y, p.z].every(n => [-1, 0, 1].includes(n)) || Math.abs(p.x) + Math.abs(p.y) + Math.abs(p.z) !== 1) throw new Error('faceVector 须为六个正交单位方向之一');
++  return p;
++}
++
++/** A lazy body lease spans native calls and is revoked with the originating method. */
++export class MineflayerMethod {
++  private readonly connectionBot: Bot | null;
++  private body: Promise<{ bot: Bot; ctx: SkillContext }> | null = null;
++  private release: (() => void) | null = null;
++  private taskId: number | null = null;
++  private terminalError: Error | null = null;
++  constructor(private readonly opts: { executor: Executor; name: string; signal: AbortSignal;
++    getBot(): Bot | null; successful(): boolean; revoke(reason: string): void; beforeEnqueue(): void }) {
++    this.connectionBot = opts.getBot();
++    opts.signal.addEventListener('abort', () => {
++      this.release?.();
++      if (!opts.successful() && !this.terminalError && this.taskId !== null) opts.executor.cancelTask(this.taskId, '原生程序权限撤销');
++    }, { once: true });
++  }
++  get ownsBody(): boolean { return this.body !== null; }
++  private acquire(): Promise<{ bot: Bot; ctx: SkillContext }> {
++    if (this.body) return this.body;
++    let enter!: (owner: { bot: Bot; ctx: SkillContext }) => void;
++    let fail!: (error: Error) => void;
++    this.body = new Promise((resolve, reject) => { enter = resolve; fail = reject; });
++    const untilFinished = new Promise<void>(resolve => { this.release = resolve; });
++    this.opts.beforeEnqueue();
++    this.taskId = this.opts.executor.enqueueProgram({ name: this.opts.name,
++      run: async (bot, ctx) => {
++        const revoke = () => this.opts.revoke('原生程序的连接、位置或身体状态已变化');
++        const events = ['end', 'death', 'respawn', 'forcedMove'] as const;
++        for (const event of events) bot.on(event, revoke);
++        try { enter({ bot, ctx }); await untilFinished; }
++        finally { for (const event of events) bot.off(event, revoke); }
++      },
++      cancel: reason => {
++        if (this.terminalError) return;
++        this.terminalError = new Error(reason);
++        fail(this.terminalError); this.release?.(); this.opts.revoke(reason);
++      } });
++    return this.body;
++  }
++  async call(name: string, args: unknown[]): Promise<unknown> {
++    if (!Object.hasOwn(NATIVE_API, name)) throw new Error(`未开放 Mineflayer API ${name}`);
++    this.opts.signal.throwIfAborted();
++    if (this.terminalError) throw this.terminalError;
++    const owner = READ_ONLY.has(name as NativeName) ? null : await this.acquire();
++    const bot = owner?.bot ?? this.opts.getBot();
++    if (!bot || bot !== this.connectionBot || bot !== this.opts.getBot()) throw new Error('Minecraft 连接已变化');
++    const active = () => {
++      this.opts.signal.throwIfAborted();
++      if (owner) checkAbort(owner.ctx);
++      if (bot !== this.opts.getBot()) throw new Error('Minecraft 连接已变化');
++    };
++    active();
++    if (!guarded.has(bot._client)) {
++      const original = bot._client.write;
++      bot._client.write = function (...packet: Parameters<typeof original>) {
++        nativeCalls.getStore()?.(); return original.apply(this, packet);
++      };
++      guarded.add(bot._client);
++    }
++    const value = await nativeCalls.run(active, async () => {
++      const value = await this.invoke(bot, owner?.ctx, name as NativeName, args);
++      active();
++      return value ?? null;
++    });
++    return { value, taskId: this.taskId, sampledAt: new Date().toISOString(), nativeMethod: name };
++  }
++  private async invoke(bot: Bot, ctx: SkillContext | undefined, name: NativeName, args: unknown[]): Promise<unknown> {
++    const [a, b, c] = args;
++    switch (name) {
++      case 'read': {
++        if (a === 'entity') return bot.entity ? { id: bot.entity.id, position: bot.entity.position,
++          velocity: bot.entity.velocity, yaw: bot.entity.yaw, pitch: bot.entity.pitch, onGround: bot.entity.onGround } : null;
++        if (a === 'health') return bot.health;
++        if (a === 'food') return bot.food;
++        if (a === 'game') return bot.game;
++        if (a === 'heldItem') return packItem(bot.heldItem);
++        if (a === 'inventory.slots') return bot.inventory.slots.map(packItem);
++        const path = String(a).match(/^registry\.(itemsByName|blocksByName)\.([a-z0-9_]+)$/);
++        if (!path) throw new Error('read 仅支持 api:"read" 列出的公开字段');
++        return (bot.registry[path[1] as 'itemsByName' | 'blocksByName'] as Record<string, unknown>)[path[2]] ?? null;
++      }
++      case 'blockAt': return packBlock(bot.blockAt(point(a), b === undefined ? true : Boolean(b)));
++      case 'findBlock': case 'findBlocks': {
++        const options = a as { point?: unknown; matching?: unknown; maxDistance?: number; count?: number; useExtraInfo?: boolean } | null;
++        const matching = Array.isArray(options?.matching) ? options.matching : [options?.matching];
++        if (matching.length < 1 || matching.length > 64 || !matching.every(id => Number.isInteger(id) && Number(id) >= 0)) throw new Error('matching 须为方块数字 ID 或 ID 数组');
++        const maxDistance = options?.maxDistance ?? 16, count = options?.count ?? 1;
++        if (!Number.isInteger(maxDistance) || maxDistance < 1 || maxDistance > 32 || !Number.isInteger(count) || count < 1 || count > 64) throw new Error('搜索范围或数量超出 api 契约');
++        const query = { matching: matching as number[], maxDistance, count,
++          ...(options?.point === undefined ? {} : { point: point(options.point) }), useExtraInfo: options?.useExtraInfo === true };
++        return name === 'findBlock' ? packBlock(bot.findBlock(query)) : bot.findBlocks(query);
++      }
++      case 'canSeeBlock': return bot.canSeeBlock(block(bot, a));
++      case 'canDigBlock': return bot.canDigBlock(block(bot, a));
++      case 'digTime': return bot.digTime(block(bot, a));
++      case 'inventory.items': return bot.inventory.items().map(packItem);
++      case 'getControlState': return bot.getControlState(control(a));
++      case 'look':
++        if (typeof a !== 'number' || !Number.isFinite(a) || typeof b !== 'number' || !Number.isFinite(b) || Math.abs(b) > Math.PI / 2) throw new Error('look 要有限弧度与有效 pitch');
++        return bot.look(a, b, c === true);
++      case 'lookAt': return bot.lookAt(point(a), b === true);
++      case 'setControlState':
++        if (typeof b !== 'boolean') throw new Error('控制键状态须为布尔值');
++        if (!bot.physicsEnabled) throw new Error('普通物理未启用；飞行控制使用现有 flight/control 入口');
++        return bot.setControlState(control(a), b);
++      case 'clearControlStates': return bot.clearControlStates();
++      case 'waitForTicks':
++        if (!Number.isInteger(a) || Number(a) < 1 || Number(a) > 200) throw new Error('ticks 须为1..200');
++        return bot.waitForTicks(a as number);
++      case 'dig': {
++        const target = block(bot, a, true), permission = breakPermissionNote(bot, target);
++        if (permission) throw new Error(permission);
++        if (!bot.canDigBlock(target)) throw new Error('Mineflayer.canDigBlock 为 false；未导航或开挖');
++        if (b !== undefined && typeof b !== 'boolean' && b !== 'ignore') throw new Error('forceLook 须为布尔值或 ignore');
++        const digFace = c === undefined || c === 'auto' || c === 'raycast' ? c : face(c);
++        return bot.dig(target, (b ?? true) as boolean | 'ignore', (digFace ?? 'auto') as 'auto' | 'raycast' | Vec3);
++      }
++      case 'stopDigging': return bot.stopDigging();
++      case 'placeBlock': {
++        const target = block(bot, a, true), direction = face(b), held = bot.heldItem;
++        if (!held) throw new Error('主手没有放置材料');
++        const permit = permitPlacement(ctx!, held.name, false, target.position.plus(direction));
++        if (!permit.ok) throw new Error(permit.reason);
++        let placed = false;
++        try { await bot.placeBlock(target, direction); placed = true; }
++        finally { await permit.finish(placed); }
++        return null;
++      }
++      case 'equip': {
++        const slot = typeof a === 'object' && a !== null ? (a as { slot?: number }).slot : undefined;
++        const item = typeof a === 'number' ? a : bot.inventory.slots[slot ?? -1];
++        if (typeof a !== 'number' && (!item || (a as { instanceHash?: string }).instanceHash !== itemIdentity(item as NonNullable<Bot['heldItem']>))) throw new Error('物品槽位或实例已变化；先重新读取 inventory.items');
++        if (typeof item === 'number' && (!Number.isInteger(item) || !bot.registry.items[item])) throw new Error('未知物品数字 ID');
++        const dest = destination(b);
++        const stack = typeof item === 'number'
++          ? bot.inventory.items().find(candidate => candidate.type === item) : item;
++        if (!stack) throw new Error('当前库存没有该物品实例');
++        return dest === 'hand' ? bot.equip(stack, dest) : equipSlotConfirmed(bot, stack, dest);
++      }
++      case 'unequip':
++        if (!bot.inventory.slots.slice(9, 45).some(slot => slot === null)) throw new Error('背包没有空格；未调用可能丢物的原生 unequip');
++        return destination(a) === 'hand' ? bot.unequip('hand') : unequipSlotConfirmed(bot, destination(a) as Exclude<ReturnType<typeof destination>, 'hand'>);
++      case 'activateBlock': {
++        const target = block(bot, a, true), direction = b === undefined ? undefined : face(b), cursor = c === undefined ? undefined : point(c);
++        if (cursor && [cursor.x, cursor.y, cursor.z].some(n => n < 0 || n > 1)) throw new Error('cursorPos 须在方块的0..1范围内');
++        return withPreparedInteractionHand(bot, () => bot.activateBlock(target, direction, cursor));
++      }
++      case 'activateItem':
++        if (a !== undefined && typeof a !== 'boolean') throw new Error('offHand 须为布尔值');
++        return bot.activateItem(a as boolean | undefined);
++      case 'deactivateItem': return bot.deactivateItem();
++    }
++  }
++}

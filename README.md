@@ -8,6 +8,8 @@
 
 宿主使用 Cortico World API 5；开发检查使用官方 `cortico@0.1.8` SDK。改进后的 Minecraft 引擎随包分发，不要求宿主使用个人 fork。完整状态快照、按结果结束模型轮次及认知任务类别属于可选宿主扩展：支持它们的框架可使用这些信息，官方 0.1.8 仍使用原有事件和认知接口。World 不替换宿主的记忆、Persona 或模型调度实现。
 
+自主程序可用 `mymc_script {api:"index"}` 按需发现 Mineflayer 原生接口，并用 `bot` 与 `Vec3` 编排方块属性读取、当前手持物交互、挖掘、放置和短步。接口保留原生名称与坐标语义，共用身体队列、保护、材料及库存确认；程序终态不等于世界目标完成。完整约定见 `mymc_guide {topic:"control"}`。只有首次出生后才向动作层交付游戏连接，避免把登录等待阶段的临时实体当作真实现场。
+
 ## 安装与配置
 
 npm 发布版可在 Cortico 控制台的扩展页填写 `cortico-world-qiandengji` 安装。扩展页不接受网页或 `.tgz` 地址；使用 [GitHub Releases](https://github.com/jcs130/cortico-world-qiandengji/releases) 的安装包时，通过 pnpm 安装到宿主的扩展目录：
