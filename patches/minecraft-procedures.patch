@@ -1,0 +1,537 @@
+diff --git a/world.ts b/world.ts
+--- a/world.ts
++++ b/world.ts
+@@ -15,3 +15,3 @@
+   ConfigGroup, World, WorldHost, WorldConsoleDecl, WorldPanelDecl, WorldRequestFacts,
+-  EventTag, StoragePart, ToolCallContext, ToolDef, ToolOutcome, TriggerMode,
++  BlobInput, EventTag, StoragePart, ToolCallContext, ToolDef, ToolOutcome, TriggerMode,
+ } from './support/host-contract.ts';
+@@ -32,3 +32,5 @@
+ import { FLIGHT_PLAN_MAX_POINTS, parseFlightPlan, previewFlightPlan } from './flight-preview.ts';
+-import { MethodRunner, METHOD_LIMITS, type MethodOperation, type MethodRun } from './method-runner.ts';
++import { MethodRunner, METHOD_LIMITS, METHOD_ADAPTER, type MethodOperation, type MethodRun } from './method-runner.ts';
++import { resolveProcedure, procedureReference, PROCEDURE_RECEIPT_SCHEMA, PROCEDURE_RECEIPT_MIME,
++  type ProcedureReceipt } from './support/procedure.ts';
+ import { MineflayerMethod, NATIVE_API, nativeApiHelp } from './method-mineflayer.ts';
+@@ -2239,3 +2241,5 @@
+       + 'Expand an SDK call to inspect its actual fields before interpreting results; compare the returned observations with the method objective before saving verified claims. '
+-      + 'Store source, conditions, version/hash and verified before/after evidence in your own workspace; read relevant methods on demand.',
++      + 'Alternatively use {procedure:{handle,revision},params,validate?} to resolve and run a pinned cortico.procedure/v1 dependency graph for adapter minecraft-method/v1. '
++      + 'await methods.run(alias,params) composes only declared dependency versions; all share this program\'s budgets and body lease. Source is loaded directly from the selected blobs, without copying it through model context. '
++      + 'Procedure terminal events carry an execution UUID and persistent receipt for explicit goal review/adoption by the owning Persona; completion alone is not proof of improvement.',
+     parameters: { type: 'object', properties: {
+@@ -2243,2 +2247,3 @@
+       code: { type: 'string', minLength: 1, maxLength: METHOD_LIMITS.sourceChars },
++      procedure: { type: 'object', properties: { handle: { type: 'string' }, revision: { type: 'string' } }, required: ['handle', 'revision'] },
+       params: { type: 'object', additionalProperties: true },
+@@ -4254,3 +4259,3 @@
+           if (args.api !== undefined) {
+-            if (typeof args.api !== 'string' || ['code', 'runId', 'call', 'stop', 'validate'].some(key => args[key] !== undefined)) throw new Error('api 须单独使用');
++            if (typeof args.api !== 'string' || ['code', 'procedure', 'runId', 'call', 'stop', 'validate'].some(key => args[key] !== undefined)) throw new Error('api 须单独使用');
+             return this.toolLog('mc_script', args, nativeApiHelp(args.api));
+@@ -4260,11 +4265,16 @@
+           if (args.stop === true) {
+-            if (args.code !== undefined || args.runId !== undefined || args.call !== undefined) throw new Error('stop不能与code、runId或call合用');
++            if (args.code !== undefined || args.procedure !== undefined || args.runId !== undefined || args.call !== undefined) throw new Error('stop不能与code、procedure、runId或call合用');
+             return this.toolLog('mc_script', args, this.methods.stop('mc_script明确取消') ? '已取消当前方法' : '当前没有运行中的方法');
+           }
+-          if (args.code !== undefined) {
++          if (args.code !== undefined || args.procedure !== undefined) {
+             if (args.runId !== undefined || args.call !== undefined) throw new Error('code不能与runId或call合用');
++            if (args.code !== undefined && args.procedure !== undefined) throw new Error('code和procedure不能合用');
+             if (args.validate !== true && (!this.executor || !this.bridge?.bot?.entity)) throw new Error('Minecraft尚未连接');
+-            const run = this.methods.start({ name: args.name as string, code: args.code as string,
++            const reference = args.procedure === undefined ? undefined : procedureReference(args.procedure);
++            const graph = reference ? resolveProcedure(reference, METHOD_ADAPTER, handle => this.host?.blob(handle) ?? null) : undefined;
++            const root = graph?.versions[graph.root];
++            const run = this.methods.start({ name: root?.id ?? args.name as string, code: root?.code ?? args.code as string,
+               params: args.params as Record<string, unknown> | undefined,
+-              durationMs: args.durationMs as number | undefined, validate: args.validate === true });
++              durationMs: args.durationMs as number | undefined, validate: args.validate === true,
++              ...(graph && reference ? { procedure: { reference, graph } } : {}) });
+             return this.toolLog('mc_script', args, `方法#${run.id}已启动，尚无执行终态：${JSON.stringify(run)}`);
+@@ -4390,6 +4400,16 @@
+         startedAt: run.startedAt, endedAt: run.endedAt, error: run.error } });
++    const procedure = run.procedure;
++    const receipt: ProcedureReceipt | undefined = procedure && run.status !== 'running' ? {
++      schema: PROCEDURE_RECEIPT_SCHEMA, executionId: procedure.executionId, root: procedure.reference,
++      adapter: procedure.adapter, mode: procedure.mode, status: run.status, startedAt: run.startedAt, endedAt: run.endedAt!,
++      invocations: procedure.invocations, trace: run.trace, result: run.result, error: run.error,
++    } : undefined;
++    const blobs: BlobInput[] | undefined = receipt ? [{ bytes: new TextEncoder().encode(JSON.stringify({ ...receipt, versions: procedure!.versions })),
++      mime: PROCEDURE_RECEIPT_MIME, name: 'procedure-run.json', fallbackText: '方法完整执行回执；按执行 UUID 查询摘要，再按调用编号展开。' }] : undefined;
+     this.emit('minecraft.method', `方法#${run.id}「${run.name}」终态${run.status}；源码SHA256 ${run.sourceHash}；`
+       + `${run.trace.length}次SDK调用。${run.error ?? ''}用 mc_script {runId:${run.id}}读取各次真实回执；`
++      + (receipt ? `执行UUID ${receipt.executionId}，方法版本 ${receipt.root.revision}；完整回执已随事件保存。` : '')
+       + '脚本结束不等于原目标已达成。核对执行后状态，修订方法并记录已验证范围。', true,
+-    { meta: { runId: run.id, sourceHash: run.sourceHash, status: run.status } });
++    { meta: { runId: run.id, sourceHash: run.sourceHash, status: run.status, ...(receipt ? { procedureReceipt: {
++      schema: receipt.schema, executionId: receipt.executionId, root: receipt.root, status: receipt.status } } : {}) }, blobs });
+   }
+@@ -8692,3 +8712,3 @@
+     urgent: boolean,
+-    opts?: { deliver?: boolean; trigger?: TriggerMode; tags?: readonly EventTag[]; meta?: Record<string, unknown> },
++    opts?: { deliver?: boolean; trigger?: TriggerMode; tags?: readonly EventTag[]; meta?: Record<string, unknown>; blobs?: BlobInput[] },
+     senderKey?: string,
+@@ -8716,2 +8736,3 @@
+         meta: opts?.meta,
++        blobs: opts?.blobs,
+       },
+diff --git a/proxy.ts b/proxy.ts
+--- a/proxy.ts
++++ b/proxy.ts
+@@ -32,2 +32,5 @@
+ import { worldEnvLine, worldIdentityOf } from './server-config.ts';
++import { decodeBlobs } from './engine-blobs.ts';
++import { resolveProcedure, procedureReference } from './support/procedure.ts';
++import { METHOD_ADAPTER } from './method-runner.ts';
+ 
+@@ -62,5 +65,3 @@
+     ...out,
+-    blobs: out.blobs.map((b) => ('b64' in b
+-      ? { bytes: Buffer.from(b.b64, 'base64'), mime: b.mime, fallbackText: b.fallbackText, ...(b.name ? { name: b.name } : {}) }
+-      : b)),
++    blobs: decodeBlobs(out.blobs),
+   };
+@@ -121,2 +122,12 @@
+       handler: async (args, ctx) => {
++        const selected = new Map<string, {handle: string; b64: string; mime: string}>();
++        if (decl.name === 'mc_script' && args.procedure !== undefined) {
++          try {
++            resolveProcedure(procedureReference(args.procedure), METHOD_ADAPTER, handle => {
++              const got = this.host?.blob(handle);
++              if (got) selected.set(handle, {handle, b64: Buffer.from(got.bytes).toString('base64'), mime: got.mime});
++              return got ?? null;
++            });
++          } catch (error) { return {text: `[${decl.name} 失败] ${String(error)}`, failed: true}; }
++        }
+         try {
+@@ -127,2 +138,3 @@
+               round: roundTokenOf(ctx),
++              ...(selected.size ? {selectedBlobs: [...selected.values()]} : {}),
+             },
+@@ -384,3 +396,3 @@
+       if (req.kind === 'push') {
+-        value = await host.pushEvent(req.evt, req.opts);
++        value = await host.pushEvent({ ...req.evt, blobs: decodeBlobs(req.evt.blobs) }, req.opts);
+       } else if (req.kind === 'drain') {
+diff --git a/engine-child.ts b/engine-child.ts
+--- a/engine-child.ts
++++ b/engine-child.ts
+@@ -5,2 +5,4 @@
+ import { DeferredRenders } from './deferred-renders.ts';
++import { AsyncLocalStorage } from 'node:async_hooks';
++import { encodeBlobs } from './engine-blobs.ts';
+ import type {
+@@ -73,5 +75,3 @@
+     ...plain,
+-    blobs: blobs.map((b) => ('bytes' in b
+-      ? { b64: Buffer.from(b.bytes).toString('base64'), mime: b.mime, fallbackText: b.fallbackText, ...(b.name ? { name: b.name } : {}) }
+-      : b)),
++    blobs: encodeBlobs(blobs),
+   };
+@@ -92,4 +92,5 @@
+ 
++const selectedBlobs = new AsyncLocalStorage<ReadonlyMap<string, {bytes: Uint8Array; mime: string}>>();
+ const host: WorldHost = {
+-  pushEvent: (e, opts) => hostRpc({ kind: 'push', evt: e as Parameters<typeof host.pushEvent>[0] & { blobs?: undefined }, opts }) as Promise<EventEnvelope>,
++  pushEvent: (e, opts) => hostRpc({ kind: 'push', evt: { ...e, blobs: encodeBlobs(e.blobs) }, opts }) as Promise<EventEnvelope>,
+   pushDeferred: (e, opts) => {
+@@ -116,3 +117,3 @@
+   },
+-  blob: () => unavailable('blob'),
++  blob: handle => selectedBlobs.getStore()?.get(handle) ?? null,
+   reportUsage: (usage, opts) => send({ t: 'note', note: { kind: 'usage', usage, opts } }),
+@@ -210,3 +211,4 @@
+     if (!tool) throw new Error(`未知工具「${req.name}」`);
+-    const out = await withAnchors({ sess: req.role, ...(req.callId ? { call: req.callId } : {}), ...(req.round !== null ? { round: req.round } : {}) }, () => tool.handler(req.args, {
++    const blobs = new Map(req.selectedBlobs?.map(b => [b.handle, {bytes: Buffer.from(b.b64, 'base64'), mime: b.mime}]));
++    const out = await selectedBlobs.run(blobs, () => withAnchors({ sess: req.role, ...(req.callId ? { call: req.callId } : {}), ...(req.round !== null ? { round: req.round } : {}) }, () => tool.handler(req.args, {
+       role: req.role,
+@@ -215,3 +217,3 @@
+       ...(req.round !== null ? { round: req.round } : {}),
+-    }));
++    })));
+     return toolOutcomeOverIpc(out);
+diff --git a/engine-ipc.ts b/engine-ipc.ts
+--- a/engine-ipc.ts
++++ b/engine-ipc.ts
+@@ -8,2 +8,3 @@
+   PushOptions, TriggerMode, WorldRequestFacts,
++  WorldHost,
+ } from './support/host-contract.ts';
+@@ -28,2 +29,4 @@
+       callId: string | null; round: number | null;
++      /** Parent resolves only the explicitly selected procedure graph. */
++      selectedBlobs?: Array<{ handle: string; b64: string; mime: string }>;
+     }
+@@ -42,7 +45,8 @@
+   failed?: true;
+-  blobs?: Array<
+-    | { b64: string; mime: string; name?: string; fallbackText: string }
+-    | { handle: string; fallbackText: string }
+-  >;
++  blobs?: IpcBlob[];
+ }
++
++export type IpcBlob =
++  | { b64: string; mime: string; name?: string; fallbackText: string }
++  | { handle: string; fallbackText: string };
+ 
+@@ -93,3 +97,3 @@
+       kind: 'push';
+-      evt: Omit<EventEnvelope, 'cursor' | 'origin'> & { origin?: EventEnvelope['origin'] };
++      evt: Omit<Parameters<WorldHost['pushEvent']>[0], 'blobs'> & { blobs?: IpcBlob[] };
+       opts?: PushOptions;
+diff --git a/method-runner.ts b/method-runner.ts
+--- a/method-runner.ts
++++ b/method-runner.ts
+@@ -1,3 +1,6 @@
+-import { createHash } from 'node:crypto';
++import { createHash, randomUUID } from 'node:crypto';
+ import { Worker } from 'node:worker_threads';
++import { PROCEDURE_LIMITS, type ProcedureGraph, type ProcedureInvocation, type ProcedureReference } from './support/procedure.ts';
++
++export const METHOD_ADAPTER = 'minecraft-method/v1';
+ 
+@@ -10,2 +13,3 @@
+   endedAt?: string; result?: unknown; error?: string;
++  procedure?: { revision: string; invocation: number };
+ }
+@@ -15,2 +19,4 @@
+   trace: MethodTrace[]; result?: unknown; error?: string;
++  procedure?: { executionId: string; reference: ProcedureReference; adapter: string; mode: 'validation' | 'execution';
++    invocations: ProcedureInvocation[]; versions: Array<{ id: string; revision: string; sourceHash: string; parent: string | null; author: unknown }> };
+ }
+@@ -18,2 +24,3 @@
+   name: string; code: string; params?: Record<string, unknown>; durationMs?: number; validate?: boolean;
++  procedure?: { reference: ProcedureReference; graph: ProcedureGraph };
+ }
+@@ -44,3 +51,4 @@
+     const summary = (run: MethodRun) => ({ id: run.id, name: run.name, sourceHash: run.sourceHash,
+-      startedAt: run.startedAt, endedAt: run.endedAt, status: run.status, calls: run.trace.length, error: run.error });
++      startedAt: run.startedAt, endedAt: run.endedAt, status: run.status, calls: run.trace.length, error: run.error,
++      ...(run.procedure ? { procedure: run.procedure } : {}) });
+     if (id === undefined) return [...this.runs.values()].map(summary);
+@@ -60,2 +68,3 @@
+       return { call: trace.call, method: trace.method, startedAt: trace.startedAt, endedAt: trace.endedAt,
++        procedure: trace.procedure,
+         error: trace.error, accepted: reply?.accepted, taskId: reply?.taskId, kind: reply?.kind, done: reply?.done,
+@@ -82,5 +91,13 @@
+       startedAt: new Date().toISOString(), status: 'running', trace: [] };
++    if (request.procedure) {
++      const { reference, graph } = request.procedure;
++      if (graph.root !== reference.revision || graph.versions[graph.root]?.code !== request.code) throw new Error('procedure request identity mismatch');
++      run.procedure = { executionId: randomUUID(), reference, adapter: METHOD_ADAPTER,
++        mode: request.validate ? 'validation' : 'execution', invocations: [],
++        versions: Object.values(graph.versions).map(v => ({ id: v.id, revision: v.revision, sourceHash: v.sourceHash, parent: v.parent, author: v.author })) };
++    }
+     const controller = new AbortController();
+     const worker = new Worker(new URL('./method-worker.mjs', import.meta.url), {
+-      workerData: { code: request.code, params, validate: request.validate === true, nativeMethods: this.host.nativeMethods },
++      workerData: { code: request.code, params, validate: request.validate === true, nativeMethods: this.host.nativeMethods,
++        graph: request.procedure?.graph, maxInvocations: PROCEDURE_LIMITS.invocations },
+       env: {}, execArgv: [], resourceLimits: { maxOldGenerationSizeMb: 64, stackSizeMb: 4 },
+@@ -101,2 +118,5 @@
+       }
++      for (const invocation of run.procedure?.invocations ?? []) if (invocation.status === 'running') {
++        invocation.status = 'failed'; invocation.endedAt = run.endedAt; invocation.error = error ?? 'procedure capability revoked';
++      }
+       if (result !== undefined) run.result = result;
+@@ -116,2 +136,17 @@
+       if (message.kind === 'error') { finish('failed', String(message.error)); return; }
++      if (message.kind === 'procedure') {
++        const invocation = run.procedure?.invocations.find(i => i.invocation === message.invocation);
++        if (!run.procedure || request.validate || !request.procedure?.graph.versions[message.revision]
++          || !Number.isInteger(message.invocation) || message.invocation < 1 || message.invocation > PROCEDURE_LIMITS.invocations) {
++          finish('failed', 'invalid procedure invocation identity'); return;
++        }
++        if (message.status === 'running' && !invocation) {
++          run.procedure.invocations.push({ invocation: message.invocation, revision: message.revision,
++            ...(message.parent === undefined ? {} : { parent: message.parent }), startedAt: new Date().toISOString(), status: 'running' });
++        } else if (invocation?.status === 'running' && ['completed', 'failed'].includes(message.status)) {
++          invocation.status = message.status; invocation.endedAt = new Date().toISOString();
++          if (message.error) invocation.error = String(message.error).slice(0, 1600);
++        } else finish('failed', 'invalid procedure invocation transition');
++        return;
++      }
+       if (message.kind === 'done') {
+@@ -136,2 +171,3 @@
+       const trace: MethodTrace = { call: message.id, method: message.method, args, startedAt: new Date().toISOString() };
++      if (message.scope) trace.procedure = { revision: message.scope.revision, invocation: message.scope.invocation };
+       run.trace.push(trace);
+diff --git a/method-worker.mjs b/method-worker.mjs
+--- a/method-worker.mjs
++++ b/method-worker.mjs
+@@ -3,2 +3,3 @@
+ import { Vec3 } from 'vec3';
++import { procedureProgram } from './support/procedure-program.mjs';
+ 
+@@ -8,6 +9,6 @@
+ const pending = new Map();
+-const rpc = harden((method, args = {}) => new Promise((resolve, reject) => {
++const rpc = harden((method, args = {}, scope) => new Promise((resolve, reject) => {
+   const id = ++serial;
+   pending.set(id, { resolve, reject, method });
+-  parentPort.postMessage({ kind: 'call', id, method, args: JSON.parse(JSON.stringify(args)) });
++  parentPort.postMessage({ kind: 'call', id, method, args: JSON.parse(JSON.stringify(args)), scope });
+ }));
+@@ -32,18 +33,22 @@
+ 
+-const bot = workerData.nativeMethods ? Object.fromEntries(workerData.nativeMethods
+-  .filter(name => name !== 'inventory.items').map(name => [name, (...args) => rpc('mineflayer', { name, args })])) : undefined;
+-if (bot) bot.inventory = { items: () => rpc('mineflayer', { name: 'inventory.items', args: [] }) };
+-
+-const mc = harden({
+-  state: () => rpc('state'),
+-  do: (steps) => rpc('do', { steps }),
+-  flightPlan: (args) => rpc('flightPlan', args),
+-});
++function capabilities(scope) {
++  const bot = workerData.nativeMethods ? Object.fromEntries(workerData.nativeMethods
++    .filter(name => name !== 'inventory.items').map(name => [name, (...args) => rpc('mineflayer', { name, args }, scope)])) : undefined;
++  if (bot) bot.inventory = { items: () => rpc('mineflayer', { name: 'inventory.items', args: [] }, scope) };
++  return { mc: harden({ state: () => rpc('state', {}, scope), do: steps => rpc('do', { steps }, scope),
++    flightPlan: args => rpc('flightPlan', args, scope) }), ...(bot ? { bot: harden(bot), Vec3: harden(Vec3) } : {}) };
++}
+ 
+ try {
+-  const compartment = new Compartment({ mc, params: harden(workerData.params),
+-    ...(bot ? { bot: harden(bot), Vec3: harden(Vec3) } : {}) });
+-  const program = compartment.evaluate(`(async () => {\n${workerData.code}\n})`);
+-  if (typeof program !== 'function') throw new Error('code必须是异步函数体');
+-  const result = workerData.validate ? { valid: true } : await program();
++  let result;
++  if (workerData.graph) {
++    const program = procedureProgram(workerData.graph, { capabilities, maxInvocations: workerData.maxInvocations,
++      onInvocation: event => parentPort.postMessage({ kind: 'procedure', ...event }) });
++    result = workerData.validate ? program.validate() : await program.run(workerData.params);
++  } else {
++    const compartment = new Compartment({ ...capabilities(), params: harden(workerData.params) });
++    const program = compartment.evaluate(`(async () => {\n${workerData.code}\n})`);
++    if (typeof program !== 'function') throw new Error('code必须是异步函数体');
++    result = workerData.validate ? { valid: true } : await program();
++  }
+   parentPort.postMessage({ kind: 'done', value: result === undefined ? null : result });
+diff --git a/engine-blobs.ts b/engine-blobs.ts
+new file mode 100644
+--- /dev/null
++++ b/engine-blobs.ts
+@@ -0,0 +1,13 @@
++/** JSON IPC preserves byte attachments for both tool replies and World events. */
++import type { BlobInput } from './support/host-contract.ts';
++import type { IpcBlob } from './engine-ipc.ts';
++
++export function encodeBlobs(blobs: BlobInput[] | undefined): IpcBlob[] | undefined {
++  return blobs?.map(b => 'bytes' in b ? { b64: Buffer.from(b.bytes).toString('base64'),
++    mime: b.mime, fallbackText: b.fallbackText, ...(b.name ? { name: b.name } : {}) } : b);
++}
++
++export function decodeBlobs(blobs: IpcBlob[] | undefined): BlobInput[] | undefined {
++  return blobs?.map(b => 'b64' in b ? { bytes: Buffer.from(b.b64, 'base64'),
++    mime: b.mime, fallbackText: b.fallbackText, ...(b.name ? { name: b.name } : {}) } : b);
++}
+diff --git a/support/procedure.ts b/support/procedure.ts
+new file mode 100644
+--- /dev/null
++++ b/support/procedure.ts
+@@ -0,0 +1,117 @@
++/** Portable procedure artifacts. Memory owns versions; Worlds resolve explicitly selected blobs. */
++import { createHash } from 'node:crypto';
++
++export const PROCEDURE_SCHEMA = 'cortico.procedure/v1' as const;
++export const PROCEDURE_RECEIPT_SCHEMA = 'cortico.procedure-run/v1' as const;
++export const PROCEDURE_RECEIPT_MIME = 'application/vnd.cortico.procedure-run+json';
++export const PROCEDURE_LIMITS = Object.freeze({ sourceChars: 12_000, artifactChars: 20_000,
++  graphSourceChars: 48_000, versions: 8, depth: 4, invocations: 32 });
++
++export interface ProcedureReference { handle: string; revision: string }
++export interface ProcedureVersion {
++  schema: typeof PROCEDURE_SCHEMA;
++  id: string;
++  adapter: string;
++  description: string;
++  conditions: string[];
++  code: string;
++  dependencies: Record<string, ProcedureReference>;
++  parent: string | null;
++  author: { kind: 'agent' | 'operator'; role: string; callId?: string };
++  createdAt: string;
++  sourceHash: string;
++  revision: string;
++}
++export interface ProcedureGraph { root: string; versions: Record<string, ProcedureVersion> }
++export interface ProcedureInvocation {
++  invocation: number; revision: string; parent?: number; startedAt: string; endedAt?: string;
++  status: 'running' | 'completed' | 'failed'; error?: string;
++}
++export interface ProcedureReceipt {
++  schema: typeof PROCEDURE_RECEIPT_SCHEMA;
++  executionId: string;
++  root: ProcedureReference;
++  adapter: string;
++  mode: 'validation' | 'execution';
++  status: 'validated' | 'completed' | 'failed' | 'cancelled';
++  startedAt: string;
++  endedAt: string;
++  invocations: ProcedureInvocation[];
++  /** Adapter-defined observed calls and results, not a goal-success judgment. */
++  trace: unknown[];
++  result?: unknown;
++  error?: string;
++}
++
++export function procedureHash(value: unknown): string {
++  const canonical = (v: unknown): unknown => Array.isArray(v) ? v.map(canonical)
++    : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
++      .map(([key, child]) => [key, canonical(child)])) : v;
++  return createHash('sha256').update(JSON.stringify(canonical(value))).digest('hex');
++}
++
++export function procedureId(value: unknown): string {
++  if (typeof value !== 'string' || !/^[a-z][a-z0-9-]{0,63}$/.test(value)) throw new Error('id must be 1–64 lowercase letters, digits or hyphens, starting with a letter');
++  return value;
++}
++export function procedureRevision(value: unknown): string {
++  if (typeof value !== 'string' || !/^[a-f0-9]{64}$/.test(value)) throw new Error('revision must be a SHA256 hash');
++  return value;
++}
++export function procedureReference(value: unknown): ProcedureReference {
++  const v = value as ProcedureReference;
++  if (!v || typeof v !== 'object' || typeof v.handle !== 'string' || v.handle.length > 512
++    || !/^(mem|log):[^\s]+$/.test(v.handle)) throw new Error('procedure handle must be an explicit mem: or log: reference');
++  return { handle: v.handle, revision: procedureRevision(v.revision) };
++}
++
++export function parseProcedure(value: unknown): ProcedureVersion {
++  const v = value as ProcedureVersion;
++  if (!v || typeof v !== 'object' || v.schema !== PROCEDURE_SCHEMA) throw new Error('unsupported procedure schema');
++  if (JSON.stringify(v).length > PROCEDURE_LIMITS.artifactChars) throw new Error('procedure artifact is too large');
++  procedureId(v.id);
++  if (typeof v.adapter !== 'string' || !/^[a-z][a-z0-9-]*\/v[1-9][0-9]*$/.test(v.adapter) || v.adapter.length > 80) throw new Error('adapter must be a versioned capability name');
++  if (typeof v.description !== 'string' || !v.description.trim() || v.description.length > 800) throw new Error('description must state the purpose and result contract in at most 800 characters');
++  if (!Array.isArray(v.conditions) || v.conditions.length > 8 || v.conditions.some(c => typeof c !== 'string' || !c.trim() || c.length > 400)) throw new Error('conditions must contain at most eight short applicability/failure boundaries');
++  if (typeof v.code !== 'string' || !v.code.trim() || v.code.length > PROCEDURE_LIMITS.sourceChars) throw new Error('invalid procedure source length');
++  if (!v.dependencies || typeof v.dependencies !== 'object' || Array.isArray(v.dependencies)
++    || Object.keys(v.dependencies).length > PROCEDURE_LIMITS.versions - 1) throw new Error('invalid dependencies');
++  for (const [alias, ref] of Object.entries(v.dependencies)) { procedureId(alias); procedureReference(ref); }
++  if (v.parent !== null) procedureRevision(v.parent);
++  if (!v.author || !['agent', 'operator'].includes(v.author.kind) || typeof v.author.role !== 'string'
++    || v.author.role.length > 80 || (v.author.callId !== undefined && (typeof v.author.callId !== 'string' || v.author.callId.length > 200))) throw new Error('invalid author provenance');
++  if (typeof v.createdAt !== 'string' || !Number.isFinite(Date.parse(v.createdAt))) throw new Error('invalid creation time');
++  if (v.sourceHash !== createHash('sha256').update(v.code).digest('hex')) throw new Error('procedure source hash mismatch');
++  const { revision, ...body } = v;
++  if (procedureRevision(revision) !== procedureHash(body)) throw new Error('procedure revision hash mismatch');
++  return structuredClone(v);
++}
++
++/** Fetches only the selected dependency graph; never lists or executes a Memory library. */
++export function resolveProcedure(root: ProcedureReference, adapter: string,
++  blob: (handle: string) => { bytes: Uint8Array; mime: string } | null): ProcedureGraph {
++  const versions: Record<string, ProcedureVersion> = {};
++  let sourceChars = 0;
++  const visit = (raw: ProcedureReference, path: string[]) => {
++    const ref = procedureReference(raw);
++    if (path.includes(ref.revision)) throw new Error('cyclic procedure dependency');
++    if (path.length >= PROCEDURE_LIMITS.depth) throw new Error('procedure dependency depth exceeded');
++    if (versions[ref.revision]) {
++      for (const dep of Object.values(versions[ref.revision].dependencies)) visit(dep, [...path, ref.revision]);
++      return;
++    }
++    if (Object.keys(versions).length >= PROCEDURE_LIMITS.versions) throw new Error('procedure dependency count exceeded');
++    const got = blob(ref.handle);
++    if (!got) throw new Error(`procedure blob unavailable: ${ref.handle}`);
++    if (got.bytes.byteLength > PROCEDURE_LIMITS.artifactChars * 4) throw new Error('procedure blob is too large');
++    const v = parseProcedure(JSON.parse(new TextDecoder().decode(got.bytes)));
++    if (v.revision !== ref.revision) throw new Error('dependency reference hash mismatch');
++    if (v.adapter !== adapter) throw new Error(`procedure adapter mismatch: ${v.adapter}; expected ${adapter}`);
++    sourceChars += v.code.length;
++    if (sourceChars > PROCEDURE_LIMITS.graphSourceChars) throw new Error('combined procedure source budget exceeded');
++    versions[v.revision] = v;
++    for (const dep of Object.values(v.dependencies)) visit(dep, [...path, ref.revision]);
++  };
++  visit(root, []);
++  return { root: root.revision, versions };
++}
+diff --git a/support/procedure-program.mjs b/support/procedure-program.mjs
+new file mode 100644
+--- /dev/null
++++ b/support/procedure-program.mjs
+@@ -0,0 +1,53 @@
++/** SES procedure composition; the adapter supplies capabilities and owns the Worker/time budget. */
++export function procedureProgram(graph, options) {
++  let serial = 0;
++  const pending = new Set();
++  const copy = value => {
++    const text = JSON.stringify(value ?? {});
++    if (text.length > 4096) throw new Error('procedure params exceed 4096 characters');
++    return harden(JSON.parse(text));
++  };
++  const compile = (revision, params, scope, validate) => {
++    const version = graph.versions[revision];
++    let childRunning = false;
++    const methods = harden({ run: async (alias, childParams = {}) => {
++      if (validate) throw new Error('validation cannot invoke procedures');
++      if (childRunning) throw new Error('procedure dependencies must be awaited serially');
++      if (!Object.hasOwn(version.dependencies, alias)) throw new Error(`undeclared procedure dependency: ${alias}`);
++      childRunning = true;
++      try { return await invoke(version.dependencies[alias].revision, childParams, scope.invocation); }
++      finally { childRunning = false; }
++    } });
++    const compartment = new Compartment({ ...options.capabilities(scope), params: copy(params), methods });
++    const program = compartment.evaluate(`(async () => {\n${version.code}\n})`);
++    if (typeof program !== 'function') throw new Error('procedure code must be an async function body');
++    return program;
++  };
++  const invoke = async (revision, params, parent) => {
++    if (++serial > options.maxInvocations) throw new Error('procedure invocation budget exceeded');
++    const scope = { invocation: serial, revision, ...(parent === undefined ? {} : { parent }) };
++    pending.add(scope.invocation);
++    options.onInvocation({ ...scope, status: 'running' });
++    try {
++      const result = await compile(revision, params, scope, false)();
++      const text = JSON.stringify(result ?? null);
++      if (text.length > 24000) throw new Error('procedure result exceeds 24000 characters');
++      options.onInvocation({ ...scope, status: 'completed' });
++      return harden(JSON.parse(text));
++    } catch (error) {
++      options.onInvocation({ ...scope, status: 'failed', error: String(error).slice(0, 1600) });
++      throw error;
++    } finally { pending.delete(scope.invocation); }
++  };
++  return {
++    validate() {
++      for (const revision of Object.keys(graph.versions)) compile(revision, {}, { revision, invocation: 0 }, true);
++      return { valid: true, versions: Object.keys(graph.versions).length };
++    },
++    async run(params) {
++      const result = await invoke(graph.root, params);
++      if (pending.size) throw new Error('procedure ended with an unawaited dependency');
++      return result;
++    },
++  };
++}
+diff --git a/support/procedure-program.d.mts b/support/procedure-program.d.mts
+new file mode 100644
+--- /dev/null
++++ b/support/procedure-program.d.mts
+@@ -0,0 +1,7 @@
++import type { ProcedureGraph } from './procedure.ts';
++export interface ProcedureScope { invocation: number; revision: string; parent?: number }
++export function procedureProgram(graph: ProcedureGraph, options: {
++  capabilities(scope: ProcedureScope): Record<string, unknown>;
++  onInvocation(event: ProcedureScope & { status: 'running' | 'completed' | 'failed'; error?: string }): void;
++  maxInvocations: number;
++}): { validate(): { valid: true; versions: number }; run(params: Record<string, unknown>): Promise<unknown> };
+diff --git a/README.md b/README.md
+--- a/README.md
++++ b/README.md
+@@ -1,2 +1,2 @@
+-<!-- Owner: src/worlds/minecraft/definition.ts, src/worlds/minecraft/world.ts, src/worlds/minecraft/bridge.ts, src/worlds/minecraft/config.ts, src/worlds/minecraft/server-login.mjs, src/worlds/minecraft/method-runner.ts, src/worlds/minecraft/method-worker.mjs, src/worlds/minecraft/flight.ts, src/worlds/minecraft/flight-preview.ts, src/worlds/minecraft/agentfriend-flight.ts, src/worlds/minecraft/terrain.ts, src/worlds/minecraft/executor.ts, src/worlds/minecraft/combat.ts, src/worlds/minecraft/skills.ts, src/worlds/minecraft/skills-control.ts, src/worlds/minecraft/visual-capture.ts, src/worlds/minecraft/modern-viewer.ts, src/worlds/minecraft/chests.ts, src/worlds/minecraft/inventory.ts, src/worlds/minecraft/inventory-click-sync.ts, src/worlds/minecraft/equipment.ts, src/worlds/minecraft/check.ts, src/worlds/minecraft/spatial-slices.ts, src/worlds/minecraft/spatial-observation.ts, src/worlds/minecraft/cell-facts.ts -->
++<!-- Owner: src/worlds/minecraft/proxy.ts, src/worlds/minecraft/engine-child.ts, src/worlds/minecraft/engine-ipc.ts, src/worlds/minecraft/engine-blobs.ts, src/worlds/minecraft/definition.ts, src/worlds/minecraft/world.ts, src/worlds/minecraft/bridge.ts, src/worlds/minecraft/config.ts, src/worlds/minecraft/server-login.mjs, src/worlds/minecraft/method-runner.ts, src/worlds/minecraft/method-worker.mjs, src/worlds/minecraft/flight.ts, src/worlds/minecraft/flight-preview.ts, src/worlds/minecraft/agentfriend-flight.ts, src/worlds/minecraft/terrain.ts, src/worlds/minecraft/executor.ts, src/worlds/minecraft/combat.ts, src/worlds/minecraft/skills.ts, src/worlds/minecraft/skills-control.ts, src/worlds/minecraft/visual-capture.ts, src/worlds/minecraft/modern-viewer.ts, src/worlds/minecraft/chests.ts, src/worlds/minecraft/inventory.ts, src/worlds/minecraft/inventory-click-sync.ts, src/worlds/minecraft/equipment.ts, src/worlds/minecraft/check.ts, src/worlds/minecraft/spatial-slices.ts, src/worlds/minecraft/spatial-observation.ts, src/worlds/minecraft/cell-facts.ts -->
+ 
+@@ -13,2 +13,4 @@
+ `mc_script {api:"index"}` 列出当前开放的 Mineflayer 4.37.1 方法，`{api:"blockAt"}` 等按需查签名。所有 `bot` 方法经 Worker 传输，须串行 `await`；返回的 Vec3 运算和 Block.getProperties() 同步执行，属性值保留上游类型（例如水的 level 为字符串）。`bot.blockAt`、原生查找和库存读取不占身体；`bot.lookAt`、方向键、dig、placeBlock、equip、activateItem/activateBlock 等首次身体调用排入现有执行器，独占到程序结束，之后不能嵌套 `mc.do` 等待自己的队列。原生交互保留当前手持物；不自动寻路、换工具或补支承。放置与挖掘沿用已安装的服务端确认、保护和材料约束，装备沿用库存同步。每次调用记录方法名、采样时间、身体任务编号和实际结果；取消后的迟到调用不得继续发动作包。只有首次 spawn 后才把游戏连接交给执行器，登录阶段的临时实体不作为可行动状态。
++
++`mc_script {procedure:{handle,revision},params,validate?}` 读取明确选择的 `cortico.procedure/v1` 工件，适配器为 `minecraft-method/v1`。源码与依赖通过宿主 blob 接口解析并验哈希；代理仅把本次选中的依赖工件传入子进程，子进程按调用隔离后再次验哈希，不直接访问 Persona 或记忆文件。`await methods.run(alias,params)` 调用固定依赖，所有子方法共享既有 Worker、时限、调用上限、身体租约与取消清理；最多八个版本、四层依赖、48000字符源码和32次方法调用。validate 解析所有依赖，不执行动作。终态附带执行UUID、各版本作者和源码哈希、子方法调用链、真实 SDK 回执的持久化附件，事件和工具回执的二进制附件均按原字节跨进程传回宿主；内联脚本仍仅保留最近八次进程记录。方法检索、经验评价、采用与回退由 Persona 的程序化记忆工具负责，World 不写 Memory，也不把程序结束解释为目标成功。
+ 

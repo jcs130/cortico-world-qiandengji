@@ -22,7 +22,8 @@
       "patches/minecraft-combat-eligibility.patch",
       "patches/minecraft-combat-program-budget.patch",
       "patches/minecraft-native-methods.patch",
-      "patches/minecraft-server-login.patch"
+      "patches/minecraft-server-login.patch",
+      "patches/minecraft-procedures.patch"
     ]
   },
   "viewer": {

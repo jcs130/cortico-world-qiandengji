@@ -30,7 +30,8 @@ for (const [index, file] of bridgeFiles.entries()) {
 }
 if (assets.minecraftVersion !== '1.20.6') throw new Error('RELEASE_ASSET_VERSION_MISMATCH');
 for (const file of ['engine/proxy.ts', 'engine/engine-child.ts', 'engine/dependency-patches.ts',
-  'engine/method-worker.mjs', 'engine/support/typed-decision.ts', 'engine/support/host-contract.ts',
+  'engine/method-worker.mjs', 'engine/engine-blobs.ts', 'engine/support/procedure.ts',
+  'engine/support/procedure-program.mjs', 'engine/support/procedure-program.d.mts', 'engine/support/typed-decision.ts', 'engine/support/host-contract.ts',
   'dist/console.js', 'dist/console.css', 'dist/viewer/dist/modern-viewer.js',
   'dist/viewer/public/index.html', 'dist/viewer/public/third/index.html',
   'dist/viewer/public/dungeon/index.html']) {

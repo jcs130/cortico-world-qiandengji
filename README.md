@@ -1,4 +1,4 @@
-<!-- Owner: package.json, scripts/build-release.ts, release-sources.json, patches/minecraft-idle-context.patch, patches/minecraft-combat-decision.patch, patches/minecraft-storage-correction.patch, src/world.ts, src/config.ts -->
+<!-- Owner: patches/minecraft-procedures.patch, scripts/verify-release.mjs, package.json, scripts/build-release.ts, release-sources.json, patches/minecraft-idle-context.patch, patches/minecraft-combat-decision.patch, patches/minecraft-storage-correction.patch, src/world.ts, src/config.ts -->
 
 # cortico-world-qiandengji
 
@@ -9,6 +9,8 @@
 宿主使用 Cortico World API 5；开发检查使用官方 `cortico@0.1.8` SDK。改进后的 Minecraft 引擎随包分发，不要求宿主使用个人 fork。完整状态快照、按结果结束模型轮次及认知任务类别属于可选宿主扩展：支持它们的框架可使用这些信息，官方 0.1.8 仍使用原有事件和认知接口。World 不替换宿主的记忆、Persona 或模型调度实现。
 
 自主程序可用 `mymc_script {api:"index"}` 按需发现 Mineflayer 原生接口，并用 `bot` 与 `Vec3` 编排方块属性读取、当前手持物交互、挖掘、放置和短步。接口保留原生名称与坐标语义，共用身体队列、保护、材料及库存确认；程序终态不等于世界目标完成。完整约定见 `mymc_guide {topic:"control"}`。只有首次出生后才向动作层交付游戏连接，避免把登录等待阶段的临时实体当作真实现场。
+
+自主方法可保存为 `cortico.procedure/v1` 工件，用 `mymc_script {procedure:{handle,revision},params,validate?}` 按固定版本组合执行。World 只读取选中的工件和依赖，保留既有调用、身体租约与取消约束，终态通过持久化附件交回真实调用链。检索、评价、采用与回退由支持该协议的宿主 Persona 提供；官方 0.1.8 宿主仍可使用内联 `code` 程序。完整程序化记忆不会全量加入模型上下文，测试通过也不代表部署中的角色已学会方法。
 
 ## 安装与配置
 
