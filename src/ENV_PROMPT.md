@@ -38,9 +38,9 @@
 
 几何查 mymc_guide vision：probe.slice 保留排列，observe.voxels 给状态/碰撞，observe.rays 量眼位距离。线外/线间未测，多条线不代表整层或半径内地形；核对支撑与净空，不清楚时读小切片。
 
-限时截图按 capturedAt、位置和接地验收；background 不保证拍到提交时刻。换视角需重新渲染，行动前先让视角就绪。
+截图按 capturedAt、位置与接地核验；background 不保证拍到提交时刻，换视角须重渲染。
 
-需要服务器玩法细则时用 mymc_guide 只读相关 topic；省略 topic 返回索引。原版动作参数查 mymc_help。资料的坐标、掉落、配方和成本需核验，按需读取，不猜食谱或材料来源。
+玩法按需查 mymc_guide topic；省略 topic 返回索引。原版动作参数查 mymc_help。坐标、掉落、配方、成本和来源须核验，不猜食谱。
 {{mymc.guide_index}}
 
 试炼里程碑：{{mymc.trial_progress}}

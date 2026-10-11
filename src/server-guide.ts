@@ -17,6 +17,7 @@ export const MYMC_GUIDE_TOPICS = [
   { id: 'mining', title: '探矿与挖掘', description: '绝对定位、隐藏矿石、安全井口与保护' },
   { id: 'living', title: '种植钓鱼与烹饪', description: '生长回访、岸上钓鱼、熔炉与睡觉' },
   { id: 'building', title: '家与建造', description: '布局、蓝图、施工核验与设计经验' },
+  { id: 'railway', title: '铁路设计与连通性', description: '选线美感、轨形连通、动力与试乘' },
   { id: 'social', title: '玩家交往与动作', description: '附近感知、公屏私聊、拜访、挥手与赠物' },
   { id: 'vision', title: '现场视觉与空间几何', description: '体素切片、碰撞射线、落点净空、按问题选视角与证据边界' },
   { id: 'broadcast', title: '直播与加入方式', description: '介绍玩法、内测 QQ 群、事实解说与语音节奏' },
