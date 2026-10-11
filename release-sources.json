@@ -28,7 +28,8 @@
       "patches/minecraft-mounted-look.patch",
       "patches/minecraft-railway-observation.patch",
       "patches/minecraft-vehicle-state.patch",
-      "patches/minecraft-collect-target-contract.patch"
+      "patches/minecraft-collect-target-contract.patch",
+      "patches/minecraft-collect-step-state.patch"
     ]
   },
   "viewer": {

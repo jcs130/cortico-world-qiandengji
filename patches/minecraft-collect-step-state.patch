@@ -1,0 +1,41 @@
+--- a/executor.ts
++++ b/executor.ts
+@@ -2153,7 +2153,8 @@
+       ?? refusal(this.tunnelSupportStopNote(task.steps, at), 'tunnel.support', 'repeat')
+       ?? refusal(this.verticalTunnelOscillationNote(task.steps, at), 'tunnel.oscillation', 'repeat')
+       ?? refusal(this.repeatEmptyProbeNote(task.steps, at), 'probe.empty', 'repeat')
+-      ?? refusal(this.unseenCollectNote(task.steps, at), 'collect.unseen', 'repeat')
++      // Later steps observe the world after their predecessors actually finish.
++      ?? refusal(this.unseenCollectNote(task.steps.slice(0, 1), at), 'collect.unseen', 'repeat')
+       ?? refusal(this.immatureCollectNote(task.steps, at), 'collect.immature')
+       ?? refusal(this.repeatFailedTaskNote(task.steps, at), 'task.failed', 'repeat');
+     const echo = echoDiff(task.steps, wrote);
+@@ -3211,7 +3212,7 @@
+     return `同一整单已经连续失败 ${entry.count} 次，现场位置没明显变化；${left} 秒内原样重下不会受理。上次卡在:${entry.why}。请换站位、目标或做法`;
+   }
+ 
+-  /** 前一段路线不能预支“采集目标已露出”；先让 agent 改变地形，再单独采集。 */
++  /** 首步可立即拒收；组合任务的后续 collect 在执行到该步时重新读现场。 */
+   private unseenCollectNote(steps: readonly SkillCall[], now: number): string | null {
+     const bot = this.opts.getBot();
+     if (!bot?.entity) return null;
+@@ -3231,7 +3232,7 @@
+         }
+       } catch { continue; } // 感知读数不可用时交给技能本身裁决
+       return `附近连续 ${miss.count} 次没有看得见的${zhName(call.block)}，现在仍未露出；`
+-        + '这单的 collect 暂不受理。先单独挖开障碍、探索另一处，或走到 16 格外找露出的目标；不要连着重复提交采集';
++        + '当前采集暂缓。可以先执行挖掘或移动，再到 collect 步骤重读；目标露出、离开 16 格或本次 90 秒暂缓到期后恢复。';
+     }
+     return null;
+   }
+@@ -5483,6 +5484,10 @@
+           bot.on('windowOpen', onWindowOpen);
+         }
+         try {
++          if (run.skill === 'collect') {
++            const hold = this.unseenCollectNote([run], Date.now());
++            if (hold) throw new SkillBlocked(hold, [], 'local', 'resource-unavailable');
++          }
+           const tread = stepTargetCell(bot, call);
+           const releaseTread = tread ? holdTreadWater(bot, tread) : null;
+           let skillResult = await runSkill(bot, run, ctx).finally(() => releaseTread?.());
