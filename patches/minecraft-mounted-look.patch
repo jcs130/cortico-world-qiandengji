@@ -1,0 +1,18 @@
+--- a/bridge.ts
++++ b/bridge.ts
+@@ -32,6 +32,7 @@
+ import { trackMaps } from './map-view.ts';
+ import { trackDamageSources } from './damage-source.ts';
+ import { installServerLogin } from './server-login.mjs';
++import { installMountedLook } from '../src/mounted-look.ts';
+ 
+ interface BridgeOptions {
+   host: string;
+@@ -551,6 +552,7 @@
+     trackDamageSources(bot);
+     /** 修补须通过插件注入，等待 Mineflayer 的 inject_allowed。 */
+     bot.loadPlugin((b) => installMineflayerFixes(b, log, this.opts.diag, this.opts.showTempo));
++    bot.loadPlugin(installMountedLook);
+     bot.loadPlugin(installOffsetShapes);
+     bot.loadPlugin(pathfinder);
+     if (this.agentFriendProtection) {

@@ -24,7 +24,8 @@
       "patches/minecraft-native-methods.patch",
       "patches/minecraft-server-login.patch",
       "patches/minecraft-procedures.patch",
-      "patches/minecraft-chat-provenance.patch"
+      "patches/minecraft-chat-provenance.patch",
+      "patches/minecraft-mounted-look.patch"
     ]
   },
   "viewer": {
