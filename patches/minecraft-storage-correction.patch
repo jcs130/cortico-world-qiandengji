@@ -1,0 +1,12 @@
+diff --git a/executor.ts b/executor.ts
+--- a/executor.ts
++++ b/executor.ts
+@@ -2126,7 +2126,7 @@ export class Executor {
+       ?? refusal(this.pendingAttackPlanNote(task.steps, mode), 'combat.pending')
+       ?? refusal(this.repeatStationaryGotoNote(task.steps, botForInspection, at), 'goto.stationary', 'repeat')
+       ?? refusal(this.spatialFailureNote(task.steps, at), 'navigation.failed', 'repeat')
+-      ?? refusal(storageAccessHold, 'storage.access')
++      ?? refusal(storageAccessHold, 'storage.access', 'correction')
+       ?? refusal(this.staleKnownContainerUseNote(task.steps), 'use.staleContainer', 'correction')
+       ?? refusal(this.portableStorageMisuseNote(task.steps), 'storage.portable', 'correction')
+       ?? refusal(this.protectedTossNote(task.steps), 'toss.protected')

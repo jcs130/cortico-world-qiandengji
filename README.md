@@ -1,4 +1,4 @@
-<!-- Owner: package.json, scripts/build-release.ts, release-sources.json, patches/minecraft-idle-context.patch, src/world.ts, src/config.ts -->
+<!-- Owner: package.json, scripts/build-release.ts, release-sources.json, patches/minecraft-idle-context.patch, patches/minecraft-storage-correction.patch, src/world.ts, src/config.ts -->
 
 # cortico-world-qiandengji
 
@@ -57,6 +57,8 @@ Java 1.20.6 画面支持当前玩家连接实际收到的玩家／NPC 头顶文�
 配置图片能力后应按实际模型验证；配置声明与模型实际能力不一致时，需要订正供应商配置。视觉回退无法代替图像审美判断，精确方块与碰撞用 `mymc_scout` 的原生体素／射线查询。
 
 ## 契约
+
+存取请求因窗口关闭或访问条件不符而首次拒收时，失败回执允许主模型在同轮修正步骤；原队列保留。同一现场下原样重复已否定请求时，仍沿用已有重复拒收机制结束该轮。该调度提示需要支持按结果结束轮次的宿主，官方宿主仍接收原始失败回执。
 
 `combat` 与环境提示声明 `queue:"now"` 的即时补给和撤离用法，默认提交继续等待战斗并替换旧待办。引擎须支持首步 eat/flee/surface 的低血控制权交接及进食主手保护；消费结果仍以实际库存、生命与效果回执为准。
 
