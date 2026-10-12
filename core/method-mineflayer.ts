@@ -15,7 +15,7 @@ const guarded = new WeakSet<object>();
 
 export const NATIVE_API = Object.freeze({
   read: 'read(path): JSON read of entity, health, food, game, heldItem, inventory.slots, or registry.itemsByName.<id>/blocksByName.<id>. No client, credentials or private fields.',
-  blockAt: 'blockAt(point, extraInfos=true): Block|null. Unloaded is null. Block.getProperties() reads the returned native properties; re-read for current values.',
+  blockAt: 'blockAt(point, extraInfos=true): Block|null. Unloaded is null. Block.getProperties() synchronously reads this returned snapshot, preserving native string|number|boolean values. Numeric-looking enum properties may be strings (for example age:"7", level:"0"); inspect their types and explicitly convert only a property known to be numeric before a numeric comparison. Re-read blockAt for current values. A completed read-only program does not prove any block or inventory changed.',
   findBlocks: 'findBlocks({point?,matching,maxDistance?,count?,useExtraInfo?}): Vec3[]. matching is a numeric block id or array of ids; maxDistance 1..32 and count 1..64. Function predicates stay in the program: filter returned blocks there.',
   findBlock: 'findBlock(options): Block|null, with the same options and bounds as findBlocks.',
   canSeeBlock: 'canSeeBlock(block): boolean from Mineflayer visibility, using a fresh block at its position.',
@@ -42,7 +42,7 @@ const READ_ONLY = new Set<NativeName>(['read', 'blockAt', 'findBlocks', 'findBlo
   'canDigBlock', 'digTime', 'inventory.items', 'getControlState']);
 
 export function nativeApiHelp(name?: string): string {
-  const lead = 'mc_script 提供 bot 与 Vec3。Mineflayer 4.37.1 公共接口通过 Worker JSON 传输，所有 bot 调用须逐个 await；返回 Block.getProperties() 与 Vec3 运算在 Worker 内同步。'
+  const lead = 'mc_script 提供 bot 与 Vec3。Mineflayer 4.37.1 公共接口通过 Worker JSON 传输，所有 bot 调用须逐个 await；返回 Block.getProperties() 与 Vec3 运算在 Worker 内同步。属性保留原生 string/number/boolean，不自动转数字；具体见 api:"blockAt"。'
     + ' 首次身体调用排入现有身体队列并独占至程序结束；此后不能再调用 mc.do，防止等待自己的队列。读数不占身体。'
     + ' 取消、战斗/环境接管、死亡、断线或超时均撤销原生程序，不自动重放。可用 api:<方法名> 按需查看签名；缺少的 API 明确不可用。';
   if (name === undefined || name === 'index') return `${lead}\n${Object.keys(NATIVE_API).join(', ')}\n上游文档：https://github.com/PrismarineJS/mineflayer/blob/master/docs/api.md`;
