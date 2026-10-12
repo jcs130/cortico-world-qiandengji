@@ -1,0 +1,11 @@
+{
+  "dataDir": "./private-agent-data",
+  "timezone": "Asia/Shanghai",
+  "acceptsImages": false,
+  "world": {
+    "host": "example.test",
+    "port": 25565,
+    "username": "Alice",
+    "viewerPort": 18080
+  }
+}

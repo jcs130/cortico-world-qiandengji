@@ -1,16 +1,35 @@
 {
   "name": "cortico-world-qiandengji",
-  "version": "0.1.2",
+  "version": "0.2.0-next.1",
   "type": "module",
-  "description": "千灯纪 Minecraft server World for Cortico",
-  "repository": { "type": "git", "url": "git+https://github.com/jcs130/cortico-world-qiandengji.git" },
+  "description": "Minecraft tools and runtime for Agents, with Cortico and MCP adapters",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcs130/cortico-world-qiandengji.git"
+  },
   "homepage": "https://github.com/jcs130/cortico-world-qiandengji#readme",
-  "bugs": { "url": "https://github.com/jcs130/cortico-world-qiandengji/issues" },
+  "bugs": {
+    "url": "https://github.com/jcs130/cortico-world-qiandengji/issues"
+  },
   "license": "MIT",
-  "keywords": ["cortico-world", "cortico", "minecraft"],
-  "engines": { "node": ">=22" },
+  "keywords": [
+    "cortico-world",
+    "cortico",
+    "minecraft"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "packageManager": "pnpm@11.5.0",
   "main": "./src/index.ts",
+  "bin": { "qiandengji-mcp": "./bin/qiandengji-mcp.mjs" },
+  "exports": {
+    ".": "./src/index.ts",
+    "./agent": "./src/agent/index.ts",
+    "./mcp": "./src/mcp/server.ts",
+    "./package.json": "./package.json",
+    "./*": "./*"
+  },
   "cortico": {
     "kind": "world",
     "api": 5,
@@ -18,19 +37,39 @@
     "consoleClient": "dist/console.js",
     "consoleStyle": "dist/console.css"
   },
-  "files": ["src", "engine", "dist", "patches", "client-login", "scripts/build-client-login.mjs", "references/battlefield-protocol.md", "references/server-technical/index.json", "references/server-technical/server-access.json", "release-sources.json", "README.md", "DEPLOYMENT.md", "LICENSE"],
+  "files": [
+    "src",
+    "bin",
+    "docs",
+    "examples/agent-mcp.json",
+    "engine",
+    "dist",
+    "patches",
+    "client-login",
+    "scripts/build-client-login.mjs",
+    "references/battlefield-protocol.md",
+    "references/server-technical/index.json",
+    "references/server-technical/server-access.json",
+    "release-sources.json",
+    "README.md",
+    "DEPLOYMENT.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "pnpm run build:engine && pnpm run build:console && pnpm run build:viewer && pnpm run verify:release",
     "build:engine": "tsx scripts/build-release.ts engine",
     "build:console": "node scripts/build-console.mjs",
     "build:viewer": "tsx scripts/build-release.ts viewer",
     "build:client-login": "node scripts/build-client-login.mjs",
+    "start:mcp": "node bin/qiandengji-mcp.mjs",
     "verify:release": "node scripts/verify-release.mjs",
     "prepack": "node scripts/verify-release.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "ajv": "8.20.0",
     "minecraft-data": "3.112.0",
     "mineflayer": "4.37.1",
     "mineflayer-pathfinder": "2.4.5",
@@ -39,6 +78,7 @@
     "prismarine-viewer": "1.33.0",
     "ses": "2.3.0",
     "socket.io": "4.8.3",
+    "tsx": "4.23.15",
     "vec3": "0.2.0"
   },
   "devDependencies": {
@@ -46,7 +86,6 @@
     "cortico": "0.1.8",
     "esbuild": "^0.28.2",
     "socket.io-client": "4.8.3",
-    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }

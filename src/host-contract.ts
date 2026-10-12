@@ -1,5 +1,5 @@
 /** Optional fork metadata; the public API 5 host remains the base contract. */
-export * from 'cortico/core/types.ts';
+export type * from 'cortico/core/types.ts';
 import type {
   BlobInput, CognitionHost as PublicCognitionHost, CognitionRequest as PublicCognitionRequest,
   ToolOutcome as PublicToolOutcome, WorldHost as PublicWorldHost,

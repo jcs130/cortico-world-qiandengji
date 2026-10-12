@@ -13,7 +13,7 @@ import type {
 } from './host-contract.ts';
 import { MINECRAFT_PANEL_DECLS, MINECRAFT_TOOL_DECLS, type MinecraftWorldOptions } from '../engine/world.ts';
 import { MinecraftWorldProxy } from '../engine/proxy.ts';
-import { renderTemplate } from 'cortico/core/template.ts';
+import { renderTemplate } from '../engine/support/runtime.mjs';
 import {
   MYMC_CLIENT_CONFIG_GROUP,
   MYMC_CONFIG_GROUP,

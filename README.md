@@ -1,4 +1,4 @@
-<!-- Owner: src/railway.ts, src/guides/railway.md, patches/minecraft-railway-observation.patch, src/mounted-look.ts, patches/minecraft-mounted-look.patch, src/chat-provenance.ts, patches/minecraft-chat-provenance.patch, patches/minecraft-procedures.patch, scripts/verify-release.mjs, package.json, scripts/build-release.ts, release-sources.json, patches/minecraft-idle-context.patch, patches/minecraft-combat-decision.patch, patches/minecraft-storage-correction.patch, src/world.ts, src/config.ts -->
+<!-- Owner: src/adapters/cortico.ts, src/agent/runtime.ts, src/mcp/server.ts, scripts/build-host-runtime.ts, src/railway.ts, src/guides/railway.md, patches/minecraft-railway-observation.patch, src/mounted-look.ts, patches/minecraft-mounted-look.patch, src/chat-provenance.ts, patches/minecraft-chat-provenance.patch, patches/minecraft-procedures.patch, scripts/verify-release.mjs, package.json, scripts/build-release.ts, release-sources.json, patches/minecraft-idle-context.patch, patches/minecraft-combat-decision.patch, patches/minecraft-storage-correction.patch, src/world.ts, src/config.ts -->
 
 # cortico-world-qiandengji
 
@@ -15,6 +15,10 @@ Mineflayer 4.37.1 乘坐状态下会暂停步行物理刻，也暂停原生转�
 铁路用 `mymc_guide {topic:"railway"}` 按需查询选线、路基、站台、轨形和试乘知识。`mymc_railway {bounds:[xmin,ymin,zmin,xmax,ymax,zmax],start:[x,y,z],end:[x,y,z],detail:true}` 直接只读已加载方块，按端口朝向和接合高度给出连通分量、路径、开口和动力轨供电读数，不占身体队列。它不自动设计、施工或给美感评分；样本内连接、发车成功、载人往返与画面观感分别核验。读数可供角色自己的可编辑方法使用，不宣称角色已自主学会。
 
 自主方法可保存为 `cortico.procedure/v1` 工件，用 `mymc_script {procedure:{handle,revision},params,validate?}` 按固定版本组合执行。World 只读取选中的工件和依赖，保留既有调用、身体租约与取消约束，终态通过持久化附件交回真实调用链。检索、评价、采用与回退由支持该协议的宿主 Persona 提供；官方 0.1.8 宿主仍可使用内联 `code` 程序。完整程序化记忆不会全量加入模型上下文，测试通过也不代表部署中的角色已学会方法。
+
+## 其他 Agent 接入
+
+本包提供独立游戏运行时与 MCP stdio 入口，复用同一套 `mymc_*` 工具、脚本、快战术和执行回执。接入说明见 [Agent MCP](docs/agent-mcp.md)，各层归属见 [架构边界](docs/architecture.md)。
 
 ## 安装与配置
 

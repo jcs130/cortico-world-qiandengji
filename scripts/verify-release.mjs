@@ -12,6 +12,11 @@ const assets = await json('dist/viewer/viewer-assets.json');
 if (engine.commit !== sources.cortico.commit || viewer.commit !== sources.viewer.commit)
   throw new Error('RELEASE_SOURCE_MISMATCH');
 const patches = sources.cortico.patches ?? [];
+for (const file of ['runtime.mjs', 'runtime.d.mts', 'child-process.ts']) {
+  const actual = engine.hostRuntime?.find(entry => entry.file === file);
+  if (actual?.sha256 !== createHash('sha256').update(await readFile(join(root, 'engine/support', file))).digest('hex'))
+    throw new Error('RELEASE_HOST_RUNTIME_MISMATCH: ' + file);
+}
 if ((engine.patches ?? []).length !== patches.length) throw new Error('RELEASE_ENGINE_PATCH_MISMATCH');
 for (const [index, file] of patches.entries()) {
   const actual = engine.patches[index];
@@ -32,6 +37,7 @@ if (assets.minecraftVersion !== '1.20.6') throw new Error('RELEASE_ASSET_VERSION
 for (const file of ['engine/proxy.ts', 'engine/engine-child.ts', 'engine/dependency-patches.ts',
   'engine/method-worker.mjs', 'engine/engine-blobs.ts', 'engine/support/procedure.ts',
   'engine/support/procedure-program.mjs', 'engine/support/procedure-program.d.mts', 'engine/support/typed-decision.ts', 'engine/support/host-contract.ts',
+  'bin/qiandengji-mcp.mjs', 'src/agent/runtime.ts', 'src/mcp/server.ts',
   'dist/console.js', 'dist/console.css', 'dist/viewer/dist/modern-viewer.js',
   'dist/viewer/public/index.html', 'dist/viewer/public/third/index.html',
   'dist/viewer/public/dungeon/index.html']) {

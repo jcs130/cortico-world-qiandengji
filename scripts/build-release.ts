@@ -3,6 +3,7 @@ import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { buildHostRuntime } from './build-host-runtime.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sources = JSON.parse(await readFile(join(root, 'release-sources.json'), 'utf8')) as {
@@ -64,6 +65,10 @@ async function buildEngine(): Promise<void> {
     execFileSync('git', ['apply', '--directory=engine', file], { cwd: root, stdio: 'pipe' });
     patches.push({ file, sha256: createHash('sha256').update(patch).digest('hex') });
   }
+  await buildHostRuntime(root, coreRoot);
+  const hostRuntime = await Promise.all(['runtime.mjs', 'runtime.d.mts', 'child-process.ts'].map(async file => ({
+    file, sha256: createHash('sha256').update(await readFile(join(engineRoot, 'support', file))).digest('hex'),
+  })));
   const viewerFiles = [];
   await cp(join(root, 'src/viewer-photo-page.d.mts'), join(engineRoot, 'viewer-photo-page.d.mts'));
   for (const file of ['viewer-content.mjs', 'viewer-content.d.mts', 'text-display.mjs',
@@ -73,7 +78,7 @@ async function buildEngine(): Promise<void> {
     await writeFile(join(engineRoot, file), bytes);
     viewerFiles.push({ file, sha256: createHash('sha256').update(bytes).digest('hex') });
   }
-  await writeFile(join(engineRoot, 'source.json'), JSON.stringify({ ...sources.cortico, patches,
+  await writeFile(join(engineRoot, 'source.json'), JSON.stringify({ ...sources.cortico, patches, hostRuntime,
     viewerContent: { commit: sources.viewer.commit, files: viewerFiles },
   }, null, 2) + '\n');
   console.log(`Engine: ${sources.cortico.commit}`);
