@@ -30,7 +30,8 @@
       "patches/minecraft-vehicle-state.patch",
       "patches/minecraft-collect-target-contract.patch",
       "patches/minecraft-collect-step-state.patch",
-      "patches/minecraft-placement-state-evidence.patch"
+      "patches/minecraft-placement-state-evidence.patch",
+      "patches/minecraft-crop-placement.patch"
     ]
   },
   "viewer": {
