@@ -32,7 +32,7 @@
 
 `mymc_script {name,code,params?,durationMs?}` 运行你编写的异步函数体，立即返回运行编号。先用 `validate:true` 检查语法；它不执行动作。`{runId}` 查终态与调用摘要，`{runId,call}` 展开一次完整 SDK 回执。直接在代码中使用 `params` 和 `mc`，无需导入。
 
-- `await mc.state()` 读取 `{sampledAt,connectionGeneration,snapshot,flight,queue,combatActive,combat,method}`。位置、维度、生命、食物、背包与装备在 `snapshot` 下，快照可能为空。它不扫描方块；空间不明时通过 `mc.do` 的 `probe` 或 `observe` 步骤取得新的几何回执。
+- `await mc.state()` 读取 `{sampledAt,connectionGeneration,snapshot,flight,queue,combatActive,combat,method}`。省略 await 得到的是 Promise，不是快照。位置、维度、生命、食物、背包与装备在 `snapshot` 下，快照可能为空。它不扫描方块；空间不明时通过 `mc.do` 的 `probe` 或 `observe` 步骤取得新的几何回执。
 - `await mc.do(steps)` 通过同一执行器提交动作并等待该任务的真实终态，返回 `{accepted,taskId,kind,done,receipt,steps,state}`。先检查受理和各步结果，再用新 `state` 核对目标变化；`done` 不证明服务端委托完成。`needs` 只引用本组前面的步骤。
 - `await mc.flightPlan(args)` 只读试算飞行路线，不能代替移动；参数沿用 `mymc_flight_plan`。
 
@@ -42,11 +42,11 @@
 
 先用 `mymc_script {api:"index"}` 读取现役入口，再用 `{api:"方法名"}` 按需查签名。可用 `bot` 与 `Vec3`，无需再设计一套挖掘、放置或按键 DSL。接口来自 Mineflayer 4.37.1；Worker 传输使所有 `bot` 方法都须逐个 `await`。只开放索引列出的接口，不能访问原始 bot、私有连接或任意属性。
 
-- `await bot.blockAt(new Vec3(x,y,z))` 返回方块或未加载的 `null`。随后同步调用 `block.getProperties()` 查看真实状态；属性值保留上游类型，例如水源核对 `block.name === 'water' && String(block.getProperties().level) === '0'`，流水不能算水源。`block.position.offset(...)` 和 `plus(...)` 可计算相邻格。
-- `await bot.inventory.items()`、`await bot.read('heldItem')`、`await bot.read('entity')` 读取当前物品实例和身体；注册表单项可读 `bot.read('registry.itemsByName.water_bucket')`。`bot.equip(itemOrNumericType,'hand')` 使用当前实例或数字物品 ID；旧槽位失效时重读库存。
-- `bot.lookAt(point)` 后 `bot.activateItem()` 使用当前手中物品；`bot.activateBlock(block,face,cursor)` 点击参照方块的指定面和位置，保持当前手持物。返回只证明调用发出，须重读目标格、手持物和库存核验效果。
-- `bot.dig(block)` 和 `bot.placeBlock(reference,faceVector)` 直接使用原生接口，不自动导航、选工具或补支承；放置目标为 `reference.position.plus(faceVector)`。保护、材料与服务端确认仍适用。
-- `bot.setControlState(key,true)`、`bot.waitForTicks(n)`、`bot.setControlState(key,false)` 可组合短步、跳跃与观察；普通物理和碰撞继续生效，不证明已到目标。飞行沿用现有 `flight/control` 契约。
+- `await bot.blockAt(new Vec3(x,y,z))` 返回方块或未加载的 `null`。随后同步调用 `block.getProperties()` 查看真实状态；铁轨形状读 `.shape`，作物成熟度读 `.age`，没有通用 `.state` 字段。属性值保留上游类型，例如水源核对 `block.name === 'water' && String(block.getProperties().level) === '0'`。`block.position.offset(...)` 和 `plus(...)` 可计算相邻格。
+- `await bot.inventory.items()` 返回物品数组；`await bot.read('inventory.slots')` 返回带空槽 null 的数组，非空元素直接有 `name/count/slot`，不是 `item.name/item.count`。身体用 `await bot.read('entity')` 后读 `.position`，不能用未开放的 `bot.entity`。手持物用 `await bot.read('heldItem')`；注册表单项可用 `await bot.read('registry.itemsByName.water_bucket')`。`await bot.equip(itemOrNumericType,'hand')` 使用当前实例或数字物品 ID；旧槽位失效时重读库存。
+- `await bot.lookAt(point)` 后 `await bot.activateItem()` 使用当前手中物品；`await bot.activateBlock(block,face,cursor)` 点击参照方块的指定面和位置，保持当前手持物。返回只证明调用发出，须重读目标格、手持物和库存核验效果。
+- `await bot.dig(block)` 和 `await bot.placeBlock(reference,faceVector)` 直接使用原生接口，不自动导航、选工具或补支承；放置目标为 `reference.position.plus(faceVector)`。成功返回 void，在 Worker 中为 null，不用 `!!result` 判断失败；异常会拒绝 Promise。挖掉方块与掉落物入包分别核验，掉落物未即时入包不能写成零产出。保护、材料与服务端确认仍适用。
+- `await bot.setControlState(key,true)`、`await bot.waitForTicks(n)`、`await bot.setControlState(key,false)` 可组合短步、跳跃与观察；普通物理和碰撞继续生效，不证明已到目标。飞行沿用现有 `flight/control` 契约。
 
 首次身体调用排入现有身体队列，程序持续持有身体直到结束。此后不要调用 `mc.do`，否则会等待自己的队列；需要混用时先完成 `mc.do`，或结束原生程序后另起方法。只读调用不占身体。完成、取消或救生/战斗接管时松开按键；死亡、断线、强制位置纠正、超时会撤销程序，不自动重放。调用回执保留采样时间、原生方法名和身体任务编号，展开 `{runId,call}` 可核对。按真实终态、世界变化和下一次检索复用评价方法，源码存在不代表学会。
 
