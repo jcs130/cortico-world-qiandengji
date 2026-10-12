@@ -1,9 +1,10 @@
 import { execFileSync } from 'node:child_process';
 import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildHostRuntime } from './build-host-runtime.ts';
+import { build } from 'esbuild';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sources = JSON.parse(await readFile(join(root, 'release-sources.json'), 'utf8')) as {
@@ -79,8 +80,23 @@ async function buildEngine(): Promise<void> {
     await writeFile(join(engineRoot, file), bytes);
     viewerFiles.push({ file, sha256: createHash('sha256').update(bytes).digest('hex') });
   }
+  // Bundle the shared host and its protocol together; preserve source identities
+  // without rewriting imports or copying browser source into this client's SDK.
+  const agentSource = join(viewerRoot, 'packages/modern-viewer/renderer-src/host/viewer-agent.mjs');
+  const agent = await build({ entryPoints: [agentSource], bundle: true, platform: 'node',
+    format: 'esm', target: 'node22', write: false, metafile: true });
+  const agentBytes = agent.outputFiles[0].contents;
+  await writeFile(join(engineRoot, 'viewer-agent.mjs'), agentBytes);
+  viewerFiles.push({ file: 'viewer-agent.mjs', sha256: createHash('sha256').update(agentBytes).digest('hex') });
+  const agentTypes = await readFile(join(root, 'src/viewer-agent.d.mts'));
+  await writeFile(join(engineRoot, 'viewer-agent.d.mts'), agentTypes);
+  viewerFiles.push({ file: 'viewer-agent.d.mts', sha256: createHash('sha256').update(agentTypes).digest('hex') });
+  const agentSources = await Promise.all(Object.keys(agent.metafile!.inputs).map(async file => ({
+    file: relative(viewerRoot, resolve(file)).replaceAll('\\', '/'),
+    sha256: createHash('sha256').update(await readFile(resolve(file))).digest('hex'),
+  })));
   await writeFile(join(engineRoot, 'source.json'), JSON.stringify({ ...sources.cortico, patches, hostRuntime,
-    viewerContent: { commit: sources.viewer.commit, files: viewerFiles },
+    viewerContent: { commit: sources.viewer.commit, files: viewerFiles, agentSources },
   }, null, 2) + '\n');
   console.log(`Engine: ${sources.cortico.commit}`);
 }
@@ -98,7 +114,21 @@ async function buildViewer(): Promise<void> {
     viewerClientManifestSha256: createHash('sha256').update(client).digest('hex'),
   }, null, 2) + '\n');
   await buildMonitor(viewerRoot);
+  await buildClientConsole(viewerRoot);
   console.log(`Viewer: ${sources.viewer.commit}`);
+}
+
+async function buildClientConsole(viewerRoot: string): Promise<void> {
+  const source = join(viewerRoot, 'tools/client-console'), target = join(root, 'dist/client-console');
+  await mkdir(target, { recursive: true });
+  const files = [];
+  for (const file of ['index.html', 'console.css', 'console.js', 'README.md']) {
+    const bytes = await readFile(join(source, file));
+    await writeFile(join(target, file), bytes);
+    files.push({ file, sha256: createHash('sha256').update(bytes).digest('hex') });
+  }
+  await writeFile(join(target, 'source.json'), JSON.stringify({ repository: sources.viewer.repository,
+    commit: sources.viewer.commit, files }, null, 2) + '\n');
 }
 
 async function buildMonitor(viewerRoot: string): Promise<void> {

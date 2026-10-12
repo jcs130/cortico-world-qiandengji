@@ -92,6 +92,35 @@ export class MinecraftAgentClient {
       facts: this.phase === 'started' ? this.world.requestFacts?.() ?? null : null };
   }
 
+  /** Human/operator surface only. Device codes must not enter mc://status, MCP events or model facts. */
+  async operatorState() {
+    const cfg = this.options.cfg;
+    const console = this.world.console?.();
+    const connection = this.phase === 'started' && console?.invoke
+      ? await console.invoke('connection', 'state', []) : {
+        server: { host: cfg.host, port: cfg.port, requestedVersion: cfg.version, actualVersion: null, username: null },
+        accounts: null, clients: null,
+      };
+    return { schema: 'minecraft-client-console/v1', runtime: { phase: this.phase, run: this.journal.run },
+      connection, links: this.status().links,
+      configuredAccounts: { agent: cfg.username, observer: cfg.client.username, player: cfg.player.username },
+      configuredAuthentication: { agent: cfg.auth ?? 'offline', observer: cfg.client.auth ?? 'offline', player: cfg.player.auth ?? 'offline' },
+      viewerAssetNote: 'Bundled modern assets: Java 1.20.6. Other versions need matching assets or the fallback viewer.',
+    };
+  }
+
+  async operatorAction(action: string): Promise<void> {
+    if (action === 'connect') return this.connect();
+    if (action === 'disconnect') return this.disconnect();
+    if (this.phase !== 'started') throw new Error('Connect the client environment first.');
+    const method = ({ 'observer.start': 'observer.start', 'observer.stop': 'observer.stop',
+      'player.start': 'player.start', 'player.stop': 'player.stop' } as Record<string, string>)[action];
+    if (!method) throw new Error('Unknown operator action.');
+    const invoke = this.world.console?.().invoke;
+    if (!invoke) throw new Error('This environment has no launcher interface.');
+    await invoke('connection', method, []);
+  }
+
   async environment(): Promise<string> {
     const vars = await this.world.envPromptVars();
     if (!vars) return '';

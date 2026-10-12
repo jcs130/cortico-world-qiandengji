@@ -2,7 +2,7 @@
 
 ## 1. 安装
 
-推荐 Node.js 24。新建独立目录，从 [GitHub Releases](https://github.com/jcs130/cortico-world-qiandengji/releases) 下载 v0.3.0-next.1 的 `agent-mc-world-*.tgz`，按 SHA256SUMS 核对，然后：
+推荐 Node.js 24。新建独立目录，从 [GitHub Releases](https://github.com/jcs130/cortico-world-qiandengji/releases) 下载 v0.3.0-next.2 的 `agent-mc-world-*.tgz`，按 SHA256SUMS 核对，然后：
 
 ```text
 npm install --ignore-scripts <安装包绝对路径>
@@ -13,7 +13,7 @@ node node_modules/agent-mc-world/examples/agent-mcp-check.mjs
 
 ## 2. 私有配置与 MCP
 
-复制 `examples/minecraft-agent.json` 到自己目录，填写 `world.host`、`port`、`username`、`version`。默认按原账号名连接，不添加前缀。每个 Agent 使用独立账号、数据目录、画面端口与指标端口。当前仅实现 offline 身份；Microsoft/online-mode 认证未实现。插件密码认证是另外一层，不等于正版认证。
+离线服复制 `examples/minecraft-agent.json`，正版服复制 `examples/minecraft-online.json`。填写 `world.host`、`port`、`username`、`auth`、`version`。`version: auto` 自动协商；Microsoft 模式的 username 是缓存标识，游戏名来自已验证 Java profile。每个 Agent 使用独立账号、数据目录和端口。插件密码认证是另一层，不等于正版认证。
 
 ```json
 {
@@ -30,6 +30,8 @@ node node_modules/agent-mc-world/examples/agent-mcp-check.mjs
 ```
 
 stdout 保留给 MCP，诊断走 stderr。客户端不会自动连接；工具发现后调用 `mc_connection {"action":"connect"}`。受理启动与登录完成分别核验，从状态/事件检查认证和当前实体，不把“连接中”当作已进服。
+
+配置 `consolePort: 7796` 后，**同一个 MCP 进程**提供 `http://127.0.0.1:7796/`。首次 Microsoft 登录在该连接台查看设备码并自行授权；不把授权码交给模型或直播。不要另开第二个进程连接同一账号。无需 MCP 的人工连接台可用 `minecraft-agent-client <私有配置.json>` 启动。见 [账号、缓存与启动器](online-accounts.md)。
 
 密码不放进仓库或传给模型。`world.loginConfigFile` 指向宿主准备的私有登录配置；相对路径按私有配置所在目录解析。当前登录凭据实现使用 Windows DPAPI，跨平台凭据存储尚未验证。匹配可信系统消息，不从玩家聊天触发密码发送；没有适合的凭据实现时由宿主管理认证，不能自行假造配置格式。
 
@@ -55,6 +57,6 @@ stdout 保留给 MCP，诊断走 stderr。客户端不会自动连接；工具�
 
 ## 5. 画面与 OBS
 
-设置 `world.viewerPort` 为实例独立端口，打开 `http://127.0.0.1:<端口>/`、`/third/`、`/dungeon/`。端口为 0 时关闭画面。素材匹配 Java 1.20.6；其他版本需要另外核验。YSM、自定义皮肤、粒子和观战依赖服务端实际数据，未收到时不能当作已加载。
+设置 `world.viewerPort` 为实例独立端口，连接台列出实际画面入口；Java 1.20.6 现代画面提供 `/`、`/third/`、`/dungeon/` 和 OBS。素材版本不匹配时明确提示并使用基础画面，基础画面不具备现代 OBS/HUD 功能。YSM、自定义皮肤、粒子和观战依赖服务端实际数据，未收到时不能当作已加载。新版共享画面包含实际路径/操作标记与 OBS FOV 校准；公开解释需显式发布，不能冒称读取了模型思维。
 
 指标端口默认关闭；启用 `metricsPort` 后只读 `http://127.0.0.1:<指标端口>/api/harness/metrics`。OBS 与统计页面配置见 [Harness](harness.md)。模型耗时、token 和缓存由宿主通过 `mc_trace` 上报，不由游戏工具猜测。

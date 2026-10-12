@@ -23,7 +23,7 @@ export class MinecraftClientWorld implements World {
   }
   console() {
     const base = this.engine.console?.();
-    return { ...base, panels: base?.panels?.filter(panel => ['mount', 'skin', 'log'].includes(panel.id)), promptDocs: [{ key: 'minecraft.client.environment', title: 'Minecraft client',
+    return { ...base, panels: base?.panels?.filter(panel => ['connection', 'mount', 'skin', 'log'].includes(panel.id)), promptDocs: [{ key: 'minecraft.client.environment', title: 'Minecraft client',
       description: 'Game execution and observation ports for the connected Agent.', role: 'envPrompt' as const,
       path: fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url)) }] };
   }

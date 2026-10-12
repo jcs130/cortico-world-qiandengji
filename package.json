@@ -1,6 +1,6 @@
 {
   "name": "agent-mc-world",
-  "version": "0.3.0-next.1",
+  "version": "0.3.0-next.2",
   "type": "module",
   "description": "Independent Mineflayer execution client for Agents, with MCP, SDK, skill and Cortico World adapters",
   "repository": {
@@ -25,6 +25,7 @@
   "packageManager": "pnpm@11.5.0",
   "main": "./src/index.ts",
   "bin": {
+    "minecraft-agent-client": "./bin/minecraft-agent-client.mjs",
     "minecraft-agent-mcp": "./bin/minecraft-agent-mcp.mjs"
   },
   "exports": {
@@ -70,6 +71,8 @@
     "src/index.ts",
     "src/definition.ts",
     "src/console-client.ts",
+    "src/connection-panel.ts",
+    "src/viewer-agent.d.mts",
     "src/chat-provenance.ts",
     "src/collect-contract.ts",
     "src/mounted-look.ts",
@@ -77,13 +80,16 @@
     "src/railway.ts",
     "src/viewer-photo-page.d.mts",
     "bin/minecraft-agent-mcp.mjs",
+    "bin/minecraft-agent-client.mjs",
     "docs/architecture.md",
     "docs/minecraft-client.md",
+    "docs/online-accounts.md",
     "docs/agent-mcp.md",
     "docs/harness.md",
     "docs/migration-0.3.md",
     "examples/agent-mcp-check.mjs",
     "examples/minecraft-agent.json",
+    "examples/minecraft-online.json",
     "examples/minecraft-client.ts",
     "skills",
     "engine",
@@ -104,7 +110,7 @@
     "build:viewer": "tsx scripts/build-release.ts viewer",
     "build:client-login": "node scripts/build-client-login.mjs",
     "start:mcp": "node bin/minecraft-agent-mcp.mjs",
-    "start:minecraft": "node bin/minecraft-agent-mcp.mjs",
+    "start:minecraft": "node bin/minecraft-agent-client.mjs",
     "verify:release": "node scripts/verify-release.mjs",
     "prepack": "node scripts/verify-release.mjs",
     "test": "vitest run",
@@ -119,6 +125,7 @@
     "mineflayer-pathfinder": "2.4.5",
     "playwright-core": "1.63.0",
     "prismarine-block": "1.23.0",
+    "prismarine-auth": "3.1.1",
     "prismarine-viewer": "1.33.0",
     "ses": "2.3.0",
     "socket.io": "4.8.3",

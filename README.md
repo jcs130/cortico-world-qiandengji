@@ -12,6 +12,7 @@
 | TypeScript SDK | `agent-mc-world/client` | 模型、记忆、事件唤醒与学习评价 |
 | Cortico API 5 World | 默认导出 / `agent-mc-world/adapters/cortico` | Cortico Core 与 Persona |
 | 可复制的 Agent skill | `skills/minecraft-agent/` | 同一台机器或可访问的客户端入口 |
+| 本机连接台 / Java 启动器 | `minecraft-agent-client <私有配置.json>` | 服务器与账号配置；可选已安装的 Java 客户端 |
 
 安装 [Releases](https://github.com/jcs130/cortico-world-qiandengji/releases) 中的 `.tgz`，按 SHA256SUMS 核对。推荐 Node.js 24；无需安装 Cortico 即可使用 MCP/SDK，包括 SDK 类型。当前版本是试用版，不自动迁移已有可米部署。
 
@@ -26,7 +27,9 @@ node node_modules/agent-mc-world/examples/agent-mcp-check.mjs
 node <绝对安装目录>/node_modules/agent-mc-world/bin/minecraft-agent-mcp.mjs <私有配置的绝对路径>
 ```
 
-调用 `mc_connection {"action":"connect"}` 后读取连接事件确认登录。**每个 Agent 使用自己的账号、数据目录和非零画面端口**。当前连接仅支持 offline 身份；Microsoft/online-mode 认证尚未实现。不是所有版本、模组服与插件都已验证。内置网页素材匹配 Java 1.20.6；其他版本需验证协议和画面素材。
+调用 `mc_connection {"action":"connect"}` 后读取连接事件确认登录。**每个 Agent 使用自己的账号、数据目录和非零画面端口**。v0.3.0-next.2 加入 `auth: microsoft` 原生设备码授权、独立凭据缓存和 `version: auto`；离线服使用 `auth: offline`。账号验证、协议进入游戏、网页画面和 Java 窗口就绪分别显示。见 [正版账号与启动器](docs/online-accounts.md)。
+
+目标是连接 Mineflayer 支持的 **Java 服务器**。白名单、服务端权限、反机器人限制、协议版本及模组协议仍需实际验证；不保证任意服务器可用。内置现代画面素材匹配 Java 1.20.6，其他版本明确使用基础画面或另配匹配资源；协议登录不代表渲染或全部玩法兼容。
 
 ## 可用能力
 
@@ -35,6 +38,7 @@ node <绝对安装目录>/node_modules/agent-mc-world/bin/minecraft-agent-mcp.mj
 - 自主学习的执行基础：原生 Mineflayer 脚本、版本化方法制品、组合执行、哈希、调用轨迹。Agent 自己提出改法、验证、评价、检索与复用；保存源码不代表学会。
 - 空间读数：轨道端口与高度连通检查、体素切片和碰撞射线。无效路径不会被自动解释为深沟、断梯或不可达。
 - 现代画面与 OBS：第一人称、第三人称、2.5D、透明 HUD 与只读技术指标，来自独立 [mc-visual-console](https://github.com/jcs130/mc-visual-console) 的固定版本。
+- 连接与启动：独立本机连接台、微软设备码授权、自动版本协商、已安装 Java 客户端启动；Agent / 观察者 / 玩家缓存分离。MCP 可同时开启连接台，授权码不放进模型资源或 OBS。
 - 系统 1：通用生存/战斗反射、可选受阻建议与小动作。旧版异步快战术仍依赖 RPG 能力协议，尚未向通用入口开放；不会伪称已具备。
 
 服务器特有技能应从该服务器的帮助、目录和实际回执学习。服务器说明属于可选资料，不能自动替 Agent 做传送、强制补给或完成判定。演出、TTS、歌曲与向量服务分别装配。

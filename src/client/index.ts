@@ -6,3 +6,5 @@ export { AgentJournal } from './journal.ts';
 export { AgentMetrics, serveAgentMetrics, type HarnessTrace } from './metrics.ts';
 export type { ToolDef, ToolOutcome, ToolCallContext, EventEnvelope, WorldRequestFacts, Logger, ModelFacts, CognitionHost } from './contracts.ts';
 export { nullLogger } from '../../engine/support/runtime.mjs';
+export { serveClientConsole, type ClientConsolePort } from './console-server.ts';
+export type { PublicAccountState, AuthenticationMode } from './authentication.ts';

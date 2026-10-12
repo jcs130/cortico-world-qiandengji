@@ -8,6 +8,7 @@
 | SDK | `agent-mc-world/client` | 自有结构契约，无 Cortico 类型或运行时依赖 |
 | Cortico | 默认导出 / `agent-mc-world/adapters/cortico` | API 5；World ID `mc`，配置 `worlds.mc.*` |
 | Skill | `skills/minecraft-agent/` | 复制整个文件夹，保留 references |
+| 本机连接台 | `minecraft-agent-client <private-config.json>` | 无 Cortico；默认仅绑定 127.0.0.1 |
 
 安装与离线检查见 [接入指南](agent-mcp.md)。千灯纪旧适配器在 `integrations/qiandengji/`，不随此通用包安装，也不是默认能力。
 
@@ -35,4 +36,4 @@ await client.disconnect();
 
 把安装包内 `skills/minecraft-agent/` 完整复制到 Agent 的技能目录。先发现工具和能力，按需读取引用，不全量注入方法库。skill 强调真实回执、Promise、身体控制权、原生接口、版本和适用条件；不会安装主模型、发明服务器技能或代替学习评价。
 
-当前仅支持 offline 身份和已验证协议范围，内置画面素材是 Java 1.20.6。旧 RPG 快战术尚待从服务器能力协议中拆出，通用入口不提供法术或该战术工具；原生脚本与通用反射可用。参见 [架构边界](architecture.md)。
+v0.3.0-next.2 支持原生 Microsoft 设备码认证、隔离缓存、自动协议识别及已安装 Java 客户端启动；[完整账号与启动器指引](online-accounts.md) 说明实际验证范围。内置现代素材为 Java 1.20.6，不能由协议连接推断画面兼容。旧 RPG 快战术尚待从服务器能力协议中拆出，通用入口不提供法术或该战术工具；原生脚本与通用反射可用。参见 [架构边界](architecture.md)。

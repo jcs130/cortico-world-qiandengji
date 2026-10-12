@@ -34,12 +34,13 @@
       "patches/minecraft-crop-placement.patch",
       "patches/minecraft-goal-metrics.patch",
       "patches/minecraft-method-await.patch",
-      "patches/minecraft-viewer-observer.patch"
+      "patches/minecraft-viewer-observer.patch",
+      "patches/minecraft-online-client.patch"
     ]
   },
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
-    "commit": "4943448e4a8e9577fcda04484cf2c43b83160a13",
+    "commit": "6cd94b034f3064b74771464b192046b6d537f6f0",
     "assetPack": "java-1.20.6",
     "preset": null
   }

@@ -29,6 +29,8 @@ export function loadPrivateClientConfig<T extends MinecraftClientConfig>(path: s
   if (input.timezone !== undefined && typeof input.timezone !== 'string') throw new Error('timezone must be a string.');
   if (input.metricsPort !== undefined && (!Number.isInteger(input.metricsPort) || Number(input.metricsPort) < 0 || Number(input.metricsPort) > 65535))
     throw new Error('metricsPort must be an integer between 0 (disabled) and 65535.');
+  if (input.consolePort !== undefined && (!Number.isInteger(input.consolePort) || Number(input.consolePort) < 0 || Number(input.consolePort) > 65535))
+    throw new Error('consolePort must be an integer between 0 (disabled) and 65535.');
   const cfg = structuredClone(policy.defaults);
   merge(cfg as unknown as Record<string, unknown>, input.world as Record<string, unknown>);
   const ajv = new Ajv({ strict: false, validateFormats: false });
@@ -41,9 +43,11 @@ export function loadPrivateClientConfig<T extends MinecraftClientConfig>(path: s
     if (!validate(value)) throw new Error(`Invalid ${key}: ${ajv.errorsText(validate.errors)}`);
   }
   if (cfg.loginConfigFile) cfg.loginConfigFile = resolve(dirname(fullPath), cfg.loginConfigFile);
+  for (const account of [cfg, cfg.client, cfg.player] as Array<{ profilesFolder?: string }>)
+    if (account.profilesFolder) account.profilesFolder = resolve(dirname(fullPath), account.profilesFolder);
   policy.validate(cfg);
   return { cfg, dataDir: resolve(dirname(fullPath), input.dataDir), timezone: String(input.timezone ?? 'UTC'),
-    acceptsImages: input.acceptsImages === true, metricsPort: Number(input.metricsPort ?? 0) };
+    acceptsImages: input.acceptsImages === true, metricsPort: Number(input.metricsPort ?? 0), consolePort: Number(input.consolePort ?? 0) };
 }
 export const loadMinecraftClientConfig = (path: string) => loadPrivateClientConfig(path, {
   defaults: MINECRAFT_CLIENT_DEFAULTS, schemaPrefix: 'worlds.minecraft.', validate: assertMinecraftReady,

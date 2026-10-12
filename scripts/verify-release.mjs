@@ -35,7 +35,7 @@ for (const [index, file] of patches.entries()) {
 const bridgeFiles = ['viewer-content.mjs', 'viewer-content.d.mts', 'text-display.mjs',
   'viewer-appearance.mjs', 'viewer-appearance.d.mts', 'viewer-ysm-assets.mjs', 'viewer-ysm-motion.mjs',
   'viewer-observer.mjs', 'viewer-observer.d.mts',
-  'viewer-photo-page.mjs', 'viewer-page-assets.mjs'];
+  'viewer-photo-page.mjs', 'viewer-page-assets.mjs', 'viewer-agent.mjs', 'viewer-agent.d.mts'];
 if (engine.viewerContent?.commit !== sources.viewer.commit || engine.viewerContent.files?.length !== bridgeFiles.length)
   throw new Error('RELEASE_VIEWER_BRIDGE_MISMATCH');
 for (const [index, file] of bridgeFiles.entries()) {
@@ -47,11 +47,20 @@ if (assets.minecraftVersion !== '1.20.6') throw new Error('RELEASE_ASSET_VERSION
 for (const file of ['engine/proxy.ts', 'engine/engine-child.ts', 'engine/dependency-patches.ts',
   'engine/method-worker.mjs', 'engine/engine-blobs.ts', 'engine/support/procedure.ts',
   'engine/support/procedure-program.mjs', 'engine/support/procedure-program.d.mts', 'engine/support/typed-decision.ts', 'engine/support/host-contract.ts',
-  'bin/minecraft-agent-mcp.mjs', 'src/client/runtime.ts', 'src/adapters/minecraft.ts', 'src/mcp/server.ts',
+  'bin/minecraft-agent-mcp.mjs', 'bin/minecraft-agent-client.mjs', 'src/client/authentication.ts',
+  'src/client/runtime.ts', 'src/adapters/minecraft.ts', 'src/mcp/server.ts',
   'dist/console.js', 'dist/console.css', 'dist/viewer/dist/modern-viewer.js',
   'dist/viewer/public/index.html', 'dist/viewer/public/third/index.html',
   'dist/viewer/public/dungeon/index.html']) {
   if (!(await stat(join(root, file))).isFile()) throw new Error('RELEASE_FILE_MISSING: ' + file);
+}
+const clientConsole = await json('dist/client-console/source.json');
+if (clientConsole.commit !== sources.viewer.commit || clientConsole.files?.length !== 4)
+  throw new Error('RELEASE_CLIENT_CONSOLE_SOURCE_MISMATCH');
+for (const entry of clientConsole.files) {
+  if (!['index.html', 'console.css', 'console.js', 'README.md'].includes(entry.file)
+    || createHash('sha256').update(await readFile(join(root, 'dist/client-console', entry.file))).digest('hex') !== entry.sha256)
+    throw new Error('RELEASE_CLIENT_CONSOLE_HASH_MISMATCH');
 }
 const client = await readFile(join(root, 'dist/viewer/viewer-client.json'));
 const monitor = await json('dist/monitor/source.json');

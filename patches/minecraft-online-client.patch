@@ -1,0 +1,621 @@
+--- a/config.ts
++++ b/config.ts
+@@ -9,6 +9,8 @@
+   port: 25565,
+   /** 游戏内用户名(offline 模式直接生效) */
+   username: 'corti',
++  auth: 'offline' as 'offline' | 'microsoft',
++  profilesFolder: '',
+   /** Private scoped account file; only encrypted credential references are read by the client. */
+   loginConfigFile: '',
+   /**
+@@ -145,6 +147,8 @@
+     jvmArgs: '-Xmx4G',
+     /** 摄像机账号名(必须与 bot 的名字不同) */
+     username: 'CortiCam',
++    auth: 'offline' as 'offline' | 'microsoft',
++    profilesFolder: '',
+     width: 1280,
+     height: 720,
+     /** 启动即直连服务器(1.20+ 走 quickPlay,更早走 --server/--port) */
+@@ -181,6 +185,8 @@
+     enabled: false,
+     /** 玩家账号名(离线),必须与 bot 和摄像机都不同 */
+     username: 'Player',
++    auth: 'offline' as 'offline' | 'microsoft',
++    profilesFolder: '',
+     /** .minecraft 目录;空 = 用观察者客户端那一份 */
+     gameDir: '',
+     /** versions/ 下的版本 id;空 = 目录里唯一那个 */
+@@ -202,6 +208,8 @@
+   host: string;
+   port: number;
+   username: string;
++  auth?: 'offline' | 'microsoft';
++  profilesFolder?: string;
+   loginConfigFile: string;
+   version: string;
+   viewerPort: number;
+@@ -246,7 +254,7 @@
+   };
+   client: {
+     enabled: boolean; gameDir: string; versionId: string; javaPath: string; jvmArgs: string;
+-    username: string; width: number; height: number;
++    username: string; auth?: 'offline' | 'microsoft'; profilesFolder?: string; width: number; height: number;
+     autoJoin: boolean; autoSpectate: boolean; resyncSec: number; restartMax: number;
+     noPauseOnLostFocus: boolean; syncGui: boolean;
+   };
+@@ -256,7 +264,7 @@
+     dwellCloseMs: number; budgetMs: number; reopenGapMs: number;
+   };
+   player: {
+-    enabled: boolean; username: string; gameDir: string; versionId: string; javaPath: string;
++    enabled: boolean; username: string; auth?: 'offline' | 'microsoft'; profilesFolder?: string; gameDir: string; versionId: string; javaPath: string;
+     jvmArgs: string; width: number; height: number; autoJoin: boolean; teleportToBot: boolean;
+   };
+ }
+@@ -280,13 +288,17 @@
+     properties: {
+       'worlds.minecraft.host': { type: 'string', title: '服务器地址', 'x-hot': false },
+       'worlds.minecraft.port': { type: 'integer', title: '端口', minimum: 1, maximum: 65535, 'x-hot': false },
+-      'worlds.minecraft.username': { type: 'string', title: '游戏内用户名', 'x-hot': false },
++      'worlds.minecraft.username': { type: 'string', title: '账号标识 / 离线游戏名', 'x-hot': false,
++        description: '正版模式是本地缓存的账号标识，实际游戏名由微软验证的 Java profile 决定。' },
++      'worlds.minecraft.auth': { type: 'string', title: '账号验证', enum: ['offline', 'microsoft'], 'x-hot': false },
++      'worlds.minecraft.profilesFolder': { type: 'string', title: '正版凭据缓存目录', 'x-hot': false,
++        description: '留空使用本部署的私有 auth/agent 目录；不要放进共享目录或提交到仓库。', 'x-path': { kind: 'directory' } },
+       'worlds.minecraft.loginConfigFile': { type: 'string', title: '自动登录配置文件', 'x-hot': true,
+         description: '仅匹配账号与服务器的系统认证提示触发，每次连接提交一次；文件只保存加密凭据路径。留空关闭，下次自然重连读取。',
+         'x-path': { kind: 'file', extensions: ['.json'] } },
+       'worlds.minecraft.version': {
+         type: 'string', title: '协议版本', 'x-hot': false,
+-        description: 'mineflayer 按此版本连接,要与服务器一致。',
++        description: 'auto 自动识别 Java 协议；也可填写 Mineflayer 支持的明确版本。渲染资产和 Java 客户端版本分别配置。',
+       },
+       'worlds.minecraft.viewerPort': {
+         type: 'integer', title: 'viewer 端口', minimum: 0, maximum: 65535, 'x-hot': false,
+@@ -596,6 +608,9 @@
+         type: 'string', title: '客户端 JVM 参数', 'x-hot': true,
+         description: '空格分隔。开光影建议 -Xmx4G 起。',
+       },
++      'worlds.minecraft.client.auth': { type: 'string', title: '客户端账号验证', enum: ['offline', 'microsoft'], 'x-hot': false },
++      'worlds.minecraft.client.profilesFolder': { type: 'string', title: '客户端正版缓存目录', 'x-hot': false,
++        description: '留空使用本部署对应账号的私有缓存；与 Agent 账号分开。', 'x-path': { kind: 'directory' } },
+       'worlds.minecraft.client.username': {
+         type: 'string', title: '摄像机账号名', 'x-hot': true,
+         description: '离线账号,必须与 bot 的游戏内用户名不同。',
+@@ -656,6 +671,9 @@
+         type: 'boolean', title: '玩家客户端', 'x-hot': false,
+         description: '开启后 World 启动时一并拉起;也可以在挂载面板里单独启停。',
+       },
++      'worlds.minecraft.player.auth': { type: 'string', title: '客户端账号验证', enum: ['offline', 'microsoft'], 'x-hot': false },
++      'worlds.minecraft.player.profilesFolder': { type: 'string', title: '客户端正版缓存目录', 'x-hot': false,
++        description: '留空使用本部署对应账号的私有缓存；与 Agent 账号分开。', 'x-path': { kind: 'directory' } },
+       'worlds.minecraft.player.username': {
+         type: 'string', title: '玩家名', 'x-hot': true,
+         description: '离线账号,必须与 bot 和摄像机的名字都不同。传送认的就是这个名字。',
+--- a/bridge.ts
++++ b/bridge.ts
+@@ -37,6 +37,7 @@
+ import { installTreadWater } from './travel.ts';
+ import { trackMaps } from './map-view.ts';
+ import { trackDamageSources } from './damage-source.ts';
++import { MinecraftAuthentication, protocolVersion } from '../src/client/authentication.ts';
+ import { installServerLogin } from './server-login.mjs';
+ import { installMountedLook } from '../src/mounted-look.ts';
+ 
+@@ -45,6 +46,7 @@
+   port: number;
+   username: string;
+   version: string;
++  authentication?: MinecraftAuthentication;
+   /** Private account configuration, reread for every network connection. Empty disables automatic login. */
+   loginConfigFile?: () => string;
+   /** prismarine-viewer 网页端口;0=不开 viewer */
+@@ -244,7 +246,7 @@
+   private disposedThrough = -1;
+   private readonly bags = new Map<number, ResourceBag>();
+   private readonly disposing = new Set<Promise<void>>();
+-  private viewer: { gen: number; url: string } | null = null;
++  private viewer: { gen: number; url: string; kind: 'modern' | 'basic' } | null = null;
+   private _invSynced = false;
+   private scaffoldComplained = '';
+   private refusedStreak = 0;
+@@ -311,6 +313,10 @@
+ 
+   get reconnects(): number {
+     return this.reconnectAttempt;
++  }
++
++  get viewerKind(): 'modern' | 'basic' | null {
++    return this.viewer?.gen === this.generation ? this.viewer.kind : null;
+   }
+ 
+   get viewerUrl(): string | null {
+@@ -414,18 +420,30 @@
+     this.bagFor(gen);
+     log.info(`minecraft 连接 ${host}:${port} as ${username} (${version})`);
+     // 蓝图注册表按实际连接的版本走:写死 1.20.6 的话,1.21 上会拿旧表认方块状态与默认属性
+-    if (setBlueprintMcVersion(version)) {
++    if (protocolVersion(version) && setBlueprintMcVersion(version)) {
+       log.info(`蓝图注册表版本已跟随连接版本:${version}(原默认 ${DEFAULT_BLUEPRINT_MC_VERSION})`);
+     }
+     let bot: mineflayer.Bot;
+     try {
+-      bot = mineflayer.createBot({ host, port, username, version, auth: 'offline' });
++      bot = mineflayer.createBot({ host, port, username, version: protocolVersion(version) || undefined,
++        ...(this.opts.authentication?.botOptions() ?? { auth: 'offline' as const }),
++        logErrors: false });
+     } catch (err) {
+       log.warn(`createBot 失败: ${(err as Error).message}`);
+       this.scheduleReconnect(String((err as Error).message));
+       return;
+     }
+     this._bot = bot;
++    bot._client.on('session', session => {
++      if (this._bot === bot && this.generation === gen && !this.stopped) this.opts.authentication?.acceptProtocolSession(session);
++    });
++    bot.once('inject_allowed', () => {
++      if (this._bot === bot && this.generation === gen) setBlueprintMcVersion(bot.version);
++    });
++    // Authentication may finish after the user stopped a pending connection.
++    bot._client.on('connect', () => {
++      if (this.stopped || this._bot !== bot || this.generation !== gen) bot._client.end('Connection cancelled');
++    });
+     this.spawnedBot = null;
+     this.opts.onBotCreated?.(bot);
+     const login = installServerLogin(bot, { server: `${host}:${port}`, username,
+@@ -608,6 +626,7 @@
+ 
+     bot.once('spawn', () => {
+       if (this.stopped || this._bot !== bot || this.generation !== gen) return;
++      setBlueprintMcVersion(bot.version);
+       this.spawnedBot = bot;
+       this.reconnectAttempt = 0;
+       this.refusedStreak = 0;
+@@ -642,6 +661,7 @@
+     bot.once('end', (reason) => onGone(String(reason)));
+     bot.once('kicked', (reason) => onGone(`kicked: ${JSON.stringify(reason)}`));
+     bot.on('error', (err) => {
++      this.opts.authentication?.failPending();
+       log.warn(`minecraft 连接错误: ${err.message}`);
+       this.noteConnectError(err);
+     });
+@@ -1048,11 +1068,23 @@
+           );
+           return;
+         }
+-        if (this.opts.viewerAssetsDir) {
++        let modernAssets = this.opts.viewerAssetsDir;
++        if (modernAssets) {
++          const { readFile } = await import('node:fs/promises');
++          const { join } = await import('node:path');
++          try {
++            const manifest = JSON.parse(await readFile(join(modernAssets, 'viewer-assets.json'), 'utf8'));
++            if (manifest.minecraftVersion !== bot.version) {
++              this.opts.log.warn(`Modern assets ${manifest.minecraftVersion} do not match Java ${bot.version}; using the basic viewer.`);
++              modernAssets = '';
++            }
++          } catch { /* An explicitly configured broken pack fails with its own diagnostic. */ }
++        }
++        if (modernAssets) {
+           const { startModernViewer } = await import('./modern-viewer.ts');
+           if (this.stopped || this._bot !== bot || this.generation !== gen || this.bagFor(gen).disposed) return;
+           const handle = await startModernViewer(bot, {
+-            port, assetsDir: this.opts.viewerAssetsDir, speakerName: this.opts.viewerSpeakerName,
++            port, assetsDir: modernAssets, speakerName: this.opts.viewerSpeakerName,
+             speechSourceId: this.opts.viewerSpeechSourceId,
+             agentMana: () => this.agentMana,
+           });
+@@ -1066,7 +1098,7 @@
+           this.bagFor(gen).register('prismarine-viewer', () => this.releaseViewer(gen, port, close));
+         }
+         if (this.stopped || this.generation !== gen) return; // 旧代不得改新代状态
+-        this.viewer = { gen, url: `http://127.0.0.1:${port}` };
++        this.viewer = { gen, url: `http://127.0.0.1:${port}`, kind: modernAssets ? 'modern' : 'basic' };
+         this.opts.log.info(`minecraft viewer 已启动 http://127.0.0.1:${port}`);
+       } catch (err) {
+         this.opts.log.warn(`minecraft viewer 启动失败(不影响游玩): ${(err as Error).message}`);
+--- a/client-launch.ts
++++ b/client-launch.ts
+@@ -2,6 +2,7 @@
+  * 从 Mojang 版本 JSON 生成客户端 Java 命令，支持 inheritsFrom 继承。
+  * client.ts 管理进程生命周期。
+  */
++import type { JavaCredentials } from '../src/client/authentication.ts';
+ import { createHash } from 'node:crypto';
+ import { existsSync, readFileSync, readdirSync } from 'node:fs';
+ import { join } from 'node:path';
+@@ -43,6 +44,7 @@
+   versionId: string;
+   javaPath: string;
+   username: string;
++  session?: JavaCredentials;
+   /** 额外 JVM 参数(内存等),空格分隔 */
+   jvmArgs?: string[];
+   width: number;
+@@ -227,7 +229,7 @@
+   const nativesDir = input.nativesDir ?? join(gameDir, 'natives', versionId);
+   const separator = os === 'windows' ? ';' : ':';
+   const vars: Record<string, string> = {
+-    auth_player_name: input.username,
++    auth_player_name: input.session?.username ?? input.username,
+     // 加载器版本靠 `-DignoreList=...,${version_name}.jar` 把主 jar 挡在模块路径外,所以这个名字
+     // 必须是实际加载的那个 jar;继承链上的版本没有自己的 jar,用的是 jarId 那个。
+     version_name: jarId,
+@@ -235,9 +237,9 @@
+     assets_root: join(gameDir, 'assets'),
+     game_assets: join(gameDir, 'assets'),
+     assets_index_name: assetIndexId,
+-    auth_uuid: offlineUuid(input.username),
+-    auth_access_token: '0',
+-    auth_session: '0',
++    auth_uuid: input.session?.uuid ?? offlineUuid(input.username),
++    auth_access_token: input.session?.accessToken ?? '0',
++    auth_session: input.session ? `token:${input.session.accessToken}:${input.session.uuid}` : '0',
+     clientid: '',
+     auth_xuid: '',
+     user_type: 'msa',
+--- a/client.ts
++++ b/client.ts
+@@ -2,6 +2,7 @@
+  * 管理观察者或玩家客户端进程。Windows 通过启动进程及其子进程的可见窗口判断就绪，其他平台使用 stdout 标记。
+  * 进服后的附身和传送由 world.ts 编排；窗口标题按账号名设置，并在直连加载后重设一次。
+  */
++import type { JavaCredentials, MinecraftAuthentication } from '../src/client/authentication.ts';
+ import { logLines } from 'cortico/core/ipc-logger.ts';
+ import { spawn, type ChildProcess } from 'node:child_process';
+ import { existsSync, mkdirSync, readdirSync, renameSync, statSync } from 'node:fs';
+@@ -42,6 +43,7 @@
+   /** 额外 JVM 参数,空格分隔 */
+   jvmArgs: () => string;
+   username: () => string;
++  authentication?: MinecraftAuthentication;
+   width: () => number;
+   height: () => number;
+   /** 进游戏直连服务器 */
+@@ -152,6 +154,8 @@
+ }
+ 
+ export class GameClient {
++  private startInFlight?: Promise<ClientState>;
++  private launchGeneration = 0;
+   private phase: ClientPhase = 'stopped';
+   private detail: string | null = null;
+   private proc: ChildProcess | null = null;
+@@ -203,11 +207,20 @@
+       versionId,
+       username: this.opts.username(),
+       configured: broken === null,
+-      command: 'error' in launch ? null : [launch.command, ...launch.args].join(' '),
++      command: this.opts.authentication?.snapshot().mode === 'microsoft' || 'error' in launch
++        ? null : [launch.command, ...launch.args].join(' '),
+     };
+   }
+ 
+-  async start(): Promise<ClientState> {
++  start(): Promise<ClientState> {
++    if (this.startInFlight) return this.startInFlight;
++    const task = this.startOnce();
++    this.startInFlight = task;
++    void task.finally(() => { if (this.startInFlight === task) this.startInFlight = undefined; }).catch(() => {});
++    return task;
++  }
++
++  private async startOnce(): Promise<ClientState> {
+     if (this.phase === 'starting' || this.phase === 'running') return this.state();
+     // 窗口探测超时不会结束游戏进程；再次点击启动应复核原窗口，不能双开同一账号。
+     if (this.proc?.exitCode === null) {
+@@ -222,7 +235,21 @@
+       this.opts.log.info(`${this.opts.label}在自动重启到点前(还剩 ${left} 秒)被直接启动,排着的那次自动重启取消`);
+     }
+     const gameDir = this.opts.gameDir();
+-    const launch = this.resolveLaunch(gameDir);
++    // Verify installed files before asking a human to authenticate.
++    const preflight = this.resolveLaunch(gameDir);
++    if ('error' in preflight) { this.phase = 'error'; this.detail = preflight.error; return this.state(); }
++    const generation = ++this.launchGeneration;
++    this.phase = 'starting';
++    this.detail = '正在验证客户端账号';
++    let session: JavaCredentials | undefined;
++    try { session = await this.opts.authentication?.javaCredentials(); }
++    catch (error) {
++      if (generation !== this.launchGeneration) return this.state();
++      this.phase = 'error'; this.detail = error instanceof Error ? error.message : '客户端账号验证失败';
++      return this.state();
++    }
++    if (generation !== this.launchGeneration || this.opts.shuttingDown?.()) return this.state();
++    const launch = this.resolveLaunch(gameDir, session);
+     if ('error' in launch) {
+       this.phase = 'error';
+       this.detail = launch.error;
+@@ -296,6 +323,9 @@
+   }
+ 
+   async stop(): Promise<ClientState> {
++    this.launchGeneration++;
++    this.startInFlight = undefined;
++    this.opts.authentication?.stop();
+     this.clearTimer();
+     this.phase = 'stopped';
+     this.detail = null;
+@@ -331,7 +361,7 @@
+     return this.state();
+   }
+ 
+-  private resolveLaunch(gameDir = this.directory()): ReturnType<typeof buildClientLaunch> | { command: string; args: string[]; cwd: string | undefined } {
++  private resolveLaunch(gameDir = this.directory(), session?: JavaCredentials): ReturnType<typeof buildClientLaunch> | { command: string; args: string[]; cwd: string | undefined } {
+     if (this.opts.commandOverride) {
+       return { command: this.opts.commandOverride.command, args: this.opts.commandOverride.args, cwd: undefined };
+     }
+@@ -341,6 +371,7 @@
+       versionId: this.opts.versionId(),
+       javaPath: this.opts.javaPath(),
+       username: this.opts.username(),
++      session,
+       jvmArgs: this.opts.jvmArgs().split(/\s+/).filter(Boolean),
+       width: this.opts.width(),
+       height: this.opts.height(),
+--- a/world.ts
++++ b/world.ts
+@@ -81,6 +81,7 @@
+ import {
+   MinecraftServerManager, type MinecraftDifficultyFact, type MinecraftServerPhase, type MinecraftServerState,
+ } from './server.ts';
++import { MinecraftAuthentication } from '../src/client/authentication.ts';
+ import { GameClient, type ClientState } from './client.ts';
+ import {
+   Executor, Reflexes, parseNoteText, parseQueueMode, parseScoutSteps, parseSteps, sendChat,
+@@ -402,6 +403,7 @@
+  * ——面板 id 两边一旦不同,浏览器插件那几个键就只在其中一条路上对得上。
+  */
+ export const MINECRAFT_PANEL_DECLS: readonly WorldPanelDecl[] = [
++  { id: 'connection', title: '连接与账号', getMethods: ['state'] },
+   { id: 'mount', title: '挂载', description: '游戏服务器 / 观察者客户端 / 玩家客户端的启停。' },
+   { id: 'skin', title: '皮肤', description: '她和玩家各穿哪一张皮肤:选一张 PNG,由客户端读(离线服自己没有材质)。' },
+   { id: 'world', title: '存档与玩法', description: '换存档、开新世界、调难度与游戏模式。' },
+@@ -2771,6 +2773,7 @@
+   private serverLifecycleTarget: string | null = null;
+   private serverLifecycleActive = false;
+   private readonly client: GameClient;
++  private readonly accountAuth: Record<'agent' | 'observer' | 'player', MinecraftAuthentication>;
+   /** 人自己进服那一份;与摄像机是两份进程 */
+   private readonly playerClient: GameClient;
+   private readonly diag: MinecraftLog;
+@@ -2889,6 +2892,13 @@
+       emit: (event) => this.logBodyLease(event),
+     });
+     this.dataDir = opts.dataDir ?? '';
++    const account = (lane: 'agent' | 'observer' | 'player') => {
++      const config = lane === 'agent' ? this.cfg : lane === 'observer' ? this.cfg.client : this.cfg.player;
++      return { mode: config.auth ?? 'offline', account: config.username, profilesFolder: config.profilesFolder };
++    };
++    this.accountAuth = Object.fromEntries(['agent', 'observer', 'player'].map(lane => [lane,
++      new MinecraftAuthentication(() => account(lane as 'agent' | 'observer' | 'player'), this.dataDir,
++        lane as 'agent' | 'observer' | 'player')])) as typeof this.accountAuth;
+     const ledger = (name: string): string | null => (opts.dataDir ? join(opts.dataDir, name) : null);
+     this.combatSpells = new CombatSpells(new CombatTacticBook(ledger('minecraft-combat-tactics.json')));
+     this.rejectedRoutes = new RejectedRouteLedger(ledger('minecraft-rejected-routes.json'));
+@@ -2956,7 +2966,8 @@
+       versionId: () => this.cfg.client.versionId,
+       javaPath: () => this.cfg.client.javaPath,
+       jvmArgs: () => this.cfg.client.jvmArgs,
+-      username: () => this.cfg.client.username,
++      username: () => this.accountAuth.observer.snapshot().profile?.name ?? this.observerName(),
++      authentication: this.accountAuth.observer,
+       width: () => this.cfg.client.width,
+       height: () => this.cfg.client.height,
+       autoJoin: () => this.cfg.client.autoJoin,
+@@ -2982,7 +2993,8 @@
+       versionId: () => this.cfg.player.versionId || this.cfg.client.versionId,
+       javaPath: () => this.cfg.player.javaPath || this.cfg.client.javaPath,
+       jvmArgs: () => this.cfg.player.jvmArgs,
+-      username: () => this.cfg.player.username,
++      username: () => this.accountAuth.player.snapshot().profile?.name ?? this.playerName(),
++      authentication: this.accountAuth.player,
+       width: () => this.cfg.player.width,
+       height: () => this.cfg.player.height,
+       autoJoin: () => this.cfg.player.autoJoin,
+@@ -3019,8 +3031,8 @@
+   /** 角色 → 该铺的账号名。摄像机不在其中:旁观者不渲染,它没有身体可穿。 */
+   private skinAccounts(): Array<{ role: SkinRole; username: string }> {
+     return [
+-      { role: 'bot', username: this.cfg.username },
+-      { role: 'player', username: this.cfg.player.username },
++      { role: 'bot', username: this.chatName() },
++      { role: 'player', username: this.playerName() },
+     ];
+   }
+ 
+@@ -3126,8 +3138,8 @@
+     const seen = new Set<string>();
+     return [
+       { name: this.chatName(), role: 'bot' as const },
+-      { name: this.cfg.client.username, role: 'camera' as const },
+-      { name: this.cfg.player.username, role: 'player' as const },
++      { name: this.observerName(), role: 'camera' as const },
++      { name: this.playerName(), role: 'player' as const },
+     ].filter((x) => {
+       const name = x.name.trim();
+       if (!name || seen.has(name)) return false;
+@@ -3375,7 +3387,7 @@
+     // 摄像机说明是一整段措辞,所以它住在自己的可编辑片段里——代码只决定用不用,
+     // 措辞归人。前缀里不该有任何一句只存在于 .ts 里的话。
+     return {
+-      'minecraft.version': this.cfg.version,
++      'minecraft.version': this.bridge?.bot?.version ?? this.cfg.version,
+       'minecraft.world': worldEnvLine(this.worldIdentity()),
+       'minecraft.explored': this.explored.summary(normalizeDimension(this.bridge?.bot?.game?.dimension)),
+       // 上下文截断时读取当前非默认设置，同时注明被蓝图预留收口的垫脚料。
+@@ -3512,7 +3524,15 @@
+         },
+       ],
+       storage: this.storageParts(),
+-      links: viewerUrl ? [{ label: '打开画面', href: viewerUrl }] : [],
++      links: viewerUrl ? [
++        { label: this.bridge?.viewerKind === 'basic' ? '基础画面' : '第一人称', href: viewerUrl },
++        ...(this.bridge?.viewerKind === 'modern' ? [
++          { label: '第三人称', href: viewerUrl + '/third/' },
++          { label: '2.5D', href: viewerUrl + '/dungeon/' },
++          { label: 'OBS', href: viewerUrl + '/?obs=1' },
++          { label: 'OBS 布局', href: viewerUrl + '/?obs=1&obsEdit=1' },
++        ] : []),
++      ] : [],
+       config: [
+         MINECRAFT_CONFIG_GROUP,
+         MINECRAFT_RHYTHM_CONFIG_GROUP,
+@@ -3538,6 +3558,24 @@
+       return (fn as (...a: unknown[]) => unknown).apply(obj, args);
+     };
+     switch (panel) {
++      case 'connection': {
++        const launched = method === 'observer.start' ? this.client : method === 'player.start' ? this.playerClient : null;
++        if (launched) {
++          // Human OAuth can take minutes. A console RPC accepts the launch and
++          // polls its account/window state instead of timing out on the login.
++          void launched.start().catch(() => this.host?.log.warn('Client launch did not complete.'));
++          return { accepted: method };
++        }
++        if (method === 'observer.stop') return this.client.stop();
++        if (method === 'player.stop') return this.playerClient.stop();
++        if (method !== 'state') throw new Error('Unknown connection method');
++        return { server: { host: this.cfg.host, port: this.cfg.port, requestedVersion: this.cfg.version,
++          actualVersion: this.bridge?.bot?.version ?? null, username: this.bridge?.bot?.username ?? null },
++          viewer: { mode: this.bridge?.viewerKind ?? null, url: this.bridge?.viewerUrl ?? null },
++          accounts: Object.fromEntries(Object.entries(this.accountAuth).map(([lane, auth]) => [lane, auth.snapshot()])),
++          clients: { observer: (({command, ...state}) => state)(await this.client.state()),
++            player: (({command, ...state}) => state)(await this.playerClient.state()) } };
++      }
+       case 'mount': {
+         const dot = method.indexOf('.');
+         const lane = dot < 0 ? '' : method.slice(0, dot);
+@@ -4105,6 +4143,7 @@
+       port: this.cfg.port,
+       username: this.cfg.username || this.botName,
+       version: this.cfg.version,
++      authentication: this.accountAuth.agent,
+       loginConfigFile: () => this.cfg.loginConfigFile,
+       viewerPort: this.cfg.viewerPort,
+       viewerAssetsDir: this.cfg.viewerAssetsDir,
+@@ -4192,6 +4231,7 @@
+ 
+   async stop(): Promise<void> {
+     this.shuttingDown = true;
++    for (const auth of Object.values(this.accountAuth)) auth.stop();
+     this.combatProgram.close();
+     this.methods.stop('Minecraft World 已停止');
+     this.methodTerminals.clear();
+@@ -4536,6 +4576,9 @@
+     const focus = typeof args.focus === 'string' ? args.focus.replace(/\s+/g, ' ').trim().slice(0, 160) : '';
+     const bot = this.bridge?.bot;
+     const viewerUrl = this.bridge?.viewerUrl;
++    if (this.bridge?.viewerKind === 'basic') {
++      return { text: '[mc_visual 暂不可用] 当前使用基础画面，没有匹配的现代截图素材；请读取现场数据或安装匹配资源。', failed: true };
++    }
+     if (!bot?.entity || !viewerUrl) {
+       return { text: this.toolLog(name, args, '[mc_visual 暂不可用] 游戏或网页画面未连接；等画面恢复后再看'),
+         failed: true, endsTurn: true };
+@@ -6931,7 +6974,7 @@
+   private scheduleSpectateCheck(): void {
+     const t = setTimeout(() => {
+       if (!this.cfg.client.autoSpectate || !this.client.running) return;
+-      const cam = this.cfg.client.username;
++      const cam = this.observerName();
+       const bot = this.bridge?.bot as { players?: Record<string, { gamemode?: number }> } | null | undefined;
+       if (!cam || !bot) return;
+       const p = bot.players?.[cam];
+@@ -6961,7 +7004,7 @@
+    * 借 bot 的聊天权限(需要 op)。返回一句给控制台看的回执。
+    */
+   private teleportPlayer(reason: string): string {
+-    const who = this.cfg.player.username.trim();
++    const who = this.playerName().trim();
+     const target = this.chatName();
+     if (!who) return '没配玩家名,不知道要传谁';
+     if (who === target) return `玩家名与 bot 同名(${who}),传送不了`;
+@@ -7274,7 +7317,7 @@
+       }
+       // 人进服是她该知道的事(照报),同时也是把人挪到她旁边的那一刻——玩家列表
+       // 里出现比窗口出现晚、比世界加载完早,给它两秒再下 tp
+-      if (this.cfg.player.teleportToBot && player.username === this.cfg.player.username.trim()) {
++      if (this.cfg.player.teleportToBot && player.username === this.playerName().trim()) {
+         setTimeout(() => this.teleportPlayer('玩家进服'), 2_000);
+       }
+       this.emit('minecraft.enter', `[Minecraft] 玩家 ${player.username} 进入了服务器。`, true,
+@@ -7614,7 +7657,7 @@
+     const bot = this.bridge?.bot;
+     if (!bot?.entity || !this.host) return;
+     const viewerUrl = this.bridge?.viewerUrl;
+-    if (this.cfg.viewerAssetsDir && viewerUrl) {
++    if (this.cfg.viewerAssetsDir && viewerUrl && this.bridge?.viewerKind !== 'basic') {
+       const key = `${this.connectionGeneration}:${viewerUrl}`;
+       if (key !== this.visualWarmKey) {
+         this.visualWarmKey = key;
+@@ -8587,13 +8630,15 @@
+   }
+ 
+ 
++  private observerName(): string { return this.accountAuth.observer.snapshot().profile?.name ?? this.cfg.client.username; }
++  private playerName(): string { return this.accountAuth.player.snapshot().profile?.name ?? this.cfg.player.username; }
+   private chatName(): string {
+-    return this.cfg.username || this.botName;
++    return this.bridge?.bot?.username || this.cfg.username || this.botName;
+   }
+ 
+   /** 观察者客户端账号不计入在线玩家。 */
+   private isCamera(username: string): boolean {
+-    const cam = this.cfg.client.username;
++    const cam = this.observerName();
+     return Boolean(cam) && username === cam;
+   }
+ 
+--- a/modern-viewer.ts
++++ b/modern-viewer.ts
+@@ -27,6 +27,7 @@
+ import { observeViewerFishingCatch, viewerDroppedItem } from './viewer-fishing.ts';
+ import { viewerPageCss, viewerPageHtml } from './viewer-page-assets.ts';
+ import { serveViewerAsset } from './viewer-asset-server.ts';
++import { createViewerAgentBridge } from './viewer-agent.mjs';
+ import { createViewerContentBridge } from './viewer-content.mjs';
+ import { createViewerAppearanceBridge } from './viewer-appearance.mjs';
+ import { createViewerObserverBridge } from './viewer-observer.mjs';
+@@ -447,6 +448,7 @@
+   const speechRelay = new ViewerSpeechRelay(options.speechSourceId || bot.username);
+   const content = bot.version === '1.20.6' ? createViewerContentBridge(bot) : null;
+   const appearance = bot.version === '1.20.6' ? createViewerAppearanceBridge(bot) : null;
++  const agentVisuals = createViewerAgentBridge(bot);
+   // Container serialization is already supplied by this host; preserve its richer trade/property state.
+   const observer = bot.version === '1.20.6' ? createViewerObserverBridge(bot) : null;
+ 
+@@ -810,6 +812,7 @@
+       socket.disconnect(true); return;
+     }
+     const stopContent = content?.subscribeSocket(socket);
++    const stopAgentVisuals = agentVisuals.subscribeSocket(socket);
+     const stopAppearance = appearance?.subscribeSocket(socket);
+     const stopObserver = observer?.subscribeSocket(socket);
+     // WorldView owns chunks and block updates. Its stock entity packets omit villager
+@@ -1145,6 +1148,7 @@
+       if (!active) return;
+       active = false;
+       stopContent?.();
++      stopAgentVisuals();
+       stopAppearance?.();
+       stopObserver?.();
+       captureLease?.stop();
+@@ -1230,6 +1234,7 @@
+     });
+   } catch (error) {
+     content?.dispose();
++    agentVisuals.dispose();
+     appearance?.dispose();
+     observer?.dispose();
+     first.close(); third.close();
+@@ -1312,6 +1317,7 @@
+       if (closed) return;
+       closed = true;
+       content?.dispose();
++    agentVisuals.dispose();
+       appearance?.dispose();
+       observer?.dispose();
+       speechRelay.close();
