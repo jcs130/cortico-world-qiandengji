@@ -41,7 +41,7 @@
   },
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
-    "commit": "6cd94b034f3064b74771464b192046b6d537f6f0",
+    "commit": "2d769ee65bbe62a671a61a6c92e75d671be59298",
     "assetPack": "java-1.20.6",
     "preset": null
   }

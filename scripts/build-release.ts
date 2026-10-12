@@ -137,7 +137,7 @@ async function buildMonitor(viewerRoot: string): Promise<void> {
   await rm(target, { recursive: true, force: true });
   await mkdir(target, { recursive: true });
   const files = ['server.py', 'metrics.py', 'brain.py', 'connections.py', 'harness.py',
-    'test_server.py', 'test_metrics.py', 'test_brain.py', 'test_connections.py', 'test_harness.py',
+    'test_server.py', 'test_metrics.py', 'test_brain.py', 'test_connections.py', 'test_harness.py', 'test_engine_metadata.py',
     'overlay.config.example.json', 'README.md', 'BRAIN-METRICS.md', 'METRICS-CONTRACT.md', 'HARNESS-METRICS.md',
     'qa.mjs', 'start.ps1', ...((await readdir(join(source, 'public'))).map(file => `public/${file}`))];
   const hashes = [];
