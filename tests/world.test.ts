@@ -127,8 +127,8 @@ describe('Mymc World contract', () => {
     expect(facts.snapshotTypes).toEqual(['mymc.world.snapshot', 'mymc.task.queue']);
     expect(facts.text).toContain('mymc_queue');
     expect(facts.text).toContain('2026-01-01T00:00:00Z');
-    expect(facts.text).toContain('/mycli help');
-    expect(facts.text).toContain('/mycli spells list 1');
+    expect(facts.text).toContain('/mycli capabilities');
+    expect(facts.text).toContain('/mycli skills status');
     expect(facts.text).toContain('尚未核验分页目录是否完整');
     expect(observed).toEqual(before);
   });
@@ -149,7 +149,7 @@ describe('Mymc World contract', () => {
     const facts = world.requestFacts()!;
     expect(facts.parts?.find(part => part.key === 'queue')?.text).toBe('mymc_queue: 空闲');
     expect(facts.parts?.find(part => part.key === 'nearby')?.text).toBe('');
-    expect(facts.parts?.find(part => part.key === 'skillCatalog')?.text).toContain('/mycli help');
+    expect(facts.parts?.find(part => part.key === 'skillCatalog')?.text).toContain('/mycli capabilities');
     expect(facts.parts?.map(part => part.text).filter(Boolean).join('\n')).toBe(facts.text);
     expect(observed).toEqual(before);
   });
@@ -167,9 +167,9 @@ describe('Mymc World contract', () => {
       const world = new MymcWorld({ cfg, dataDir: dir }, fake.engine);
       const facts = world.requestFacts()!;
       expect(facts.text).toContain('当前饱食度20/20，常规口粮0个');
-      expect(facts.text).toContain('本次目录完整');
+      expect(facts.text).toContain('历史 MC_SPELL 目录完整');
       expect(facts.text).toContain('give:造物术');
-      expect(facts.text).toContain('/mycli help');
+      expect(facts.text).toContain('/mycli capabilities');
       expect(facts.text).not.toContain('详细配方只按需读取');
       const detail = await world.tools().find((tool) => tool.name === 'mymc_skills')!
         .handler({ id: 'give' }, { role: 'main', log: {} as never });
@@ -221,7 +221,7 @@ describe('Mymc World contract', () => {
     expect(tools[0].description).toContain('queue:"now"');
     expect((tools[0].parameters.properties as Record<string, { description: string }>).text.description).toBe('Use mymc_do');
     expect(await tools[0].handler({}, { role: 'main', log: {} as never })).toBe('[mymc_do] 已受理');
-    expect(await tools[2].handler({}, { role: 'main', log: {} as never })).toContain('尚未收到服务端技能目录');
+    expect(await tools[2].handler({}, { role: 'main', log: {} as never })).toContain('尚未收到历史 MC_SPELL 目录');
     const decl = world.console();
     expect(decl.panels?.map((panel) => panel.id)).toEqual(['mount', 'skin', 'log']);
     expect(decl.config?.every((group) => group.owner === 'world:mymc')).toBe(true);
@@ -230,8 +230,8 @@ describe('Mymc World contract', () => {
     const prompt = await renderWorldEnvPrompt(world);
     expect(prompt.text).toContain('mymc_guide');
     expect(prompt.text).toContain('mymc_help');
-    expect(prompt.text).toContain('/mycli help');
-    expect(prompt.text).toContain('/mycli spells list 1');
+    expect(prompt.text).toContain('/mycli capabilities');
+    expect(prompt.text).toContain('/mycli skills status');
     expect(prompt.text).toContain('不因中途位置变化反复 stop/do');
     expect(prompt.text).toContain('当前任务：任务#7 正在整理背包');
     expect(prompt.text).toContain('目标摘要：先清理奖励箱');

@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 
 export const MYMC_GUIDE_TOPICS = [
+  { id: 'cli', title: 'Agent CLI 0.4.31', description: '认证、能力发现、状态格式、分页生命周期与结果未知' },
   { id: 'world', title: '世界与自主探索', description: '世界设定、独自生活与活动选择' },
   { id: 'protection', title: '保护与权限', description: '村庄保护、采集拒绝与操作边界' },
   { id: 'travel', title: '传送与抵达', description: '归乡、村庄路标、实际高度与脱困' },
@@ -38,5 +39,5 @@ export function readServerGuide(topic?: unknown): { text: string; failed?: true 
   const entry = MYMC_GUIDE_TOPICS.find((candidate) => candidate.id === topic);
   if (!entry) return { failed: true, text: `玩法主题无效。省略 topic 查看索引，或使用以下主题：\n${serverGuideIndex()}` };
   const text = readFileSync(new URL(`./guides/${entry.id}.md`, import.meta.url), 'utf8').trim();
-  return { text: `# 千灯纪 · ${entry.title}\n\n资料包含已验证机制与操作建议；规则、位置和状态以当前服务端回执为准。\n\n${text}` };
+  return { text: `# 千灯纪 · ${entry.title}\n\n资料记录来源与操作建议；规则、位置和状态以当前服务端回执为准。\n\n${text}` };
 }

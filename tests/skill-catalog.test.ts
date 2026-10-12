@@ -27,11 +27,11 @@ describe('千灯纪结构化法术目录', () => {
         requires: '非旁观者', onFailure: '重复使用不扣魔力', scaling: '15/18/21 秒', tip: '寻找安全落点' };
       expect(catalog.observe(`[MC 系统] MC_SPELL_ITEM ${JSON.stringify(item)}`, '2026-10-03T10:00:00+08:00')).toBeNull();
       expect(catalog.readout()).toContain('flight 飞行术');
-      expect(catalog.readout('flight')).toContain('完整说明请发送');
+      expect(catalog.readout('flight')).toContain('/mycli capabilities info flight');
       expect(catalog.observe(`[MC 系统] MC_SPELL_DETAIL ${JSON.stringify(detail)}`, '2026-10-03T10:01:00+08:00')).toBeNull();
       const restored = new SkillCatalog('example.test:25565', dir);
       expect(restored.readout('flight')).toContain('15/18/21 秒');
-      expect(restored.readout('unknown')).toContain('/mycli spells explain unknown');
+      expect(restored.readout('unknown')).toContain('/mycli capabilities info unknown');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -42,7 +42,7 @@ describe('千灯纪结构化法术目录', () => {
     catalog.observe('[MC 系统] MC_SPELL_DETAIL {broken}', '2026-10-03T10:00:00+08:00');
     catalog.observe('[MC 系统] 魔力不足：需要 6。', '2026-10-03T10:00:01+08:00');
     catalog.observe('[MC 系统] ✦ 探矿术找到铁矿：X=1 Y=2 Z=3', '2026-10-03T10:00:02+08:00');
-    expect(catalog.readout()).toContain('尚未收到服务端技能目录');
+    expect(catalog.readout()).toContain('尚未收到历史 MC_SPELL 目录');
   });
 
   const stamp = '2026-01-01T00:00:00Z';
@@ -66,7 +66,7 @@ describe('千灯纪结构化法术目录', () => {
       send(catalog, 'DETAIL', { ...item('team'), name: '队友传送术',
         command: '/mycli locate tp <玩家名|nearest>', requires: '目标在线且非旁观者' });
       const restored = new SkillCatalog('example.test:25565', dir);
-      expect(restored.compactIndex()).toContain('2/2 页、3/3 项；本次目录完整');
+      expect(restored.compactIndex()).toContain('2/2 页、3/3 项；历史 MC_SPELL 目录完整');
       expect(restored.compactIndex()).toContain('team:队友传送术');
       expect(restored.readout('team')).toContain('/mycli locate tp <玩家名|nearest>');
       expect(restored.readout('team')).toContain('目标在线且非旁观者');
@@ -141,12 +141,13 @@ describe('千灯纪结构化法术目录', () => {
       send(catalog, 'DETAIL', { ...item('extra'), effect: '仅说明' });
       catalog = new SkillCatalog('example.test:25565', dir);
       expect(catalog.compactIndex()).toContain('1/2 页、1/3 项');
-      expect(catalog.compactIndex()).toContain('/mycli spells list 2');
+      expect(catalog.compactIndex()).toContain('按原始 MC_CLI_NEXT 续读，不猜页码');
+      expect(catalog.compactIndex()).not.toContain('/mycli spells list 2');
       send(catalog, 'LIST', { schemaVersion: 1, page: 2, pages: 2, total: 3 });
-      expect(catalog.compactIndex()).toContain('本次目录未完整');
+      expect(catalog.compactIndex()).toContain('历史 MC_SPELL 目录未完整');
       send(catalog, 'ITEM', item('two'));
       send(catalog, 'ITEM', item('three'));
-      expect(catalog.compactIndex()).toContain('本次目录完整');
+      expect(catalog.compactIndex()).toContain('历史 MC_SPELL 目录完整');
       expect(catalog.readout('extra')).toContain('尚未缓存');
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });

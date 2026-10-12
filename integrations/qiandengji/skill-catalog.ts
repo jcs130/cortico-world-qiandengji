@@ -33,7 +33,7 @@ interface DirectoryObservation {
   updatedAt: string;
 }
 
-export const SKILL_ENTRY = '千灯纪有技能系统。游戏命令入口 /mycli help；法术目录 /mycli spells list 1，按 MC_SPELL_NEXT 翻页；单项 /mycli spells explain <ID>，缓存用 mymc_skills。按服务端声明选择 mymc_cast 或 mymc_do 的 chat 步骤，不把其他命令改写成 cast。';
+export const SKILL_ENTRY = '千灯纪 Agent CLI 0.4.31：/mycli capabilities 发现能力，/mycli capabilities info <ID> 查参数与结果查询，/mycli skills status 查本人资格、魔力和冷却。完整认证及分页契约用 mymc_guide cli；mymc_skills 保存旧 MC_SPELL 观察，不证明本连接的当前可用能力。';
 
 function directoryHeader(value: unknown): { page: number; pages: number; total: number } | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -213,15 +213,10 @@ export class SkillCatalog {
     }
     const progress = this.directory
       ? `已收到 ${Object.keys(this.directory.pageItems).length}/${this.directory.pages} 页、`
-        + `${this.directoryIds().length}/${this.directory.total} 项；${this.directoryComplete() ? '本次目录完整' : '本次目录未完整'}`
+        + `${this.directoryIds().length}/${this.directory.total} 项；${this.directoryComplete() ? '历史 MC_SPELL 目录完整' : '历史 MC_SPELL 目录未完整'}`
       : '尚未核验分页目录是否完整';
-    let missingPage = 1;
-    if (this.directory) {
-      while (this.directory.pageItems[missingPage] !== undefined) missingPage++;
-      if (missingPage > this.directory.pages) missingPage = 1;
-    }
     return `${SKILL_ENTRY}\n[技能目录观察] ${progress}；缓存 ${this.spells.size} 项，最近 ${this.updatedAt || '尚无观测'}。`
-      + (!this.directoryComplete() ? `补查 /mycli spells list ${missingPage}。` : '')
+      + (!this.directoryComplete() ? '当前目录查询 /mycli capabilities；按原始 MC_CLI_NEXT 续读，不猜页码。' : '')
       + (groups.size ? '\n' + [...groups].map(([category, names]) => `${category}：${names.join('、')}`).join('\n') : '')
       + '\n目录说明可查询的技能；本人是否已学会、当前魔力及剩余冷却看实时状态，效果与前提按单项说明读取。';
   }
@@ -261,18 +256,18 @@ export class SkillCatalog {
   readout(id?: string): string {
     if (id) {
       const record = this.spells.get(id.trim().toLowerCase());
-      if (!record) return `[千灯纪法术] 尚未缓存 ${id}。发送 /mycli spells explain ${id} 后再读；以服务端当次回执为准。`;
-      return `[千灯纪法术] ${record.item.name} (${record.item.id})，简表观测 ${record.observedAt ?? this.updatedAt}。\n`
+      if (!record) return `[千灯纪法术] 尚未缓存 ${id}。用 /mycli capabilities 查当前 ID，再用 /mycli capabilities info ${id} 查询；以服务端当次回执为准。`;
+      return `[千灯纪法术历史] ${record.item.name} (${record.item.id})，简表观测 ${record.observedAt ?? this.updatedAt}；重连后需重新核验。\n`
         + (record.detail
           ? `说明观测 ${record.detailAt ?? this.updatedAt}\nMC_SPELL_DETAIL ${JSON.stringify(record.detail)}`
-          : `MC_SPELL_ITEM ${JSON.stringify(record.item)}\n完整说明请发送 /mycli spells explain ${record.item.id}。`);
+          : `MC_SPELL_ITEM ${JSON.stringify(record.item)}\n当前说明查询 /mycli capabilities info ${record.item.id}。`);
     }
     if (this.spells.size === 0 && this.entries.size === 0) {
-      return '[千灯纪技能] 尚未收到服务端技能目录。可发送 /mycli spells list 1，再按 MC_SPELL_NEXT 翻页；单项说明用 /mycli spells explain <ID>。';
+      return `[千灯纪技能] 尚未收到历史 MC_SPELL 目录。${SKILL_ENTRY}`;
     }
     const spellLines = [...this.spells.values()].map(({ item }) =>
       `${item.id} ${item.name} [${item.category}] 魔力${item.mana} 冷却${item.cooldownMs}ms ${item.command}`);
-    return `[千灯纪技能] 服务端 ${this.server}。\n${this.compactIndex()}\n单项完整说明用 mymc_skills {"id":"..."} 或 /mycli spells explain <ID>。\n`
+    return `[千灯纪技能历史] 服务端 ${this.server}。\n${this.compactIndex()}\n历史说明用 mymc_skills {"id":"..."}；当前说明用 /mycli capabilities info <ID>。\n`
       + [...spellLines, ...this.entries.values()].join('\n');
   }
 

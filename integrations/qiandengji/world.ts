@@ -96,7 +96,7 @@ export const MYMC_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [...MINE
 })), {
   name: 'mymc_skills',
   tags: ['read'],
-  description: 'Read the latest observed Qiandengji spell directory. Pass id for a cached full MC_SPELL_DETAIL; use /mycli spells list and /mycli spells explain <ID> to refresh server facts. Current mana and remaining cooldown come from mcagent:state.',
+  description: 'Read historically observed Qiandengji MC_SPELL entries. Pass id for a cached full detail. The current CLI uses /mycli capabilities, /mycli capabilities info <ID> and /mycli skills status; read mymc_guide cli for authentication and pagination. Old cached commands and unknown cooldowns do not establish current availability.',
   parameters: { type: 'object', properties: { id: { type: 'string', description: 'Optional stable spell ID, e.g. flight or frostnova.' } }, required: [] },
 }, {
   name: 'mymc_guide',
