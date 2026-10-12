@@ -8,17 +8,10 @@ The tool prefix avoids Cortico's built-in Minecraft tools. Original execution
 receipts retain their `mc_*` names; those names map to `agentmc_*` in this adapter.
 The independent SDK/MCP continues to expose `mc_*`.
 
-Install **cortico-world-minecraft-agent** from Cortico's Extensions page, or:
-
-```sh
-cd extensions
-corepack pnpm add --ignore-workspace cortico-world-minecraft-agent
-```
-
-Restart Cortico to load the installed version. Configure your server address,
-account and protocol version, then enable this World. Disable other Worlds using
-the same Minecraft connection first. This package does not modify the framework's
-built-in Minecraft example.
+This is a private developer assembly example and is not published as a second World.
+Cortico users install **cortico-world-qiandengji**, displayed as 联机版我的世界.
+Independent hosts use **agent-mc-world** through SDK/MCP; developers may import
+`agent-mc-world/adapters/cortico` to assemble their own host integration.
 
 The core is a regular dependency and is installed automatically. Cortico is
 provided by the host; its optional peer declaration does not install another host.

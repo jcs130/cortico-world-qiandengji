@@ -14,7 +14,7 @@
 
 ## 可选装配
 
-Cortico 用户安装 `cortico-world-minecraft-agent`，千灯纪用户安装 `cortico-world-qiandengji`。两者自动安装精确版本的 `agent-mc-world`；Cortico 由宿主提供，声明可选 peer。两包都采用 API 5、`cortico-world` 搜索关键字、默认 WorldDefinition 和独立控制台产物。核心没有 World manifest，也不进入插件搜索结果。
+Cortico 用户只安装 `cortico-world-qiandengji`，界面显示“联机版我的世界”，自动安装精确版本的 `agent-mc-world` 核心依赖。Cortico 由宿主提供，声明可选 peer。插件采用 API 5、`cortico-world` 搜索关键字、默认 WorldDefinition 和独立控制台产物。核心没有 World manifest，不会显示成第二个 World。`adapters/cortico` 保留为开发者装配示例，标记 private，不单独发布到 npm。
 
 执行 `node scripts/build-extensions.mjs` 生成两种插件。通用插件配置为 `worlds.mc.*`，千灯纪保留 `worlds.mymc.*`。两者共享互斥资源名，不能同时使用同一账号。服务器插件只依赖公开的 `agent-mc-world/extension` 端口，不读取邻接核心源码。必须用实际 `.tgz` 的生产安装目录运行 Cortico `check:extension`，不能只检查仓库目录。
 
@@ -22,6 +22,6 @@ Cortico 用户安装 `cortico-world-minecraft-agent`，千灯纪用户安装 `co
 
 ## 发布与上线门槛
 
-源码、构建、离线验收、提交、发布、部署与实际游玩分别记录。对发布副本依次执行完整测试、类型检查、三个包的 `npm pack`、包级离线安装与 API 5 检查，再发布核心和两个插件。插件固定同次核心版本，因此先发布核心；npm 认证失败时保留制品与校验值，不能记作发布成功。
+源码、构建、离线验收、提交、发布、部署与实际游玩分别记录。对发布副本依次执行完整测试、类型检查、核心与一个 World 的 `npm pack`、包级离线安装与 API 5 检查，再发布核心和这个插件。插件固定同次核心版本，因此先发布核心；npm 认证失败时保留制品与校验值，不能记作发布成功。
 
 0.4.0 的部署记录见 `docs/release-0.4.0.md`。原始停止期间的离线验收记录保留为历史证据。实服效果与用户后续批准的启动验证单独记录。
