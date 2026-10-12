@@ -18,11 +18,11 @@ const PORTS: Record<string, readonly Port[]> = {
   ascending_north: [S, { ...N, rise: 1 }], ascending_south: [N, { ...S, rise: 1 }],
   south_east: [S, E], south_west: [S, W], north_west: [N, W], north_east: [N, E],
 };
-export const RAILWAY_LIMITS = { cells: 4096, axis: 128, rails: 256, examples: 24, text: 24_000 } as const;
+export const RAILWAY_LIMITS = { cells: 4096, axis: 128, rails: 256, examples: 24, summaryExamples: 6, text: 7_500 } as const;
 
 export const RAILWAY_TOOL_DECL = {
   name: 'mc_railway', tags: ['read'] as const,
-  description: 'Read rail shapes and height-compatible reciprocal connections in an absolute inclusive bounds box of the currently loaded world. No movement, queue changes, redstone activation or building. At most 4096 cells, 128 per axis and 256 rails. Optional start/end rail cells test connectivity within this sample and return the path. Counts and adjacency alone never certify connection; unobserved continuations remain unknown. powered=false is a current reading, not proof of a failed circuit. detail adds compact rail/edge and nearby collision data. This is static topology, not a passenger clearance, launch or round-trip test. Use mc_guide railway for interpretation and design.',
+  description: 'Read rail shapes and height-compatible reciprocal connections in an absolute inclusive bounds box of the currently loaded world. No movement, queue changes, redstone activation or building. At most 4096 cells, 128 per axis and 256 rails. Optional start/end rail cells test connectivity within this sample and return the complete path. The default summary bounds examples and reports omitted counts; narrow bounds to inspect another section. Counts and adjacency alone never certify connection; unobserved continuations remain unknown. powered=false is a current reading, not proof of a failed circuit. detail adds rail/edge and nearby collision data; oversized detail fails with instructions to narrow bounds. This is static topology, not a passenger clearance, launch or round-trip test. Use mc_guide railway for interpretation and design.',
   parameters: { type: 'object', additionalProperties: false, properties: {
     bounds: { type: 'array', minItems: 6, maxItems: 6, items: { type: 'integer' }, description: 'Absolute [xmin,ymin,zmin,xmax,ymax,zmax], inclusive. Read only the corridor needed; unloaded cells are unknown.' },
     start: { type: 'array', minItems: 3, maxItems: 3, items: { type: 'integer' }, description: 'Optional start rail cell inside bounds; requires end.' },
@@ -176,8 +176,25 @@ export function railwayReadout(bot: Bot | null, args: Record<string, unknown>) {
   try {
     if (!bot?.entity) throw new Error('Minecraft 尚未连接，未读取铁路');
     const result = observeRailway(at => bot.blockAt(new Vec3(...at), false), args, bot.game?.dimension ?? null);
-    const text = JSON.stringify(result);
-    if (text.length > RAILWAY_LIMITS.text) throw new Error('铁路回执过大；缩小 bounds，未返回截断数据');
-    return { text: `[mc_railway] ${text}` };
+    const prefix = '[mc_railway] ';
+    if (args.detail) {
+      const text = prefix + JSON.stringify(result);
+      if (text.length > RAILWAY_LIMITS.text) throw new Error('铁路明细超过回执上限；缩小 bounds 后重查，或用 detail:false 先读连通性摘要。本次未返回截断明细');
+      return { text };
+    }
+    let shown = RAILWAY_LIMITS.summaryExamples as number;
+    for (;;) {
+      const summary = { ...result,
+        components: result.components.slice(0, shown), componentsOmitted: Math.max(0, result.components.length - shown),
+        openPorts: result.openPorts.slice(0, shown), openPortsOmitted: result.openPortCount - Math.min(shown, result.openPorts.length),
+        power: { ...result.power, unpoweredExamples: result.power.unpoweredExamples.slice(0, shown),
+          unpoweredExamplesOmitted: result.power.unpoweredNow - Math.min(shown, result.power.unpoweredExamples.length) },
+        readHint: 'Counts and the requested route path are complete within bounds. Listed components/ports/power cells are bounded examples; narrow bounds or request detail:true for a specific section.',
+      };
+      const text = prefix + JSON.stringify(summary);
+      if (text.length <= RAILWAY_LIMITS.text) return { text };
+      if (shown === 0) throw new Error('铁路路径超过回执上限；缩小 bounds 与 start/end 分段读取。本次未返回截断路径');
+      shown = Math.floor(shown / 2);
+    }
   } catch (error) { return { text: `[mc_railway 失败] ${String(error)}`, failed: true as const }; }
 }

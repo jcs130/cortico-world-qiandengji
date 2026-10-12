@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import { Vec3 } from 'vec3';
-import { observeRailway, railwayReadout } from '../src/railway.ts';
+import { observeRailway, railwayReadout, RAILWAY_LIMITS } from '../src/railway.ts';
 import { MYMC_TOOL_DECLS, MymcWorld } from '../src/world.ts';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 import { readServerGuide } from '../src/server-guide.ts';
@@ -106,5 +106,32 @@ describe('loaded rail topology, independent of body actions', () => {
     expect(readServerGuide('railway').text).toContain('维护人员提供');
     const bot = { entity: {}, game: { dimension: 'overworld' }, blockAt: (at: Vec3) => scene().read([at.x, at.y, at.z]) };
     expect(railwayReadout(bot as never, { bounds }).text).toContain('client-loaded-world');
+  });
+  it('bounds a fragmented summary and preserves complete counts and route evidence', () => {
+    const s = scene(), box = [0, 63, 0, 127, 66, 7];
+    for (let x = 0; x < 128; x++) {
+      s.set([x, 64, 0], 'rail', { shape: 'east_west' });
+      s.set([x, 64, 4], 'rail', { shape: 'north_south' });
+    }
+    const bot = { entity: {}, game: { dimension: 'overworld' }, blockAt: (at: Vec3) => s.read([at.x, at.y, at.z]) };
+    const args = { bounds: box, start: [0, 64, 0], end: [127, 64, 0] };
+    const out = railwayReadout(bot as never, args);
+    expect('failed' in out).toBe(false);
+    expect(out.text.length).toBeLessThanOrEqual(RAILWAY_LIMITS.text);
+    const summary = JSON.parse(out.text.slice('[mc_railway] '.length));
+    expect(summary).toMatchObject({ railCount: 256, componentCount: 129, unknownCells: 0,
+      route: { status: 'connected_in_sample', start: args.start, end: args.end } });
+    expect(summary.route.path).toHaveLength(128);
+    expect(summary.route.path.at(-1)).toEqual(args.end);
+    expect(summary.components.length + summary.componentsOmitted).toBe(summary.componentCount);
+    expect(summary.openPorts.length + summary.openPortsOmitted).toBe(summary.openPortCount);
+    expect(summary.readHint).toContain('bounded examples');
+    const detail = railwayReadout(bot as never, { ...args, detail: true });
+    expect('failed' in detail && detail.failed).toBe(true);
+    expect(detail.text).toContain('detail:false');
+    expect(detail.text).not.toContain('"rails":');
+    const section = railwayReadout(bot as never, { bounds: [0, 63, 0, 3, 66, 5], detail: true });
+    expect('failed' in section).toBe(false);
+    expect(JSON.parse(section.text.slice('[mc_railway] '.length)).rails.length).toBeGreaterThan(0);
   });
 });

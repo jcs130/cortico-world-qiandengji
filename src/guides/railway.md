@@ -27,7 +27,8 @@
 - `components` 是当前 shape/高度真正互接的连通分量；`route.path` 是本次样本内的端口路径，轨道数量达标不能替代它。
 - 判断这次指定的起终点，读 `route.status/path`；其他分量可能是另一股道或施工余段，不会撤销已经测得的这条连接。不要只因 `componentCount>1` 就拆改一条已连通的路径；它也不证明整个目标线路已完工。
 - `connected_in_sample` 仅证明样本内存在静态连接；`not_connected_in_sample` 表示没测到这样的路径；`unknown` 表示缺少端口/已加载区域等证据，不能宣称全局不可达。
-- `openPorts` 逐一给出朝向、接合高度、相邻实际方块或朝向不匹配；终点开口可能是有意设计。看 `openPortsOmitted`，示例不等于完整列表；需要时缩小到那个接头。
+- 默认摘要保留完整计数与指定路径，但只列有限示例；看 `componentsOmitted`、`openPortsOmitted` 和 `unpoweredExamplesOmitted`，示例不等于完整列表。回执最多 7500 字符，`detail:true` 超限会要求缩小范围，不返回截断明细。
+- `openPorts` 给出示例接头的朝向、接合高度、相邻实际方块或朝向不匹配；终点开口可能是有意设计。需要时缩小到那个接头。
 - detail 的 `rails` 每行为 `[x,y,z,palette,component]`，palette 索引 `railPalette`；`edges` 的数字是 rails 数组的零起下标。它们可交给你自己的程序分析、做示意图和比较修订。
 - `collisionExamples` 是支撑/头顶的碰撞读数，不是完整乘客扫掠体检查。弯道侧面、斜坡高端、隧道顶部、站台边缘还要查 vision 的体素/射线并实乘。未加载和盒外保持未知。
 
