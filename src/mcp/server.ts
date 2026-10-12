@@ -2,19 +2,19 @@ import { Ajv } from 'ajv';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ListResourcesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema,
   type CallToolResult, type Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { BlobRef, ToolOutcome } from '../host-contract.ts';
-import type { MymcAgentRuntime } from '../agent/runtime.ts';
-import { traceSchema } from '../agent/metrics.ts';
+import type { BlobRef, ToolOutcome } from '../client/contracts.ts';
+import type { MinecraftAgentClient } from '../client/runtime.ts';
+import { traceSchema } from '../client/metrics.ts';
 
-const connection: Tool = {
-  name: 'mymc_connection', description: 'Connect, inspect or disconnect this Agent\'s Minecraft runtime. '
+const connectionSpec: Tool = {
+  name: 'mc_connection', description: 'Connect, inspect or disconnect this Agent\'s Minecraft runtime. '
     + 'Connecting starts the engine; check status lamps and actual game events for authentication and connection. '
     + 'Tool discovery does not connect. A disconnect stops this runtime\'s actions.',
   inputSchema: { type: 'object', properties: { action: { type: 'string', enum: ['connect', 'status', 'disconnect', 'environment'] } },
     required: ['action'], additionalProperties: false },
 };
-const events: Tool = {
-  name: 'mymc_events', description: 'Read bounded Minecraft events after a cursor: chat, announcements, task completion, '
+const eventsSpec: Tool = {
+  name: 'mc_events', description: 'Read bounded Minecraft events after a cursor: chat, announcements, task completion, '
     + 'damage and observed state. Poll while an accepted action is running; acceptance alone is not completion. '
     + 'Use the returned run and nextCursor on the next read. A gap means some events have left the recent buffer. '
     + 'Archived events are excluded unless explicitly requested. Reading does not prove the Agent has acted on a message.',
@@ -24,27 +24,31 @@ const events: Tool = {
     waitMs: { type: 'integer', minimum: 0, maximum: 30000 }, includeArchived: { type: 'boolean' },
   }, additionalProperties: false }, annotations: { readOnlyHint: true },
 };
-const artifact: Tool = {
-  name: 'mymc_artifact', description: 'Put a UTF-8 execution artifact or read a receipt by its log: handle. '
-    + 'An explicitly selected procedure artifact can be passed to mymc_script; its schema, revision and dependencies '
+const artifactSpec: Tool = {
+  name: 'mc_artifact', description: 'Put a UTF-8 execution artifact or read a receipt by its log: handle. '
+    + 'An explicitly selected procedure artifact can be passed to mc_script; its schema, revision and dependencies '
     + 'are checked by the existing executor. This stores execution data, without creating or adopting Agent memories.',
   inputSchema: { type: 'object', properties: {
     action: { type: 'string', enum: ['put', 'get'] }, handle: { type: 'string' },
     text: { type: 'string', maxLength: 64000 }, mime: { type: 'string', enum: ['application/json', 'text/plain'] },
   }, required: ['action'], additionalProperties: false },
 };
-const metrics: Tool = { name: 'mymc_metrics', description: 'Read runtime-measured tool return latency and explicitly host-reported model/method metadata. Tool returns are not game task completion. No intelligence score or verified learning is inferred.',
+const metricsSpec: Tool = { name: 'mc_metrics', description: 'Read runtime-measured tool return latency and explicitly host-reported model/method metadata. Tool returns are not game task completion. No intelligence score or verified learning is inferred.',
   inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true } };
-const trace: Tool = { name: 'mymc_trace', description: 'Optional HOST instrumentation: report measured model request metadata or an attributed method lifecycle event linked to saved artifacts. Do not invent token counts, timings, authorship or improvement. Stores metadata, not Agent memory. Each transport attempt uses a unique id.',
+const traceSpec: Tool = { name: 'mc_trace', description: 'Optional HOST instrumentation: report measured model request metadata or an attributed method lifecycle event linked to saved artifacts. Do not invent token counts, timings, authorship or improvement. Stores metadata, not Agent memory. Each transport attempt uses a unique id.',
   inputSchema: traceSchema as Tool['inputSchema'] };
 
-export function createMymcMcpServer(runtime: MymcAgentRuntime, version: string): Server {
-  const server = new Server({ name: 'qiandengji-minecraft', version }, {
+export function createMinecraftMcpServer(runtime: MinecraftAgentClient, version: string): Server {
+  const prefix = runtime.toolPrefix;
+  const translate = (text: string) => text.replaceAll('mc_', prefix + '_');
+  const [connection, events, artifact, metrics, trace] = [connectionSpec, eventsSpec, artifactSpec, metricsSpec, traceSpec]
+    .map(tool => ({ ...tool, name: translate(tool.name), description: translate(tool.description ?? '') }));
+  const server = new Server({ name: `minecraft-agent-${runtime.profile}`, version }, {
     capabilities: { tools: {}, resources: {} },
-    instructions: 'This server supplies Minecraft observation and execution. You own goals, memory, reasoning and wakeups. '
-      + 'Read mymc_connection action:environment, connect explicitly, and consume mymc_events while tasks execute. '
-      + 'Use mymc_guide and mymc_script api:index for progressive tool and native Mineflayer documentation. '
-      + 'Keep measured world facts and actual execution receipts separate from hypotheses and goal-success judgments.',
+    instructions: translate('This server supplies Minecraft observation and execution. You own goals, memory, reasoning and wakeups. '
+      + 'Read mc_connection action:environment, connect explicitly, and consume mc_events while tasks execute. '
+      + 'Use mc_help and mc_script api:index for progressive tool and native Mineflayer documentation. '
+      + 'Keep measured world facts and actual execution receipts separate from hypotheses and goal-success judgments.'),
   });
   const tools: Tool[] = [connection, events, artifact, metrics, trace, ...runtime.tools().map(tool => ({
     name: tool.name, description: tool.description, inputSchema: tool.parameters as Tool['inputSchema'],
@@ -57,7 +61,7 @@ export function createMymcMcpServer(runtime: MymcAgentRuntime, version: string):
     const saved = runtime.journal.blob(ref.handle);
     if (saved && saved.mime.startsWith('image/')) return [{ type: 'image' as const,
       mimeType: saved.mime, data: Buffer.from(saved.bytes).toString('base64') }];
-    return [{ type: 'resource_link' as const, uri: `mymc-artifact://${ref.handle.slice(4)}`,
+    return [{ type: 'resource_link' as const, uri: `${prefix}-artifact://${ref.handle.slice(4)}`,
       name: ref.name ?? ref.handle, mimeType: ref.mime, description: ref.fallbackText }];
   });
   const outcome = (result: ToolOutcome): CallToolResult => ({
@@ -123,18 +127,21 @@ export function createMymcMcpServer(runtime: MymcAgentRuntime, version: string):
   });
 
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({ resources: [{
-    uri: 'mymc://environment', name: 'Minecraft environment and tool guide index', mimeType: 'text/plain',
-  }, { uri: 'mymc://status', name: 'Game runtime status', mimeType: 'application/json' },
-  { uri: 'mymc://metrics', name: 'Harness metadata with source and coverage', mimeType: 'application/json' }] }));
+    uri: `${prefix}://environment`, name: 'Minecraft environment and tool guide index', mimeType: 'text/plain',
+  }, { uri: `${prefix}://status`, name: 'Game runtime status', mimeType: 'application/json' },
+  { uri: `${prefix}://metrics`, name: 'Harness metadata with source and coverage', mimeType: 'application/json' }] }));
   server.setRequestHandler(ReadResourceRequestSchema, async request => {
     const uri = request.params.uri;
-    if (uri === 'mymc://environment') return { contents: [{ uri, mimeType: 'text/plain', text: await runtime.environment() }] };
-    if (uri === 'mymc://status') return { contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(runtime.status()) }] };
-    if (uri === 'mymc://metrics') return { contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(runtime.metrics.snapshot(runtime.status().phase)) }] };
-    const match = /^mymc-artifact:\/\/([a-f0-9]{64})$/.exec(uri);
+    if (uri === `${prefix}://environment`) return { contents: [{ uri, mimeType: 'text/plain', text: await runtime.environment() }] };
+    if (uri === `${prefix}://status`) return { contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(runtime.status()) }] };
+    if (uri === `${prefix}://metrics`) return { contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(runtime.metrics.snapshot(runtime.status().phase)) }] };
+    const match = new RegExp(`^${prefix}-artifact://([a-f0-9]{64})$`).exec(uri);
     const saved = match && runtime.journal.blob(`log:${match[1]}`);
     if (!saved) throw new Error('Resource unavailable.');
     return { contents: [{ uri, mimeType: saved.mime, blob: Buffer.from(saved.bytes).toString('base64') }] };
   });
   return server;
 }
+
+/** Existing integrations retain this public import. */
+export const createMymcMcpServer = createMinecraftMcpServer;

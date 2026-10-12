@@ -1,1 +1,1 @@
-export { MYMC } from './adapters/cortico.ts';
+export { MC } from './adapters/minecraft.ts';

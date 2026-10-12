@@ -1,0 +1,46 @@
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
+import { join } from 'node:path';
+import { expect, it } from 'vitest';
+
+it('type-checks the standalone SDK with all Cortico module resolution forbidden', () => {
+  const options: ts.CompilerOptions = { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
+    moduleResolution: ts.ModuleResolutionKind.Bundler, strict: true, noEmit: true,
+    allowImportingTsExtensions: true, esModuleInterop: true, skipLibCheck: true, types: ['node'] };
+  const host = ts.createCompilerHost(options), forbidden: string[] = [];
+  host.resolveModuleNames = (names, containingFile) => names.map(name => {
+    if (name === 'cortico' || name.startsWith('cortico/')) { forbidden.push(name); return undefined; }
+    return ts.resolveModuleName(name, containingFile, options, host).resolvedModule;
+  });
+  const entry = fileURLToPath(new URL('../src/client/index.ts', import.meta.url));
+  const program = ts.createProgram([entry], options, host);
+  const errors = ts.getPreEmitDiagnostics(program).filter(d => d.category === ts.DiagnosticCategory.Error);
+  expect(forbidden).toEqual([]);
+  expect(errors.map(d => `${d.file?.fileName}:${d.start} ${ts.flattenDiagnosticMessageText(d.messageText, '\n')}`)).toEqual([]);
+}, 30000);
+
+it('consumes the published declaration graph without resolving Cortico or private engine implementation', () => {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const entry = join(root, 'tests', 'sdk-declaration-consumer.ts');
+  const source = `import { MinecraftAgentClient, MINECRAFT_CLIENT_DEFAULTS, nullLogger,
+    type ToolOutcome, type EventEnvelope } from '../dist/types/src/client/index.js';
+    const client = new MinecraftAgentClient({ cfg: MINECRAFT_CLIENT_DEFAULTS, dataDir:'./data', log:nullLogger() });
+    const result: Promise<ToolOutcome> = client.call('mc_script', {api:'index'});
+    const events: EventEnvelope[] = client.journal.read(0, 8).events;
+    void result; void events;`;
+  const options: ts.CompilerOptions = { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
+    moduleResolution: ts.ModuleResolutionKind.Bundler, strict: true, noEmit: true,
+    allowImportingTsExtensions: true, esModuleInterop: true, skipLibCheck: true, types: ['node'] };
+  const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host), forbidden: string[] = [];
+  host.getSourceFile = (file, language, error, fresh) => file.replaceAll('\\', '/') === entry.replaceAll('\\', '/')
+    ? ts.createSourceFile(file, source, language) : original(file, language, error, fresh);
+  host.resolveModuleNames = (names, containingFile) => names.map(name => {
+    if (name === 'cortico' || name.startsWith('cortico/')) { forbidden.push(name); return undefined; }
+    return ts.resolveModuleName(name, containingFile, options, host).resolvedModule;
+  });
+  const program = ts.createProgram([entry], options, host);
+  expect(forbidden).toEqual([]);
+  expect(ts.getPreEmitDiagnostics(program).filter(d => d.category === ts.DiagnosticCategory.Error)
+    .map(d => ts.flattenDiagnosticMessageText(d.messageText, '\n'))).toEqual([]);
+  expect(program.getSourceFiles().some(file => /\/engine\/world\.ts$/.test(file.fileName))).toBe(false);
+});

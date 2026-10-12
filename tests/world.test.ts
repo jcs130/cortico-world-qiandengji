@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { EventEnvelope, WorldConsoleDecl, WorldHost } from 'cortico/core/types.ts';
 import { renderWorldEnvPrompt } from 'cortico/core/prefix.ts';
-import { MYMC } from '../src/definition.ts';
+import { MYMC } from '../integrations/qiandengji/cortico.ts';
 import { MYMC_CONFIG_GROUP, MYMC_DEFAULTS } from '../src/config.ts';
 import { assertMymcReady } from '../src/guard.ts';
 import { MYMC_TOOL_DECLS, MymcWorld } from '../src/world.ts';

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import type { CoreConfig } from 'cortico/core/types.ts';
 import { CORE_DEFAULTS } from 'cortico/core/config.ts';
 import { loadDeployment } from 'cortico/deploy.ts';
-import { MYMC } from '../src/definition.ts';
+import { MYMC } from '../integrations/qiandengji/cortico.ts';
 import { MYMC_RHYTHM_CONFIG_GROUP, type MymcConfigSection } from '../src/config.ts';
 
 describe('Qiandengji repeat-success configuration', () => {

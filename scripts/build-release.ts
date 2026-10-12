@@ -8,7 +8,7 @@ import { buildHostRuntime } from './build-host-runtime.ts';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sources = JSON.parse(await readFile(join(root, 'release-sources.json'), 'utf8')) as {
   cortico: { repository: string; commit: string; patches?: string[] };
-  viewer: { repository: string; commit: string; assetPack: string; preset: string };
+  viewer: { repository: string; commit: string; assetPack: string; preset: string | null };
 };
 
 function sourceRoot(variable: string, fallback: string, expected: string): string {
@@ -48,7 +48,7 @@ async function buildEngine(): Promise<void> {
     await writeFile(target, rewritten);
   }
   await mkdir(join(engineRoot, 'support'), { recursive: true });
-  await cp(join(root, 'src/host-contract.ts'), join(engineRoot, 'support/host-contract.ts'));
+  await cp(join(root, 'src/client/contracts.ts'), join(engineRoot, 'support/host-contract.ts'));
   await cp(join(coreRoot, 'src/protocol/typed-decision.ts'), join(engineRoot, 'support/typed-decision.ts'));
   const consoleRoot = join(engineRoot, 'console');
   for (const file of await readdir(consoleRoot)) {
@@ -66,7 +66,7 @@ async function buildEngine(): Promise<void> {
     patches.push({ file, sha256: createHash('sha256').update(patch).digest('hex') });
   }
   await buildHostRuntime(root, coreRoot);
-  const hostRuntime = await Promise.all(['runtime.mjs', 'runtime.d.mts', 'child-process.ts'].map(async file => ({
+  const hostRuntime = await Promise.all(['runtime.mjs', 'runtime.d.mts', 'child-process.ts', 'host-contract.ts'].map(async file => ({
     file, sha256: createHash('sha256').update(await readFile(join(engineRoot, 'support', file))).digest('hex'),
   })));
   const viewerFiles = [];
@@ -88,7 +88,7 @@ async function buildEngine(): Promise<void> {
 async function buildViewer(): Promise<void> {
   const viewerRoot = sourceRoot('MC_VISUAL_CONSOLE_DIR', 'viewer', sources.viewer.commit);
   const preparer = await import(pathToFileURL(join(viewerRoot, 'tools/prepare-viewer-assets.mjs')).href) as {
-    prepareAssetPack: (options: { id: string; outputDirectory: string; preset: string }) => Promise<unknown>;
+    prepareAssetPack: (options: { id: string; outputDirectory: string; preset: string | null }) => Promise<unknown>;
   };
   const outputDirectory = join(root, 'dist/viewer');
   await preparer.prepareAssetPack({ id: sources.viewer.assetPack, outputDirectory, preset: sources.viewer.preset });

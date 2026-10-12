@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { dryMountWorld } from 'cortico/extensions/dry-mount.ts';
 import worldDefinition from '../src/index.ts';
+import { MINECRAFT_CLIENT_DEFAULTS, assertMinecraftReady } from '../src/client/config.ts';
 import { MYMC_DEFAULTS, mymcEngineConfig } from '../src/config.ts';
 import { assertMymcReady } from '../src/guard.ts';
 
@@ -17,12 +18,13 @@ describe('installable World', () => {
     expect(report.failures).toEqual([]);
   });
   it('constructs without connecting and observes the configured server and port', async () => {
-    const cfg = { ...structuredClone(MYMC_DEFAULTS), host: 'example.test', port: 25577, username: 'visitor' };
-    assertMymcReady(cfg);
+    const cfg = { ...structuredClone(MINECRAFT_CLIENT_DEFAULTS), host: 'example.test', port: 25577, username: 'visitor' };
+    assertMinecraftReady(cfg);
     const world = worldDefinition.create({ cfg, timezone: 'UTC', dataDir: '', botName: 'test' } as never);
-    expect(world.id).toBe('mymc');
-    expect((await world.envPromptVars())?.['mymc.world']).toContain('example.test:25577');
-    expect(world.tools().map(tool => tool.name)).toEqual(expect.arrayContaining(['mymc_do', 'mymc_cast', 'mymc_scout', 'mymc_script']));
+    expect(world.id).toBe('mc');
+    expect((await world.envPromptVars())?.['minecraft.world']).toContain('example.test:25577');
+    expect(world.tools().map(tool => tool.name)).toEqual(expect.arrayContaining(['mc_do', 'mc_scout', 'mc_script']));
+    expect(world.tools().some(tool => tool.name === 'mymc_skills' || tool.name === 'mc_cast')).toBe(false);
   });
 
   it.each([0, 65536, 1.5])('rejects invalid server port %s before connecting', port => {

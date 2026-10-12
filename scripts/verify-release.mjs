@@ -9,10 +9,19 @@ const sources = await json('release-sources.json');
 const engine = await json('engine/source.json');
 const viewer = await json('dist/viewer/source.json');
 const assets = await json('dist/viewer/viewer-assets.json');
+const declarations = await json('dist/types/manifest.json');
+if (declarations.schema !== 'agent-mc-world-types/v1' || !declarations.files?.some(entry => entry.file === 'src/client/index.d.ts'))
+  throw new Error('RELEASE_DECLARATIONS_MISSING');
+for (const entry of declarations.files) {
+  if (!/^(?:src|engine)\/[A-Za-z0-9_./-]+\.d\.(?:ts|mts)$/.test(entry.file) || entry.file.includes('..'))
+    throw new Error('RELEASE_DECLARATION_PATH');
+  if (createHash('sha256').update(await readFile(join(root, 'dist/types', entry.file))).digest('hex') !== entry.sha256)
+    throw new Error('RELEASE_DECLARATION_HASH_MISMATCH: ' + entry.file);
+}
 if (engine.commit !== sources.cortico.commit || viewer.commit !== sources.viewer.commit)
   throw new Error('RELEASE_SOURCE_MISMATCH');
 const patches = sources.cortico.patches ?? [];
-for (const file of ['runtime.mjs', 'runtime.d.mts', 'child-process.ts']) {
+for (const file of ['runtime.mjs', 'runtime.d.mts', 'child-process.ts', 'host-contract.ts']) {
   const actual = engine.hostRuntime?.find(entry => entry.file === file);
   if (actual?.sha256 !== createHash('sha256').update(await readFile(join(root, 'engine/support', file))).digest('hex'))
     throw new Error('RELEASE_HOST_RUNTIME_MISMATCH: ' + file);
@@ -38,7 +47,7 @@ if (assets.minecraftVersion !== '1.20.6') throw new Error('RELEASE_ASSET_VERSION
 for (const file of ['engine/proxy.ts', 'engine/engine-child.ts', 'engine/dependency-patches.ts',
   'engine/method-worker.mjs', 'engine/engine-blobs.ts', 'engine/support/procedure.ts',
   'engine/support/procedure-program.mjs', 'engine/support/procedure-program.d.mts', 'engine/support/typed-decision.ts', 'engine/support/host-contract.ts',
-  'bin/qiandengji-mcp.mjs', 'src/agent/runtime.ts', 'src/mcp/server.ts',
+  'bin/minecraft-agent-mcp.mjs', 'src/client/runtime.ts', 'src/adapters/minecraft.ts', 'src/mcp/server.ts',
   'dist/console.js', 'dist/console.css', 'dist/viewer/dist/modern-viewer.js',
   'dist/viewer/public/index.html', 'dist/viewer/public/third/index.html',
   'dist/viewer/public/dungeon/index.html']) {

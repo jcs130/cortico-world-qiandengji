@@ -1,8 +1,8 @@
 {
-  "name": "cortico-world-qiandengji",
-  "version": "0.2.0-next.3",
+  "name": "agent-mc-world",
+  "version": "0.3.0-next.1",
   "type": "module",
-  "description": "Minecraft tools and runtime for Agents, with Cortico and MCP adapters",
+  "description": "Independent Mineflayer execution client for Agents, with MCP, SDK, skill and Cortico World adapters",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jcs130/cortico-world-qiandengji.git"
@@ -13,9 +13,11 @@
   },
   "license": "MIT",
   "keywords": [
-    "cortico-world",
-    "cortico",
-    "minecraft"
+    "minecraft",
+    "mineflayer",
+    "agent",
+    "mcp",
+    "cortico-world"
   ],
   "engines": {
     "node": ">=22"
@@ -23,52 +25,91 @@
   "packageManager": "pnpm@11.5.0",
   "main": "./src/index.ts",
   "bin": {
-    "qiandengji-mcp": "./bin/qiandengji-mcp.mjs"
+    "minecraft-agent-mcp": "./bin/minecraft-agent-mcp.mjs"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./agent": "./src/agent/index.ts",
-    "./mcp": "./src/mcp/server.ts",
+    ".": {
+      "types": "./dist/types/src/index.d.ts",
+      "default": "./src/index.ts"
+    },
+    "./client": {
+      "types": "./dist/types/src/client/index.d.ts",
+      "default": "./src/client/index.ts"
+    },
+    "./contracts": {
+      "types": "./dist/types/src/client/contracts.d.ts",
+      "default": "./src/client/contracts.ts"
+    },
+    "./adapters/cortico": {
+      "types": "./dist/types/src/adapters/minecraft.d.ts",
+      "default": "./src/adapters/minecraft.ts"
+    },
+    "./mcp": {
+      "types": "./dist/types/src/mcp/server.d.ts",
+      "default": "./src/mcp/server.ts"
+    },
     "./package.json": "./package.json",
-    "./*": "./*"
+    "./mcp/stdio": {
+      "types": "./dist/types/src/mcp/stdio.d.ts",
+      "default": "./src/mcp/stdio.ts"
+    }
   },
   "cortico": {
     "kind": "world",
     "api": 5,
-    "displayName": "千灯纪",
+    "displayName": "Agent MC World",
     "consoleClient": "dist/console.js",
     "consoleStyle": "dist/console.css"
   },
   "files": [
-    "src",
-    "bin",
-    "docs",
-    "examples/agent-mcp.json",
+    "src/client",
+    "src/runtime",
+    "src/mcp/server.ts",
+    "src/mcp/stdio.ts",
+    "src/adapters/minecraft.ts",
+    "src/index.ts",
+    "src/definition.ts",
+    "src/console-client.ts",
+    "src/chat-provenance.ts",
+    "src/collect-contract.ts",
+    "src/mounted-look.ts",
+    "src/vehicle-state.ts",
+    "src/railway.ts",
+    "src/viewer-photo-page.d.mts",
+    "bin/minecraft-agent-mcp.mjs",
+    "docs/architecture.md",
+    "docs/minecraft-client.md",
+    "docs/agent-mcp.md",
+    "docs/harness.md",
+    "docs/migration-0.3.md",
     "examples/agent-mcp-check.mjs",
+    "examples/minecraft-agent.json",
+    "examples/minecraft-client.ts",
+    "skills",
     "engine",
     "dist",
     "patches",
     "client-login",
     "scripts/build-client-login.mjs",
     "references/battlefield-protocol.md",
-    "references/server-technical/index.json",
-    "references/server-technical/server-access.json",
     "release-sources.json",
     "README.md",
     "DEPLOYMENT.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "pnpm run build:engine && pnpm run build:console && pnpm run build:viewer && pnpm run verify:release",
+    "build": "pnpm run build:engine && pnpm run build:console && pnpm run build:viewer && pnpm run build:types && pnpm run verify:release",
     "build:engine": "tsx scripts/build-release.ts engine",
     "build:console": "node scripts/build-console.mjs",
     "build:viewer": "tsx scripts/build-release.ts viewer",
     "build:client-login": "node scripts/build-client-login.mjs",
-    "start:mcp": "node bin/qiandengji-mcp.mjs",
+    "start:mcp": "node bin/minecraft-agent-mcp.mjs",
+    "start:minecraft": "node bin/minecraft-agent-mcp.mjs",
     "verify:release": "node scripts/verify-release.mjs",
     "prepack": "node scripts/verify-release.mjs",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:types": "node scripts/build-types.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.1",
@@ -91,5 +132,6 @@
     "socket.io-client": "4.8.3",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
-  }
+  },
+  "types": "./dist/types/src/index.d.ts"
 }

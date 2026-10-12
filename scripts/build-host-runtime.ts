@@ -16,7 +16,8 @@ export async function buildHostRuntime(root: string, coreRoot: string): Promise<
     outfile: join(engine, 'support/runtime.mjs'), bundle: true, platform: 'node', format: 'esm',
     target: 'node22', legalComments: 'eof',
   });
-  await cp(join(root, 'src/runtime/host-runtime.d.mts'), join(engine, 'support/runtime.d.mts'));
+  await writeFile(join(engine, 'support/runtime.d.mts'), (await readFile(join(root, 'src/runtime/host-runtime.d.mts'), 'utf8'))
+    .replaceAll('../client/contracts.ts', './host-contract.ts'));
   await cp(join(root, 'src/runtime/child-process.ts'), join(engine, 'support/child-process.ts'));
   // Rewrite after the patch series, which applies against the pinned upstream import paths.
   for (const file of await readdir(engine)) {
