@@ -218,13 +218,18 @@ protected async setCombatTactic(args: Record<string, unknown>, hostSampling = fa
       ...(program !== undefined ? { program } : {}) });
     if (rawProgram === null) this.combatProgram.close();
     if (rawProgram !== undefined) { this.combatProgramErrorHash = null; this.combatProgramError = null; }
+    const programHash = program ? combatProgramHash(program) : null;
+    const programError = program && this.combatProgramErrorHash === programHash
+      ? this.combatProgramError : this.combatProgram.status().error;
     return this.toolLog(tool, args,
       `已设置战术：${spells?.join(' → ') ?? '默认法术顺序'}；`
       + (healAtOrBelow === null ? '治疗血线未设置。'
         : `生命 ≤${healAtOrBelow}/20 时先尝试圣愈术。`)
       + (rules?.length ? `已启用${rules.length}项条件分支；法术列表仅作分支停用后的备用，未命中不自动进攻施法。` : '')
-      + (program ? `自主程序「${program.name}」SHA256 ${combatProgramHash(program)}；已编译，实战效果待核验。` : '')
-      + '已按当前世界保存，重载后继续使用；只在交战时按目标、魔力和冷却尝试，效果以服务端回执为准。'
+      + (program ? `自主程序「${program.name}」SHA256 ${programHash}；`
+        + (programError ? `已停止采用：${programError}。当前使用默认候选，需修订 program 后重新核验。`
+          : '已编译，实战效果待核验。') : '')
+      + '已按当前世界保存；保存不代表程序已采用。只在交战时按目标、魔力和冷却尝试，效果以服务端回执为准。'
       + '\n' + this.combatSpells.readout(undefined, Date.now(), this.bridge?.bot ?? undefined));
   }
 protected tryAutoSelfHeal(bot: Bot): boolean {
