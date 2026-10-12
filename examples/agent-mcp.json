@@ -6,6 +6,7 @@
     "host": "example.test",
     "port": 25565,
     "username": "Alice",
+    "version": "1.20.6",
     "viewerPort": 18080
   }
 }

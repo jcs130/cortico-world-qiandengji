@@ -18,14 +18,14 @@ Mineflayer 4.37.1 乘坐状态下会暂停步行物理刻，也暂停原生转�
 
 ## 其他 Agent 接入
 
-本包提供独立游戏运行时与 MCP stdio 入口，复用同一套 `mymc_*` 工具、脚本、快战术和执行回执。接入说明见 [Agent MCP](docs/agent-mcp.md)，各层归属见 [架构边界](docs/architecture.md)。
+本包从 **v0.2.0-next.1 试用版**起提供独立游戏运行时与 MCP stdio 入口，复用同一套 `mymc_*` 工具、脚本、快战术和执行回执。接入说明见 [Agent MCP](docs/agent-mcp.md)，包括安装包、离线检查、账号与密码登录、MCP 配置和首次验收；各层归属见 [架构边界](docs/architecture.md)。v0.1.2 安装包不含此独立入口。
 
 ## 安装与配置
 
 npm 发布版可在 Cortico 控制台的扩展页填写 `cortico-world-qiandengji` 安装。扩展页不接受网页或 `.tgz` 地址；使用 [GitHub Releases](https://github.com/jcs130/cortico-world-qiandengji/releases) 的安装包时，通过 pnpm 安装到宿主的扩展目录：
 
 ```powershell
-pnpm --dir 'C:\Cortico\extensions' add 'https://github.com/jcs130/cortico-world-qiandengji/releases/download/v0.1.1/cortico-world-qiandengji-0.1.1.tgz' --ignore-workspace
+pnpm --dir 'C:\Cortico\extensions' add 'https://github.com/jcs130/cortico-world-qiandengji/releases/download/v0.1.2/cortico-world-qiandengji-0.1.2.tgz' --ignore-workspace
 ```
 
 将示例目录替换为自己的 Cortico `extensions` 目录；若设置了 `CORTICO_EXTENSIONS_DIR`，使用该目录。目录尚不存在时先创建。安装后重启 Cortico，扩展页会列出千灯纪。Git 仓库源码尚未包含生成的引擎和画面，源码安装前须按下方步骤构建。

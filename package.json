@@ -42,6 +42,7 @@
     "bin",
     "docs",
     "examples/agent-mcp.json",
+    "examples/agent-mcp-check.mjs",
     "engine",
     "dist",
     "patches",
