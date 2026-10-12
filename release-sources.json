@@ -33,6 +33,7 @@
       "patches/minecraft-placement-state-evidence.patch",
       "patches/minecraft-crop-placement.patch",
       "patches/minecraft-goal-metrics.patch",
+      "patches/minecraft-goal-closure.patch",
       "patches/minecraft-method-await.patch",
       "patches/minecraft-viewer-observer.patch",
       "patches/minecraft-online-client.patch"

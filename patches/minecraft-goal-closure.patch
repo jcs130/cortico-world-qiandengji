@@ -1,0 +1,62 @@
+diff --git a/world.ts b/world.ts
+--- a/world.ts
++++ b/world.ts
+@@ -8,6 +8,7 @@
+  */
+ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+ import { goalClosureMetadata } from './goal-metrics.ts';
++import { createGoalClosureHandler, GOAL_CLOSURE_CONTRACT } from '../src/client/goal-closure.ts';
+ import { createHash, randomUUID } from 'node:crypto';
+ import { EventEmitter } from 'node:events';
+ import { dirname, join } from 'node:path';
+@@ -2377,7 +2378,7 @@
+       + 'the supplied predicate; it does not check its semantic relevance. Use judgment with actual '
+       + 'evidence for understood information, conversation and server command results. '
+       + 'Call with no fields to read them all back. Tied to the current world and empty after a restart '
+-      + 'or a world change, so the lasting copy belongs in your own notes.',
++      + 'or a world change, so the lasting copy belongs in your own notes.' + GOAL_CLOSURE_CONTRACT,
+     parameters: {
+       type: 'object',
+       properties: {
+@@ -2441,7 +2442,7 @@
+       'Register dimension-tagged named places in this world: home, bed, chest, workstation, danger zone, resource spot, '
+       + 'portal, farm, landmark — up to 24. Call with no fields to read them all back with the bearing '
+       + 'and distance for places in your current dimension. Tied to the current world and empty after a restart '
+-      + 'or a world change, so the lasting copy belongs in your own notes.',
++      + 'or a world change, so the lasting copy belongs in your own notes.' + GOAL_CLOSURE_CONTRACT,
+     parameters: {
+       type: 'object',
+       description: '一次只受理一件事。set 收数组 = 一次把笔记里那份地图整个装载回来。',
+@@ -4357,7 +4358,7 @@
+       },
+       mc_visual: async (args, ctx) => this.visualObservation(args, ctx),
+       mc_policy: async (args) => this.toolLog('mc_policy', args, this.setPolicy(args)),
+-      mc_goal: async (args) => this.toolLog('mc_goal', args, this.setGoal(args)),
++      mc_goal: async (args) => this.goalClosure(args),
+       mc_map: async (args) => this.toolLog('mc_map', args, this.setMap(args)),
+       mc_blueprint: async (args) => this.toolLog('mc_blueprint', args, this.setBlueprint(args)),
+       mc_check: async (args) => this.toolLog('mc_check', args, this.runCheck(args)),
+@@ -5164,6 +5165,23 @@
+    * (连上之前先把上一场的清单挂回去,正是 PWSR 想要的用法)。拿不到 bot 只是
+    * 登记时刻少一个游戏内天数,如实留 null。
+    */
++  private readonly goalClosure = createGoalClosureHandler({
++    state: (args) => {
++      const op = parseGoal(args);
++      if ('error' in op || op.kind !== 'done') return null;
++      const goal = this.goalTable().list.find(value => value.slot === op.slot);
++      return goal ? {
++        slot: goal.slot,
++        identity: `${this.pwsr.realm}/${goal.slot}/${goal.at}/${goal.realTime}`,
++        phase: JSON.stringify(goal.plan.steps.map(step => ({
++          do: step.do, state: step.state, verify: step.verify, judgment: step.judgment,
++        }))),
++      } : null;
++    },
++    invoke: (args) => this.setGoal(args),
++    log: (args, text) => this.toolLog('mc_goal', args, text),
++  });
++
+   private setGoal(args: Record<string, unknown>): string {
+     const op = parseGoal(args);
+     if ('error' in op) return `[mc_goal 失败] ${op.error}`;
