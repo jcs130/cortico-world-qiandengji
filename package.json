@@ -2,7 +2,7 @@
   "name": "agent-mc-world",
   "version": "0.4.0",
   "type": "module",
-  "description": "Independent Mineflayer execution client for Agents, with MCP, SDK, skill and Cortico World adapters",
+  "description": "Independent Mineflayer execution client for Agents, with MCP, SDK and optional server capability packs",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jcs130/cortico-world-qiandengji.git"
@@ -39,10 +39,6 @@
     "./contracts": {
       "types": "./dist/types/src/contracts/index.d.ts",
       "default": "./dist/runtime/src/contracts/index.js"
-    },
-    "./adapters/cortico": {
-      "types": "./dist/types/src/adapters/minecraft.d.ts",
-      "default": "./dist/runtime/src/adapters/minecraft.js"
     },
     "./mcp": {
       "types": "./dist/types/src/mcp/server.d.ts",
@@ -85,9 +81,6 @@
     "LICENSE",
     "README.md",
     "release-sources.json",
-    "adapters/cortico/types.ts",
-    "adapters/cortico/ENV_PROMPT.md",
-    "src/adapters/minecraft.ts",
     "bridges",
     "scripts/build.mjs",
     "scripts/build-types.mjs",

@@ -18,6 +18,14 @@ type RepeatSuccessFallback = {
 };
 
 export type MymcConfigSection = MinecraftConfigSection & {
+  /** Omitted legacy configuration must be explicitly migrated before enabling server rules. */
+  serverPack?: 'none' | 'qiandengji';
+  /** Explicit host adapter configuration, never passed to the game process. */
+  hostDecisions?: { combat?: {
+    enabled: boolean; endpoint: string; mode: 'shadow' | 'act';
+    model?: string; apiKeyEnv?: string;
+    timeoutMs?: number; minIntervalMs?: number; minConfidence?: number; maxAgeMs?: number;
+  } };
   combatOptions: CombatExecutionPolicy;
   preserveLoginName?: boolean;
   repeatSuccessFallback: RepeatSuccessFallback;
@@ -35,6 +43,7 @@ export function mymcLoginName(value: string, preserveLoginName = false): string 
 export function mymcEngineConfig(cfg: MymcConfigSection): MymcConfigSection {
   return new Proxy(cfg, {
     get(target, key, receiver) {
+      if (key === 'hostDecisions') return undefined;
       return key === 'username' ? mymcLoginName(target.username, target.preserveLoginName) : Reflect.get(target, key, receiver);
     },
   });
@@ -68,7 +77,7 @@ export const MYMC_DEFAULTS: MymcConfigSection = {
   player: { ...MINECRAFT_DEFAULTS.player, teleportToBot: false },
 } as MymcConfigSection;
 
-function mymcGroup(base: ConfigGroup, title: string): ConfigGroup {
+export function mymcGroup(base: ConfigGroup, title: string): ConfigGroup {
   return {
     ...base,
     id: base.id.replace('world:minecraft', 'world:mymc'),
@@ -84,10 +93,31 @@ function mymcGroup(base: ConfigGroup, title: string): ConfigGroup {
 }
 
 const connectionGroup = mymcGroup(MINECRAFT_CONFIG_GROUP, '千灯纪 · 连接');
+export const SERVER_PACK_PROPERTY = {
+  type: 'string' as const, enum: ['none', 'qiandengji'], title: '服务器资料包', 'x-hot': false,
+  description: 'none 使用通用 Minecraft 功能；qiandengji 启用随包提供的千灯纪技能资料及协议适配。更改后重启 World。',
+};
+/** Public World defaults: no server identity, commands, channels or performance endpoints. */
+export const WORLD_DEFAULTS: MymcConfigSection = {
+  ...structuredClone(MYMC_DEFAULTS), ...structuredClone(MINECRAFT_CLIENT_DEFAULTS),
+  serverPack: 'none', viewerPort: 7793,
+  visual: { ...MINECRAFT_CLIENT_DEFAULTS.visual, mode: 'auto' },
+};
 export const MYMC_CONFIG_GROUP: ConfigGroup = {
   ...connectionGroup,
   schema: { ...connectionGroup.schema, properties: {
     ...connectionGroup.schema.properties,
+    'worlds.mymc.serverPack': SERVER_PACK_PROPERTY,
+    'worlds.mymc.hostDecisions.combat.enabled': { type: 'boolean', title: '宿主快速战术选择', 'x-hot': false,
+      description: '仅千灯纪资料包使用。由宿主适配器按明确配置调用选择服务，游戏核心不调用模型。默认关闭。' },
+    'worlds.mymc.hostDecisions.combat.endpoint': { type: 'string', title: '快速选择服务地址', 'x-hot': false,
+      description: '完整 HTTP(S) 地址；服务需支持 state/questions 与 answers/probabilities 协议，不能直接填普通聊天接口。不扫描其他端点。' },
+    'worlds.mymc.hostDecisions.combat.mode': { type: 'string', enum: ['shadow', 'act'], title: '快战术模式', 'x-hot': false,
+      description: 'shadow 仅观察建议；act 将选择提交核心再次校验。未配置或出错时原近战、自保与规则施法继续。' },
+    'worlds.mymc.hostDecisions.combat.model': { type: 'string', title: 'Jev / System One 模型名', 'x-hot': false,
+      description: '按你的服务填写；留空使用该服务的默认模型。' },
+    'worlds.mymc.hostDecisions.combat.apiKeyEnv': { type: 'string', title: '快决策密钥环境变量名', 'x-hot': false,
+      description: '只填变量名，例如 JEV_API_KEY；密钥在启动环境中设置，不填写到提示词或资料包。' },
     'worlds.mymc.username': {
       ...connectionGroup.schema.properties['worlds.mymc.username'],
       type: 'string', title: 'Agent 登录名', 'x-hot': false,

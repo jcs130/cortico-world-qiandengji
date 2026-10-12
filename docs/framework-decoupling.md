@@ -45,7 +45,7 @@
 | 千灯纪扩展 | `integrations/qiandengji/` | `/mycli`、魔力/技能、保护频道、公会/试炼、服务器战术、YSM/观战频道和规则；默认发行包不带此扩展 |
 | 通用演出桥 | 共享 `mc-visual-console` 的 `host/viewer-performance-relay.mjs` | 本仓库随包副本在 `bridges/performance/`，哈希记录在 `provenance/performance-bridge.json` |
 
-默认 `agent-mc-world` 导出中立 SDK，不再默认导出 `MC`。Cortico 通过 `agent-mc-world/adapters/cortico` 或专门的适配器包装配。N.E.K.O 等宿主可使用 SDK/MCP；核心没有反向导入这些宿主。
+默认 `agent-mc-world` 导出中立 SDK，不再默认导出 `MC`。Cortico 通过 `adapters/cortico/`（仓库内私有示例，不进入核心安装包） 或专门的适配器包装配。N.E.K.O 等宿主可使用 SDK/MCP；核心没有反向导入这些宿主。
 
 ## 能力迁移对照
 

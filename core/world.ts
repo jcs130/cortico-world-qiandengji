@@ -3441,7 +3441,7 @@ export class MinecraftWorld implements World {
         },
       ],
       storage: this.storageParts(),
-      links: viewerUrl ? [
+      links: [...(viewerUrl ? [
         { label: this.bridge?.viewerKind === 'basic' ? '基础画面' : '第一人称', href: viewerUrl },
         ...(this.bridge?.viewerKind === 'modern' ? [
           { label: '第三人称', href: viewerUrl + '/third/' },
@@ -3449,7 +3449,13 @@ export class MinecraftWorld implements World {
           { label: 'OBS', href: viewerUrl + '/?obs=1' },
           { label: 'OBS 布局', href: viewerUrl + '/?obs=1&obsEdit=1' },
         ] : []),
-      ] : [],
+      ] : []), ...(() => {
+        try {
+          const url = new URL(this.cfg.metricsDashboardUrl ?? '');
+          return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password
+            ? [{ label: '模型与执行', href: url.href }] : [];
+        } catch { return []; }
+      })()],
       config: [
         MINECRAFT_CONFIG_GROUP,
         MINECRAFT_RHYTHM_CONFIG_GROUP,
@@ -3490,6 +3496,7 @@ export class MinecraftWorld implements World {
           actualVersion: this.bridge?.bot?.version ?? null, username: this.bridge?.bot?.username ?? null },
           viewer: { mode: this.bridge?.viewerKind ?? null, url: this.bridge?.viewerUrl ?? null },
           accounts: Object.fromEntries(Object.entries(this.accountAuth).map(([lane, auth]) => [lane, auth.snapshot()])),
+          connection: this.bridge?.connectionState ?? null,
           clients: { observer: (({command, ...state}) => state)(await this.client.state()),
             player: (({command, ...state}) => state)(await this.playerClient.state()) } };
       }
@@ -4892,7 +4899,8 @@ export class MinecraftWorld implements World {
    */
   protected runCheck(args: Record<string, unknown>): string {
     const bot = this.bridge?.bot;
-    if (!bot) return '[mc_check] 还没连上服务器,对不了账(断线会自动重连,连上会有事件)';
+    if (!bot) return '[mc_check] 角色尚不可操作，对不了账；连接、密码提交、认证成功与进世界分别确认。当前状态：'
+      + JSON.stringify(this.bridge?.connectionState ?? { active: false, ready: false });
     // 蓝图与路标两类断言查的是 realm 域的表:取之前先对一次命名空间
     this.syncRealm();
     const world = this.checkWorld(bot);

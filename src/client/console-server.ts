@@ -17,8 +17,8 @@ export async function serveClientConsole(port: number, runtime: ClientConsolePor
   const token = randomBytes(32).toString('hex');
   const operations = new Map<string, { status: 'running' | 'completed' | 'failed'; at: string; error?: string }>();
   const pending = new Set<Promise<void>>();
-  const files = new Map(await Promise.all(['index.html', 'console.css', 'console.js'].map(async name =>
-    ['/' + (name === 'index.html' ? '' : name), await readFile(join(assets, name))] as const)));
+  const files = new Map(await Promise.all(['index.html', 'console.css', 'console.js', 'metrics.html', 'metrics.css', 'metrics.js'].map(async name =>
+    ['/' + (name === 'index.html' ? '' : name === 'metrics.html' ? 'metrics' : name), await readFile(join(assets, name))] as const)));
   let closing = false;
   const server = createServer(async (request, response) => {
     const address = server.address();
@@ -37,7 +37,7 @@ export async function serveClientConsole(port: number, runtime: ClientConsolePor
         if (request.url === '/api/harness/metrics') { json(200, runtime.metrics.snapshot(runtime.status().phase)); return; }
         const file = files.get(request.url ?? '');
         if (!file) { json(404, { error: 'Not found.' }); return; }
-        response.writeHead(200, { 'content-type': request.url === '/' ? 'text/html; charset=utf-8'
+        response.writeHead(200, { 'content-type': request.url === '/' || request.url === '/metrics' ? 'text/html; charset=utf-8'
           : request.url?.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8',
           'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer',
           'content-security-policy': "default-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" });

@@ -239,6 +239,8 @@ export class Bridge {
   protected _bot: mineflayer.Bot | null = null;
   /** An entity can exist before login/first spawn; it is not yet an operable body. */
   protected spawnedBot: mineflayer.Bot | null = null;
+  protected protocolSpawned = false;
+  protected serverLogin: ReturnType<typeof installServerLogin> | null = null;
   protected started = false;
   protected stopped = false;
   protected reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -309,7 +311,14 @@ export class Bridge {
 
   get connected(): boolean {
     return this._bot !== null && this.spawnedBot === this._bot
+      && (this.serverLogin?.ready() ?? true)
       && (this._bot as unknown as { entity?: unknown }).entity !== undefined;
+  }
+
+  get connectionState() {
+    return { active: this.started, protocolState: this._bot?._client.state ?? 'closed',
+      spawnReceived: this.protocolSpawned, ready: this.connected, reconnects: this.reconnectAttempt,
+      serverLogin: this.serverLogin?.detail() ?? { stage: 'disabled', attempted: false, reason: null } };
   }
 
   /** 连接生命周期已启用；不要求当前已经完成登录。 */
@@ -376,6 +385,7 @@ export class Bridge {
     const bot = this._bot;
     this._bot = null;
     this.spawnedBot = null;
+    this.protocolSpawned = false;
     this.agentMana = undefined;
     this._invSynced = false;
     this.liveMovements = null;
@@ -451,10 +461,16 @@ export class Bridge {
       if (this.stopped || this._bot !== bot || this.generation !== gen) bot._client.end('Connection cancelled');
     });
     this.spawnedBot = null;
+    this.protocolSpawned = false;
     this.opts.onBotCreated?.(bot);
+    let activate = () => {};
     const login = installServerLogin(bot, { server: `${host}:${port}`, username,
       configFile: this.opts.loginConfigFile?.(),
-      report: status => log.info(`minecraft authentication ${status.status}`, { username, server: `${host}:${port}` }) });
+      report: status => {
+        log.info(`minecraft authentication ${status.status}`, { username, server: `${host}:${port}`, reason: status.reason });
+        if (status.status === 'confirmed') activate();
+      } });
+    this.serverLogin = login;
     this.bagFor(gen).register('server-login', login.stop);
     this.bagFor(gen).register('flight-abilities', watchFlightAbilities(bot));
     this.attachServerProtocols(bot, gen);
@@ -620,26 +636,29 @@ export class Bridge {
       }
     });
 
-    bot.once('spawn', () => {
-      if (this.stopped || this._bot !== bot || this.generation !== gen) return;
+    activate = () => {
+      if (this.stopped || this._bot !== bot || this.generation !== gen || this.spawnedBot === bot
+        || !this.protocolSpawned || !login.ready()) return;
       setBlueprintMcVersion(bot.version);
       this.spawnedBot = bot;
       this.reconnectAttempt = 0;
       this.refusedStreak = 0;
       this.installSpawnGear(bot, gen);
       this.opts.onSpawn();
-      /** spawn 在死亡重生时也触发，连接装配使用 once；持续监听处理同连接重生。 */
-      /** respawn 包也用于维度切换，不能单独识别死亡重生。 */
-      bot.on('spawn', () => {
-        if (this.stopped || this._bot !== bot || this.generation !== gen) return;
-        this.opts.onRespawn?.();
-      });
+    };
+    bot.on('spawn', () => {
+      if (this.stopped || this._bot !== bot || this.generation !== gen) return;
+      const wasReady = this.spawnedBot === bot;
+      this.protocolSpawned = true;
+      activate();
+      if (wasReady && login.ready()) this.opts.onRespawn?.();
     });
 
     const onGone = (reason: string) => {
       if (this._bot !== bot || this.generation !== gen) return;
       this._bot = null;
       this.spawnedBot = null;
+      this.protocolSpawned = false;
       this.agentMana = undefined;
       this._invSynced = false;
       this.viewer = null;

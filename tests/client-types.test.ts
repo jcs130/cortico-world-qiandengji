@@ -23,12 +23,11 @@ it('type-checks the standalone SDK with all Cortico module resolution forbidden'
 it.each(['Bundler','NodeNext'] as const)('consumes published declarations in %s without framework or private implementation', mode => {
   const root = fileURLToPath(new URL('../', import.meta.url));
   const entry = join(root, 'tests', 'sdk-declaration-consumer.ts');
-  const source = `import * as adapter from '../dist/types/src/adapters/minecraft.js';
-    import * as mcp from '../dist/types/src/mcp/server.js';
+  const source = `import * as mcp from '../dist/types/src/mcp/server.js';
     import * as stdio from '../dist/types/src/mcp/stdio.js';
     import {createRelay} from '../dist/types/bridges/performance/relay.mjs';
     import * as extension from '../dist/types/src/extension.js';
-    void adapter;void mcp;void stdio;void createRelay;void extension;
+    void mcp;void stdio;void createRelay;void extension;
     import { MinecraftAgentClient, MINECRAFT_CLIENT_DEFAULTS, nullLogger,
     type ToolOutcome, type EventEnvelope } from '../dist/types/src/client/index.js';
     const client = new MinecraftAgentClient({ cfg: MINECRAFT_CLIENT_DEFAULTS, dataDir:'./data', log:nullLogger() });

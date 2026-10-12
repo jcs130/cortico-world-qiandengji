@@ -1,5 +1,6 @@
 /** Server manuals are read by topic; the index needs no manual file reads. */
 import { readFileSync } from 'node:fs';
+import { QIANDENGJI_PACK } from './data-packs/qiandengji/manifest.ts';
 
 export const MYMC_GUIDE_TOPICS = [
   { id: 'cli', title: 'Agent CLI 0.4.31', description: '认证、能力发现、状态格式、分页生命周期与结果未知' },
@@ -34,7 +35,7 @@ export function serverGuideIndex(): string {
 /** Templates remain intact so the World can render them from its current envPromptVars. */
 export function readServerGuide(topic?: unknown): { text: string; failed?: true } {
   if (topic === undefined || topic === 'index') return {
-    text: `千灯纪玩法索引。用 mymc_guide 的 topic 读取相关全文；规则与命令以当次服务端回执为准。\n${serverGuideIndex()}`,
+    text: `千灯纪玩法索引。资料包 ${QIANDENGJI_PACK.id}@${QIANDENGJI_PACK.version}，维护者资料；用 mymc_guide 的 topic 读取相关全文，规则与命令以当次服务端回执为准。\n${serverGuideIndex()}`,
   };
   const entry = MYMC_GUIDE_TOPICS.find((candidate) => candidate.id === topic);
   if (!entry) return { failed: true, text: `玩法主题无效。省略 topic 查看索引，或使用以下主题：\n${serverGuideIndex()}` };

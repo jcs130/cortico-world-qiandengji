@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
@@ -28,6 +28,64 @@ async function settle(check: () => boolean) {
   while (!check()) { if (Date.now() > end) throw new Error('authentication callback timeout'); await new Promise(r => setTimeout(r, 10)); }
 }
 describe('scoped automatic server authentication', () => {
+  it('repeats a registration secret only when explicitly configured, without logging it', async () => {
+    const r = fixture();
+    writeFileSync(r.configFile, JSON.stringify({ enabled: true, accounts: [{ ...r.account,
+      command: 'register', repeatPassword: true }] }));
+    const login = installServerLogin(r.bot, r.options);
+    r.messages('AUTH_LOGIN');
+    await settle(() => r.sent.length === 1);
+    expect(r.sent).toEqual(['/register fixture-pass fixture-pass']);
+    expect(JSON.stringify(r.reports)).not.toContain('fixture-pass');
+    login.stop();
+  });
+  it('supports explicit portable secret references and never enables play on password submission alone', async () => {
+    const r = fixture();
+    writeFileSync(r.configFile, JSON.stringify({ enabled: true, accounts: [{ ...r.account,
+      credentialFile: undefined, credentialEnv: 'AGENT_MC_TEST_PASSWORD' }] }));
+    vi.stubEnv('AGENT_MC_TEST_PASSWORD', 'portable-fixture');
+    try {
+      const login = installServerLogin(r.bot, { ...r.options, readCredential: undefined });
+      expect(login.ready()).toBe(false);
+      r.messages('AUTH_LOGIN');
+      await settle(() => r.sent.length === 1);
+      expect(r.sent).toEqual(['/login portable-fixture']);
+      expect(login.ready()).toBe(false);
+      r.messages('AUTH_SUCCESS');
+      expect(login.ready()).toBe(true);
+      expect(JSON.stringify(r.reports)).not.toContain('portable-fixture');
+      login.stop(); expect(login.ready()).toBe(false);
+    } finally { vi.unstubAllEnvs(); }
+  });
+  it('reads an explicitly selected private file relative to its account config', async () => {
+    const r = fixture();
+    writeFileSync(r.credential, 'file-fixture\n', { mode: 0o600 });
+    writeFileSync(r.configFile, JSON.stringify({ enabled: true, accounts: [{ ...r.account,
+      credentialFile: 'credential', credentialFormat: 'file' }] }));
+    const login = installServerLogin(r.bot, { ...r.options, readCredential: undefined });
+    r.messages('AUTH_LOGIN');
+    await settle(() => r.sent.length === 1);
+    expect(r.sent).toEqual(['/login file-fixture']);
+    login.stop();
+  });
+  it('times out without confirmation and discards delayed success or credential results', async () => {
+    vi.useFakeTimers();
+    try {
+      const r = fixture();
+      writeFileSync(r.configFile, JSON.stringify({ enabled: true, accounts: [{ ...r.account, timeoutMs: 1000 }] }));
+      let finish!: (value: Buffer) => void;
+      const login = installServerLogin(r.bot, { ...r.options, readCredential: () => new Promise(resolve => { finish = resolve; }) });
+      r.messages('AUTH_LOGIN');
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(login.detail()).toMatchObject({ stage: 'blocked', reason: 'confirmation-timeout' });
+      const bytes = Buffer.from('must-not-send'); finish(bytes);
+      await Promise.resolve();
+      r.messages('AUTH_SUCCESS');
+      expect(login.ready()).toBe(false); expect(r.sent).toEqual([]);
+      expect(bytes.every(byte => byte === 0)).toBe(true);
+      login.stop();
+    } finally { vi.useRealTimers(); }
+  });
   it('submits once per connection, confirms separately and never reports the credential', async () => {
     const r = fixture(), login = installServerLogin(r.bot, r.options);
     r.messages('AUTH_LOGIN: required', 'chat'); r.messages('<Player> AUTH_LOGIN: required');

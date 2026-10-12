@@ -7,7 +7,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const target = resolve(process.argv[2] ?? join(root, 'scratch', `clean-${Date.now()}`));
 if (existsSync(target)) throw new Error('Clean check requires a new directory');
 await mkdir(target, { recursive: true });
-const entries = ['examples','core','src','adapters','integrations','bridges','scripts','tests','bin','vendor','provenance','docs','skills','client-login',
+const entries = ['examples','core','src','adapters','integrations','packages','bridges','scripts','tests','bin','vendor','provenance','docs','skills','client-login',
   'package.json','pnpm-workspace.yaml','pnpm-lock.yaml','release-sources.json','tsconfig.json','tsconfig.core.json','tsconfig.integration.json','vitest.config.ts','README.md','DEPLOYMENT.md','LICENSE'];
 for (const entry of entries) await cp(join(root, entry), join(target, entry), { recursive: true });
 // The checkout and generated engine are intentionally absent, and installation is strictly offline.

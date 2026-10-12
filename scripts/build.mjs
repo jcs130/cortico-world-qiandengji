@@ -15,7 +15,7 @@ const walk = async path => (await Promise.all((await readdir(path, { withFileTyp
   e.isDirectory() ? walk(join(path, e.name)) : [join(path, e.name)]))).flat();
 const sources = ['core', 'src/client', 'src/contracts', 'src/runtime', 'src/mcp/server.ts', 'src/mcp/stdio.ts',
   'src/index.ts', 'src/extension.ts', 'src/chat-provenance.ts', 'src/collect-contract.ts', 'src/mounted-look.ts', 'src/vehicle-state.ts',
-  'src/railway.ts', 'src/blueprint-railway.ts', 'src/adapters/minecraft.ts', 'adapters/cortico/types.ts', 'adapters/cortico/ENV_PROMPT.md', 'bridges/performance'];
+  'src/railway.ts', 'src/blueprint-railway.ts', 'bridges/performance'];
 const inputs = [];
 for (const source of sources) {
   const path = join(root, source);

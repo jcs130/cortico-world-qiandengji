@@ -13,7 +13,7 @@
 | MCP stdio | `minecraft-agent-mcp <私有配置.json>` | 支持工具调用与持续消费事件的宿主 |
 | TypeScript SDK | `agent-mc-world/client` | 模型、记忆、事件唤醒与学习评价 |
 | 联机版我的世界（Cortico API 5） | npm `cortico-world-qiandengji` | Cortico 与明确配置的服务器 |
-| 宿主开发适配端口 | `agent-mc-world/adapters/cortico` | 开发者自行装配；不另发 World 插件 |
+| 宿主开发适配端口 | `adapters/cortico/`（仓库内私有示例，不进入核心安装包） | 开发者自行装配；不另发 World 插件 |
 | 可复制的 Agent skill | `skills/minecraft-agent/` | 同一台机器或可访问的客户端入口 |
 | 本机连接台 / Java 启动器 | `minecraft-agent-client <私有配置.json>` | 服务器与账号配置；可选已安装的 Java 客户端 |
 

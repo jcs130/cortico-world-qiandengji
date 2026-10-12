@@ -1,7 +1,7 @@
 import type { WorldDefinition } from '../../adapters/cortico/types.ts';
 import type { ConfigGroup, WorldHost } from '../client/contracts.ts';
-import { MinecraftClientWorld } from '../client/world.ts';
-import { assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS, type MinecraftClientConfig } from '../client/config.ts';
+import { MinecraftClientWorld, assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS } from '../extension.ts';
+import type { MinecraftClientConfig } from '../client/config.ts';
 import { fileURLToPath } from 'node:url';
 
 const adapterText = (text: string) => text.replace(/\bmc_([a-z][a-z0-9_]*)\b/g, 'agentmc_$1');
@@ -21,7 +21,7 @@ class CorticoMinecraftWorld extends MinecraftClientWorld {
     const base = super.console();
     return { ...base, label: '联机版我的世界',
       promptDocs: base.promptDocs?.map(doc => ({ ...doc, key: 'worlds.mc.envPrompt',
-        path: fileURLToPath(new URL('../../adapters/cortico/ENV_PROMPT.md', import.meta.url)) })),
+        path: fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url)) })),
       config: base.config?.map(group => ({ ...group,
         id: group.id.replace('world:minecraft', 'world:mc'), owner: 'world:mc' as const,
         schema: { ...group.schema, properties: Object.fromEntries(Object.entries(group.schema.properties)

@@ -25,6 +25,7 @@ export const MINECRAFT_DEFAULTS = {
   viewerAssetsDir: '',
   /** 网页画面中语音气泡显示的称呼；空 = 游戏内用户名 */
   viewerSpeakerName: '',
+  metricsDashboardUrl: '',
   performanceBridge: {module:'',endpoint:''},
   remoteTextures: false,
   /** Omitted mc_visual.background follows this mode; explicit arguments take precedence. */
@@ -131,7 +132,7 @@ export const MINECRAFT_DEFAULTS = {
     javaPath: '',
     jvmArgs: '-Xmx4G',
     /** 摄像机账号名(必须与 bot 的名字不同) */
-    username: 'CortiCam',
+    username: 'AgentCamera',
     auth: 'offline' as 'offline' | 'microsoft',
     profilesFolder: '',
     width: 1280,
@@ -200,6 +201,8 @@ export interface MinecraftConfigSection {
   viewerPort: number;
   viewerAssetsDir: string;
   viewerSpeakerName: string;
+  /** Human-opened metrics dashboard; no polling or discovery is performed by the core. */
+  metricsDashboardUrl?: string;
   performanceBridge?: import('./relay-port.ts').RelayConfiguration;
   remoteTextures?: boolean;
   visual: { background: boolean };
@@ -277,7 +280,7 @@ export const MINECRAFT_CONFIG_GROUP: ConfigGroup = {
       'worlds.minecraft.profilesFolder': { type: 'string', title: '正版凭据缓存目录', 'x-hot': false,
         description: '留空使用本部署的私有 auth/agent 目录；不要放进共享目录或提交到仓库。', 'x-path': { kind: 'directory' } },
       'worlds.minecraft.loginConfigFile': { type: 'string', title: '自动登录配置文件', 'x-hot': true,
-        description: '仅匹配账号与服务器的系统认证提示触发，每次连接提交一次；文件只保存加密凭据路径。留空关闭，下次自然重连读取。',
+        description: '按服务器和账号匹配系统提示，每连接提交一次；私有配置引用 DPAPI、环境变量或私有密码文件。等成功标记且角色进世界后才可操作。留空关闭，下次重连读取。',
         'x-path': { kind: 'file', extensions: ['.json'] } },
       'worlds.minecraft.version': {
         type: 'string', title: '协议版本', 'x-hot': false,
@@ -295,6 +298,10 @@ export const MINECRAFT_CONFIG_GROUP: ConfigGroup = {
       'worlds.minecraft.viewerSpeakerName': {
         type: 'string', title: '网页语音气泡称呼', 'x-hot': false,
         description: '空=游戏内用户名；在现代画面中随实际语音播放显示。',
+      },
+      'worlds.minecraft.metricsDashboardUrl': {
+        type: 'string', title: '模型消耗页面地址', 'x-hot': true,
+        description: '可选。填写本 Agent 的指标页面地址；只有打开链接时浏览器访问，不扫描模型服务。独立连接台自带 /metrics 页面。',
       },
       'worlds.minecraft.visual.background': {
         type: 'boolean', title: '后台观察画面', 'x-hot': true,

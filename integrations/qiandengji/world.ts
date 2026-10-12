@@ -1,4 +1,5 @@
 import { SERVER_TOOLS } from './engine/world.ts';
+import { HostCombatDriver, validateHostCombat } from './host/combat-driver.ts';
 /** 千灯纪的 World 契约；游戏协议与执行器沿用 Minecraft 引擎。 */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -295,6 +296,7 @@ export class MymcWorld implements World {
   private readonly prospect = new ProspectEvidence();
   private readonly requireProtectSupport: boolean;
   private host: WorldHost | null = null;
+  private fastCombat: HostCombatDriver | null = null;
 
   constructor(private readonly opts: Omit<MinecraftWorldOptions, 'cfg'> & { cfg: MymcConfigSection; botDir?: string }, engine?: MinecraftWorldProxy) {
     this.requireProtectSupport = engine === undefined;
@@ -363,6 +365,11 @@ export class MymcWorld implements World {
         if (tool.name === 'mc_visual') {
           return observeVisual(tool, args, ctx, this.host, () => this.requestFacts(),
             this.opts.cfg.visual.mode === 'structured', 'mymc', toMymcText);
+        }
+        if (tool.name === 'mc_combat_tactic' && this.fastCombat
+          && Object.keys(args).length === 1 && (args.decisions === true || Number.isSafeInteger(args.decision))) {
+          return { text: JSON.stringify(this.fastCombat.inspect(args.decision as number | undefined)),
+            meta: { protocol: 'agent-mc-tactics/v1', owner: 'host' } };
         }
         if (tool.name === 'mc_cast' && typeof args.spell === 'string') {
           const id = args.spell.trim().toLowerCase();
@@ -481,6 +488,7 @@ export class MymcWorld implements World {
   }
 
   async start(host: WorldHost): Promise<void> {
+    validateHostCombat(this.opts.cfg);
     if (this.opts.botDir) assertMymcReady(this.opts.cfg, this.opts.botDir);
     if (this.requireProtectSupport) {
       const availableTools = new Set(this.engine.tools().map((tool) => tool.name));
@@ -496,11 +504,26 @@ export class MymcWorld implements World {
       }
     }
     this.host = host;
-    try { await this.engine.start(mymcHost(host, this.catalog, this.trialProgress, this.prospect, this.guildProgress, this.messages)); }
-    catch (error) { this.host = null; throw error; }
+    try {
+      await this.engine.start(mymcHost(host, this.catalog, this.trialProgress, this.prospect, this.guildProgress, this.messages));
+      if (this.opts.cfg.hostDecisions?.combat?.enabled) {
+        const tool = this.engine.tools().find(tool => tool.name === 'mc_combat_tactic');
+        if (!tool) throw new Error('Host fast combat requires the selected pack tactic port.');
+        this.fastCombat = new HostCombatDriver(() => this.opts.cfg, {
+          call: (args, signal) => tool.handler(args, { role: 'host-decision', log: host.log, signal }),
+          report: (event, data) => host.log.emit('info', `host combat ${event}`, { event: 'host.combat.' + event, data }),
+        });
+        this.fastCombat.start();
+      }
+    } catch (error) {
+      this.fastCombat?.stop(); this.fastCombat = null; this.host = null;
+      await this.engine.stop();
+      throw error;
+    }
   }
 
   stop(): Promise<void> {
+    this.fastCombat?.stop(); this.fastCombat = null;
     this.host = null;
     return this.engine.stop();
   }

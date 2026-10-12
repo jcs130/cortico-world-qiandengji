@@ -12,6 +12,8 @@ const sources=JSON.parse(await readFile(new URL('release-sources.json',root),'ut
 if(hash(await readFile(new URL(sources.viewer.artifact,root)))!==sources.viewer.sha256)throw new Error('Viewer input hash mismatch');
 const pkg = JSON.parse(await readFile(new URL('package.json', root), 'utf8'));
 if (pkg.dependencies?.cortico || pkg.devDependencies?.cortico || pkg.cortico) throw new Error('Default package must be host-independent');
+if (Object.keys(pkg.exports).some(key => /cortico/i.test(key)) || manifest.files.some(entry => /adapters\/(?:cortico|minecraft)/i.test(entry.file)))
+  throw new Error('Host adapter leaked into the independent core distribution');
 const declarations = JSON.parse(await readFile(new URL('dist/types/manifest.json', root), 'utf8'));
 for (const entry of declarations.files) {
   const bytes = await readFile(new URL('dist/types/' + entry.file, root));

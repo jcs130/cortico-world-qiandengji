@@ -3,9 +3,13 @@ dist/
 coverage/
 .env
 *.log
-engine/
+/engine/
+!integrations/qiandengji/engine/
+!integrations/qiandengji/engine/**
 .sources/
 scratch/
 *.tgz
 
 !vendor/mc-visual-console-java-1.20.6.tgz
+!vendor/native-types/
+!vendor/native-types/**

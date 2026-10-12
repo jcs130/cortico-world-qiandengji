@@ -15,7 +15,7 @@ afterEach(async () => { for (const close of cleanups.splice(0).reverse()) await 
 async function setup(action: (name: string) => Promise<void> = async () => {}) {
   const assets = mkdtempSync(join(tmpdir(), 'mc-console-test-'));
   cleanups.push(() => rmSync(assets, { recursive: true, force: true }));
-  for (const file of ['index.html', 'console.js', 'console.css']) writeFileSync(join(assets, file), 'fixture');
+  for (const file of ['index.html', 'console.js', 'console.css', 'metrics.html', 'metrics.js', 'metrics.css']) writeFileSync(join(assets, file), 'fixture');
   const runtime = { operatorState: async () => ({ schema: 'minecraft-client-console/v1', runtime: { phase: 'disconnected' },
     connection: { accounts: { agent: { mode: 'microsoft', phase: 'awaiting-user', challenge: { userCode: 'FIXTURE-1234' } } } } }),
     operatorAction: vi.fn(action), metrics: { snapshot: () => ({ schema: 'metrics', phase: 'disconnected' }) }, status: () => ({ phase: 'disconnected' }) };
@@ -32,6 +32,7 @@ it('serves the operator UI and private challenge separately from read-only model
   const metrics = await (await fetch(app.url + 'api/harness/metrics')).json();
   expect(JSON.stringify(metrics)).not.toMatch(/FIXTURE|controlToken/);
   expect((await fetch(app.url + 'auth/agent')).status).toBe(404);
+  expect((await fetch(app.url + 'metrics')).headers.get('content-type')).toContain('text/html');
 });
 it('requires local Host/Origin and the process nonce; GET cannot execute game or launcher actions', async () => {
   const app = await setup();

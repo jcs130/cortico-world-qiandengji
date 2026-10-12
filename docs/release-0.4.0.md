@@ -9,7 +9,7 @@
 | `agent-mc-world@0.4.0` | 中立 SDK；SDK/MCP、agent-mc/v1、独立核心、现代画面；无 Cortico 依赖 |
 | `cortico-world-qiandengji@0.4.0` | Cortico API 5，World ID `mymc`；显式千灯纪服务器扩展与同版核心 |
 
-在 Cortico 中安装 `cortico-world-qiandengji`，重启加载并配置 `worlds.mymc`。核心自动作为依赖安装，不显示第二个 World。`agent-mc-world/adapters/cortico` 保留开发者装配端口，其包装示例标记 private，不另发 npm 插件。保留原框架的 Minecraft 示例世界，不修改或覆盖它。未配置服务器不会连接，未配置演出桥不会扫描端口。
+在 Cortico 中安装 `cortico-world-qiandengji`，重启加载并配置 `worlds.mymc`。核心自动作为依赖安装，不显示第二个 World。`adapters/cortico/`（仓库内私有示例，不进入核心安装包） 保留开发者装配端口，其包装示例标记 private，不另发 npm 插件。保留原框架的 Minecraft 示例世界，不修改或覆盖它。未配置服务器不会连接，未配置演出桥不会扫描端口。
 
 ## 本轮修正
 
