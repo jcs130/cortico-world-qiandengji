@@ -1,0 +1,29 @@
+--- a/method-worker.mjs
++++ b/method-worker.mjs
+@@ -7,11 +7,21 @@
+ 
+ let serial = 0;
+ const pending = new Map();
+-const rpc = harden((method, args = {}, scope) => new Promise((resolve, reject) => {
+-  const id = ++serial;
+-  pending.set(id, { resolve, reject, method });
+-  parentPort.postMessage({ kind: 'call', id, method, args: JSON.parse(JSON.stringify(args)), scope });
+-}));
++const rpc = harden((method, args = {}, scope) => {
++  const result = new Promise((resolve, reject) => {
++    const id = ++serial;
++    pending.set(id, { resolve, reject, method });
++    parentPort.postMessage({ kind: 'call', id, method, args: JSON.parse(JSON.stringify(args)), scope });
++  });
++  const name = method === 'mineflayer' ? `bot.${args.name}` : `mc.${method}`;
++  return new Proxy(result, {
++    get(target, key) {
++      if (key === 'then' || key === 'catch' || key === 'finally') return target[key].bind(target);
++      if (key === Symbol.toStringTag) return Reflect.get(target, key);
++      throw new TypeError(`${name}() returns a Promise; await it before reading ${String(key)}. No observation was read from this Promise.`);
++    },
++  });
++});
+ parentPort.on('message', (message) => {
+   const request = pending.get(message.id);
+   if (!request) return;

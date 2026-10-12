@@ -32,7 +32,8 @@
       "patches/minecraft-collect-step-state.patch",
       "patches/minecraft-placement-state-evidence.patch",
       "patches/minecraft-crop-placement.patch",
-      "patches/minecraft-goal-metrics.patch"
+      "patches/minecraft-goal-metrics.patch",
+      "patches/minecraft-method-await.patch"
     ]
   },
   "viewer": {
