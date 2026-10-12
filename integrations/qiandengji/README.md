@@ -4,6 +4,8 @@
 
 这里保存千灯纪账号规范、传送、公会/试炼、技能目录、服务器资料及旧 `mymc_*` World/MCP 装配。它们不属于默认 Agent MC World 产品，也不在通用发行包的 files 白名单中。
 
+现役 Cortico 本地扩展链接指向本目录的私有兼容包，默认导出 `MYMC`，World ID 为 `mymc`；通用包默认导出 `MC`，ID 为 `mc`。更换链接前先核对已启用的 World ID 与当前账号、数据目录。兼容包的 `dist/console.js` 和 `dist/console.css` 从同仓库现役控制台产物复制，沿用已有控制台；不要为更换装配入口覆盖现役引擎或重建正在提供的控制台。复制后用 Cortico `check:extension` 验证本目录，重新载入已安装扩展目录确认 `mymc` 可发现，再按授权重载。
+
 现役可米继续使用这份兼容源码和原账号、配置、记忆、账本。旧 `src/` 文件转发到这里；已加载模块依赖的旧指南仍留在原路径。本次没有重载、重连或迁移。
 
 历史装配入口是 `cortico.ts` 的 `MYMC`、`runtime.ts` 的 `MymcAgentRuntime` 以及 `stdio.ts`；依赖同仓库通用客户端和生成引擎。这里尚不是单独发布的 npm 包。旧操作说明保存在 `LEGACY-README.md` / `LEGACY-DEPLOYMENT.md`，只用于兼容维护。
