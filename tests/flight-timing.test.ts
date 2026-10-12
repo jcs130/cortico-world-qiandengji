@@ -2,9 +2,9 @@ import { EventEmitter } from 'node:events';
 import type { Bot } from 'mineflayer';
 import { Vec3 } from 'vec3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { flyToPosition, previewFlight, setFlightExpiry, watchFlightAbilities } from '../engine/flight.ts';
-import { previewFlightPlan } from '../engine/flight-preview.ts';
-import * as context from '../engine/skill-context.ts';
+import { flyToPosition, previewFlight, setFlightExpiry, watchFlightAbilities } from '../core/flight.ts';
+import { previewFlightPlan } from '../core/flight-preview.ts';
+import * as context from '../core/skill-context.ts';
 
 beforeEach(() => {
   vi.useFakeTimers();

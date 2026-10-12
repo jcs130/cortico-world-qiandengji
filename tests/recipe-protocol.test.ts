@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
-import { repairRecipeSerializers } from '../engine/mineflayer-fixes.ts';
+import { repairRecipeSerializers } from '../core/mineflayer-fixes.ts';
 
 const worldRequire = createRequire(import.meta.url);
 const mfRequire = createRequire(worldRequire.resolve('mineflayer'));

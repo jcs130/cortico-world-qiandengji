@@ -3,7 +3,7 @@ import type { Bot } from 'mineflayer';
 import minecraftData from 'minecraft-data';
 import { Vec3 } from 'vec3';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BattlefieldObserver, BATTLEFIELD_CHANNEL } from '../engine/battlefield.ts';
+import { BattlefieldObserver, BATTLEFIELD_CHANNEL } from '../integrations/qiandengji/engine/battlefield.ts';
 
 const ownUuid = '00000000-0000-0000-0000-000000000001';
 const allyUuid = '00000000-0000-0000-0000-000000000002';

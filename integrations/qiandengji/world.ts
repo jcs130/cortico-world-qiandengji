@@ -1,8 +1,8 @@
+import { SERVER_TOOLS } from './engine/world.ts';
 /** 千灯纪的 World 契约；游戏协议与执行器沿用 Minecraft 引擎。 */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type {
-  CognitionRequest,
   DeferredRendered,
   ToolDef,
   ToolOutcome,
@@ -11,9 +11,9 @@ import type {
   WorldHost,
   WorldPanelDecl,
 } from '../../src/client/contracts.ts';
-import { MINECRAFT_PANEL_DECLS, MINECRAFT_TOOL_DECLS, type MinecraftWorldOptions } from '../../engine/world.ts';
-import { MinecraftWorldProxy } from '../../engine/proxy.ts';
-import { renderTemplate } from '../../engine/support/runtime.mjs';
+import { MINECRAFT_PANEL_DECLS, MINECRAFT_TOOL_DECLS, type MinecraftWorldOptions } from '../../src/extension.ts';
+import { MinecraftWorldProxy } from '../../src/extension.ts';
+import { renderTemplate } from '../../src/extension.ts';
 import {
   MYMC_CLIENT_CONFIG_GROUP,
   MYMC_CONFIG_GROUP,
@@ -31,7 +31,7 @@ import { TrialProgress, trialGoalLimitNote } from './trial-status.ts';
 import { ProspectEvidence } from './prospect-evidence.ts';
 import { GuildProgress } from './guild-progress.ts';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from './server-guide.ts';
-import { observeVisual } from '../../src/client/visual.ts';
+import { observeVisual } from '../../src/extension.ts';
 import { combatTacticNote } from './combat-contract.ts';
 
 const ENV_PROMPT_FILE = fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url));
@@ -239,7 +239,11 @@ export function routeViaServerCommand(args: Record<string, unknown>): { args: Re
 
 function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgress,
   prospect: ProspectEvidence, guild: GuildProgress, messages: MessageInbox): WorldHost {
-  const bridge = Object.create(host) as WorldHost;
+  const bridge: WorldHost = {
+    pushEvent:(event,options)=>host.pushEvent(event,options),pushDeferred:(event,options)=>host.pushDeferred(event,options),
+    drainPendingEvents:filter=>host.drainPendingEvents(filter),store:host.store,blob:handle=>host.blob(handle),
+    get modelFacts(){return host.modelFacts;},reportUsage:(usage,options)=>host.reportUsage(usage,options),log:host.log,
+  };
   bridge.pushEvent = async (event, options) => {
     const mapped = toMymcEvent(event);
     const channel = mapped.type === 'mymc.chat' ? messageChannel(mapped.text) : null;
@@ -271,25 +275,13 @@ function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgres
     ...(event.senderKey !== undefined
       ? { senderKey: event.senderKey.replace(/^minecraft(?=\.|$)/, 'mymc') }
       : {}),
-    render: async () => mapRendered(await event.render()),
+    render: async signal => mapRendered(await event.render(signal)),
   }, options);
   bridge.drainPendingEvents = async (filter) => {
     const events = await host.drainPendingEvents((event) => filter(toMinecraftEvent(event)));
     return events.map(toMinecraftEvent);
   };
   bridge.reportUsage = (usage, options) => host.reportUsage(usage, options);
-  Object.defineProperty(bridge, 'cognition', {
-    get: () => {
-      const cognition = host.cognition;
-      return cognition && {
-        request: (request: CognitionRequest) => cognition.request({
-          ...request,
-          brief: toMymcText(request.brief),
-          tools: request.tools?.map((name) => name.replace(/^mc_/, 'mymc_')),
-        }),
-      };
-    },
-  });
   return bridge;
 }
 
@@ -306,7 +298,7 @@ export class MymcWorld implements World {
 
   constructor(private readonly opts: Omit<MinecraftWorldOptions, 'cfg'> & { cfg: MymcConfigSection; botDir?: string }, engine?: MinecraftWorldProxy) {
     this.requireProtectSupport = engine === undefined;
-    this.engine = engine ?? new MinecraftWorldProxy({ ...opts, cfg: mymcEngineConfig(opts.cfg), agentFriendEnabled: true });
+    this.engine = engine ?? new MinecraftWorldProxy({ ...opts, cfg: mymcEngineConfig(opts.cfg), extension: { module: new URL('./engine/world.ts', import.meta.url).href, tools: SERVER_TOOLS } });
     this.catalog = new SkillCatalog(`${opts.cfg.host}:${opts.cfg.port}`, opts.dataDir);
     const identity = `${opts.cfg.host}:${opts.cfg.port}:${mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName)}`;
     this.messages = new MessageInbox(identity, opts.dataDir);
@@ -342,7 +334,7 @@ export class MymcWorld implements World {
         parts?: readonly { key: string; text: string }[] } | null;
     };
     const facts = engine.requestFacts?.();
-    const additions = [{ key: 'skillCatalog', text: this.catalog.compactIndex() },
+    const additions = [{ key:'trialHistory',text:this.verifiedFacts()??'' }, { key: 'skillCatalog', text: this.catalog.compactIndex() },
       { key: 'guildState', text: this.guildProgress.facts() },
       { key: 'messages', text: this.messages.index() }].filter(part => part.text);
     if (!facts) {
@@ -356,6 +348,8 @@ export class MymcWorld implements World {
       snapshotTypes: facts.snapshotTypes.map((type) => type.replace(/^minecraft\./, 'mymc.')),
     };
   }
+
+  onTurnEnded() { return this.engine.onTurnEnded?.(); }
 
   tools(): ToolDef[] {
     const engineTools = this.engine.tools();
@@ -444,7 +438,7 @@ export class MymcWorld implements World {
     const base = this.engine.console();
     return {
       ...base,
-      label: '千灯纪',
+      label: '联机版我的世界',
       panels: [...MYMC_PANEL_DECLS],
       promptDocs: [
         {
@@ -492,13 +486,13 @@ export class MymcWorld implements World {
       const availableTools = new Set(this.engine.tools().map((tool) => tool.name));
       const missingTools = ['mc_cast', 'mc_combat_tactic'].filter((name) => !availableTools.has(name));
       if (missingTools.length > 0) {
-        throw new Error(`当前 Cortico Minecraft 引擎缺少千灯纪使用的工具：${missingTools.join(', ')}`);
+        throw new Error(`独立引擎未装配千灯纪扩展工具：${missingTools.join(', ')}`);
       }
-      const protectionModule = '../../engine/agentfriend-protection.ts';
+      const protectionModule = './engine/agentfriend-protection.ts';
       try {
         await import(protectionModule);
       } catch {
-        throw new Error('当前 Cortico 构建缺少 AgentFriend 方块保护预检；请先升级 Minecraft 引擎');
+        throw new Error('千灯纪扩展缺少 AgentFriend 方块保护模块；请检查扩展安装完整性');
       }
     }
     this.host = host;

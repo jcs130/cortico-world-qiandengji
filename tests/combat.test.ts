@@ -2,14 +2,14 @@ import { EventEmitter } from 'node:events';
 import type { Bot } from 'mineflayer';
 import { Vec3 } from 'vec3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CombatSession, footingAhead, type CombatTuning } from '../engine/combat.ts';
-import type { CombatRangedActions } from '../engine/combat.ts';
-import type { RangedTarget } from '../engine/ranged.ts';
-import { MinecraftLog } from '../engine/log.ts';
-import { Executor, type TaskReport } from '../engine/executor.ts';
-import { skillEat } from '../engine/skills-craft.ts';
-import type { CombatResult } from '../engine/combat-tactics.ts';
-import type { Logger } from 'cortico/core/types.ts';
+import { CombatSession, footingAhead, type CombatTuning } from '../core/combat.ts';
+import type { CombatRangedActions } from '../core/combat.ts';
+import type { RangedTarget } from '../core/ranged.ts';
+import { MinecraftLog } from '../core/log.ts';
+import { Executor, type TaskReport } from '../core/executor.ts';
+import { skillEat } from '../core/skills-craft.ts';
+import type { CombatResult } from '../integrations/qiandengji/engine/combat-tactics.ts';
+import type { Logger } from '../src/client/contracts.ts';
 
 const log = { child() { return this; }, info() {}, warn() {}, error() {}, debug() {}, trace() {}, emit() {} } as unknown as Logger;
 

@@ -3,11 +3,11 @@ import { EventEmitter } from 'node:events';
 import type { Bot } from 'mineflayer';
 import { Vec3 } from 'vec3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Executor, type TaskReport } from '../engine/executor.ts';
+import { Executor, type TaskReport } from '../core/executor.ts';
 
 const field = vi.hoisted(() => ({ visible: false, collections: 0 }));
-vi.mock('../engine/skills-gather.ts', async original => ({
-  ...await original<typeof import('../engine/skills-gather.ts')>(),
+vi.mock('../core/skills-gather.ts', async original => ({
+  ...await original<typeof import('../core/skills-gather.ts')>(),
   collectVisible: () => field.visible,
   skillCollect: async () => { field.collections++; return 'collected after current observation'; },
 }));

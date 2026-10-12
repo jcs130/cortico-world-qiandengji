@@ -10,13 +10,13 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 
 const directory = mkdtempSync(join(tmpdir(), 'minecraft-agent-check-'));
 const config = join(directory, 'agent.json');
-const generic = process.argv[2] !== '--legacy-qiandengji';
-if (process.argv.length > 3 || (process.argv[2] && !['--minecraft', '--legacy-qiandengji'].includes(process.argv[2]))) throw new Error('Usage: agent-mcp-check.mjs');
+const generic = true;
+if (process.argv.length > 3 || (process.argv[2] && process.argv[2] !== '--minecraft')) throw new Error('Usage: agent-mcp-check.mjs');
 const prefix = generic ? 'mc' : 'mymc';
 writeFileSync(config, JSON.stringify({ dataDir: './data', world: { host: 'example.test', username: 'probe' } }));
 const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const transport = new StdioClientTransport({ command: process.execPath,
-  args: [fileURLToPath(new URL(generic ? '../bin/minecraft-agent-mcp.mjs' : '../bin/qiandengji-mcp.mjs', import.meta.url)), config],
+  args: [fileURLToPath(new URL('../bin/minecraft-agent-mcp.mjs', import.meta.url)), config],
   cwd: directory, stderr: 'pipe' });
 const client = new Client({ name: 'minecraft-install-check', version: '1.0.0' });
 let errors = '';

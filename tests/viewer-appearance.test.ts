@@ -1,11 +1,27 @@
+import { serverViewerProtocol } from '../integrations/qiandengji/engine/viewer-state.ts';
 import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
 import { io, type Socket } from 'socket.io-client';
 import { expect, it, vi } from 'vitest';
-import { startModernViewer } from '../engine/modern-viewer.ts';
-import { APPEARANCE_CHANNEL, PAPER_YSM_JAR_SHA256 } from '../engine/viewer-appearance.mjs';
+import { startModernViewer } from '../core/modern-viewer.ts';
+import { APPEARANCE_CHANNEL, PAPER_YSM_JAR_SHA256 } from '../integrations/qiandengji/engine/viewer-appearance.mjs';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 import { freeViewerPort, viewerBot } from './fixtures/viewer-bot.ts';
+
+it('does not register or request server plugin channels without an explicit extension', async () => {
+  const {bot,protocol}=viewerBot();
+  const write=vi.fn(()=>{throw Error('Unconfigured plugin packet');});
+  Object.assign(protocol,{state:'play',write});
+  const viewer=await startModernViewer(bot as never,{port:await freeViewerPort(),assetsDir:MYMC_DEFAULTS.viewerAssetsDir});
+  try {
+    bot.emit('spawn');
+    protocol.emit('custom_payload',{channel:APPEARANCE_CHANNEL,data:Buffer.from('{}')});
+    const health=await (await fetch(viewer.url+'/healthz')).json();
+    expect(health.appearance).toBeNull();
+    expect(write).not.toHaveBeenCalled();
+  } finally { await viewer.close(); }
+  expect(protocol.listenerCount('custom_payload')).toBe(0);
+});
 
 it('relays verified original appearance assets over both existing viewer paths and releases all observers', async () => {
   const { bot, protocol } = viewerBot();
@@ -44,7 +60,7 @@ it('relays verified original appearance assets over both existing viewer paths a
     channel: APPEARANCE_CHANNEL, data: Buffer.from(JSON.stringify(value)),
   });
   const viewer = await startModernViewer(bot as never, {
-    port: await freeViewerPort(), assetsDir: MYMC_DEFAULTS.viewerAssetsDir,
+    serverProtocol: serverViewerProtocol, port: await freeViewerPort(), assetsDir: MYMC_DEFAULTS.viewerAssetsDir,
   });
   expect(registrations).toBe(1);
   const clients: Socket[] = [];

@@ -1,8 +1,8 @@
 import { createRequire } from 'node:module';
 import type { Bot } from 'mineflayer';
 import { describe, expect, it } from 'vitest';
-import { recordToolChoice, toolTraceNote } from '../engine/tools.ts';
-import type { SkillContext } from '../engine/skill-context.ts';
+import { recordToolChoice, toolTraceNote } from '../core/tools.ts';
+import type { SkillContext } from '../core/skill-context.ts';
 
 const require = createRequire(createRequire(import.meta.url).resolve('mineflayer'));
 const Item = require('prismarine-item')('1.20.6');

@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url';
-import { MINECRAFT_DEFAULTS, type MinecraftConfigSection } from '../../engine/config.ts';
+import { MINECRAFT_DEFAULTS, type MinecraftConfigSection } from '../../core/config.ts';
 import { protocolVersion } from './authentication.ts';
 
 export type MinecraftClientConfig = MinecraftConfigSection;
@@ -20,5 +20,6 @@ export function assertMinecraftReady(cfg: MinecraftClientConfig): void {
     throw new Error('Offline Minecraft account must contain 1–16 letters, digits or underscores.');
   if (cfg.username.length > 254 || /[\x00-\x1f\x7f]/.test(cfg.username) || cfg.username !== cfg.username.trim())
     throw new Error('Invalid Minecraft account identifier.');
+  if (cfg.idle.selector !== 'random') throw new Error('Idle inference belongs to the host; migrate legacy configuration before connecting.');
   protocolVersion(cfg.version);
 }

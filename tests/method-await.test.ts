@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MethodRunner, type MethodRun } from '../engine/method-runner.ts';
+import { MethodRunner, type MethodRun } from '../core/method-runner.ts';
 
 async function run(code: string, nativeMethods?: string[]) {
   let finish!: (run: MethodRun) => void;

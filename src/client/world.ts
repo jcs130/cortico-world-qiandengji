@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
-import { MinecraftWorldProxy } from '../../engine/proxy.ts';
-import type { MinecraftWorldOptions } from '../../engine/world.ts';
+import { MinecraftWorldProxy } from '../../core/proxy.ts';
+import type { MinecraftWorldOptions } from '../../core/world.ts';
 import type { ToolDef, World, WorldHost, WorldRequestFacts } from './contracts.ts';
 import { observeVisual } from './visual.ts';
 
@@ -11,7 +11,7 @@ export class MinecraftClientWorld implements World {
   private host: WorldHost | null = null;
   private readonly engine: EnginePort;
   constructor(options: MinecraftWorldOptions, engine?: EnginePort) {
-    this.engine = engine ?? new MinecraftWorldProxy({ ...options, agentFriendEnabled: false });
+    this.engine = engine ?? new MinecraftWorldProxy(options);
   }
   envPromptVars() { return this.engine.envPromptVars(); }
   requestFacts() { return this.engine.requestFacts?.() ?? null; }
@@ -32,5 +32,5 @@ export class MinecraftClientWorld implements World {
     try { await this.engine.start(host); } catch (error) { this.host = null; throw error; }
   }
   stop() { this.host = null; return this.engine.stop(); }
-  onTurnEnded() { this.engine.onTurnEnded?.(); }
+  onTurnEnded() { return this.engine.onTurnEnded?.(); }
 }

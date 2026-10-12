@@ -2,9 +2,9 @@ import { EventEmitter } from 'node:events';
 import { createRequire } from 'node:module';
 import type { Bot } from 'mineflayer';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ensureHolding } from '../engine/placement.ts';
-import { skillEquip } from '../engine/skills-craft.ts';
-import { installInventoryClickSync } from '../engine/inventory-click-sync.ts';
+import { ensureHolding } from '../core/placement.ts';
+import { skillEquip } from '../core/skills-craft.ts';
+import { installInventoryClickSync } from '../core/inventory-click-sync.ts';
 
 const require = createRequire(createRequire(import.meta.url).resolve('mineflayer'));
 

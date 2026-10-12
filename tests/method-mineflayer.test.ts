@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { Bot } from 'mineflayer';
 import { Vec3 } from 'vec3';
 import { methodHarness, methodEnded } from './method-harness.ts';
-import { installNavigationBareHand } from '../engine/hand-interaction.ts';
+import { installNavigationBareHand } from '../core/hand-interaction.ts';
 
 const dependency = createRequire(createRequire(import.meta.url).resolve('mineflayer'));
 const registry = dependency('prismarine-registry')('1.20.6');

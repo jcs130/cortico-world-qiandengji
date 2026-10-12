@@ -2,12 +2,12 @@ import { createRequire } from 'node:module';
 import { EventEmitter } from 'node:events';
 import type { Bot } from 'mineflayer';
 import { Vec3 } from 'vec3';
-import { MinecraftWorld } from '../engine/world.ts';
-import { MINECRAFT_DEFAULTS } from '../engine/config.ts';
-import { Executor } from '../engine/executor.ts';
-import { CONTROL_KEYS } from '../engine/skills.ts';
-import { watchFlightAbilities } from '../engine/flight.ts';
-import { MethodRunner } from '../engine/method-runner.ts';
+import { MinecraftWorld } from '../core/world.ts';
+import { MINECRAFT_DEFAULTS } from '../core/config.ts';
+import { Executor } from '../core/executor.ts';
+import { CONTROL_KEYS } from '../core/skills.ts';
+import { watchFlightAbilities } from '../core/flight.ts';
+import { MethodRunner } from '../core/method-runner.ts';
 import { FakeHost } from './method-host.ts';
 function nextTaskId(): () => number { let seq = 0; return () => ++seq; }
 

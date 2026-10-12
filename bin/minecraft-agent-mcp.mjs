@@ -1,5 +1,3 @@
 #!/usr/bin/env node
-import { register } from 'tsx/esm/api';
-register();
-const { startMcpStdio } = await import('../src/mcp/stdio.ts');
+const { startMcpStdio } = await import('../dist/runtime/src/mcp/stdio.js');
 await startMcpStdio();

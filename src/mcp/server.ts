@@ -5,6 +5,20 @@ import { CallToolRequestSchema, ListResourcesRequestSchema, ListToolsRequestSche
 import type { BlobRef, ToolOutcome } from '../client/contracts.ts';
 import type { MinecraftAgentClient } from '../client/runtime.ts';
 import { traceSchema } from '../client/metrics.ts';
+import { randomUUID } from 'node:crypto';
+import { PROTOCOL, requireProtocol, type ArchiveQuery } from '../contracts/protocol.ts';
+
+const protocolSpec: Tool = {
+  name: 'mc_protocol', description: 'Versioned host protocol: explicitly begin/end a real decision turn, cancel a request, query execution state, replace current facts, read original archives, or budget request context. Tool RPC completion does not end a turn. Execution completion does not complete your goal.',
+  inputSchema: { type: 'object', properties: {
+    protocol: { type: 'string', const: PROTOCOL },
+    action: { enum: ['begin_turn', 'end_turn', 'ack_barrier', 'cancel', 'task', 'facts', 'archive', 'archive_runs', 'prepare_context'] },
+    id: { type: 'string', minLength: 1, maxLength: 256 }, kind: { enum: ['task', 'method', 'observation'] },
+    run: { type: 'string' }, after: { type: 'integer', minimum: 0 }, limit: { type: 'integer', minimum: 1, maximum: 256 },
+    type: { type: 'string' }, keyword: { type: 'string' }, history: { type: 'string' },
+    contextTokens: { type: 'integer', minimum: 1 }, reservedOutputTokens: { type: 'integer', minimum: 0 },
+  }, required: ['protocol', 'action'], additionalProperties: false },
+};
 
 const connectionSpec: Tool = {
   name: 'mc_connection', description: 'Connect, inspect or disconnect this Agent\'s Minecraft runtime. '
@@ -41,7 +55,7 @@ const traceSpec: Tool = { name: 'mc_trace', description: 'Optional HOST instrume
 export function createMinecraftMcpServer(runtime: MinecraftAgentClient, version: string): Server {
   const prefix = runtime.toolPrefix;
   const translate = (text: string) => text.replaceAll('mc_', prefix + '_');
-  const [connection, events, artifact, metrics, trace] = [connectionSpec, eventsSpec, artifactSpec, metricsSpec, traceSpec]
+  const [connection, events, artifact, metrics, trace, protocol] = [connectionSpec, eventsSpec, artifactSpec, metricsSpec, traceSpec, protocolSpec]
     .map(tool => ({ ...tool, name: translate(tool.name), description: translate(tool.description ?? '') }));
   const server = new Server({ name: `minecraft-agent-${runtime.profile}`, version }, {
     capabilities: { tools: {}, resources: {} },
@@ -50,9 +64,12 @@ export function createMinecraftMcpServer(runtime: MinecraftAgentClient, version:
       + 'Use mc_help and mc_script api:index for progressive tool and native Mineflayer documentation. '
       + 'Keep measured world facts and actual execution receipts separate from hypotheses and goal-success judgments.'),
   });
-  const tools: Tool[] = [connection, events, artifact, metrics, trace, ...runtime.tools().map(tool => ({
+  const session = randomUUID();
+  const tools: Tool[] = [connection, events, artifact, metrics, trace, protocol, ...runtime.tools().map(tool => ({
     name: tool.name, description: tool.description, inputSchema: tool.parameters as Tool['inputSchema'],
     annotations: { readOnlyHint: tool.tags.includes('read') && !tool.tags.some(tag => ['write', 'act', 'speak'].includes(tag)) },
+    _meta: { [PROTOCOL]: { tags: tool.tags, barrierAfter: tool.barrierAfter === true,
+      endsTurn: tool.endsTurn === true, interruptible: tool.interruptible !== false } },
   }))];
   const ajv = new Ajv({ strict: false, allErrors: true, validateFormats: false });
   const validators = new Map(tools.map(tool => [tool.name, ajv.compile(tool.inputSchema)]));
@@ -66,6 +83,9 @@ export function createMinecraftMcpServer(runtime: MinecraftAgentClient, version:
   });
   const outcome = (result: ToolOutcome): CallToolResult => ({
     content: [{ type: 'text', text: result.text }, ...contents(runtime.journal.saveBlobs(result.blobs))],
+    structuredContent: { ...result, protocol: PROTOCOL, text: result.text, failed: result.failed === true,
+      endsTurn: result.endsTurn === true, control: result.control ?? null, execution: result.execution ?? null,
+      events: result.events ?? [], blobs: runtime.journal.saveBlobs(result.blobs) },
     ...(result.failed ? { isError: true } : {}),
   });
 
@@ -77,6 +97,28 @@ export function createMinecraftMcpServer(runtime: MinecraftAgentClient, version:
       if (!validate) throw new Error(`Unknown tool: ${name}`);
       if (!validate(args)) throw new Error(`Invalid arguments: ${ajv.errorsText(validate.errors)}`);
       if (extra.signal.aborted) throw new Error('Request cancelled before submission.');
+      if (name === protocol.name) {
+        requireProtocol(String(args.protocol));
+        const id = () => { if (typeof args.id !== 'string' || !args.id) throw new Error('id is required'); return args.id; };
+        let result: unknown;
+        switch (args.action) {
+          case 'begin_turn': result = runtime.beginTurn(id()); break;
+          case 'end_turn': result = await runtime.endTurn(id()); break;
+          case 'ack_barrier': runtime.acknowledgeBarrier(id()); result = { acknowledged: true }; break;
+          case 'cancel': result = runtime.cancel(id()); break;
+          case 'task': {
+            if (!['task', 'method', 'observation'].includes(String(args.kind))) throw new Error('kind is required');
+            result = runtime.task(args.kind as 'task' | 'method' | 'observation', id()); break;
+          }
+          case 'facts': result = runtime.currentFacts(); break;
+          case 'archive_runs': result = runtime.journal.archiveRuns(); break;
+          case 'archive': result = await runtime.journal.archive(args as ArchiveQuery); break;
+          case 'prepare_context': result = await runtime.prepareContext({ contextTokens: Number(args.contextTokens),
+            reservedOutputTokens: Number(args.reservedOutputTokens) }, String(args.history ?? ''), undefined,
+            tools.map(tool => ({ name: tool.name, description: tool.description ?? '', parameters: tool.inputSchema }))); break;
+        }
+        return outcome({ text: JSON.stringify(result) });
+      }
       if (name === metrics.name) return outcome({ text: JSON.stringify(runtime.metrics.snapshot(runtime.status().phase)) });
       if (name === trace.name) {
         runtime.metrics.report(args);
@@ -89,22 +131,7 @@ export function createMinecraftMcpServer(runtime: MinecraftAgentClient, version:
         return outcome({ text: JSON.stringify(runtime.status()) });
       }
       if (name === events.name) {
-        const after = Number(args.after ?? 0);
-        const run = typeof args.run === 'string' ? args.run : undefined;
-        // Check the cursor epoch before waiting or rendering deferred samples.
-        runtime.journal.read(after, 1, run);
-        const deadline = Date.now() + Number(args.waitMs ?? 0);
-        do {
-          await runtime.journal.renderDeferred();
-          if (runtime.journal.store.latestCursor() > after || Date.now() >= deadline) break;
-          await new Promise<void>((resolve, reject) => {
-            const abort = () => { clearTimeout(timer); reject(new Error('Event wait cancelled.')); };
-            const timer = setTimeout(() => { extra.signal.removeEventListener('abort', abort); resolve(); }, Math.min(200, deadline - Date.now()));
-            extra.signal.addEventListener('abort', abort, { once: true });
-            if (extra.signal.aborted) { extra.signal.removeEventListener('abort', abort); abort(); }
-          });
-        } while (!extra.signal.aborted);
-        return outcome({ text: JSON.stringify(runtime.journal.read(after, Number(args.limit ?? 64), run, args.includeArchived === true)) });
+        return outcome({ text: JSON.stringify(await runtime.events(args, extra.signal)) });
       }
       if (name === artifact.name) {
         if (args.action === 'put') {
@@ -120,7 +147,12 @@ export function createMinecraftMcpServer(runtime: MinecraftAgentClient, version:
           return outcome({ text: Buffer.from(saved.bytes).toString('utf8') });
         return outcome({ text: args.handle, blobs: [{ handle: args.handle, fallbackText: 'Execution artifact' }] });
       }
-      return outcome(await runtime.call(name, args, String(extra.requestId), extra.signal));
+      if (Object.keys(request.params._meta ?? {}).some(key => key.startsWith('agent-mc/') && key !== PROTOCOL)) throw new Error('Unsupported call protocol version');
+      const metadata = request.params._meta?.[PROTOCOL] as { requestId?: string; turnId?: string } | undefined;
+      if (metadata && (typeof metadata !== 'object' || (metadata.requestId !== undefined && typeof metadata.requestId !== 'string')
+        || (metadata.turnId !== undefined && typeof metadata.turnId !== 'string'))) throw new Error('Invalid protocol call metadata');
+      return outcome(await runtime.call(name, args, { requestId: metadata?.requestId ?? `${session}:${extra.requestId}`,
+        turnId: metadata?.turnId, signal: extra.signal }));
     } catch (error) {
       return { isError: true, content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }] };
     }

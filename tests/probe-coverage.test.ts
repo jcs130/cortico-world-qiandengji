@@ -2,8 +2,8 @@ import { createRequire } from 'node:module';
 import type { Bot } from 'mineflayer';
 import { Vec3 } from 'vec3';
 import { describe, expect, it } from 'vitest';
-import type { SkillContext } from '../engine/skill-context.ts';
-import { skillProbe } from '../engine/skills-gather.ts';
+import type { SkillContext } from '../core/skill-context.ts';
+import { skillProbe } from '../core/skills-gather.ts';
 
 const require = createRequire(createRequire(import.meta.url).resolve('mineflayer'));
 const registry = require('minecraft-data')('1.20.6');

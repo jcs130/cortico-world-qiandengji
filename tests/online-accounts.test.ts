@@ -6,9 +6,9 @@ import mineflayer from 'mineflayer';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MinecraftAuthentication, protocolVersion, publicDeviceChallenge } from '../src/client/authentication.ts';
 import { nullLogger } from '../src/client/index.ts';
-import { Bridge } from '../engine/bridge.ts';
-import { GameClient } from '../engine/client.ts';
-import { buildClientLaunch } from '../engine/client-launch.ts';
+import { Bridge } from '../core/bridge.ts';
+import { GameClient } from '../core/client.ts';
+import { buildClientLaunch } from '../core/client-launch.ts';
 import { loadMinecraftClientConfig } from '../src/client/config-file.ts';
 
 const directories: string[] = [], bridges: Bridge[] = [], clients: GameClient[] = [];

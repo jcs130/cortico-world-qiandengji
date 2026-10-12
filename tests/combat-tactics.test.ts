@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { CombatTacticBook, type CombatResult } from '../engine/combat-tactics.ts';
-import { CombatSpells } from '../engine/combat-spells.ts';
+import { CombatTacticBook, type CombatResult } from '../integrations/qiandengji/engine/combat-tactics.ts';
+import { CombatSpells } from '../integrations/qiandengji/engine/combat-spells.ts';
 
 const dirs: string[] = [];
 function file(): string {

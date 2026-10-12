@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { Ajv } from 'ajv';
-import { MINECRAFT_CLIENT_CONFIG_GROUP, MINECRAFT_CONFIG_GROUP, MINECRAFT_PLAYER_CONFIG_GROUP, MINECRAFT_RHYTHM_CONFIG_GROUP } from '../../engine/config.ts';
+import { MINECRAFT_CLIENT_CONFIG_GROUP, MINECRAFT_CONFIG_GROUP, MINECRAFT_PLAYER_CONFIG_GROUP, MINECRAFT_RHYTHM_CONFIG_GROUP } from '../../core/config.ts';
 import type { ConfigGroup } from './contracts.ts';
 import { MINECRAFT_CLIENT_DEFAULTS, assertMinecraftReady, type MinecraftClientConfig } from './config.ts';
 

@@ -3,8 +3,8 @@ import { createRequire } from 'node:module';
 import type { Bot } from 'mineflayer';
 import { Vec3 } from 'vec3';
 import { describe, expect, it } from 'vitest';
-import { installPlacementMissState } from '../engine/placement-miss-state.ts';
-import { SkillBlocked } from '../engine/skill-context.ts';
+import { installPlacementMissState } from '../core/placement-miss-state.ts';
+import { SkillBlocked } from '../core/skill-context.ts';
 
 const require = createRequire(createRequire(import.meta.url).resolve('mineflayer'));
 const registry = require('prismarine-registry')('1.20.6');

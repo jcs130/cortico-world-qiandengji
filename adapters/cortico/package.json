@@ -1,0 +1,55 @@
+{
+  "name": "cortico-world-minecraft-agent",
+  "version": "0.4.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "cortico": {
+    "kind": "world",
+    "api": 5,
+    "displayName": "联机版我的世界",
+    "consoleClient": "dist/console.js",
+    "consoleStyle": "dist/console.css"
+  },
+  "peerDependencies": {
+    "cortico": ">=0.1.8 <0.2.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/build-extensions.mjs",
+    "prepack": "node dist/verify.mjs"
+  },
+  "license": "MIT",
+  "description": "联机版我的世界：现代 Web 可视化、丰富的游戏信息，并通过扩展适配服务器技能和模组内容。",
+  "keywords": [
+    "cortico-world",
+    "minecraft",
+    "mineflayer"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcs130/cortico-world-qiandengji.git",
+    "directory": "adapters/cortico"
+  },
+  "homepage": "https://github.com/jcs130/cortico-world-qiandengji#readme",
+  "bugs": {
+    "url": "https://github.com/jcs130/cortico-world-qiandengji/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "agent-mc-world": "0.4.0"
+  },
+  "peerDependenciesMeta": {
+    "cortico": {
+      "optional": true
+    }
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  }
+}

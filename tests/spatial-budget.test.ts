@@ -1,9 +1,9 @@
 import type { Bot } from 'mineflayer';
 import { Vec3 } from 'vec3';
 import { describe, expect, it } from 'vitest';
-import { shapeCells } from '../engine/cell-facts.ts';
-import { parseSpatialObservation, SPATIAL_OBSERVATION_LIMITS } from '../engine/spatial-observation.ts';
-import { partitionSpatialBox, spatialBoxBudgetNote } from '../engine/spatial-slices.ts';
+import { shapeCells } from '../core/cell-facts.ts';
+import { parseSpatialObservation, SPATIAL_OBSERVATION_LIMITS } from '../core/spatial-observation.ts';
+import { partitionSpatialBox, spatialBoxBudgetNote } from '../core/spatial-slices.ts';
 
 const cap = SPATIAL_OBSERVATION_LIMITS.cells;
 

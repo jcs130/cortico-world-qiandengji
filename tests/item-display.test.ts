@@ -1,12 +1,13 @@
 import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import { Vec3 } from 'vec3';
-import { itemCustomName } from '../engine/item-display.ts';
-import { containerStacks, potionText, slotStack } from '../engine/containers.ts';
-import { askedLabel, invItemNamed } from '../engine/inventory.ts';
-import { skillEquip } from '../engine/skills-craft.ts';
-import { bagStamp, renderBagReadout, renderStoredItemReadout } from '../engine/readouts.ts';
-import { droppedStackOf, narrateWorld, narrateWorldSegments, snapshotFingerprint, snapshotFromBot, worldDelta } from '../engine/terrain.ts';
+import { itemCustomName } from '../core/item-display.ts';
+import { bagNow } from '../core/receipt.ts';
+import { containerStacks, potionText, slotStack } from '../core/containers.ts';
+import { askedLabel, invItemNamed } from '../core/inventory.ts';
+import { skillEquip } from '../core/skills-craft.ts';
+import { bagStamp, renderBagReadout, renderStoredItemReadout } from '../core/readouts.ts';
+import { droppedStackOf, narrateWorld, narrateWorldSegments, snapshotFingerprint, snapshotFromBot, worldDelta } from '../core/terrain.ts';
 
 const worldRequire = createRequire(import.meta.url);
 const require = createRequire(worldRequire.resolve('mineflayer'));
@@ -43,6 +44,14 @@ function botWithItems() {
 }
 
 describe('item instance display names', () => {
+  it('keeps server item names in blocked-task inventory evidence without relabeling ordinary heads', () => {
+    const { bot, backpack } = botWithItems();
+    const plain = new Item(registry.itemsByName.player_head.id, 1);
+    bot.inventory.items = () => [plain, backpack];
+    const text = bagNow(bot as never);
+    expect(text).toContain('大背包×1');
+    expect(text).toContain('玩家头×1');
+  });
   it.each([
     { customName: '§e大背包§r' },
     { components: [{ type: 'minecraft:custom_name', data: JSON.stringify({ text: '大背包' }) }] },

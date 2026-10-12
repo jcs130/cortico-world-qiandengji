@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { io, type Socket } from 'socket.io-client';
 import { describe, expect, it, vi } from 'vitest';
-import { startModernViewer } from '../engine/modern-viewer.ts';
+import { startModernViewer } from '../core/modern-viewer.ts';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 import { bubbleEntity, freeViewerPort, viewerBot } from './fixtures/viewer-bot.ts';
 

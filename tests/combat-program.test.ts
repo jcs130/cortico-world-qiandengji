@@ -2,11 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Worker } from 'node:worker_threads';
 import { Vec3 } from 'vec3';
 import type { Bot } from 'mineflayer';
-import { CombatProgramRunner, combatProgramCandidates, COMBAT_PROGRAM_LIMITS } from '../engine/combat-program.ts';
-import { CombatDecisionLoop, type CombatDecisionFrame } from '../engine/combat-decision.ts';
-import { combatReactions } from '../engine/combat-reactions.ts';
-import { MINECRAFT_DEFAULTS } from '../engine/config.ts';
-import { CombatTacticBook } from '../engine/combat-tactics.ts';
+import { CombatProgramRunner, combatProgramCandidates, COMBAT_PROGRAM_LIMITS } from '../integrations/qiandengji/engine/combat-program.ts';
+import { CombatDecisionLoop, type CombatDecisionFrame } from '../adapters/host-decisions/combat-decision.ts';
+import { combatReactions } from '../integrations/qiandengji/engine/combat-reactions.ts';
+import { COMBAT_DECISION_DEFAULTS } from '../adapters/host-decisions/defaults.ts';
+import { CombatTacticBook } from '../integrations/qiandengji/engine/combat-tactics.ts';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -118,7 +118,7 @@ describe('agent-authored combat programs', () => {
     const bot = { entity: { position: new Vec3(0,64,0), onGround: true }, blockAt: (p: Vec3) => p.y < 64
       ? { boundingBox: 'block', name: 'stone', shapes: [[0,0,0,1,1,1]], getProperties: () => ({}) }
       : { boundingBox: 'empty', name: 'air', shapes: [], getProperties: () => ({}) } } as unknown as Bot;
-    const cfg = { ...MINECRAFT_DEFAULTS.combatDecision, allowMovement: true };
+    const cfg = { ...COMBAT_DECISION_DEFAULTS, allowMovement: true };
     const control = { bodyFree: false, canStep: true, targetId: 2, sinceHitMs: 20, fight: 'armed', fleeHealth: 6, chaseMax: 12 };
     expect(combatReactions(bot, f.battlefield, cfg, control)).toEqual([]);
     const pool = combatReactions(bot, f.battlefield, cfg, control, true);
@@ -146,7 +146,7 @@ describe('agent-authored combat programs', () => {
     let applied = false;
     let request: Record<string, unknown> = {};
     const reports: Array<{ event: string; data: Record<string, unknown> }> = [];
-    const loop = new CombatDecisionLoop({ config: () => ({ ...MINECRAFT_DEFAULTS.combatDecision,
+    const loop = new CombatDecisionLoop({ config: () => ({ ...COMBAT_DECISION_DEFAULTS,
       enabled: true, mode: 'act', endpoint: 'http://decision.invalid', maxAgeMs: 2000 }),
       sample: () => structuredClone(f), prepare: async input => ({ ...input,
         ...combatProgramCandidates(await r.run(input.program!, input), input, () => true),

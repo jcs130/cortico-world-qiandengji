@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import type { Logger } from '../client/contracts.ts';
@@ -26,7 +27,7 @@ export async function startMcpStdio(factory: McStdioFactory = nativeClient, comm
 const configPath = process.argv[2];
 if (!configPath || process.argv.length !== 3) throw new Error(`Usage: ${command} <private-config.json>`);
 const { runtime, metricsPort, consolePort } = factory(configPath, logger(command));
-const manifest = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
+const manifest = JSON.parse(readFileSync(createRequire(import.meta.url).resolve('agent-mc-world/package.json'), 'utf8'));
 const server = createMinecraftMcpServer(runtime, manifest.version);
 let operator: Awaited<ReturnType<typeof serveClientConsole>> | null = null;
 let monitor: Awaited<ReturnType<typeof serveAgentMetrics>> | null = null;

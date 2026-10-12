@@ -1,10 +1,10 @@
 import { Vec3 } from 'vec3';
 import type { Bot } from 'mineflayer';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { IdlePresentationContext } from '../engine/idle-behavior.ts';
-import { sampleIdleActions } from '../engine/idle-actions.ts';
-import { IdleBehaviorController, type IdleBehaviorScene } from '../engine/idle-behavior.ts';
-import { MinecraftWorld } from '../engine/world.ts';
+import { IdlePresentationContext } from '../core/idle-behavior.ts';
+import { sampleIdleActions } from '../core/idle-actions.ts';
+import { IdleBehaviorController, type IdleBehaviorScene } from '../adapters/host-decisions/idle-behavior.ts';
+import { MinecraftWorld } from '../core/world.ts';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 
 afterEach(() => vi.useRealTimers());

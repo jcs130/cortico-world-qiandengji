@@ -2,28 +2,20 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { dryMountWorld } from 'cortico/extensions/dry-mount.ts';
-import worldDefinition from '../src/index.ts';
+import { MC as worldDefinition } from '../src/adapters/minecraft.ts';
 import { MINECRAFT_CLIENT_DEFAULTS, assertMinecraftReady } from '../src/client/config.ts';
 import { MYMC_DEFAULTS, mymcEngineConfig } from '../src/config.ts';
 import { assertMymcReady } from '../src/guard.ts';
 
 describe('installable World', () => {
-  it('passes the public API 5 dry mount without starting a player or model', async () => {
-    const report = await dryMountWorld(worldDefinition, {
-      scratchDir: join(fileURLToPath(new URL('../scratch/', import.meta.url)), 'public-sdk-mount'),
-      packageDir: fileURLToPath(new URL('../', import.meta.url)),
-      hasConsoleClient: true,
-    });
-    expect(report.failures).toEqual([]);
-  });
   it('constructs without connecting and observes the configured server and port', async () => {
     const cfg = { ...structuredClone(MINECRAFT_CLIENT_DEFAULTS), host: 'example.test', port: 25577, username: 'visitor' };
     assertMinecraftReady(cfg);
     const world = worldDefinition.create({ cfg, timezone: 'UTC', dataDir: '', botName: 'test' } as never);
     expect(world.id).toBe('mc');
     expect((await world.envPromptVars())?.['minecraft.world']).toContain('example.test:25577');
-    expect(world.tools().map(tool => tool.name)).toEqual(expect.arrayContaining(['mc_do', 'mc_scout', 'mc_script']));
+    expect(world.tools().map(tool => tool.name)).toEqual(expect.arrayContaining(['agentmc_do', 'agentmc_scout', 'agentmc_script']));
+    expect(world.tools().some(tool => tool.name.startsWith('mc_'))).toBe(false);
     expect(world.tools().some(tool => tool.name === 'mymc_skills' || tool.name === 'mc_cast')).toBe(false);
   });
 

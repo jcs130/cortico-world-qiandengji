@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { goalClosureMetadata } from '../engine/goal-metrics.ts';
-import { parseGoalPlan } from '../engine/goal-plan.ts';
+import { goalClosureMetadata } from '../core/goal-metrics.ts';
+import { parseGoalPlan } from '../core/goal-plan.ts';
 
 describe('goal closure metadata', () => {
   it('requires fresh mechanical verdicts for every milestone and preserves identity across attempts', () => {

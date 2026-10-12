@@ -1,7 +1,7 @@
 import { loadMinecraftClientConfig } from './config-file.ts';
 import { MinecraftAgentClient } from './runtime.ts';
 import { serveClientConsole } from './console-server.ts';
-import { nullLogger } from '../../engine/support/runtime.mjs';
+import { nullLogger } from '../../core/support/runtime.mjs';
 
 export async function startMinecraftClientConsole(): Promise<void> {
   if (process.argv.length !== 3) throw new Error('Usage: minecraft-agent-client <private-config.json>');

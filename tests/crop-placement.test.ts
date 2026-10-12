@@ -3,10 +3,10 @@ import { createRequire } from 'node:module';
 import type { Bot } from 'mineflayer';
 import { Vec3 } from 'vec3';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { refAt } from '../engine/cell-facts.ts';
-import { matchPlacedMaterialName, placeIntoCell, usableReference } from '../engine/placement.ts';
-import { skillBuild } from '../engine/skills-build.ts';
-import { SkillBlocked, type SkillContext } from '../engine/skill-context.ts';
+import { refAt } from '../core/cell-facts.ts';
+import { matchPlacedMaterialName, placeIntoCell, usableReference } from '../core/placement.ts';
+import { skillBuild } from '../core/skills-build.ts';
+import { SkillBlocked, type SkillContext } from '../core/skill-context.ts';
 
 const require = createRequire(createRequire(import.meta.url).resolve('mineflayer'));
 const registry = require('prismarine-registry')('1.20.6');

@@ -26,7 +26,8 @@ describe('generic Minecraft client boundary', () => {
     expect(names).not.toEqual(expect.arrayContaining(['mc_cast']));
     expect(names).not.toContain('mymc_skills');
     const environment = await runtime.environment();
-    expect(environment).toContain('example.test:25565');
+    expect(environment).not.toContain('example.test:25565');
+    expect(runtime.currentFacts().parts).toEqual(expect.arrayContaining([expect.objectContaining({key:'connection', text: expect.stringContaining('example.test')})]));
     expect(environment).not.toMatch(/千灯纪|\/mycli|ag_Alice/);
     await expect(runtime.call('mc_do', {})).rejects.toThrow('mc_connection');
   });

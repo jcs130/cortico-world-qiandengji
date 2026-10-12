@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import mineflayer from 'mineflayer';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Bridge } from '../engine/bridge.ts';
+import { Bridge } from '../core/bridge.ts';
 
 const bridges: Bridge[] = [];
 afterEach(async () => {

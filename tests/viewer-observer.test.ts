@@ -1,6 +1,7 @@
+import { serverViewerProtocol } from '../integrations/qiandengji/engine/viewer-state.ts';
 import { io } from 'socket.io-client';
 import { describe, expect, it, vi } from 'vitest';
-import { startModernViewer } from '../engine/modern-viewer.ts';
+import { startModernViewer } from '../core/modern-viewer.ts';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 import { freeViewerPort, viewerBot } from './fixtures/viewer-bot.ts';
 
@@ -18,7 +19,7 @@ describe('packaged OBS subject integration', () => {
     Object.assign(bot.entity, { metadata: { 8: 3 } });
     const columns = vi.spyOn(bot.world, 'getColumnAt');
     const viewer = await startModernViewer(bot as never, {
-      port: await freeViewerPort(), assetsDir: MYMC_DEFAULTS.viewerAssetsDir, speechSourceId: 'offline-obs-test',
+      serverProtocol: serverViewerProtocol, port: await freeViewerPort(), assetsDir: MYMC_DEFAULTS.viewerAssetsDir, speechSourceId: 'offline-obs-test',
     });
     expect(register).toHaveBeenCalledTimes(1);
     const events: Array<{ name: string; value: any }> = [];

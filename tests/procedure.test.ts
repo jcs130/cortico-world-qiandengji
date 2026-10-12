@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { parseProcedure, PROCEDURE_LIMITS, procedureHash, resolveProcedure } from '../engine/support/procedure.ts';
+import { parseProcedure, PROCEDURE_LIMITS, procedureHash, resolveProcedure } from '../core/support/procedure.ts';
 import { fixtureBlobs, procedureFixture, procedureRef } from './procedure-fixture.ts';
 
 describe('portable versioned procedure artifacts', () => {
+  it('reads legacy artifacts without rewriting their original bytes or hashes', () => {
+    const old=procedureFixture('legacy','return 1;', {schema:'cortico.procedure/v1'});
+    const raw=JSON.stringify(old), parsed=parseProcedure(JSON.parse(raw));
+    expect(parsed.schema).toBe('cortico.procedure/v1');expect(parsed.revision).toBe(old.revision);expect(JSON.stringify(old)).toBe(raw);
+    expect(procedureFixture('new','return 1;').schema).toBe('agent-mc.procedure/v1');
+  });
   it('pins exact dependency versions and verifies content before returning an isolated graph', () => {
     const child = procedureFixture('child', 'return params.value;');
     const root = procedureFixture('root', 'return await methods.run("child",params);', {dependencies: {child: procedureRef(child)}});

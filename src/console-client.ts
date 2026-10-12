@@ -1,5 +1,5 @@
 import type { ConsoleClientBundle } from 'cortico/web/shared/client-panel.ts';
-import minecraftBundle from '../engine/console/client.ts';
+import minecraftBundle from '../adapters/cortico/console/client.ts';
 import { connectionPanel } from './connection-panel.ts';
 
 const bundle: ConsoleClientBundle = {

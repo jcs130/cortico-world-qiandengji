@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { createRequire } from 'node:module';
 import type { Bot } from 'mineflayer';
-import { clearOffHandConfirmed, equipSlotConfirmed, unequipSlotConfirmed } from '../engine/equipment.ts';
-import { skillEquip } from '../engine/skills-craft.ts';
-import { installInventoryClickSync, INVENTORY_CLICK_CONFIRM_MS } from '../engine/inventory-click-sync.ts';
+import { clearOffHandConfirmed, equipSlotConfirmed, unequipSlotConfirmed } from '../core/equipment.ts';
+import { skillEquip } from '../core/skills-craft.ts';
+import { installInventoryClickSync, INVENTORY_CLICK_CONFIRM_MS } from '../core/inventory-click-sync.ts';
 
 const require = createRequire(import.meta.url);
 const dependency = (name: string) => require(require.resolve(name, { paths: [require.resolve('mineflayer')] }));

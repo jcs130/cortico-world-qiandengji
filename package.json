@@ -1,6 +1,6 @@
 {
   "name": "agent-mc-world",
-  "version": "0.3.0-next.2",
+  "version": "0.4.0",
   "type": "module",
   "description": "Independent Mineflayer execution client for Agents, with MCP, SDK, skill and Cortico World adapters",
   "repository": {
@@ -16,14 +16,13 @@
     "minecraft",
     "mineflayer",
     "agent",
-    "mcp",
-    "cortico-world"
+    "mcp"
   ],
   "engines": {
     "node": ">=22"
   },
   "packageManager": "pnpm@11.5.0",
-  "main": "./src/index.ts",
+  "main": "./dist/runtime/src/index.js",
   "bin": {
     "minecraft-agent-client": "./bin/minecraft-agent-client.mjs",
     "minecraft-agent-mcp": "./bin/minecraft-agent-mcp.mjs"
@@ -31,91 +30,92 @@
   "exports": {
     ".": {
       "types": "./dist/types/src/index.d.ts",
-      "default": "./src/index.ts"
+      "default": "./dist/runtime/src/index.js"
     },
     "./client": {
       "types": "./dist/types/src/client/index.d.ts",
-      "default": "./src/client/index.ts"
+      "default": "./dist/runtime/src/client/index.js"
     },
     "./contracts": {
-      "types": "./dist/types/src/client/contracts.d.ts",
-      "default": "./src/client/contracts.ts"
+      "types": "./dist/types/src/contracts/index.d.ts",
+      "default": "./dist/runtime/src/contracts/index.js"
     },
     "./adapters/cortico": {
       "types": "./dist/types/src/adapters/minecraft.d.ts",
-      "default": "./src/adapters/minecraft.ts"
+      "default": "./dist/runtime/src/adapters/minecraft.js"
     },
     "./mcp": {
       "types": "./dist/types/src/mcp/server.d.ts",
-      "default": "./src/mcp/server.ts"
+      "default": "./dist/runtime/src/mcp/server.js"
     },
     "./package.json": "./package.json",
     "./mcp/stdio": {
       "types": "./dist/types/src/mcp/stdio.d.ts",
-      "default": "./src/mcp/stdio.ts"
+      "default": "./dist/runtime/src/mcp/stdio.js"
+    },
+    "./bridges/performance": {
+      "types": "./dist/types/bridges/performance/relay.d.mts",
+      "default": "./dist/runtime/bridges/performance/relay.mjs"
+    },
+    "./extension": {
+      "types": "./dist/types/src/extension.d.ts",
+      "default": "./dist/runtime/src/extension.js"
     }
   },
-  "cortico": {
-    "kind": "world",
-    "api": 5,
-    "displayName": "Agent MC World",
-    "consoleClient": "dist/console.js",
-    "consoleStyle": "dist/console.css"
-  },
   "files": [
+    "core",
     "src/client",
+    "src/contracts",
     "src/runtime",
     "src/mcp/server.ts",
     "src/mcp/stdio.ts",
-    "src/adapters/minecraft.ts",
     "src/index.ts",
-    "src/definition.ts",
-    "src/console-client.ts",
-    "src/connection-panel.ts",
-    "src/viewer-agent.d.mts",
     "src/chat-provenance.ts",
     "src/collect-contract.ts",
     "src/mounted-look.ts",
     "src/vehicle-state.ts",
     "src/railway.ts",
-    "src/viewer-photo-page.d.mts",
-    "bin/minecraft-agent-mcp.mjs",
+    "src/blueprint-railway.ts",
     "bin/minecraft-agent-client.mjs",
-    "docs/architecture.md",
-    "docs/minecraft-client.md",
-    "docs/online-accounts.md",
-    "docs/agent-mcp.md",
-    "docs/harness.md",
-    "docs/migration-0.3.md",
-    "examples/agent-mcp-check.mjs",
-    "examples/minecraft-agent.json",
-    "examples/minecraft-online.json",
-    "examples/minecraft-client.ts",
-    "skills",
-    "engine",
+    "bin/minecraft-agent-mcp.mjs",
     "dist",
-    "patches",
-    "client-login",
-    "scripts/build-client-login.mjs",
-    "references/battlefield-protocol.md",
-    "release-sources.json",
+    "docs",
+    "skills",
+    "provenance",
+    "LICENSE",
     "README.md",
+    "release-sources.json",
+    "adapters/cortico/types.ts",
+    "adapters/cortico/ENV_PROMPT.md",
+    "src/adapters/minecraft.ts",
+    "bridges",
+    "scripts/build.mjs",
+    "scripts/build-types.mjs",
+    "scripts/verify-build.mjs",
+    "vendor",
+    "tsconfig.core.json",
+    "examples",
+    "tsconfig.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "scripts/build-client-login.mjs",
+    "client-login",
     "DEPLOYMENT.md",
-    "LICENSE"
+    "src/extension.ts"
   ],
   "scripts": {
-    "build": "pnpm run build:engine && pnpm run build:console && pnpm run build:viewer && pnpm run build:types && pnpm run verify:release",
-    "build:engine": "tsx scripts/build-release.ts engine",
-    "build:console": "node scripts/build-console.mjs",
-    "build:viewer": "tsx scripts/build-release.ts viewer",
+    "build": "node scripts/build.mjs && node scripts/build-types.mjs && node scripts/verify-build.mjs",
+    "build:engine": "node scripts/build.mjs",
+    "build:viewer": "node scripts/build.mjs",
     "build:client-login": "node scripts/build-client-login.mjs",
     "start:mcp": "node bin/minecraft-agent-mcp.mjs",
     "start:minecraft": "node bin/minecraft-agent-client.mjs",
-    "verify:release": "node scripts/verify-release.mjs",
-    "prepack": "node scripts/verify-release.mjs",
+    "verify:release": "node scripts/verify-build.mjs",
+    "prepack": "node scripts/verify-build.mjs",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "build:types": "node scripts/build-types.mjs"
+    "typecheck": "tsc --noEmit -p tsconfig.core.json",
+    "build:types": "node scripts/build-types.mjs",
+    "build:extensions": "node scripts/build-extensions.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.1",
@@ -130,11 +130,11 @@
     "ses": "2.3.0",
     "socket.io": "4.8.3",
     "tsx": "4.23.15",
-    "vec3": "0.2.0"
+    "vec3": "0.2.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
-    "cortico": "0.1.8",
     "esbuild": "^0.28.2",
     "socket.io-client": "4.8.3",
     "typescript": "^5.7.2",

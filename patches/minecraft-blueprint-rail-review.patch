@@ -1,0 +1,43 @@
+--- a/blueprint-plan.ts
++++ b/blueprint-plan.ts
+@@ -35,6 +35,7 @@
+   type RepairReport,
+ } from './blueprint-repair.ts';
+ import type { Anchor } from './geometry.ts';
++import { reviewBlueprintRailway } from '../src/blueprint-railway.ts';
+ 
+ /** palette 编码交稿的最大字符数；分批只改变传输方式，不改变这条总预算。 */
+ export const BLUEPRINT_MAX_OUTPUT_CHARS = 131_072;
+@@ -348,7 +349,9 @@
+     mainStep: stepOfCell.get(key(entry.mainPos[0], entry.mainPos[1], entry.mainPos[2])) ?? -1,
+   }));
+ 
+-  return { steps, checks, placeCells, failures, advisories: supports.advisories };
++  const railway = reviewBlueprintRailway(blueprint);
++  return { steps, checks, placeCells, failures: [...failures, ...railway.failures],
++    advisories: [...railway.advisories, ...supports.advisories] };
+ }
+ 
+ /** 局部坐标 + 锚点 → 世界坐标。锚点是蓝图 [0,0,0] 落在世界的哪一格。 */
+--- a/skills-build.ts
++++ b/skills-build.ts
+@@ -549,7 +549,7 @@
+   if (steps.length === 0) return '这一段没有成形步骤';
+   if (reach === 0) return '手上的料一步都不够,第一步就得停';
+   const last = steps[reach - 1];
+-  return `手上的料能连着施工到第 ${base + reach}/${total} 步(第 ${last.y} 层)`;
++  return `仅按随身材料数量可供到第 ${base + reach}/${total} 步(第 ${last.y} 层)；未验证施工站位、支撑、可达性或线路连通`;
+ }
+ 
+ export function blueprintCellCount(blueprint: NormalizedBlueprint): number {
+--- a/world.ts
++++ b/world.ts
+@@ -6067,6 +6067,8 @@
+     return `[mc_blueprint] 「${draft.label.key}」${note}。\n`
+       + `${draft.metrics.size_xyz.join('×')},${blueprintModeText(draft.blueprint)},`
+       + `${draft.plan.placeCells} 个施工格/${draft.plan.steps.length} 步。${draft.repairText}\n`
++      + (draft.plan.advisories.length > 0
++        ? `设计检查与现场待验：\n${renderBlueprintAdvisories(draft.plan.advisories)}\n` : '')
+       + `draft version_id:${draft.versionId}\ncontent_hash:${draft.contentHash}\n`
+       + coda;
+   }

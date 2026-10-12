@@ -1,16 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { EventEnvelope, WorldConsoleDecl, WorldHost } from 'cortico/core/types.ts';
-import { renderWorldEnvPrompt } from 'cortico/core/prefix.ts';
+import type { EventEnvelope, WorldConsoleDecl, WorldHost } from '../src/client/contracts.ts';
+import {renderWorldEnvPrompt} from './fixtures/host-prompt.ts';
 import { MYMC } from '../integrations/qiandengji/cortico.ts';
 import { MYMC_CONFIG_GROUP, MYMC_DEFAULTS } from '../src/config.ts';
 import { assertMymcReady } from '../src/guard.ts';
 import { MYMC_TOOL_DECLS, MymcWorld } from '../src/world.ts';
 import { SkillCatalog } from '../src/skill-catalog.ts';
-import type { MinecraftWorldProxy } from '../engine/proxy.ts';
-import { CombatSpells } from '../engine/combat-spells.ts';
+import { MinecraftWorldProxy } from '../core/proxy.ts';
+import { CombatSpells } from '../integrations/qiandengji/engine/combat-spells.ts';
 
 function fakeEngine() {
   let bridge: WorldHost | undefined;
@@ -70,6 +70,15 @@ function fakeHost() {
 }
 
 describe('Mymc World contract', () => {
+  it('starts the default server assembly with its relocated protection module before any connection', async () => {
+    const start = vi.spyOn(MinecraftWorldProxy.prototype, 'start').mockResolvedValue(undefined);
+    const world = new MymcWorld({cfg:structuredClone(MYMC_DEFAULTS)});
+    try {
+      await expect(world.start(fakeHost().host)).resolves.toBeUndefined();
+      expect(start).toHaveBeenCalledOnce();
+    } finally { await world.stop(); start.mockRestore(); }
+  });
+
   it('puts observed tactic blockers before the intact engine receipt', async () => {
     const spells = new CombatSpells();
     spells.setTactic({ spells: ['missing_bolt'], healAtOrBelow: 12 });
@@ -233,8 +242,9 @@ describe('Mymc World contract', () => {
     expect(prompt.text).toContain('/mycli capabilities');
     expect(prompt.text).toContain('/mycli skills status');
     expect(prompt.text).toContain('不因中途位置变化反复 stop/do');
-    expect(prompt.text).toContain('当前任务：任务#7 正在整理背包');
-    expect(prompt.text).toContain('目标摘要：先清理奖励箱');
+    expect(prompt.text).not.toContain('任务#7 正在整理背包');
+    expect(world.envPromptVars()['mymc.current_task']).toBe('任务#7 正在整理背包');
+    expect(prompt.text).not.toContain('先清理奖励箱');
     expect(prompt.text).not.toContain('{{mymc.');
     expect(prompt.sourceKey).toBe('worlds.mymc.envPrompt');
   });
@@ -270,7 +280,7 @@ describe('Mymc World contract', () => {
     await world.stop();
   });
 
-  it('maps child events and cognition requests to mymc before they reach Core', async () => {
+  it('maps child events while keeping host model invocation outside the engine port', async () => {
     const fake = fakeEngine();
     const outer = fakeHost();
     const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
@@ -292,10 +302,8 @@ describe('Mymc World contract', () => {
     expect(outer.deferred[0].type).toBe('mymc.world.snapshot');
     expect(outer.deferred[0].senderKey).toBe('mymc');
     expect(await outer.deferred[0].render()).toBe('mymc_queue:空');
-    await bridge.cognition!.request({ brief: '用 mc_blueprint 交稿', tools: ['mc_blueprint'] });
-    expect(outer.cognitionRequests[0]).toMatchObject({
-      brief: '用 mymc_blueprint 交稿', tools: ['mymc_blueprint'],
-    });
+    expect((bridge as unknown as {cognition?:unknown}).cognition).toBeUndefined();
+    expect(outer.cognitionRequests).toHaveLength(0);
     outer.disableCognition();
     expect(bridge.cognition).toBeUndefined();
     await world.stop();

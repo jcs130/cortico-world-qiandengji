@@ -1,4 +1,2 @@
-import { MC } from './definition.ts';
-export default MC;
-export { MC };
-export type { MinecraftClientConfig } from './client/config.ts';
+export * from './client/index.ts';
+export * from './contracts/protocol.ts';

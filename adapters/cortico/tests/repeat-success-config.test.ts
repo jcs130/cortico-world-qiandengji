@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { CoreConfig } from 'cortico/core/types.ts';
+import type { CoreConfig } from '../../../src/client/contracts.ts';
 import { CORE_DEFAULTS } from 'cortico/core/config.ts';
 import { loadDeployment } from 'cortico/deploy.ts';
 import { MYMC } from '../integrations/qiandengji/cortico.ts';
-import { MYMC_RHYTHM_CONFIG_GROUP, type MymcConfigSection } from '../src/config.ts';
+import { MYMC_RHYTHM_CONFIG_GROUP, type MymcConfigSection } from '../../../src/config.ts';
 
 describe('Qiandengji repeat-success configuration', () => {
   it('merges deployed settings into the World config and exposes all four controls', () => {

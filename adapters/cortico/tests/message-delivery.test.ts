@@ -3,11 +3,11 @@ import { createRequire } from 'node:module';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WakeBus } from 'cortico/core/bus.ts';
 import { nullLogger } from 'cortico/core/util.ts';
-import type { EventEnvelope, TriggerMode, WorldHost } from 'cortico/core/types.ts';
-import { MinecraftWorld } from '../engine/world.ts';
-import type { MinecraftWorldProxy } from '../engine/proxy.ts';
-import { MYMC_DEFAULTS } from '../src/config.ts';
-import { MymcWorld } from '../src/world.ts';
+import type { EventEnvelope, TriggerMode, WorldHost } from '../../../src/client/contracts.ts';
+import { MinecraftWorld } from '../../../core/world.ts';
+import type { MinecraftWorldProxy } from '../../../core/proxy.ts';
+import { MYMC_DEFAULTS } from '../../../src/config.ts';
+import { MymcWorld } from '../../../src/world.ts';
 
 const require = createRequire(import.meta.url);
 const mfRequire = createRequire(require.resolve('mineflayer'));

@@ -1,3 +1,5 @@
-patches/*.patch text eol=lf -whitespace
-# This patch targets both LF sources and the pinned CRLF blueprint registry.
-patches/minecraft-crop-placement.patch -text
+# These source copies have byte-level provenance hashes. Keep their original bytes on every platform.
+vendor/** -text
+bridges/performance/** -text
+core/viewer-item-profile.mjs -text
+core/viewer-head-textures.mjs -text

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { readFileSync, existsSync } from 'node:fs';
 import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,7 +10,7 @@ const output = resolve(root, 'dist/types');
 if (output !== join(root, 'dist', 'types')) throw new Error('Invalid declaration output path');
 // Run in a release checkout, as with the engine/viewer build.
 await rm(output, { recursive: true, force: true });
-const entries = ['src/index.ts', 'src/client/index.ts', 'src/client/contracts.ts', 'src/mcp/server.ts', 'src/mcp/stdio.ts'];
+const entries = ['src/index.ts', 'src/extension.ts', 'src/client/index.ts', 'src/client/contracts.ts', 'src/contracts/index.ts', 'src/mcp/server.ts', 'src/mcp/stdio.ts', 'src/adapters/minecraft.ts', 'bridges/performance/relay.d.mts'];
 const program = ts.createProgram(entries.map(path => join(root, path)), {
   target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler,
   strict: true, esModuleInterop: true, skipLibCheck: true, allowImportingTsExtensions: true,
@@ -22,8 +23,28 @@ if (errors.length) throw new Error(errors.map(d => ts.flattenDiagnosticMessageTe
 // Emit only the public declaration graph. Private implementation imports must
 // not make SDK consumers type-check the full Mineflayer execution engine.
 const options = program.getCompilerOptions(), host = ts.createCompilerHost(options);
+// Native extension declarations are isolated from invalid upstream ambient declarations.
+// These are pinned declaration-only copies, with licenses and source hashes; no runtime patching.
+const nativeRoot = join(root, 'vendor/native-types');
+const nativeManifest = JSON.parse(await readFile(join(nativeRoot, 'manifest.json'), 'utf8'));
+const nativeTarget = (resolved) => {
+  const file = resolved.replaceAll('\\', '/');
+  const candidates = nativeManifest.files.filter(entry => file.endsWith('/node_modules/' + entry.package + '/' + entry.path));
+  if (!candidates.length) return undefined;
+  let directory = dirname(resolved);
+  while (directory !== dirname(directory) && !existsSync(join(directory, 'package.json'))) directory = dirname(directory);
+  const pkg = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8'));
+  const match = candidates.find(entry => entry.package === pkg.name && entry.version === pkg.version);
+  if (!match) throw new Error('Native declaration version not audited: ' + pkg.name + '@' + pkg.version);
+  return match;
+};
+for (const entry of nativeManifest.files) {
+  const bytes = await readFile(join(nativeRoot, entry.file));
+  if (createHash('sha256').update(bytes).digest('hex') !== entry.sha256) throw new Error('Native declaration hash: ' + entry.file);
+}
+await cp(nativeRoot, join(output, 'native'), { recursive: true });
 const pending = entries.map(file => join(root, file));
-pending.push(join(root, 'engine/pathfinder-lib.d.ts'));
+pending.push(join(root, 'core/pathfinder-lib.d.ts'));
 const visited = new Set();
 while (pending.length) {
   const path = resolve(pending.shift());
@@ -42,7 +63,15 @@ while (pending.length) {
   }
   for (const { file, text } of emitted) {
     await mkdir(dirname(file), { recursive: true });
-    await writeFile(file, text);
+    const relocated = text.replace(/(['"])([^'"\r\n]+)\1/g, (all, quote, spec) => {
+      const resolved = ts.resolveModuleName(spec, path, options, host).resolvedModule?.resolvedFileName;
+      const native = resolved && nativeTarget(resolved);
+      if (!native) return all;
+      let target = relative(dirname(file), join(output, 'native', native.file)).replaceAll('\\', '/').replace(/\.d\.ts$/, '.js');
+      if (!target.startsWith('.')) target = './' + target;
+      return quote + target + quote;
+    });
+    await writeFile(file, relocated.replace(/(['"])([^'"\r\n]*?)\.ts\1/g, '$1$2.js$1').replace(/(['"])([^'"\r\n]*?)\.mts\1/g, '$1$2.mjs$1'));
     for (const imported of ts.preProcessFile(text, true).importedFiles) {
       const dependency = ts.resolveModuleName(imported.fileName, path, options, host).resolvedModule?.resolvedFileName;
       if (dependency) {

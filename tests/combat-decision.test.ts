@@ -1,10 +1,10 @@
 import type { Bot } from 'mineflayer';
 import { Vec3 } from 'vec3';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CombatDecisionLoop, type CombatDecisionFrame, type CombatCandidate, type CombatDecisionConfig } from '../engine/combat-decision.ts';
-import { MINECRAFT_DEFAULTS } from '../engine/config.ts';
-import { combatReactions } from '../engine/combat-reactions.ts';
-import { CombatSpells } from '../engine/combat-spells.ts';
+import { CombatDecisionLoop, type CombatDecisionFrame, type CombatCandidate, type CombatDecisionConfig } from '../adapters/host-decisions/combat-decision.ts';
+import { COMBAT_DECISION_DEFAULTS } from '../adapters/host-decisions/defaults.ts';
+import { combatReactions } from '../integrations/qiandengji/engine/combat-reactions.ts';
+import { CombatSpells } from '../integrations/qiandengji/engine/combat-spells.ts';
 
 function frame(): CombatDecisionFrame {
   return { battlefield: { sampledAtMs: Date.now(), connectionGeneration: 1, dimension: 'overworld',
@@ -24,7 +24,7 @@ function frame(): CombatDecisionFrame {
     candidates: [{ id: 'ranged', kind: 'cast', spell: 'spark', intent: 'Hit one visible ranged attacker.', manaCost: 4, ruleId: 'ranged' }],
     omittedCandidates: 0 };
 }
-const config = (): CombatDecisionConfig => ({ ...MINECRAFT_DEFAULTS.combatDecision,
+const config = (): CombatDecisionConfig => ({ ...COMBAT_DECISION_DEFAULTS,
   enabled: true, mode: 'act', endpoint: 'http://decision.invalid/systemone' });
 function response(choice = 'option_0', p = 0.9) {
   return new Response(JSON.stringify({ answers: { tactic: { type: 'choice', choice,

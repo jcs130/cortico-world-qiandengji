@@ -1,18 +1,56 @@
 {
   "name": "cortico-world-qiandengji",
-  "version": "0.3.0-compat.1",
-  "private": true,
+  "version": "0.4.0",
   "type": "module",
-  "description": "Local compatibility assembly for the existing Qiandengji deployment",
-  "main": "./index.ts",
+  "description": "联机版我的世界：内置现代 Web 可视化、丰富的游戏信息，适配千灯纪服务器技能、玩法和模组内容。",
+  "main": "./dist/world/index.js",
   "exports": {
-    ".": "./index.ts"
+    ".": "./dist/world/index.js"
   },
   "cortico": {
     "kind": "world",
     "api": 5,
-    "displayName": "千灯纪",
+    "displayName": "联机版我的世界",
     "consoleClient": "dist/console.js",
     "consoleStyle": "dist/console.css"
+  },
+  "keywords": [
+    "cortico-world",
+    "minecraft",
+    "mineflayer"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcs130/cortico-world-qiandengji.git",
+    "directory": "integrations/qiandengji"
+  },
+  "homepage": "https://github.com/jcs130/cortico-world-qiandengji#readme",
+  "bugs": {
+    "url": "https://github.com/jcs130/cortico-world-qiandengji/issues"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "agent-mc-world": "0.4.0",
+    "vec3": "0.2.0"
+  },
+  "peerDependencies": {
+    "cortico": ">=0.1.8 <0.2.0"
+  },
+  "peerDependenciesMeta": {
+    "cortico": {
+      "optional": true
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/build-extensions.mjs",
+    "prepack": "node dist/verify.mjs"
   }
 }

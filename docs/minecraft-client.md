@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | MCP | `minecraft-agent-mcp`、`mc_*`、`mc://` | 本包生产依赖，无 Cortico |
 | SDK | `agent-mc-world/client` | 自有结构契约，无 Cortico 类型或运行时依赖 |
-| Cortico | 默认导出 / `agent-mc-world/adapters/cortico` | API 5；World ID `mc`，配置 `worlds.mc.*` |
+| Cortico | `agent-mc-world/adapters/cortico` | API 5；World ID `mc`，配置 `worlds.mc.*` |
 | Skill | `skills/minecraft-agent/` | 复制整个文件夹，保留 references |
 | 本机连接台 | `minecraft-agent-client <private-config.json>` | 无 Cortico；默认仅绑定 127.0.0.1 |
 

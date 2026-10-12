@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Vec3 } from 'vec3';
 import { narrateVehicleState, vehicleStateFromBot } from '../src/vehicle-state.ts';
-import { narrateWorld, narrateWorldSegments, snapshotFingerprint, snapshotFromBot } from '../engine/terrain.ts';
+import { narrateWorld, narrateWorldSegments, snapshotFingerprint, snapshotFromBot } from '../core/terrain.ts';
 
 function rig() {
   return { entity: { position: new Vec3(-542, 67, -441), velocity: new Vec3(0, 0, 0), yaw: 0, onGround: false },

@@ -2,7 +2,7 @@
 
 ## 1. 安装
 
-推荐 Node.js 24。新建独立目录，从 [GitHub Releases](https://github.com/jcs130/cortico-world-qiandengji/releases) 下载 v0.3.0-next.2 的 `agent-mc-world-*.tgz`，按 SHA256SUMS 核对，然后：
+推荐 Node.js 24。新建独立目录，安装经校验的 `agent-mc-world-*.tgz`。本文对应 0.4.0-next.1 本地候选，尚未发布；旧 Release 的能力与入口不能据此推断。按 SHA256SUMS 核对后：
 
 ```text
 npm install --ignore-scripts <安装包绝对路径>
@@ -57,6 +57,6 @@ stdout 保留给 MCP，诊断走 stderr。客户端不会自动连接；工具�
 
 ## 5. 画面与 OBS
 
-设置 `world.viewerPort` 为实例独立端口，连接台列出实际画面入口；Java 1.20.6 现代画面提供 `/`、`/third/`、`/dungeon/` 和 OBS。素材版本不匹配时明确提示并使用基础画面，基础画面不具备现代 OBS/HUD 功能。YSM、自定义皮肤、粒子和观战依赖服务端实际数据，未收到时不能当作已加载。新版共享画面包含实际路径/操作标记与 OBS FOV 校准；公开解释需显式发布，不能冒称读取了模型思维。
+设置 `world.viewerPort` 为实例独立端口，连接台列出实际画面入口；Java 1.20.6 现代画面提供 `/`、`/third/`、`/dungeon/` 和 OBS。素材版本不匹配时明确提示并使用基础画面，基础画面不具备现代 OBS/HUD 功能。原版粒子来自当前 bot。YSM 与服务器观战频道由显式安装的服务器扩展提供，默认不注册、不请求；未收到有效数据时不能当作已加载。新版共享画面包含实际路径/操作标记与 OBS FOV 校准；公开解释需显式发布，不能冒称读取了模型思维。
 
 指标端口默认关闭；启用 `metricsPort` 后只读 `http://127.0.0.1:<指标端口>/api/harness/metrics`。OBS 与统计页面配置见 [Harness](harness.md)。模型耗时、token 和缓存由宿主通过 `mc_trace` 上报，不由游戏工具猜测。

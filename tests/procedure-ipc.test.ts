@@ -2,10 +2,10 @@ import {mkdtempSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {describe,expect,it} from 'vitest';
-import {MinecraftWorldProxy} from '../engine/proxy.ts';
-import {MINECRAFT_DEFAULTS,type MinecraftConfigSection} from '../engine/config.ts';
-import type {WorldHost} from '../engine/support/host-contract.ts';
-import {PROCEDURE_RECEIPT_MIME} from '../engine/support/procedure.ts';
+import {MinecraftWorldProxy} from '../core/proxy.ts';
+import {MINECRAFT_DEFAULTS,type MinecraftConfigSection} from '../core/config.ts';
+import type {WorldHost} from '../core/support/host-contract.ts';
+import {PROCEDURE_RECEIPT_MIME} from '../core/support/procedure.ts';
 import {FakeHost} from './method-host.ts';
 import {fixtureBlobs,procedureFixture,procedureRef} from './procedure-fixture.ts';
 
@@ -22,7 +22,7 @@ describe('selected procedure IPC',()=>{
       host.blob=handle=>{reads.push(handle);return blobs(handle);};
       await proxy.start(host);
       const tool=proxy.tools().find(t=>t.name==='mc_script')!;
-      expect(typeof await tool.handler({procedure:procedureRef(root),validate:true},{role:'main',log:host.log})).toBe('string');
+      expect(await tool.handler({procedure:procedureRef(root),validate:true},{role:'main',log:host.log})).toMatchObject({execution:{kind:'method',phase:'accepted',goalCompleted:false}});
       const event=await new Promise<(typeof host.events)[number]>((resolve,reject)=>{
         const end=Date.now()+5000;
         const poll=()=>{

@@ -3,12 +3,12 @@ import { EventEmitter } from 'node:events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Bot } from 'mineflayer';
 import { Vec3 } from 'vec3';
-import { invItemNamed, noSuchItem } from '../engine/inventory.ts';
-import { equipNamed, skillEquip } from '../engine/skills-craft.ts';
-import { useOnce } from '../engine/skills-interact.ts';
-import { precheckStep, precheckSteps, type PrecheckDeps } from '../engine/precheck.ts';
-import { Executor, type TaskReport } from '../engine/executor.ts';
-import { parseSteps, type SkillCall } from '../engine/skills.ts';
+import { invItemNamed, noSuchItem } from '../core/inventory.ts';
+import { equipNamed, skillEquip } from '../core/skills-craft.ts';
+import { useOnce } from '../core/skills-interact.ts';
+import { precheckStep, precheckSteps, type PrecheckDeps } from '../core/precheck.ts';
+import { Executor, type TaskReport } from '../core/executor.ts';
+import { parseSteps, type SkillCall } from '../core/skills.ts';
 
 const require = createRequire(import.meta.url);
 const dependency = createRequire(require.resolve('mineflayer'));

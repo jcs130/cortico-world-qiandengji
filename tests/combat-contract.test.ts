@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatSpells } from '../engine/combat-spells.ts';
+import { CombatSpells } from '../integrations/qiandengji/engine/combat-spells.ts';
 import { combatTacticNote } from '../src/combat-contract.ts';
 
 describe('combat capability readout', () => {

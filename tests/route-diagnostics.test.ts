@@ -1,8 +1,8 @@
 import { EventEmitter } from 'node:events';
 import { Vec3 } from 'vec3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Executor, type SkillCall, type TaskReport } from '../engine/executor.ts';
-import type { RouteProbe } from '../engine/skill-context.ts';
+import { Executor, type SkillCall, type TaskReport } from '../core/executor.ts';
+import type { RouteProbe } from '../core/skill-context.ts';
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());

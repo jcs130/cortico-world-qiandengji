@@ -1,13 +1,14 @@
+import { COMBAT_EXECUTION_DEFAULTS, type CombatExecutionPolicy } from './engine/combat-decision-types.ts';
 import type { ConfigGroup } from '../../src/client/contracts.ts';
-import { fileURLToPath } from 'node:url';
 import {
   MINECRAFT_CLIENT_CONFIG_GROUP,
   MINECRAFT_CONFIG_GROUP,
   MINECRAFT_DEFAULTS,
+  MINECRAFT_CLIENT_DEFAULTS,
   MINECRAFT_PLAYER_CONFIG_GROUP,
   MINECRAFT_RHYTHM_CONFIG_GROUP,
   type MinecraftConfigSection,
-} from '../../engine/config.ts';
+} from '../../src/extension.ts';
 
 type RepeatSuccessFallback = {
   enabled: boolean;
@@ -17,6 +18,7 @@ type RepeatSuccessFallback = {
 };
 
 export type MymcConfigSection = MinecraftConfigSection & {
+  combatOptions: CombatExecutionPolicy;
   preserveLoginName?: boolean;
   repeatSuccessFallback: RepeatSuccessFallback;
   visual: MinecraftConfigSection['visual'] & { mode: 'auto' | 'structured' };
@@ -51,6 +53,7 @@ const baseRepeatSuccessFallback = (MINECRAFT_DEFAULTS as {
 
 export const MYMC_DEFAULTS: MymcConfigSection = {
   ...structuredClone(MINECRAFT_DEFAULTS),
+  combatOptions: structuredClone(COMBAT_EXECUTION_DEFAULTS),
   // Preserve deployments created before the engine supplied this option.
   repeatSuccessFallback: { ...REPEAT_SUCCESS_FALLBACK_DEFAULTS, ...baseRepeatSuccessFallback },
   enabled: false,
@@ -58,7 +61,7 @@ export const MYMC_DEFAULTS: MymcConfigSection = {
   username: '',
   preserveLoginName: false,
   viewerPort: 7793,
-  viewerAssetsDir: fileURLToPath(new URL('../../dist/viewer/', import.meta.url)),
+  viewerAssetsDir: MINECRAFT_CLIENT_DEFAULTS.viewerAssetsDir,
   visual: { ...MINECRAFT_DEFAULTS.visual, mode: 'auto' },
   escapeCommand: '/mycli goto arena',
   local: { ...MINECRAFT_DEFAULTS.local, startWithWorld: false, serverDir: '', cheats: false },
@@ -123,18 +126,7 @@ export const MYMC_RHYTHM_CONFIG_GROUP: ConfigGroup = {
         'x-suffix': '分钟', 'x-hot': true,
       },
       ...rhythmGroup.schema.properties,
-      'worlds.mymc.decision.enabled': {
-        ...rhythmGroup.schema.properties['worlds.mymc.decision.enabled'],
-        description: '可选快模型受阻建议，不控制动作；关闭、地址为空或服务失败时，原始回执、规则反射及主 LLM 照常工作。',
-      },
-      'worlds.mymc.decision.endpoint': {
-        ...rhythmGroup.schema.properties['worlds.mymc.decision.endpoint'],
-        description: '可选快决策服务的 JSON POST 地址，接收 state 和 questions，返回 answers；模型由该服务配置。不是 chat/completions 地址，空值不请求。',
-      },
-      'worlds.mymc.idle.endpoint': {
-        ...rhythmGroup.schema.properties['worlds.mymc.idle.endpoint'],
-        description: '可选小动作选择服务，使用同类选择题协议；未配置、超时或响应无效时按规则从当前允许的动作中轮换。',
-      },
+
     },
   },
 };

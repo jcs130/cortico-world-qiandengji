@@ -1,4 +1,4 @@
-<!-- Owner: src/client/runtime.ts, src/client/metrics.ts, src/mcp/server.ts, scripts/build-release.ts -->
+<!-- Owner: src/client/runtime.ts, src/client/metrics.ts, src/mcp/server.ts, scripts/build.mjs -->
 
 # Agent MC World Harness
 

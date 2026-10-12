@@ -1,5 +1,3 @@
 #!/usr/bin/env node
-import { register } from 'tsx/esm/api';
-register();
-const { startMinecraftClientConsole } = await import('../src/client/cli.ts');
+const { startMinecraftClientConsole } = await import('../dist/runtime/src/client/cli.js');
 await startMinecraftClientConsole();

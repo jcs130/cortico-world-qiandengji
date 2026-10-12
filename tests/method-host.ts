@@ -1,5 +1,5 @@
 /** World 测试宿主,记录事件及投递选项,其余接口使用空实现。 */
-import type { EventEnvelope, WorldHost, PushOptions } from '../engine/support/host-contract.ts';
+import type { EventEnvelope, WorldHost, PushOptions } from '../core/support/host-contract.ts';
 
 export class FakeHost implements WorldHost {
   events: EventEnvelope[] = [];

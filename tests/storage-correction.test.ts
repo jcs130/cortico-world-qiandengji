@@ -1,8 +1,8 @@
 import { EventEmitter } from 'node:events';
 import { Vec3 } from 'vec3';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Executor } from '../engine/executor.ts';
-import { MinecraftWorld } from '../engine/world.ts';
+import { Executor } from '../core/executor.ts';
+import { MinecraftWorld } from '../core/world.ts';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 
 afterEach(() => vi.useRealTimers());
@@ -46,7 +46,7 @@ describe('storage rejection scheduling', () => {
     expect(r.exec.status().waiting.map(task => task.id)).toEqual(before);
     const corrected = await r.call([{ skill: 'use', at: [1, 64, 0] },
       { skill: 'take', item: 'string', count: 12, from: 'open', needs: [1] }]);
-    expect(typeof corrected).toBe('string');
+    expect(corrected).toMatchObject({execution:{kind:'task',phase:'accepted',terminal:false,goalCompleted:false}});
     expect(r.exec.status().waiting.map(task => task.id)).toEqual([...before, expect.any(Number)]);
   });
 });

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { PROCEDURE_SCHEMA, procedureHash, type ProcedureVersion } from '../engine/support/procedure.ts';
+import { PROCEDURE_SCHEMA, procedureHash, type ProcedureVersion } from '../core/support/procedure.ts';
 
 export function procedureFixture(id: string, code: string, overrides: Partial<ProcedureVersion> = {}): ProcedureVersion {
   const {revision: _revision, ...body} = {schema: PROCEDURE_SCHEMA, id, code, adapter: 'minecraft-method/v1',

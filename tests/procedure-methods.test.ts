@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { MethodRunner, type MethodRun } from '../engine/method-runner.ts';
-import { PROCEDURE_RECEIPT_MIME, resolveProcedure } from '../engine/support/procedure.ts';
+import { MethodRunner, type MethodRun } from '../core/method-runner.ts';
+import { PROCEDURE_RECEIPT_MIME, resolveProcedure } from '../core/support/procedure.ts';
 import { fixtureBlobs, procedureFixture, procedureRef } from './procedure-fixture.ts';
 import { methodHarness, methodEnded } from './method-harness.ts';
-import type { WorldHost } from '../engine/support/host-contract.ts';
+import type { WorldHost } from '../core/support/host-contract.ts';
 
 const runners: MethodRunner[] = [];
 afterEach(() => runners.splice(0).forEach(r => r.stop('test cleanup')));
@@ -39,7 +39,7 @@ describe('composed executable Minecraft methods', () => {
       r.host.blob = fixtureBlobs([root, child]);
       const tool = r.world.tools().find(t => t.name === 'mc_script')!;
       const reply = await tool.handler({procedure: procedureRef(root)}, {role: 'main', log: r.host.log});
-      expect(String(reply)).toContain('已启动');
+      expect(reply).toMatchObject({text:expect.stringContaining('已启动'),execution:{kind:'method',phase:'accepted',goalCompleted:false}});
       const run = await methodEnded(r, r.runner.read().at(-1)!.id);
       expect(run.status).toBe('completed');
       expect(r.bot.entity.position.x).toBeLessThan(0);

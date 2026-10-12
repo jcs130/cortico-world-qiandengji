@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ToolDef, ToolOutcome, WorldHost, WorldRequestFacts } from '../src/host-contract.ts';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 import { MymcWorld } from '../src/world.ts';
-import type { MinecraftWorldProxy } from '../engine/proxy.ts';
-import { IdleBehaviorController, type IdleBehaviorEvent, type IdleBehaviorScene } from '../engine/idle-behavior.ts';
-import { MinecraftWorld } from '../engine/world.ts';
+import type { MinecraftWorldProxy } from '../core/proxy.ts';
+import { IdleBehaviorController, type IdleBehaviorEvent, type IdleBehaviorScene } from '../adapters/host-decisions/idle-behavior.ts';
+import { MinecraftWorld } from '../core/world.ts';
 
 const sampledAt = '2026-01-01T12:00:00Z';
 const facts: WorldRequestFacts = {
@@ -140,8 +140,6 @@ describe('optional fast decision service', () => {
 
   it('keeps the real blocked task receipt when no fast model is configured', () => {
     const cfg = structuredClone(MYMC_DEFAULTS);
-    cfg.decision.enabled = true;
-    cfg.decision.endpoint = '';
     const world = new MinecraftWorld({ cfg });
     const pushEvent = vi.fn(async event => ({ ...event, cursor: 1 }));
     const fetchCall = vi.fn();
