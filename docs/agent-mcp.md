@@ -5,7 +5,7 @@
 推荐 Node.js 24。新建独立目录，从 [GitHub Releases](https://github.com/jcs130/cortico-world-qiandengji/releases) 下载 v0.3.0-next.1 的 `agent-mc-world-*.tgz`，按 SHA256SUMS 核对，然后：
 
 ```text
-npm install <安装包绝对路径>
+npm install --ignore-scripts <安装包绝对路径>
 node node_modules/agent-mc-world/examples/agent-mcp-check.mjs
 ```
 

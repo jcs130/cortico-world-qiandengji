@@ -16,7 +16,7 @@
 安装 [Releases](https://github.com/jcs130/cortico-world-qiandengji/releases) 中的 `.tgz`，按 SHA256SUMS 核对。推荐 Node.js 24；无需安装 Cortico 即可使用 MCP/SDK，包括 SDK 类型。当前版本是试用版，不自动迁移已有可米部署。
 
 ```text
-npm install <agent-mc-world 安装包的绝对路径>
+npm install --ignore-scripts <agent-mc-world 安装包的绝对路径>
 node node_modules/agent-mc-world/examples/agent-mcp-check.mjs
 ```
 

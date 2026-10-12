@@ -2,7 +2,7 @@
 
 Product: **Agent MC World**, package `agent-mc-world`, version `0.3.0-next.1` (prerelease). Distribution history: https://github.com/jcs130/cortico-world-qiandengji/releases . Repository naming is historical; the default client has no designated server gameplay.
 
-Install the release `.tgz` into a fresh Node.js 24 project after checking SHA256SUMS. Run `node node_modules/agent-mc-world/examples/agent-mcp-check.mjs` for offline MCP discovery. This does not connect or test gameplay. No Cortico installation is needed for MCP/SDK.
+Install the release `.tgz` into a fresh Node.js 24 project after checking SHA256SUMS: `npm install --ignore-scripts <absolute-package.tgz>`. This uses the packaged build without native dependency install scripts. Run `node node_modules/agent-mc-world/examples/agent-mcp-check.mjs` for offline MCP discovery. This does not connect or test gameplay. No Cortico installation is needed for MCP/SDK.
 
 Copy the entire skill directory, including this reference. A skill alone does not install the executable, a main model or memory.
 
