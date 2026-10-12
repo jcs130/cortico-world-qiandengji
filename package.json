@@ -1,6 +1,6 @@
 {
   "name": "cortico-world-qiandengji",
-  "version": "0.2.0-next.1",
+  "version": "0.2.0-next.2",
   "type": "module",
   "description": "Minecraft tools and runtime for Agents, with Cortico and MCP adapters",
   "repository": {
@@ -22,7 +22,9 @@
   },
   "packageManager": "pnpm@11.5.0",
   "main": "./src/index.ts",
-  "bin": { "qiandengji-mcp": "./bin/qiandengji-mcp.mjs" },
+  "bin": {
+    "qiandengji-mcp": "./bin/qiandengji-mcp.mjs"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./agent": "./src/agent/index.ts",

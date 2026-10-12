@@ -2,6 +2,8 @@
 
 # 架构与接入边界
 
+项目定义为“面向 Minecraft 的具身 Agent Harness”，覆盖环境执行、方法制品与反馈、现代化/OBS 画面及技术分析。完整能力表和独立指标接入见 [Harness 定义与接线](harness.md)。主决策与记忆仍由 Agent 宿主提供。
+
 同一套 Minecraft 工具、游戏执行器和回执可以通过 Cortico World 或独立 MCP 入口使用。独立入口不启动 Cortico Core、Persona、主播演出或记忆系统。
 
 ```mermaid
@@ -36,6 +38,7 @@ flowchart TD
 | 通用方法的作者、版本、评价与采用 | Agent 的方法库；Cortico 实现在 Persona `procedures.ts` | 传入明确选择的、带版本与哈希的方法制品 |
 | 方法的游戏执行、原生接口、真实调用轨迹 | `engine/method-runner.ts`、`method-worker.mjs`、`method-mineflayer.ts` | `mymc_script`；校验、执行、目标达成分别记录 |
 | 网页渲染 | 独立仓库 `jcs130/mc-visual-console` | 本包固定版本的画面产物与游戏读数 |
+| 技术分析与 OBS 指标 | 共享仓库 `tools/model-status-overlay`；本包 `src/agent/metrics.ts` | 元数据契约与只读 HTTP/MCP；工具返回由运行时测，模型与方法由宿主上报 |
 | 演出、TTS、唱歌 | 独立 VTuber 扩展 | 由宿主另行装配 |
 
 ## 游戏层与宿主适配

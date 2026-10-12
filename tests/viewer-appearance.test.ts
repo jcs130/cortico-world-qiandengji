@@ -11,8 +11,14 @@ it('relays verified original appearance assets over both existing viewer paths a
   const { bot, protocol } = viewerBot();
   const uuid = '00000000-0000-4000-8000-000000000001';
   const writes: Array<{ channel: string; data: Buffer }> = [];
+  let registrations = 0;
   Object.assign(protocol, { uuid, state: 'play', write(name: string, packet: { channel: string; data: Buffer }) {
     expect(name).toBe('custom_payload');
+    if (packet.channel === 'minecraft:register') {
+      expect(packet.data.toString()).toBe('mcviewer:state');
+      registrations++;
+      return;
+    }
     expect(packet.channel).toBe('mcagent:ysm_asset');
     writes.push(packet);
   } });
@@ -40,6 +46,7 @@ it('relays verified original appearance assets over both existing viewer paths a
   const viewer = await startModernViewer(bot as never, {
     port: await freeViewerPort(), assetsDir: MYMC_DEFAULTS.viewerAssetsDir,
   });
+  expect(registrations).toBe(1);
   const clients: Socket[] = [];
   const connect = async (path: string) => {
     const events: Array<{ name: string; value: Record<string, unknown> }> = [];

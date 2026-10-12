@@ -22,13 +22,15 @@ try {
   await client.connect(transport);
   const tools = (await client.listTools()).tools;
   for (const name of ['mymc_connection', 'mymc_events', 'mymc_artifact', 'mymc_scout',
-    'mymc_do', 'mymc_script', 'mymc_combat_tactic']) assert.ok(tools.some(tool => tool.name === name), name);
+    'mymc_do', 'mymc_script', 'mymc_combat_tactic', 'mymc_metrics', 'mymc_trace']) assert.ok(tools.some(tool => tool.name === name), name);
   const response = await client.callTool({ name: 'mymc_connection', arguments: { action: 'status' } });
   assert.ok(!response.isError);
   const status = JSON.parse(response.content[0].text);
   assert.equal(status.phase, 'disconnected');
   const environment = await client.readResource({ uri: 'mymc://environment' });
   assert.ok(environment.contents[0].text.includes('mymc_'));
+  const metrics = await client.readResource({ uri: 'mymc://metrics' });
+  assert.equal(JSON.parse(metrics.contents[0].text).schema, 'agent-harness-metrics-v1');
   console.log(JSON.stringify({ ok: true, version: manifest.version, protocol: 'MCP stdio',
     toolCount: tools.length, phase: status.phase, gameConnected: false, environmentRead: true }, null, 2));
 } catch (error) {

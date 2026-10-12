@@ -8,6 +8,7 @@ import type { MymcConfigSection } from '../config.ts';
 import { renderTemplate } from '../../engine/support/runtime.mjs';
 import { AgentJournal } from './journal.ts';
 import { AgentConnectionLease } from './connection-lease.ts';
+import { AgentMetrics } from './metrics.ts';
 
 export interface AgentRuntimeOptions {
   cfg: MymcConfigSection;
@@ -24,6 +25,7 @@ type RuntimeWorld = World & { requestFacts?(): unknown };
 /** The caller owns reasoning, memory and wakeups. This runtime owns one game connection and its receipts. */
 export class MymcAgentRuntime {
   readonly journal: AgentJournal;
+  readonly metrics: AgentMetrics;
   private phase: 'disconnected' | 'starting' | 'started' | 'stopping' = 'disconnected';
   private transition?: Promise<void>;
   private readonly host: WorldHost;
@@ -34,6 +36,7 @@ export class MymcAgentRuntime {
     private readonly world: RuntimeWorld = new MymcWorld({ cfg: options.cfg, dataDir: options.dataDir,
       timezone: options.timezone ?? 'UTC', botName: options.agentName ?? options.cfg.username })) {
     this.journal = new AgentJournal(options.dataDir);
+    this.metrics = new AgentMetrics(this.journal.run, options.dataDir, handle => this.journal.blob(handle) !== null);
     this.lease = new AgentConnectionLease(options.dataDir, this.journal.run);
     this.host = {
       pushEvent: (event, opts) => this.journal.pushEvent(event, opts),
@@ -98,16 +101,19 @@ export class MymcAgentRuntime {
     if (!tool) throw new Error(`Unknown game tool: ${name}`);
     if (signal?.aborted) throw new Error('Tool call cancelled before submission.');
     this.activeCalls++;
+    this.metrics.toolStarted(callId, name);
     const queued: EventEnvelope[] = [];
     try {
       const result = await tool.handler(args, { role: this.options.agentName ?? 'agent', log: this.options.log,
         callId, signal, queueExternalEvents: events => queued.push(...events) });
       const outcome = typeof result === 'string' ? { text: result } : { ...result };
       if (queued.length) outcome.text += '\n[Game events returned with this call]\n' + JSON.stringify(queued);
+      this.metrics.toolEnded(callId, outcome.failed === true);
       appendFileSync(join(this.options.dataDir, 'tools.jsonl'), JSON.stringify({ at: new Date().toISOString(),
         run: this.journal.run, callId, name, failed: outcome.failed === true, text: outcome.text }) + '\n');
       return outcome;
     } catch (error) {
+      this.metrics.toolEnded(callId, true);
       appendFileSync(join(this.options.dataDir, 'tools.jsonl'), JSON.stringify({ at: new Date().toISOString(),
         run: this.journal.run, callId, name, failed: true, error: String(error) }) + '\n');
       throw error;

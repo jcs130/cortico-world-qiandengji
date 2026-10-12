@@ -24,7 +24,8 @@ for (const [index, file] of patches.entries()) {
     throw new Error('RELEASE_ENGINE_PATCH_MISMATCH: ' + file);
 }
 const bridgeFiles = ['viewer-content.mjs', 'viewer-content.d.mts', 'text-display.mjs',
-  'viewer-appearance.mjs', 'viewer-appearance.d.mts', 'viewer-ysm-assets.mjs',
+  'viewer-appearance.mjs', 'viewer-appearance.d.mts', 'viewer-ysm-assets.mjs', 'viewer-ysm-motion.mjs',
+  'viewer-observer.mjs', 'viewer-observer.d.mts',
   'viewer-photo-page.mjs', 'viewer-page-assets.mjs'];
 if (engine.viewerContent?.commit !== sources.viewer.commit || engine.viewerContent.files?.length !== bridgeFiles.length)
   throw new Error('RELEASE_VIEWER_BRIDGE_MISMATCH');
@@ -44,6 +45,15 @@ for (const file of ['engine/proxy.ts', 'engine/engine-child.ts', 'engine/depende
   if (!(await stat(join(root, file))).isFile()) throw new Error('RELEASE_FILE_MISSING: ' + file);
 }
 const client = await readFile(join(root, 'dist/viewer/viewer-client.json'));
+const monitor = await json('dist/monitor/source.json');
+if (monitor.commit !== sources.viewer.commit || !monitor.files?.some(entry => entry.file === 'harness.py'))
+  throw new Error('RELEASE_MONITOR_SOURCE_MISMATCH');
+for (const entry of monitor.files) {
+  if (!/^(?:[A-Za-z0-9_.-]+|public\/[A-Za-z0-9_.-]+)$/.test(entry.file)) throw new Error('RELEASE_MONITOR_PATH');
+  if (createHash('sha256').update(await readFile(join(root, 'dist/monitor', entry.file))).digest('hex') !== entry.sha256)
+    throw new Error('RELEASE_MONITOR_HASH_MISMATCH: ' + entry.file);
+}
+if (!JSON.parse(client).buildSource?.sourceSha256) throw new Error('RELEASE_VIEWER_SOURCE_DIGEST_MISSING');
 if (createHash('sha256').update(client).digest('hex') !== viewer.viewerClientManifestSha256)
   throw new Error('RELEASE_VIEWER_MANIFEST_MISMATCH');
 const bundle = await readFile(join(root, 'dist/viewer/dist/modern-viewer.js'));

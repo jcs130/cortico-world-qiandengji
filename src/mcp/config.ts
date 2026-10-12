@@ -27,6 +27,8 @@ export function loadMymcMcpConfig(path: string) {
   if (typeof input.dataDir !== 'string' || !input.dataDir.trim()) throw new Error('Configuration requires a private dataDir.');
   if (input.acceptsImages !== undefined && typeof input.acceptsImages !== 'boolean') throw new Error('acceptsImages must be boolean.');
   if (input.timezone !== undefined && typeof input.timezone !== 'string') throw new Error('timezone must be a string.');
+  if (input.metricsPort !== undefined && (!Number.isInteger(input.metricsPort) || Number(input.metricsPort) < 0 || Number(input.metricsPort) > 65535))
+    throw new Error('metricsPort must be an integer between 0 (disabled) and 65535.');
   const cfg: MymcConfigSection = { ...structuredClone(MYMC_DEFAULTS), viewerPort: 0 };
   merge(cfg as unknown as Record<string, unknown>, input.world as Record<string, unknown>);
   const ajv = new Ajv({ strict: false, validateFormats: false });
@@ -43,5 +45,5 @@ export function loadMymcMcpConfig(path: string) {
   if (cfg.loginConfigFile) cfg.loginConfigFile = resolve(dirname(fullPath), cfg.loginConfigFile);
   assertMymcReady(cfg);
   return { cfg, dataDir: resolve(dirname(fullPath), input.dataDir), timezone: String(input.timezone ?? 'UTC'),
-    acceptsImages: input.acceptsImages === true };
+    acceptsImages: input.acceptsImages === true, metricsPort: Number(input.metricsPort ?? 0) };
 }

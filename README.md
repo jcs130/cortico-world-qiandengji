@@ -18,6 +18,10 @@ Mineflayer 4.37.1 乘坐状态下会暂停步行物理刻，也暂停原生转�
 
 ## 其他 Agent 接入
 
+本项目也可作为 **Minecraft 具身 Agent Harness** 使用，覆盖执行、反馈、方法制品、现代化画面、OBS 和技术分析。系统 1 游戏快战术在 World；系统 2 和记忆由接入 Agent 提供。[能力边界与指标接入](docs/harness.md) 列出可用部分和待验证项。
+
+当前独立试用包为 **v0.2.0-next.2**，含新版网页与 OBS 游戏层、通用指标页面、MCP 元数据入口。[安装与验收指南](docs/agent-mcp.md) 给出完整步骤。
+
 本包从 **v0.2.0-next.1 试用版**起提供独立游戏运行时与 MCP stdio 入口，复用同一套 `mymc_*` 工具、脚本、快战术和执行回执。接入说明见 [Agent MCP](docs/agent-mcp.md)，包括安装包、离线检查、账号与密码登录、MCP 配置和首次验收；各层归属见 [架构边界](docs/architecture.md)。v0.1.2 安装包不含此独立入口。
 
 ## 安装与配置

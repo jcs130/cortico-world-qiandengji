@@ -1,0 +1,102 @@
+diff --git a/modern-viewer.ts b/modern-viewer.ts
+--- a/modern-viewer.ts
++++ b/modern-viewer.ts
+@@ -29,6 +29,7 @@
+ import { serveViewerAsset } from './viewer-asset-server.ts';
+ import { createViewerContentBridge } from './viewer-content.mjs';
+ import { createViewerAppearanceBridge } from './viewer-appearance.mjs';
++import { createViewerObserverBridge } from './viewer-observer.mjs';
+ import { viewerPhotoPage } from './viewer-photo-page.mjs';
+ import { minecraftTextComponent } from './text-component.ts';
+ import type { EventEmitter } from 'node:events';
+@@ -383,7 +384,8 @@
+     velocity: { x: Number(velocity?.x) || 0, y: Number(velocity?.y) || 0, z: Number(velocity?.z) || 0 },
+     onGround: entity.onGround === true, inWater: entity.isInWater === true, shieldRaised,
+     burning: entity.isOnFire === true || (Number((entity.metadata as unknown[] | undefined)?.[0]) & 1) !== 0,
+-    usingHeldItem: bot.usingHeldItem === true,
++    usingHeldItem: bot.usingHeldItem === true || (Number((entity.metadata as unknown[] | undefined)?.[8]) & 1) !== 0,
++    usingOffhand: (Number((entity.metadata as unknown[] | undefined)?.[8]) & 2) !== 0,
+     heldItemEdible: !!(held?.name && foodRegistry?.[held.name.replace(/^minecraft:/, '')]) ||
+       (held?.components?.some(component => component.type?.replace(/^minecraft:/, '') === 'food') ?? false),
+     surfaceBlock: surface ? { name: surface.name, stateId: surface.stateId } : null,
+@@ -445,6 +447,8 @@
+   const speechRelay = new ViewerSpeechRelay(options.speechSourceId || bot.username);
+   const content = bot.version === '1.20.6' ? createViewerContentBridge(bot) : null;
+   const appearance = bot.version === '1.20.6' ? createViewerAppearanceBridge(bot) : null;
++  // Container serialization is already supplied by this host; preserve its richer trade/property state.
++  const observer = bot.version === '1.20.6' ? createViewerObserverBridge(bot) : null;
+ 
+   const origin = `http://127.0.0.1:${options.port}`;
+   const sessions = new Set<() => void>();
+@@ -799,6 +803,7 @@
+ 
+   function accept(socket: Socket, view: 'first' | 'third'): void {
+     const capture = socket.handshake.headers['x-mc-viewer-capture'] === '1';
++    const overlay = socket.handshake.query.overlay === '1';
+     const releaseSlot = !closed && bot.entity ? sessionSlots.reserve(capture) : null;
+     if (!releaseSlot) {
+       socket.emit('viewerBusy', { maximum: capture ? MAX_CAPTURE_SESSIONS : MAX_SESSIONS });
+@@ -806,6 +811,7 @@
+     }
+     const stopContent = content?.subscribeSocket(socket);
+     const stopAppearance = appearance?.subscribeSocket(socket);
++    const stopObserver = observer?.subscribeSocket(socket);
+     // WorldView owns chunks and block updates. Its stock entity packets omit villager
+     // metadata, so the bounded stream below publishes entities separately.
+     const biomeIds = biomeIdMap(bot.registry, vanillaBiomes);
+@@ -1011,7 +1017,7 @@
+     let positionUpdate: Promise<void> | null = null;
+     let lastChunkRepairAtMs = 0;
+     const updateChunkPosition = () => {
+-      if (!active || !initialized || !bot.entity) return;
++      if (overlay || !active || !initialized || !bot.entity) return;
+       pendingPosition = bot.entity.position.clone();
+       if (positionUpdate) return;
+       positionUpdate = (async () => {
+@@ -1140,6 +1146,7 @@
+       active = false;
+       stopContent?.();
+       stopAppearance?.();
++      stopObserver?.();
+       captureLease?.stop();
+       if (captureKey && captureLeases.get(captureKey) === captureLease) captureLeases.delete(captureKey);
+       releaseSlot();
+@@ -1168,7 +1175,7 @@
+       clearInterval(minimapTimer);
+       clearInterval(lightTimer);
+       pendingEntities.clear(); knownEntities.clear();
+-      worldView.removeListenersFromBot(bot);
++      if (!overlay) worldView.removeListenersFromBot(bot);
+       sessions.delete(stop);
+       socket.disconnect(true);
+     };
+@@ -1201,10 +1208,12 @@
+     bot.on('entityGone', removeEntity);
+     bot.on('entitySwingArm', otherSwing);
+     bot.on('entityHurt', entityHurt);
+-    worldView.listenToBot(bot);
++    if (!overlay) worldView.listenToBot(bot);
+     for (const entity of Object.values(bot.entities)) entitySpawn(entity);
+     flushEntities();
+     time(); weather(); publishBossBars(); position(); biome(); publishAvatar(); publishContainer(); publishScoreboard(); publishMinimap(); publishLight();
++    // A transparent OBS session consumes HUD and subject updates, not world columns.
++    if (overlay) return;
+     void worldView.init(bot.entity.position).then(() => {
+       initialized = true;
+       updateChunkPosition();
+@@ -1222,6 +1231,7 @@
+   } catch (error) {
+     content?.dispose();
+     appearance?.dispose();
++    observer?.dispose();
+     first.close(); third.close();
+     throw error;
+   }
+@@ -1303,6 +1313,7 @@
+       closed = true;
+       content?.dispose();
+       appearance?.dispose();
++      observer?.dispose();
+       speechRelay.close();
+       stopInventoryPreview();
+       (bot as unknown as EventEmitter).off('path_update', onPathUpdate);

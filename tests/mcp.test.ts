@@ -48,6 +48,12 @@ describe('MCP adapter', () => {
       expect(retrieved.content).toEqual([{ type: 'text', text: '{"sample":7}' }]);
       const resource = await client.readResource({ uri: `mymc-artifact://${ref.handle.slice(4)}` });
       expect(Buffer.from((resource.contents[0] as { blob: string }).blob, 'base64').toString()).toBe('{"sample":7}');
+      const trace = await client.callTool({ name: 'mymc_trace', arguments: { kind: 'method', id: 'method-1',
+        stage: 'validated', method: 'test-method', author: 'test-agent', sourceHash: 'a'.repeat(64), artifact: ref.handle } });
+      expect(trace.isError).not.toBe(true);
+      const metrics = await client.readResource({ uri: 'mymc://metrics' });
+      expect(JSON.parse((metrics.contents[0] as { text: string }).text)).toMatchObject({ schema: 'agent-harness-metrics-v1',
+        tools: { returned: 1 }, learning: { reportedEvents: 1, environmentVerifiedImprovement: null } });
     } finally { await client.close(); await server.close(); await runtime.disconnect(); rmSync(dir, { recursive: true, force: true }); }
   });
 

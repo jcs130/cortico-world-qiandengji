@@ -4,10 +4,11 @@ import type { Logger } from '../host-contract.ts';
 import { MymcAgentRuntime } from '../agent/runtime.ts';
 import { createMymcMcpServer } from './server.ts';
 import { loadMymcMcpConfig } from './config.ts';
+import { serveAgentMetrics } from '../agent/metrics.ts';
 
 const configPath = process.argv[2];
 if (!configPath || process.argv.length !== 3) throw new Error('Usage: qiandengji-mcp <private-config.json>');
-const { cfg, dataDir, timezone, acceptsImages } = loadMymcMcpConfig(configPath);
+const { cfg, dataDir, timezone, acceptsImages, metricsPort } = loadMymcMcpConfig(configPath);
 function logger(area = 'mymc'): Logger {
   const emit: Logger['emit'] = (level, msg, options) => process.stderr.write(JSON.stringify({ level, area, msg, ...options }) + '\n');
   return { emit, child: name => logger(`${area}.${name}`),
@@ -19,8 +20,9 @@ const runtime = new MymcAgentRuntime({ cfg, dataDir, timezone, agentName: cfg.us
   modelFacts: { model: () => '', accepts: mime => acceptsImages && mime.startsWith('image/'), contextWindow: () => undefined } });
 const manifest = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
 const server = createMymcMcpServer(runtime, manifest.version);
+const monitor = metricsPort ? await serveAgentMetrics(metricsPort, () => runtime.metrics.snapshot(runtime.status().phase)) : null;
 let closing: Promise<void> | undefined;
-const close = () => closing ??= runtime.disconnect().finally(() => server.close());
+const close = () => closing ??= runtime.disconnect().finally(async () => { await monitor?.close(); await server.close(); });
 server.onclose = () => { void close(); };
 for (const signal of ['SIGINT', 'SIGTERM'] as const) process.once(signal, () => { void close(); });
 await server.connect(new StdioServerTransport());

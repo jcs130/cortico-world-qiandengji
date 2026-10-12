@@ -4,6 +4,7 @@ import { CallToolRequestSchema, ListResourcesRequestSchema, ListToolsRequestSche
   type CallToolResult, type Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { BlobRef, ToolOutcome } from '../host-contract.ts';
 import type { MymcAgentRuntime } from '../agent/runtime.ts';
+import { traceSchema } from '../agent/metrics.ts';
 
 const connection: Tool = {
   name: 'mymc_connection', description: 'Connect, inspect or disconnect this Agent\'s Minecraft runtime. '
@@ -32,6 +33,10 @@ const artifact: Tool = {
     text: { type: 'string', maxLength: 64000 }, mime: { type: 'string', enum: ['application/json', 'text/plain'] },
   }, required: ['action'], additionalProperties: false },
 };
+const metrics: Tool = { name: 'mymc_metrics', description: 'Read runtime-measured tool return latency and explicitly host-reported model/method metadata. Tool returns are not game task completion. No intelligence score or verified learning is inferred.',
+  inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true } };
+const trace: Tool = { name: 'mymc_trace', description: 'Optional HOST instrumentation: report measured model request metadata or an attributed method lifecycle event linked to saved artifacts. Do not invent token counts, timings, authorship or improvement. Stores metadata, not Agent memory. Each transport attempt uses a unique id.',
+  inputSchema: traceSchema as Tool['inputSchema'] };
 
 export function createMymcMcpServer(runtime: MymcAgentRuntime, version: string): Server {
   const server = new Server({ name: 'qiandengji-minecraft', version }, {
@@ -41,7 +46,7 @@ export function createMymcMcpServer(runtime: MymcAgentRuntime, version: string):
       + 'Use mymc_guide and mymc_script api:index for progressive tool and native Mineflayer documentation. '
       + 'Keep measured world facts and actual execution receipts separate from hypotheses and goal-success judgments.',
   });
-  const tools: Tool[] = [connection, events, artifact, ...runtime.tools().map(tool => ({
+  const tools: Tool[] = [connection, events, artifact, metrics, trace, ...runtime.tools().map(tool => ({
     name: tool.name, description: tool.description, inputSchema: tool.parameters as Tool['inputSchema'],
     annotations: { readOnlyHint: tool.tags.includes('read') && !tool.tags.some(tag => ['write', 'act', 'speak'].includes(tag)) },
   }))];
@@ -68,6 +73,11 @@ export function createMymcMcpServer(runtime: MymcAgentRuntime, version: string):
       if (!validate) throw new Error(`Unknown tool: ${name}`);
       if (!validate(args)) throw new Error(`Invalid arguments: ${ajv.errorsText(validate.errors)}`);
       if (extra.signal.aborted) throw new Error('Request cancelled before submission.');
+      if (name === metrics.name) return outcome({ text: JSON.stringify(runtime.metrics.snapshot(runtime.status().phase)) });
+      if (name === trace.name) {
+        runtime.metrics.report(args);
+        return outcome({ text: JSON.stringify({ recorded: true, source: 'host-reported', run: runtime.journal.run }) });
+      }
       if (name === connection.name) {
         if (args.action === 'connect') await runtime.connect();
         else if (args.action === 'disconnect') await runtime.disconnect();
@@ -114,11 +124,13 @@ export function createMymcMcpServer(runtime: MymcAgentRuntime, version: string):
 
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({ resources: [{
     uri: 'mymc://environment', name: 'Minecraft environment and tool guide index', mimeType: 'text/plain',
-  }, { uri: 'mymc://status', name: 'Game runtime status', mimeType: 'application/json' }] }));
+  }, { uri: 'mymc://status', name: 'Game runtime status', mimeType: 'application/json' },
+  { uri: 'mymc://metrics', name: 'Harness metadata with source and coverage', mimeType: 'application/json' }] }));
   server.setRequestHandler(ReadResourceRequestSchema, async request => {
     const uri = request.params.uri;
     if (uri === 'mymc://environment') return { contents: [{ uri, mimeType: 'text/plain', text: await runtime.environment() }] };
     if (uri === 'mymc://status') return { contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(runtime.status()) }] };
+    if (uri === 'mymc://metrics') return { contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(runtime.metrics.snapshot(runtime.status().phase)) }] };
     const match = /^mymc-artifact:\/\/([a-f0-9]{64})$/.exec(uri);
     const saved = match && runtime.journal.blob(`log:${match[1]}`);
     if (!saved) throw new Error('Resource unavailable.');

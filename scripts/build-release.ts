@@ -72,7 +72,8 @@ async function buildEngine(): Promise<void> {
   const viewerFiles = [];
   await cp(join(root, 'src/viewer-photo-page.d.mts'), join(engineRoot, 'viewer-photo-page.d.mts'));
   for (const file of ['viewer-content.mjs', 'viewer-content.d.mts', 'text-display.mjs',
-    'viewer-appearance.mjs', 'viewer-appearance.d.mts', 'viewer-ysm-assets.mjs',
+    'viewer-appearance.mjs', 'viewer-appearance.d.mts', 'viewer-ysm-assets.mjs', 'viewer-ysm-motion.mjs',
+    'viewer-observer.mjs', 'viewer-observer.d.mts',
     'viewer-photo-page.mjs', 'viewer-page-assets.mjs']) {
     const bytes = await readFile(join(viewerRoot, 'packages/modern-viewer/renderer-src/host', file));
     await writeFile(join(engineRoot, file), bytes);
@@ -96,7 +97,28 @@ async function buildViewer(): Promise<void> {
   await writeFile(join(outputDirectory, 'source.json'), JSON.stringify({ ...sources.viewer,
     viewerClientManifestSha256: createHash('sha256').update(client).digest('hex'),
   }, null, 2) + '\n');
+  await buildMonitor(viewerRoot);
   console.log(`Viewer: ${sources.viewer.commit}`);
+}
+
+async function buildMonitor(viewerRoot: string): Promise<void> {
+  const source = join(viewerRoot, 'tools/model-status-overlay');
+  const target = join(root, 'dist/monitor');
+  await rm(target, { recursive: true, force: true });
+  await mkdir(target, { recursive: true });
+  const files = ['server.py', 'metrics.py', 'brain.py', 'connections.py', 'harness.py',
+    'test_server.py', 'test_metrics.py', 'test_brain.py', 'test_connections.py', 'test_harness.py',
+    'overlay.config.example.json', 'README.md', 'BRAIN-METRICS.md', 'METRICS-CONTRACT.md', 'HARNESS-METRICS.md',
+    'qa.mjs', 'start.ps1', ...((await readdir(join(source, 'public'))).map(file => `public/${file}`))];
+  const hashes = [];
+  for (const file of files) {
+    const bytes = await readFile(join(source, file));
+    await mkdir(dirname(join(target, file)), { recursive: true });
+    await writeFile(join(target, file), bytes);
+    hashes.push({ file, sha256: createHash('sha256').update(bytes).digest('hex') });
+  }
+  await writeFile(join(target, 'source.json'), JSON.stringify({ repository: sources.viewer.repository,
+    commit: sources.viewer.commit, files: hashes }, null, 2) + '\n');
 }
 
 const stage = process.argv[2] || 'all';
