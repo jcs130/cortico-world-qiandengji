@@ -1,0 +1,52 @@
+diff --git a/world.ts b/world.ts
+--- a/world.ts
++++ b/world.ts
+@@ -7,6 +7,7 @@
+  * worlds.vtuber.delayedSources 可延迟 vtuber 侧投递，避免画面先行。
+  */
+ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
++import { goalClosureMetadata } from './goal-metrics.ts';
+ import { createHash, randomUUID } from 'node:crypto';
+ import { EventEmitter } from 'node:events';
+ import { dirname, join } from 'node:path';
+@@ -5148,12 +5149,17 @@
+     }
+     // done 的门控必须读调用这一刻的世界；任务回执和 Goal 自己的 progress 都不参与。
+     const before = op.kind === 'done' ? this.coordinateGoalPlans() : [];
++    const closingGoal = op.kind === 'done' || op.kind === 'drop' ? table.list.find(goal => goal.slot === op.slot) : null;
+     const day = (this.bridge?.bot as { time?: { day?: number } } | null | undefined)?.time?.day;
+     let receipt = applyGoal(table, op, {
+       day: typeof day === 'number' ? Math.floor(day) : null,
+       realTime: nowIso(this.timezone),
+       at: Date.now(),
+     }, (k) => this.blueprints.noteOf(k), (k) => this.goalDoneSurvey(k));
++    if (closingGoal && !table.list.includes(closingGoal) && (op.kind === 'done' || op.kind === 'drop')) {
++      this.emit('minecraft.goal.metrics', '', false, { deliver: false,
++        meta: { taskVerification: goalClosureMetadata(closingGoal, op.kind, Date.now()) } });
++    }
+     const after = op.kind === 'done' ? [] : this.coordinateGoalPlans();
+     const notices = [...before, ...after];
+     if (notices.length > 0) receipt += `\n[目标旁证] ${notices.join('；')}`;
+diff --git a/goal-metrics.ts b/goal-metrics.ts
+new file mode 100644
+index 0000000..30c8dab
+--- /dev/null
++++ b/goal-metrics.ts
+@@ -0,0 +1,17 @@
++import { createHash } from 'node:crypto';
++import type { GoalPlan } from './goal-plan.ts';
++
++/** Earlier milestones retain their evidence; the final result is rechecked at closure. */
++export function goalClosureMetadata(goal: { slot: number; at: number; realTime: string; plan: GoalPlan },
++  operation: 'done' | 'drop', observedAt: number) {
++  const taskId = createHash('sha256').update(`${goal.slot}/${goal.at}/${goal.realTime}`).digest('hex');
++  const verified = operation === 'done' && goal.plan.steps.length > 0 && goal.plan.steps.every(step =>
++    !!step.verify?.length && step.state === 'verified' && step.evidence && 'verdict' in step.evidence
++    && step.evidence.verdict === 'ok' && step.evidence.observedAt <= observedAt)
++    && !!goal.plan.steps.at(-1)?.evidence && 'observedAt' in goal.plan.steps.at(-1)!.evidence!
++    && (goal.plan.steps.at(-1)!.evidence as { observedAt: number }).observedAt >= observedAt - 1000;
++  return { schema: 'task-verification-v1', capability: 'mechanical-goal-closure-v1', task_id: taskId,
++    outcome: verified ? 'success' : 'unknown', verified_by: verified ? 'environment' : null,
++    evidence_id: verified ? `${taskId}/${observedAt}` : null,
++    recovery_case_id: null, strategy_changed: null };
++}
