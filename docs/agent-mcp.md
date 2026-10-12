@@ -6,7 +6,7 @@
 
 ## 1. 安装试用版
 
-本指南对应 **v0.2.0-next.2**。旧的 v0.1.2 安装包没有独立 MCP 入口，不要用旧包验证本指南。
+本指南对应 **v0.2.0-next.3**。旧的 v0.1.2 安装包没有独立 MCP 入口，不要用旧包验证本指南。
 
 准备 Node.js 24 和支持 MCP stdio 的 Agent 客户端。Minecraft 服务端应允许该机器访问，并为测试者分配独立账号及必要权限；包内画面素材匹配 Java 1.20.6。无需安装 Cortico 或完整 Java 游戏客户端来运行 Mineflayer Agent。
 
@@ -16,11 +16,11 @@
 mkdir D:/agents/qiandengji
 cd D:/agents/qiandengji
 npm init -y
-npm install --save-exact https://github.com/jcs130/cortico-world-qiandengji/releases/download/v0.2.0-next.2/cortico-world-qiandengji-0.2.0-next.2.tgz
+npm install --save-exact https://github.com/jcs130/cortico-world-qiandengji/releases/download/v0.2.0-next.3/cortico-world-qiandengji-0.2.0-next.3.tgz
 node node_modules/cortico-world-qiandengji/examples/agent-mcp-check.mjs
 ```
 
-最后一条命令只检查已安装的 MCP 协议、工具发现和环境资源，**不连接游戏**。本版预期输出 `ok: true`、`version: "0.2.0-next.2"`、`toolCount: 27`、`phase: "disconnected"`。下载页同时提供 `SHA256SUMS.txt`；Windows 可用 `Get-FileHash <安装包路径> -Algorithm SHA256` 比对，其他系统可用 `sha256sum`。
+最后一条命令只检查已安装的 MCP 协议、工具发现和环境资源，**不连接游戏**。本版预期输出 `ok: true`、`version: "0.2.0-next.3"`、`toolCount: 27`、`phase: "disconnected"`。下载页同时提供 `SHA256SUMS.txt`；Windows 可用 `Get-FileHash <安装包路径> -Algorithm SHA256` 比对，其他系统可用 `sha256sum`。
 
 其他系统将安装目录换成本机路径。源码开发者需要按仓库 README 的固定来源完成构建；直接 `git clone` 后只有源码，不能跳过生成引擎和画面这一步。试用安装包已经包含这些产物。
 
@@ -169,7 +169,7 @@ MCP 传输与内容类型使用官方 SDK，协议说明见 [MCP TypeScript SDK]
 
 | 现象 | 检查方式 |
 | --- | --- |
-| 找不到 MCP 入口或生成引擎 | 确认安装的是 v0.2.0-next.2 的 `.tgz`，不是 v0.1.2 或未构建的 Git 源码 |
+| 找不到 MCP 入口或生成引擎 | 确认安装的是 v0.2.0-next.3 的 `.tgz`，不是 v0.1.2 或未构建的 Git 源码 |
 | 服务列出工具，但角色不进服 | 工具发现不连接游戏；显式调用 `mymc_connection {"action":"connect"}`，再检查网络、账号和认证 |
 | `phase: "started"` 但游戏工具没有现场数据 | 该字段表示引擎启动；等待连接、首次出生及认证事件，不据此认定已进服 |
 | 账号被挤下线或连接锁冲突 | 每个 Agent 用独立账号、`dataDir` 和非零画面端口；先退出重复实例 |

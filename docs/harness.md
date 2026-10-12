@@ -44,7 +44,7 @@
 python node_modules/cortico-world-qiandengji/dist/monitor/server.py --config D:/agents/qiandengji/private-monitor.json
 ```
 
-- 技术分析：`http://127.0.0.1:17840/brain`。
+- 运行概览：`http://127.0.0.1:17840/brain`。首页紧凑展示当前阶段、系统 1 / 系统 2 响应耗时与最近失败；方法记录、请求参数和资源读数按需展开。缺失数据只标为未接入，不显示空指标墙。
 - OBS 指标小窗：`http://127.0.0.1:17840/overlay`，440×290，背景透明。
 - OBS 游戏 HUD：游戏连接后 `http://127.0.0.1:<viewerPort>/?obs=1`。编辑布局用 `?obs=1&obsEdit=1`，复制布局链接到 OBS；通常浏览器源宽 1920、高 1080，底下放游戏捕获。
 - 完整网页画面：`http://127.0.0.1:<viewerPort>/`；OBS HUD 本身不绘制世界地形。游戏画面由实际玩家连接提供，未连接时不产生当前坐标或背包事实。
