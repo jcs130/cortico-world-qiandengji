@@ -590,7 +590,7 @@ packages:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
   agent-mc-world@file:vendor/agent-mc-world-0.4.0-combat-20261014.tgz:
-    resolution: {integrity: sha512-yg/hQcZAARpE49qadJouzw0F2WiCeofIhfWanqBkQN5fBEOUZwETC7Fe9Wlz+6ij3Pma0pLonipRRBjx49bWHA==, tarball: file:vendor/agent-mc-world-0.4.0-combat-20261014.tgz}
+    resolution: {integrity: sha512-dBlBvo7htBnMbtj8ddIJv+P2rLLPl0BI61KcZ1nwKURmk+sWSyUlVuwEpE3XLEzfNuBnZAItWAGOy1nKREq+SA==, tarball: file:vendor/agent-mc-world-0.4.0-combat-20261014.tgz}
     version: 0.4.0
     engines: {node: '>=22'}
     hasBin: true
