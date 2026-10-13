@@ -29,7 +29,7 @@ export interface Battlefield {
   dimension: string | null;
   self: { entityId: number; health: Health; food: number | null; position: [number, number, number]; scoreboardTeam: string | null };
   action: { fighting: boolean; emergency: boolean; taskId: number | null; step: string | null;
-    targetEntityId?: number | null; sinceHitMs?: number | null; canStep?: boolean };
+    targetEntityId?: number | null; sinceHitMs?: number | null; canStep?: boolean; followTarget?: string | null };
   actors: BattlefieldActor[];
   omitted: number;
   server: { sequence: number; receivedAtMs: number; expiresAtMs: number } | null;

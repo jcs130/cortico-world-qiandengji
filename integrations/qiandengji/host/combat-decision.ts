@@ -26,24 +26,34 @@ export interface CombatDecisionOptions {
 export const usesHostDecision = (cfg: Pick<CombatDecisionConfig, 'connection' | 'endpoint'>) =>
   cfg.connection === 'host' || (cfg.connection !== 'endpoint' && !cfg.endpoint.trim());
 
-function sceneFacts(frame: CombatDecisionFrame) {
+const healthBand = (hp: number | null, max: number | null) => hp === null ? 'unknown'
+  : hp <= 0 ? 'dead' : hp <= 4 ? 'critical'
+    : hp <= Math.max(10, (max ?? 20) * .5) ? 'wounded' : 'healthy';
+
+function sceneFacts(frame: CombatDecisionFrame, selected: CombatCandidate | null) {
   const f = frame.battlefield;
   return { connection: [f.connectionGeneration, f.dimension], tactic: frame.tacticRevision,
-    self: [f.self.entityId, f.self.health.current, f.self.health.max, f.self.food],
-    action: [f.action.fighting, f.action.emergency, f.action.taskId, f.action.step, f.action.targetEntityId, f.action.canStep],
-    skills: frame.skills.map(s => [s.spell, s.available, s.manaCost, s.block,
+    self: [f.self.entityId, healthBand(f.self.health.current, f.self.health.max), f.self.health.max,
+      f.self.food === null ? null : f.self.food <= 6 ? 'hungry' : 'fed'],
+    action: [f.action.fighting, f.action.emergency, f.action.taskId, f.action.step, f.action.followTarget,
+      f.action.targetEntityId, selected?.kind === 'step' ? f.action.canStep : null],
+    skills: frame.skills.filter(s => selected?.kind === 'cast' && s.spell === selected.spell)
+      .map(s => [s.spell, s.available, s.manaCost, s.block,
       s.cooldownRemainingMs === null ? null : s.cooldownRemainingMs > 0]),
     actors: [...f.actors].sort((a, b) => (a.entityId ?? -1) - (b.entityId ?? -1)
       || (a.uuid ?? '').localeCompare(b.uuid ?? '')).map(e => [e.entityId, e.uuid, e.type, e.relation,
-      e.health.current, e.health.max, e.lineOfSight, e.targetEntityId]) };
+      e.relation === 'ally' ? healthBand(e.health.current, e.health.max)
+        : e.health.current === null ? 'unknown' : e.health.current <= 0 ? 'dead' : 'alive',
+      e.lineOfSight, e.targetEntityId]) };
 }
 
-function sceneChanges(before: CombatDecisionFrame, after: CombatDecisionFrame): string[] {
-  const prior = sceneFacts(before), current = sceneFacts(after);
+function sceneChanges(before: CombatDecisionFrame, after: CombatDecisionFrame, selected: CombatCandidate | null): string[] {
+  const prior = sceneFacts(before, selected), current = sceneFacts(after, selected);
   const changed: string[] = (Object.keys(prior) as Array<keyof typeof prior>)
     .filter(key => JSON.stringify(prior[key]) !== JSON.stringify(current[key]));
-  // Regeneration preserves a still-eligible choice; spending and unknown readings invalidate it.
-  if (before.mana !== after.mana && !(before.mana !== null && after.mana !== null && after.mana >= before.mana))
+  // Only a cast consumes mana. Eligibility (including rule reserves) is recomputed by the engine.
+  if (selected?.kind === 'cast' && before.mana !== after.mana
+    && (after.mana === null || after.mana < selected.manaCost))
     changed.push('mana');
   return changed;
 }
@@ -108,7 +118,7 @@ export class CombatDecisionLoop {
       ? `${c.intent} Cast ${c.spell}, mana cost ${c.manaCost}.` : c.intent; });
     const { program: _program, actionPool: _pool, ...publicFrame } = frame;
     const body = JSON.stringify({ ...(cfg.model ? { model: cfg.model } : {}), state: { ...publicFrame, objective: 'Assist the party against eligible visible enemies, survive and preserve useful ongoing attacks.' }, questions: { tactic: {
-      type: 'choice', instructions: 'Choose an immediate available combat action or keep the ongoing action. Use observed enemy and ally facts; null means unknown. Omitted entities may exist. Preserve health and useful ongoing attacks.'
+      type: 'choice', instructions: 'Choose one executable action for the next second. Engage a permitted visible hostile before being hit when healthy and available; assist confirmed allies. Follow resumes after combat. Keep means the current controller continues; do not restart a useful attack. Cast uses a ready skill, step adjusts position, retreat ends pursuit. Use health, reach, line of sight and mana; null is unknown. Never infer a team from proximity.'
         + (frame.policy ? '\nAgent-authored tactic: ' + frame.policy.instructions : ''), criteria,
     } } });
     const scope = { id, startedAtMs, connectionGeneration: frame.battlefield.connectionGeneration,
@@ -148,7 +158,7 @@ export class CombatDecisionLoop {
       const executable = selected && current?.candidates.find(c => c.id === selected.id && c.kind === selected.kind
         && (selected.kind !== 'cast' || (c.kind === 'cast' && c.spell === selected.spell && c.ruleId === selected.ruleId))
         && (selected.kind !== 'engage' || (c.kind === 'engage' && c.targetId === selected.targetId && c.uuid === selected.uuid)));
-      const changed = current ? sceneChanges(frame, current) : ['unavailable'];
+      const changed = current ? sceneChanges(frame, current, selected ?? null) : ['unavailable'];
       let outcome: string;
       if (!liveCfg.enabled || liveCfg.mode !== cfg.mode || liveCfg.endpoint !== cfg.endpoint
         || liveCfg.connection !== cfg.connection || liveCfg.decisionProvider !== cfg.decisionProvider

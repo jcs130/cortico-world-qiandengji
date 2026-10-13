@@ -133,6 +133,7 @@ export class CombatSpells {
 
   noteAbilities(abilities: ReadonlyArray<{ id: string; cooldownMs: number | null;
     cooldownRemainingMs?: number | null; manaCost?: number | null }>, now = Date.now()): void {
+    const previous = new Set(this.available);
     this.available.clear();
     for (const ability of abilities) {
       const spell = ability.id.split(':').at(-1);
@@ -144,7 +145,11 @@ export class CombatSpells {
       else if (ability.cooldownRemainingMs === null) this.serverReadyAt.delete(spell);
       if (ability.manaCost !== undefined && ability.manaCost !== null)
         this.costs.set(spell, ability.manaCost);
-      else if (ability.manaCost === null) this.costs.delete(spell);
+      // HUD packets often omit static cost (decoded as null). Keep a cost explicitly
+      // observed in this connection's catalogue; dynamic cooldown unknowns still clear above.
+    }
+    for (const spell of previous) if (!this.available.has(spell)) {
+      this.costs.delete(spell); this.cooldowns.delete(spell); this.serverReadyAt.delete(spell);
     }
   }
 

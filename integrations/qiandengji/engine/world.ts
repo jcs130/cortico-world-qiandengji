@@ -20,6 +20,8 @@ import { CombatTacticBook } from './combat-tactics.ts';
 import { COMBAT_RULES_SCHEMA, validCombatRules, type CombatRule } from './combat-rules.ts';
 import { publishViewerCastCommand } from './viewer-cast.ts';
 import { watchAgentFriendFlight } from './agentfriend-flight.ts';
+import { trialBodyState, TRIAL_DOWNED_REASON } from './trial-body-state.ts';
+import { combatMayTakeTask, diverseCombatOptions } from './combat-options.ts';
 export const SERVER_TOOLS: ReadonlyArray<Omit<ToolDef,'handler'>> = [{
     name: 'mc_cast',
     tags: ['act'],
@@ -57,6 +59,7 @@ export const SERVER_TOOLS: ReadonlyArray<Omit<ToolDef,'handler'>> = [{
        + 'The host selects candidates from {battlefield:true}; submit {choice:{candidate,tacticRevision,connectionGeneration}} for fresh validation. No inference runs in this extension. '
       + 'program:{name,code,params?} installs your JavaScript synchronous function body with frame and params; return {candidates,instructions}. '
       + 'frame.actionPool contains currently executable casts, engagements and collision-checked directions; you may select, reorder or relabel them, or construct step destinations 0.5 to 1.6 blocks away. '
+      + 'Read actors from frame.battlefield.actors (relation, health, distance, lineOfSight); candidate kinds are cast, engage, step and retreat. There is no frame.snapshot.enemies or melee candidate. '
       + 'The program constructs choices from fresh battlefield facts independently of the main model; the fast model chooses and the combat controller executes. '
       + 'Direct steps last at most 700ms and share the combat body lease; survival, task ownership and collisions remain checked. '
       + 'Use program:null to remove it. No imports, files, network or raw bot; 50ms worker execution budget, separate 500ms response deadline. Runtime failure revokes that program until updated; built-in choices remain a fallback. '
@@ -99,6 +102,7 @@ protected lastCombatProgramFeedbackAt = 0;
 protected lastCombatDecision: { atMs: number; generation: number; outcome: unknown; elapsedMs: unknown } | null = null;
 protected arenaFloor: { floor: number; total: number } | null = null;
 protected castSpell(args: Record<string, unknown>): string | ToolOutcome {
+    if (this.bodyInhibitReason) return { text: this.toolLog('mc_cast', args, `[mc_cast 未发送] ${this.bodyInhibitReason}`), failed: true, endsTurn: true };
     const spell = args.spell;
     if (typeof spell !== 'string' || !/^[a-z][a-z0-9_:-]{0,63}$/.test(spell)) {
       return { text: this.toolLog('mc_cast', args, '[mc_cast 失败] spell 必须是服务端给出的英文技能 ID'), failed: true };
@@ -233,7 +237,7 @@ protected async setCombatTactic(args: Record<string, unknown>, hostSampling = fa
       + '\n' + this.combatSpells.readout(undefined, Date.now(), this.bridge?.bot ?? undefined));
   }
 protected tryAutoSelfHeal(bot: Bot): boolean {
-    if (!this.selfHealAvailable || (bot.health ?? 0) <= 0) return false;
+    if (this.bodyInhibitReason || !this.selfHealAvailable || (bot.health ?? 0) <= 0) return false;
     const now = Date.now();
     if (this.combatSpells.manualCastBlock('selfheal', now)) return false;
     const command = '/mycli cast selfheal';
@@ -254,7 +258,7 @@ protected tryAutoSelfHeal(bot: Bot): boolean {
     return true;
   }
 protected tryAutoCombatSpell(bot: Bot): void {
-    if (this.bridge?.bot !== bot) return;
+    if (this.bodyInhibitReason || this.bridge?.bot !== bot) return;
     const fighting = (this.combat?.fighting ?? false) || (this.executor?.attacking ?? false);
     const underThreat = (this.combat?.active ?? false) || fighting;
     if (underThreat && this.selfHealAvailable
@@ -281,19 +285,19 @@ protected sampleCombatDecision(): CombatDecisionFrame | null {
     const queue = this.executor?.status();
     const reaction = this.combat?.reactionState();
     const fighting = (this.combat?.fighting ?? false) || (this.executor?.attacking ?? false);
-    const emergency = (this.reflexes?.envActive ?? false) || now < this.escapeHoldUntil
+    const emergency = this.bodyInhibitReason !== null || (this.reflexes?.envActive ?? false) || now < this.escapeHoldUntil
       || (this.executor?.escaping ?? false) || (reaction?.retreating ?? false)
       || (bot.health ?? 0) <= this.cfg.reflex.fleeHealth
       || (this.selfHealAvailable && this.combatSpells.wantsHeal(bot.health ?? 0));
     const battlefield = this.battlefield.sample(bot, this.connectionGeneration, { fighting, emergency,
       taskId: queue?.running?.id ?? null, step: queue?.running?.step.slice(0, 120) ?? null,
       targetEntityId: reaction?.targetId ?? null, sinceHitMs: reaction?.sinceHitMs ?? null,
-      canStep: reaction?.canStep ?? false }, cfg.maxEntities, now);
+      canStep: reaction?.canStep ?? false, followTarget: queue?.running?.followTarget ?? null }, cfg.maxEntities, now);
     const program = this.combatSpells.getTactic()?.program;
     const frame = this.combatSpells.decisionFrame(bot, battlefield, program ? 16 : cfg.maxCandidates, now);
     if (!fighting) frame.candidates = [];
     const control = {
-      bodyFree: !this.combat?.active && !queue?.running && !queue?.waiting.length && !queue?.hold
+      bodyFree: !this.combat?.active && combatMayTakeTask(queue)
         && !this.methods.current && !bot.currentWindow && !(this.executor?.eating ?? false),
       canStep: (reaction?.canStep ?? false) && !bot.currentWindow && !(this.executor?.eating ?? false),
       targetId: reaction?.targetId ?? null, sinceHitMs: reaction?.sinceHitMs ?? null,
@@ -309,7 +313,7 @@ protected sampleCombatDecision(): CombatDecisionFrame | null {
     }
     const choices = [...reactions, ...frame.candidates];
     frame.omittedCandidates += Math.max(0, choices.length - cfg.maxCandidates);
-    frame.candidates = choices.slice(0, cfg.maxCandidates);
+    frame.candidates = diverseCombatOptions(choices, cfg.maxCandidates);
     return frame;
   }
 protected async prepareCombatProgram(frame: CombatDecisionFrame): Promise<CombatDecisionFrame> {
@@ -321,7 +325,7 @@ protected async prepareCombatProgram(frame: CombatDecisionFrame): Promise<Combat
       const result = combatProgramCandidates(await this.combatProgram.run(program, frame), frame,
         to => this.combatDecisionConfig().allowMovement && corridorSafe(bot, new Vec3(...frame.battlefield.self.position), new Vec3(...to)));
       const max = this.combatDecisionConfig().maxCandidates;
-      return { ...frame, candidates: result.candidates.slice(0, max),
+      return { ...frame, candidates: diverseCombatOptions(result.candidates, max),
         omittedCandidates: Math.max(0, result.candidates.length - max),
         policy: { name: program.name, sourceHash: hash, instructions: result.instructions } };
     } catch (error) {
@@ -387,12 +391,19 @@ constructor(options: MinecraftWorldOptions) { super(options); this.combatSpells 
             { trigger: 'piggyback' });
         }
       }
-  protected override extensionState() { return this.combatSpells.readout(undefined, Date.now(), this.bridge?.bot ?? undefined); }
+  protected override extensionState() { return (this.bodyInhibitReason ? `[身体受限] ${this.bodyInhibitReason}\n` : '') + this.combatSpells.readout(undefined, Date.now(), this.bridge?.bot ?? undefined); }
   protected override extensionCombatTuning() { return {arena:this.arenaFloor !== null}; }
   protected override extensionLowHealth(bot: Bot) { this.tryAutoSelfHeal(bot); }
   protected override extensionRealm(key: string) { this.combatSpells?.useRealm(key); }
   protected override extensionMessage(text: string): boolean {
     if (parseProtectReply(text)) return true;
+    const bot = this.bridge?.bot;
+    const body = trialBodyState(text, bot?.player?.uuid ?? bot?._client?.uuid,
+      this.bodyInhibitReason === TRIAL_DOWNED_REASON);
+    if (body) {
+      this.setBodyInhibited(body === 'downed' ? TRIAL_DOWNED_REASON : null, body === 'downed' ? 'downed' : null);
+      return true;
+    }
     this.combatSpells.noteServerMessage(text);
     if (/^(?:可用咏唱|守护\/恢复)[：:]/.test(text)) this.selfHealAvailable = /\bselfheal\b/i.test(text);
     const match = /(?:进入第|已恢复第|^第)\s*(\d+)\s*\/\s*(\d+)\s*层(?=[：:试炼]|$)/.exec(text);

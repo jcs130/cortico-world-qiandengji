@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CombatDecisionLoop, type CombatDecisionFrame, type CombatCandidate, type CombatDecisionConfig } from '../adapters/host-decisions/combat-decision.ts';
 import { COMBAT_DECISION_DEFAULTS } from '../adapters/host-decisions/defaults.ts';
 import { combatReactions } from '../integrations/qiandengji/engine/combat-reactions.ts';
+import { combatMayTakeTask, diverseCombatOptions } from '../integrations/qiandengji/engine/combat-options.ts';
 import { CombatSpells } from '../integrations/qiandengji/engine/combat-spells.ts';
 
 function frame(): CombatDecisionFrame {
@@ -122,7 +123,7 @@ describe('independent asynchronous combat choices', () => {
     expect(r.reports.at(-1)?.data.outcome).toBe('sent');
   });
 
-  it.each(['health', 'ally-health', 'mana', 'connection', 'plan', 'target', 'sight', 'task', 'cooldown', 'emergency', 'attack-target', 'body-phase'])
+  it.each(['health', 'ally-health', 'mana', 'connection', 'plan', 'target', 'sight', 'task', 'cooldown', 'emergency', 'attack-target'])
     ('rejects a result after %s changes', async change => {
       vi.useFakeTimers(); const r = rig(); r.loop.tick();
       const f = r.f!;
@@ -151,7 +152,7 @@ describe('independent asynchronous combat choices', () => {
     expect(r.sent).toHaveLength(0); expect(r.reports.at(-1)?.data.outcome).toBe('configuration-changed');
   });
 
-  it('allows an unrelated cooldown to count down but rejects a changed availability boundary', async () => {
+  it('retains a ready cast when an unrelated skill becomes ready', async () => {
     vi.useFakeTimers(); const r = rig();
     r.f!.skills.push({ spell: 'other', available: true, manaCost: 4, cooldownRemainingMs: 2000, block: 'cooldown' });
     r.loop.tick(); r.f!.skills[1].cooldownRemainingMs = 1950;
@@ -160,8 +161,26 @@ describe('independent asynchronous combat choices', () => {
     await vi.advanceTimersByTimeAsync(r.cfg.minIntervalMs); r.loop.tick();
     r.f!.skills[1].cooldownRemainingMs = 0;
     r.resolve(); await vi.advanceTimersByTimeAsync(1);
-    expect(r.sent).toHaveLength(1);
-    expect(r.reports.at(-1)?.data.outcome).toBe('scene-changed');
+    expect(r.sent).toHaveLength(2);
+    expect(r.reports.at(-1)?.data.outcome).toBe('sent');
+  });
+
+  it('rechecks the chosen skill without discarding it for an ordinary hit, food tick or melee swing phase', async () => {
+    vi.useFakeTimers(); const r=rig(); r.loop.tick();
+    r.f!.battlefield.self.health.current=19;
+    r.f!.battlefield.self.food=19;
+    r.f!.battlefield.action.canStep=false;
+    r.f!.battlefield.actors[0].health.current=10;
+    r.resolve(); await vi.advanceTimersByTimeAsync(1);
+    expect(r.reports.at(-1)?.data.outcome).toBe('sent');
+  });
+
+  it('still rejects a short step after movement ownership changes', async () => {
+    vi.useFakeTimers(); const r=rig();
+    r.f!.candidates=[{id:'step',kind:'step',intent:'side step',destination:[0,64,1]}];
+    r.loop.tick();r.f!.battlefield.action.canStep=false;
+    r.resolve();await vi.advanceTimersByTimeAsync(1);
+    expect(r.sent).toHaveLength(0);expect(r.reports.at(-1)?.data.outcome).toBe('scene-changed');
   });
 
   it('times out without overlapping requests and ignores a late reply', async () => {
@@ -214,6 +233,22 @@ function flatBot() {
   return bot as unknown as Bot;
 }
 describe('physically available combat candidates', () => {
+  it('retains a server catalogued cost through partial HUD updates, but forgets it on removal or reconnect', () => {
+    const spells=new CombatSpells(), bot=flatBot(), field=frame().battlefield;
+    spells.setTactic({spells:null,healAtOrBelow:6,rules:[{id:'bolt',spell:'spark',intent:'Hit a visible enemy',when:{within:12}}]});
+    spells.noteMana(20);
+    spells.noteServerMessage('战斗咏唱：测试箭(spark，自动锁敌、4 魔力)');
+    spells.noteAbilities([{id:'test:spark',cooldownMs:null,cooldownRemainingMs:0,manaCost:null}]);
+    expect(spells.decisionFrame(bot,field,2).candidates[0]).toMatchObject({kind:'cast',manaCost:4});
+    spells.noteAbilities([{id:'test:spark',cooldownMs:null,cooldownRemainingMs:0,manaCost:7}]);
+    expect(spells.decisionFrame(bot,field,2).candidates[0]).toMatchObject({manaCost:7});
+    spells.noteAbilities([]);
+    spells.noteAbilities([{id:'test:spark',cooldownMs:null,cooldownRemainingMs:0,manaCost:null}]);
+    expect(spells.decisionFrame(bot,field,2).skills[0].block).toBe('mana-cost-unknown');
+    spells.noteServerMessage('战斗咏唱：测试箭(spark，4 魔力)');
+    spells.reset();
+    expect(spells.decisionFrame(bot,field,2).skills[0].manaCost).toBeNull();
+  });
   const control = { bodyFree: true, canStep: true, targetId: 3, sinceHitMs: 3000,
     fight: 'armed', fleeHealth: 6, chaseMax: 12 };
   it('party scope requires an authoritative target relation and a free body', () => {

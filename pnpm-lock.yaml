@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       agent-mc-world:
-        specifier: file:vendor/agent-mc-world-0.4.0-firstperson-20261013.tgz
-        version: file:vendor/agent-mc-world-0.4.0-firstperson-20261013.tgz
+        specifier: file:vendor/agent-mc-world-0.4.0-combat-20261014.tgz
+        version: file:vendor/agent-mc-world-0.4.0-combat-20261014.tgz
       ses:
         specifier: 2.3.0
         version: 2.3.0
@@ -589,8 +589,8 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.4.0-firstperson-20261013.tgz:
-    resolution: {integrity: sha512-NXbwqSOpWVu0Jy03vGKSaNDLEjtz2jWxh9IsLvCv3RyCFPkHK8yO/bJb+Prjxx52Y6E9NoajWYHeYmPNQksL9w==, tarball: file:vendor/agent-mc-world-0.4.0-firstperson-20261013.tgz}
+  agent-mc-world@file:vendor/agent-mc-world-0.4.0-combat-20261014.tgz:
+    resolution: {integrity: sha512-yg/hQcZAARpE49qadJouzw0F2WiCeofIhfWanqBkQN5fBEOUZwETC7Fe9Wlz+6ij3Pma0pLonipRRBjx49bWHA==, tarball: file:vendor/agent-mc-world-0.4.0-combat-20261014.tgz}
     version: 0.4.0
     engines: {node: '>=22'}
     hasBin: true
@@ -1963,7 +1963,7 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.4.0-firstperson-20261013.tgz:
+  agent-mc-world@file:vendor/agent-mc-world-0.4.0-combat-20261014.tgz:
     dependencies:
       '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.5)
       ajv: 8.20.0
