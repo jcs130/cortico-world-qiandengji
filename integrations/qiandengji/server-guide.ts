@@ -3,11 +3,11 @@ import { readFileSync } from 'node:fs';
 import { QIANDENGJI_PACK } from './data-packs/qiandengji/manifest.ts';
 
 export const MYMC_GUIDE_TOPICS = [
-  { id: 'cli', title: 'Agent CLI 0.4.31', description: '认证、能力发现、状态格式、分页生命周期与结果未知' },
+  { id: 'cli', title: 'Agent CLI 0.4.31', description: '认证、能力、状态、分页与未知结果' },
   { id: 'world', title: '世界与自主探索', description: '世界设定、独自生活与活动选择' },
-  { id: 'stories', title: '千灯纪故事线', description: '游戏中发现故事，自主选择目标' },
-  { id: 'onboarding', title: '基础入口', description: '/mycli、进度与随身道具' },
-  { id: 'skill-paths', title: '技能基础', description: '查询、点数与施法说明入口' },
+  { id: 'stories', title: '千灯纪故事线', description: '游戏内发现与选目标' },
+  { id: 'onboarding', title: '基础入口', description: '进度与道具' },
+  { id: 'skill-paths', title: '技能基础', description: '点数与说明' },
   { id: 'protection', title: '保护与权限', description: '村庄保护、采集拒绝与操作边界' },
   { id: 'travel', title: '传送与抵达', description: '归乡、村庄路标、实际高度与脱困' },
   { id: 'guild', title: '公会委托与共享', description: '看板、接单交付、公共箱与分享装备' },
@@ -24,7 +24,7 @@ export const MYMC_GUIDE_TOPICS = [
   { id: 'building', title: '家与建造', description: '布局、蓝图、施工核验与设计经验' },
   { id: 'railway', title: '铁路设计与连通性', description: '选线美感、轨形连通、动力与试乘' },
   { id: 'social', title: '玩家交往与动作', description: '附近感知、公屏私聊、拜访、挥手与赠物' },
-  { id: 'vision', title: '现场视觉与空间几何', description: '体素切片、碰撞射线、落点净空、按问题选视角与证据边界' },
+  { id: 'vision', title: '现场视觉与空间几何', description: '第一人称、切片、射线、净空与证据边界' },
   { id: 'broadcast', title: '直播与加入方式', description: '介绍玩法、内测 QQ 群、事实解说与语音节奏' },
   { id: 'state', title: '当前环境读数', description: '任务、目标、探索、规则与摄像机当前采样' },
 ] as const;
