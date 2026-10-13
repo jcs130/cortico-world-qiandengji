@@ -1,7 +1,7 @@
 import { serverViewerProtocol } from '../integrations/qiandengji/engine/viewer-state.ts';
 import { io } from 'socket.io-client';
 import { describe, expect, it, vi } from 'vitest';
-import { startModernViewer } from '../core/modern-viewer.ts';
+import { startModernViewer } from '../node_modules/agent-mc-world/core/modern-viewer.ts';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 import { freeViewerPort, viewerBot } from './fixtures/viewer-bot.ts';
 

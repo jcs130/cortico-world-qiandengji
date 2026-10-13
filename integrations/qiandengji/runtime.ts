@@ -1,4 +1,4 @@
-import { MinecraftAgentClient, type MinecraftClientOptions, type ClientEnvironment } from '../../src/client/runtime.ts';
+import { MinecraftAgentClient, type MinecraftClientOptions, type ClientEnvironment } from 'agent-mc-world/client';
 import { MymcWorld } from './world.ts';
 import { assertMymcReady } from './guard.ts';
 import type { MymcConfigSection } from './config.ts';

@@ -1,27 +1,36 @@
 # 构建、发布与部署
 
-本包是 `agent-mc-world`，0.4.0 起默认入口为中立 SDK。Cortico API 5 的可选 World ID 为 `mc`。安装与离线检查见 [Agent MCP](docs/agent-mcp.md)，本次拆分见 [能力迁移](docs/framework-decoupling.md)。推荐 Node.js 24。
+核心唯一源码与构建入口已迁至 `jcs130/minecraft-ai-friend/packages/agent-mc-world`。
+本仓库根目录是 private 工作区，只构建服务器资料包和 Cortico 适配器。
+迁移对照见 [core-repository-move](docs/core-repository-move.md)。
 
-## 独立构建
+## 构建
 
-`core/` 是本仓库维护的源码。`release-sources.json` 固定自有核心路径与共享 viewer 制品哈希；Cortico 来源只保存在 `provenance/`，不参与构建。不读取 Cortico checkout，不抽取示例世界，不应用框架补丁。
+1. 在独立副本准备并验证核心 `agent-mc-world-0.4.0.tgz`。
+2. 将制品放入本仓库忽略的 `vendor/`；`pnpm-lock.yaml` 固定其完整性。
+3. `pnpm install --offline --frozen-lockfile --ignore-scripts`，然后 `pnpm typecheck`、`pnpm build`、`pnpm test`。
+4. 从 `packages/qiandengji` 打包服务器资料包，从 `integrations/qiandengji` 打包唯一公开 World。
+5. 在外部目录安装三份实际 tgz，验证公开入口、SDK/MCP 和无隐式连接。
 
-在全新的发布目录运行 `node scripts/clean-check.mjs <新目录绝对路径>`，使用已缓存依赖离线安装、构建、检查公开类型并测试。普通构建运行 `pnpm build`。构建输出仅写发布副本，不能覆盖现役目录、配置或数据。
+构建不再读取相邻核心源码。不要在现役部署目录构建，不覆盖私人配置或数据。
+现代 viewer 的原始维护仓库仍是 `jcs130/mc-visual-console`；核心负责其明确锁定的发行制品。
 
-`build.mjs` 编译独立核心与客户端，并校验、解包随源保存的通用 viewer。`build-types.mjs` 生成公开声明依赖图，调用方无需安装或类型检查 Cortico。`verify-build.mjs` 核对源码、运行时、声明、viewer 素材的哈希和默认入口；`npm pack` 前必须通过该检查。发行包不包含千灯纪扩展或历史示例世界入口。
+## Cortico 规范
 
-打包后在新目录只装生产依赖，运行随包 `examples/agent-mcp-check.mjs`，并用实际安装目录检查 SDK 类型与入口。开发目录通过不能代替发行包通过。检查 MCP 时不连接服务器。
+公开 World 包名保持 `cortico-world-qiandengji`，显示名“联机版我的世界”，API 5、
+`cortico-world` 关键字、默认 WorldDefinition、独立 consoleClient/consoleStyle，
+宿主 Cortico 为可选 peer。`adapters/cortico` 仍为 private 示例，不发布第二个 World。
+安装包须通过自身 `dist/verify.mjs`，并在允许部署的阶段运行宿主原生扩展检查。
 
-## 可选装配
+默认 `serverPack: none`；千灯纪包需显式启用。密码、模型端点、演出端点和账号都在私有配置中。
+人格、目标、记忆由宿主保留，安装依赖不重写游戏账本。CLI 和包加载不自动连服。
 
-Cortico 用户只安装 `cortico-world-qiandengji`，界面显示“联机版我的世界”，自动安装精确版本的 `agent-mc-world` 核心依赖。Cortico 由宿主提供，声明可选 peer。插件采用 API 5、`cortico-world` 搜索关键字、默认 WorldDefinition 和独立控制台产物。核心没有 World manifest，不会显示成第二个 World。`adapters/cortico` 保留为开发者装配示例，标记 private，不单独发布到 npm。
+## 发布顺序与现役边界
 
-执行 `node scripts/build-extensions.mjs` 生成两种插件。通用插件配置为 `worlds.mc.*`，千灯纪保留 `worlds.mymc.*`。两者共享互斥资源名，不能同时使用同一账号。服务器插件只依赖公开的 `agent-mc-world/extension` 端口，不读取邻接核心源码。必须用实际 `.tgz` 的生产安装目录运行 Cortico `check:extension`，不能只检查仓库目录。
+先发布核心，再发布服务器资料包，最后发布 Cortico World / DSH 适配器。
+消费方固定经过验收的核心版本，升级时更新依赖和锁文件；不在启动时自动追逐 latest。
+尚未发布的本地候选通过 tgz 安装；不能把构建成功写成 npm 发布成功。
 
-千灯纪扩展在 `integrations/qiandengji/` 单独维护；需要显式配置扩展模块与参数，通用安装不会带入。演出桥需要明确模块、端点与相同 bot 身份；没有扫描旧端口的回退。来源、许可证与旧数据迁移方案随包保存。
-
-## 发布与上线门槛
-
-源码、构建、离线验收、提交、发布、部署与实际游玩分别记录。对发布副本依次执行完整测试、类型检查、核心与一个 World 的 `npm pack`、包级离线安装与 API 5 检查，再发布核心和这个插件。插件固定同次核心版本，因此先发布核心；npm 认证失败时保留制品与校验值，不能记作发布成功。
-
-0.4.0 的部署记录见 `docs/release-0.4.0.md`。原始停止期间的离线验收记录保留为历史证据。实服效果与用户后续批准的启动验证单独记录。
+当前仍遵守“先本地稳定运行，再发布”的约定。本次源码迁移完成离线验收，没有重启、
+切换现役 Agent，也没有 npm 发布。此前现役的游戏效果不能用作本次新制品的联机验收。
+源码提交、包哈希、安装验证、现役加载及实际游玩分别记录。

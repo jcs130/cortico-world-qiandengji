@@ -1,8 +1,8 @@
 import { createViewerAppearanceBridge } from './viewer-appearance.mjs';
 import { createViewerObserverBridge } from './viewer-observer.mjs';
 import { viewerCastCommand, viewerCastResult } from './viewer-cast.ts';
-import type { ViewerSkills } from '../../../src/extension.ts';
-import type { ViewerServerProtocol } from '../../../src/extension.ts';
+import type { ViewerSkills } from 'agent-mc-world/extension';
+import type { ViewerServerProtocol } from 'agent-mc-world/extension';
 const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 const bounded = (value: unknown, min: number, max: number): number | null => finite(value) ? Math.max(min,Math.min(max,value)) : null;
 export const VIEWER_STATE_CHANNEL = 'mcagent:state';
@@ -129,7 +129,7 @@ export function mergeViewerSpellCatalogue(previous: ViewerSkills | null,
   return { ...(previous ?? { schemaVersion: 1, mana: null, skills: [] }),
     abilities, observedAt: Date.now() };
 }
-import type { ViewerCustomEvent } from '../../../src/extension.ts';
+import type { ViewerCustomEvent } from 'agent-mc-world/extension';
 export const VIEWER_EVENT_CHANNEL = 'mcagent:event';
 export function parseViewerCustomEvent(channel: unknown, data: unknown): ViewerCustomEvent | null {
   if ((channel !== VIEWER_EVENT_CHANNEL && channel !== 'mcviewer:event') ||

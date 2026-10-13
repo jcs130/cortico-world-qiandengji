@@ -1,10 +1,10 @@
 /** Connection-scoped battle facts from native entities and optional server party telemetry. */
-import type { Bot } from 'mineflayer';
-import { metaOf } from '../../../src/extension.ts';
-import { HOSTILE } from '../../../src/extension.ts';
-import { piglinIsHostile } from '../../../src/extension.ts';
-import { canSeeEntity } from '../../../src/extension.ts';
-import { loadedSight } from '../../../src/extension.ts';
+import type { MinecraftBot as Bot } from 'agent-mc-world/extension';
+import { metaOf } from 'agent-mc-world/extension';
+import { HOSTILE } from 'agent-mc-world/extension';
+import { piglinIsHostile } from 'agent-mc-world/extension';
+import { canSeeEntity } from 'agent-mc-world/extension';
+import { loadedSight } from 'agent-mc-world/extension';
 
 export const BATTLEFIELD_CHANNEL = 'mcagent:battlefield';
 type Relation = 'ally' | 'hostile' | 'neutral' | 'unknown';

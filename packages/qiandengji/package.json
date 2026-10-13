@@ -10,8 +10,22 @@
     "./host-decisions": "./dist/host/index.js",
     "./manifest": "./dist/data-packs/qiandengji/manifest.js"
   },
-  "dependencies": { "agent-mc-world": "0.4.0", "vec3": "0.2.0" },
-  "engines": { "node": ">=22" },
-  "files": ["dist", "README.md", "LICENSE"],
-  "repository": { "type": "git", "url": "git+https://github.com/jcs130/cortico-world-qiandengji.git", "directory": "packages/qiandengji" }
+  "dependencies": {
+    "agent-mc-world": "0.4.0",
+    "vec3": "0.2.0",
+    "ses": "2.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcs130/cortico-world-qiandengji.git",
+    "directory": "packages/qiandengji"
+  }
 }

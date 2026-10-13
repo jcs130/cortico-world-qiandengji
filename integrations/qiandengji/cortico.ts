@@ -1,6 +1,6 @@
 import type { WorldDefinition } from '../../adapters/cortico/types.ts';
 import { WORLD_DEFAULTS, type MymcConfigSection } from './config.ts';
-import { assertMinecraftReady } from '../../src/extension.ts';
+import { assertMinecraftReady } from 'agent-mc-world/extension';
 import { GenericMymcWorld } from './generic-world.ts';
 import { validateHostCombat } from './host/combat-driver.ts';
 import { assertMymcReady } from './guard.ts';

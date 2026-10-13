@@ -1,4 +1,4 @@
-import type { ToolOutcome } from '../../../src/client/contracts.ts';
+import type { ToolOutcome } from 'agent-mc-world/contracts';
 import type { MymcConfigSection } from '../config.ts';
 import { COMBAT_DECISION_DEFAULTS } from './defaults.ts';
 import { CombatDecisionLoop, type CombatDecisionConfig, type CombatDecisionFrame } from './combat-decision.ts';

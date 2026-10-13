@@ -1,9 +1,9 @@
 /** Physically checked short moves and policy-scoped engagement candidates. */
-import type { Bot } from 'mineflayer';
+import type { MinecraftBot as Bot } from 'agent-mc-world/extension';
 import { Vec3 } from 'vec3';
 import type { Battlefield } from './battlefield.ts';
 import type { CombatCandidate, CombatExecutionPolicy } from './combat-decision-types.ts';
-import { corridorSafe } from '../../../src/extension.ts';
+import { corridorSafe } from 'agent-mc-world/extension';
 
 export function combatReactions(bot: Bot, field: Battlefield, cfg: CombatExecutionPolicy,
   control: { bodyFree: boolean; canStep: boolean; targetId: number | null; sinceHitMs: number | null;

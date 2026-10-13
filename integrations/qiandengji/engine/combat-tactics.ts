@@ -5,8 +5,8 @@ import type { CombatTactic } from './combat-spells.ts';
 import { validCombatRules } from './combat-rules.ts';
 import { validCombatProgram } from './combat-program.ts';
 
-import type {CombatScene,CombatResult} from '../../../src/extension.ts';
-export type {CombatScene,CombatResult} from '../../../core/combat-observation.ts';
+import type {CombatScene,CombatResult} from 'agent-mc-world/extension';
+export type {CombatScene,CombatResult} from 'agent-mc-world/extension';
 export interface CombatCastAttempt {
   spell: string;
   sentAt: string;

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 import { MymcWorld } from '../src/world.ts';
 import { startsTrialFight, trialMeleeReadiness } from '../src/trial-readiness.ts';
-import type { MinecraftWorldProxy } from '../core/proxy.ts';
+import type { MinecraftWorldProxy } from 'agent-mc-world/extension';
 
 describe('trial melee readiness', () => {
   it('recognizes trial entry actions and ignores travel or ordinary interaction', () => {

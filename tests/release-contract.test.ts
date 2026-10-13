@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { MC as worldDefinition } from '../src/adapters/minecraft.ts';
-import { MINECRAFT_CLIENT_DEFAULTS, assertMinecraftReady } from '../src/client/config.ts';
+import { MINECRAFT_CLIENT_DEFAULTS, assertMinecraftReady } from 'agent-mc-world/client';
 import { MYMC_DEFAULTS, mymcEngineConfig } from '../src/config.ts';
 import { assertMymcReady } from '../src/guard.ts';
 
@@ -51,7 +51,7 @@ describe('installable World', () => {
 
   it('uses packaged modern assets with all three camera pages and an original asset manifest', () => {
     const viewer = MYMC_DEFAULTS.viewerAssetsDir;
-    expect(viewer).toBe(fileURLToPath(new URL('../dist/viewer/', import.meta.url)));
+    expect(viewer).toBe(MINECRAFT_CLIENT_DEFAULTS.viewerAssetsDir);
     for (const page of ['index.html', 'third/index.html', 'dungeon/index.html']) {
       expect(existsSync(join(viewer, 'public', page)), page).toBe(true);
     }

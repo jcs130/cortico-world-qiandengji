@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ToolDef, WorldHost } from '../src/host-contract.ts';
-import { nullLogger } from '../core/support/runtime.mjs';
+import { nullLogger } from 'agent-mc-world/client';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 import { MymcAgentRuntime } from '../src/agent/runtime.ts';
 import { AgentJournal } from '../src/agent/journal.ts';

@@ -1,4 +1,4 @@
-import { parseTypedChoice } from '../../../src/extension.ts';
+import { parseTypedChoice } from 'agent-mc-world/extension';
 
 export type DecisionChoice = 'inspect' | 'replan' | 'resupply' | 'pause';
 

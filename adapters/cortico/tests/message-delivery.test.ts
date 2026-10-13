@@ -3,9 +3,9 @@ import { createRequire } from 'node:module';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WakeBus } from 'cortico/core/bus.ts';
 import { nullLogger } from 'cortico/core/util.ts';
-import type { EventEnvelope, TriggerMode, WorldHost } from '../../../src/client/contracts.ts';
-import { MinecraftWorld } from '../../../core/world.ts';
-import type { MinecraftWorldProxy } from '../../../core/proxy.ts';
+import type { EventEnvelope, TriggerMode, WorldHost } from 'agent-mc-world/contracts';
+import { MinecraftWorld } from 'agent-mc-world/extension';
+import type { MinecraftWorldProxy } from 'agent-mc-world/extension';
 import { MYMC_DEFAULTS } from '../../../src/config.ts';
 import { MymcWorld } from '../../../src/world.ts';
 

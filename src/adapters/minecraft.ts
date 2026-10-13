@@ -1,7 +1,7 @@
 import type { WorldDefinition } from '../../adapters/cortico/types.ts';
-import type { ConfigGroup, WorldHost } from '../client/contracts.ts';
-import { MinecraftClientWorld, assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS } from '../extension.ts';
-import type { MinecraftClientConfig } from '../client/config.ts';
+import type { ConfigGroup, WorldHost } from 'agent-mc-world/contracts';
+import { MinecraftClientWorld, assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS } from 'agent-mc-world/extension';
+import type { MinecraftClientConfig } from 'agent-mc-world/client';
 import { fileURLToPath } from 'node:url';
 
 const adapterText = (text: string) => text.replace(/\bmc_([a-z][a-z0-9_]*)\b/g, 'agentmc_$1');

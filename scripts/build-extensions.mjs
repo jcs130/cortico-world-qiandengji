@@ -7,11 +7,6 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const walk = async dir => (await Promise.all((await readdir(dir, { withFileTypes: true })).map(e =>
   e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]))).flat();
-const remap = new Map([
-  ['src/extension.js', 'agent-mc-world/extension'],
-  ['src/client/runtime.js', 'agent-mc-world/client'],
-  ['src/mcp/stdio.js', 'agent-mc-world/mcp/stdio'],
-]);
 const pack = join(root, 'packages/qiandengji');
 const sourceBase = join(root, 'integrations/qiandengji');
 await rm(join(pack, 'dist'), { recursive: true, force: true });
@@ -31,9 +26,7 @@ for (const source of await walk(sourceBase)) {
     text = text.replace(/(from\s*|import\(\s*)(['"])(\.\.?\/[^'"\r\n]+)\2/g, (all, head, quote, spec) => {
       const outside = relative(root, resolve(dirname(source), spec)).replaceAll('\\', '/');
       if (outside.startsWith('integrations/qiandengji/')) return all;
-      const mapped = remap.get(outside);
-      if (!mapped) throw new Error(`Unpublished dependency in ${name}: ${spec}`);
-      return `${head}${quote}${mapped}${quote}`;
+      throw new Error(`Unpublished dependency in ${name}: ${spec}`);
     });
   }
   await writeFile(target, text);
@@ -53,7 +46,7 @@ console.log('Cortico World package files verified');
 `);
   if (folder === 'adapters/cortico') {
     const adapter = (await transform(await readFile(join(root, 'src/adapters/minecraft.ts'), 'utf8'),
-      { loader: 'ts', format: 'esm', target: 'node22' })).code.replaceAll('../extension.ts', 'agent-mc-world/extension');
+      { loader: 'ts', format: 'esm', target: 'node22' })).code;
     await writeFile(join(base, 'dist/index.js'), adapter + '\nexport default MC;\n');
     await cp(join(base, 'ENV_PROMPT.md'), join(base, 'dist/ENV_PROMPT.md'));
     continue;
@@ -61,8 +54,7 @@ console.log('Cortico World package files verified');
   await mkdir(join(base, 'dist/world'), { recursive: true });
   let adapter = (await transform(await readFile(join(base, 'cortico.ts'), 'utf8'),
     { loader: 'ts', format: 'esm', target: 'node22' })).code;
-  adapter = adapter.replace(/from (['"])\.\/[^'"\r\n]+\1/g, 'from "agent-mc-qiandengji"')
-    .replaceAll('../../src/extension.ts', 'agent-mc-world/extension');
+  adapter = adapter.replace(/from (['"])\.\/[^'"\r\n]+\1/g, 'from "agent-mc-qiandengji"');
   await writeFile(join(base, 'dist/world/cortico.js'), adapter);
   await writeFile(join(base, 'dist/world/index.js'), 'export { MYMC, MYMC as default } from "./cortico.js";\n');
   await writeFile(join(base, 'dist/host-decisions.js'), 'export * from "agent-mc-qiandengji/host-decisions";\n');

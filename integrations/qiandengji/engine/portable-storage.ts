@@ -1,7 +1,7 @@
 /** Qiandengji portable storage rules, using the actual item's server-supplied name. */
-import type { Bot } from 'mineflayer';
+import type { MinecraftBot as Bot } from 'agent-mc-world/extension';
 import { Vec3 } from 'vec3';
-import { itemCustomName, zhName, invCount, itemPredOf, invItemNamed, resolveAt, CONTAINER_FIND, type SkillCall } from '../../../src/extension.ts';
+import { itemCustomName, zhName, invCount, itemPredOf, invItemNamed, resolveAt, CONTAINER_FIND, type SkillCall } from 'agent-mc-world/extension';
 
 export function portableStorageMisuseNote(bot: Bot | null, steps: readonly SkillCall[]): string | null {
     if (!bot?.inventory?.items) return null;

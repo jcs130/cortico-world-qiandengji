@@ -6,11 +6,11 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { describe, expect, it } from 'vitest';
-import { nullLogger } from '../core/support/runtime.mjs';
+import { nullLogger } from 'agent-mc-world/client';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 import type { WorldHost } from '../src/host-contract.ts';
 import { MymcAgentRuntime } from '../src/agent/runtime.ts';
-import { createMymcMcpServer } from '../src/mcp/server.ts';
+import { createMymcMcpServer } from 'agent-mc-world/mcp';
 import { MYMC_TOOL_DECLS } from '../src/world.ts';
 
 describe('MCP adapter', () => {

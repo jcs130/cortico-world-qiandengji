@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { CoreConfig } from '../../../src/client/contracts.ts';
+import type { CoreConfig } from 'agent-mc-world/contracts';
 import { CORE_DEFAULTS } from 'cortico/core/config.ts';
 import { loadDeployment } from 'cortico/deploy.ts';
 import { MYMC } from '../integrations/qiandengji/cortico.ts';

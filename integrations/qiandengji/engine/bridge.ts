@@ -1,8 +1,8 @@
-import type { Bot } from 'mineflayer';
-import { Bridge, type BridgeOptions } from '../../../src/extension.ts';
-import type { ProtectReply } from '../../../src/extension.ts';
+import type { MinecraftBot as Bot } from 'agent-mc-world/extension';
+import { Bridge, type BridgeOptions } from 'agent-mc-world/extension';
+import type { ProtectReply } from 'agent-mc-world/extension';
 import { AgentFriendProtection } from './agentfriend-protection.ts';
-import { BREAK_ACL_CHANNEL } from '../../../src/extension.ts';
+import { BREAK_ACL_CHANNEL } from 'agent-mc-world/extension';
 import { parseSkillsPayload, VIEWER_STATE_CHANNEL, serverViewerProtocol } from './viewer-state.ts';
 export class QiandengjiBridge extends Bridge {
   constructor(options: BridgeOptions) { super({...options, protectionChannel: BREAK_ACL_CHANNEL}); }

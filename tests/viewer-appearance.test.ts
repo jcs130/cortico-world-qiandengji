@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
 import { io, type Socket } from 'socket.io-client';
 import { expect, it, vi } from 'vitest';
-import { startModernViewer } from '../core/modern-viewer.ts';
+import { startModernViewer } from '../node_modules/agent-mc-world/core/modern-viewer.ts';
 import { APPEARANCE_CHANNEL, PAPER_YSM_JAR_SHA256 } from '../integrations/qiandengji/engine/viewer-appearance.mjs';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 import { freeViewerPort, viewerBot } from './fixtures/viewer-bot.ts';

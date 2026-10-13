@@ -1,5 +1,5 @@
 /** Optional HOST-side selector. The game engine never imports or starts this loop. */
-import { parseTypedChoice } from '../../../src/extension.ts';
+import { parseTypedChoice } from 'agent-mc-world/extension';
 import type { CombatExecutionPolicy, CombatCandidate, CombatDecisionFrame } from '../engine/combat-decision-types.ts';
 export type { CombatExecutionPolicy, CombatCandidate, CombatDecisionFrame } from '../engine/combat-decision-types.ts';
 export interface CombatDecisionConfig extends CombatExecutionPolicy {

@@ -11,10 +11,10 @@ import type {
   WorldConsoleDecl,
   WorldHost,
   WorldPanelDecl,
-} from '../../src/client/contracts.ts';
-import { MINECRAFT_PANEL_DECLS, MINECRAFT_TOOL_DECLS, type MinecraftWorldOptions } from '../../src/extension.ts';
-import { MinecraftWorldProxy } from '../../src/extension.ts';
-import { renderTemplate } from '../../src/extension.ts';
+} from 'agent-mc-world/contracts';
+import { MINECRAFT_PANEL_DECLS, MINECRAFT_TOOL_DECLS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
+import { MinecraftWorldProxy } from 'agent-mc-world/extension';
+import { renderTemplate } from 'agent-mc-world/extension';
 import {
   MYMC_CLIENT_CONFIG_GROUP,
   MYMC_CONFIG_GROUP,
@@ -32,7 +32,7 @@ import { TrialProgress, trialGoalLimitNote } from './trial-status.ts';
 import { ProspectEvidence } from './prospect-evidence.ts';
 import { GuildProgress } from './guild-progress.ts';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from './server-guide.ts';
-import { observeVisual } from '../../src/extension.ts';
+import { observeVisual } from 'agent-mc-world/extension';
 import { combatTacticNote } from './combat-contract.ts';
 
 const ENV_PROMPT_FILE = fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url));

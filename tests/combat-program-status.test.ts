@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { Vec3 } from 'vec3';
 import { QiandengjiEngine } from '../integrations/qiandengji/engine/world.ts';
 import { combatProgramHash, type CombatProgram } from '../integrations/qiandengji/engine/combat-program.ts';
-import { MINECRAFT_DEFAULTS } from '../src/extension.ts';
+import { MINECRAFT_DEFAULTS } from 'agent-mc-world/extension';
 import type { CombatDecisionFrame } from '../integrations/qiandengji/engine/combat-decision-types.ts';
 
 class StatusWorld extends QiandengjiEngine {

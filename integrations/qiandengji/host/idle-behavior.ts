@@ -1,5 +1,5 @@
-import { parseTypedChoice } from '../../../src/extension.ts';
-import type { PlayerObservation } from '../../../core/player-observation.ts';
+import { parseTypedChoice } from 'agent-mc-world/extension';
+import type { PlayerObservation } from 'agent-mc-world/extension';
 
 /** Small, expiring observations for presentation; never a second task planner or memory store. */
 

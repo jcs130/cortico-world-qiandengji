@@ -1,6 +1,6 @@
 /** Facts shown by the Minecraft viewer when the bot sends a /mycli cast command. */
 
-export { publishViewerCastCommand, observeViewerCastCommands } from '../../../src/extension.ts';
+export { publishViewerCastCommand, observeViewerCastCommands } from 'agent-mc-world/extension';
 
 const SPELL_NAMES: Readonly<Record<string, string>> = {
   home: '归乡', blink: '闪现', selfheal: '圣愈术', heal: '治疗队友',

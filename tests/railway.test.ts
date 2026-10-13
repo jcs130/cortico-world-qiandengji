@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import { Vec3 } from 'vec3';
-import { observeRailway, railwayReadout, RAILWAY_LIMITS } from '../src/railway.ts';
+import { observeRailway, railwayReadout, RAILWAY_LIMITS } from '../node_modules/agent-mc-world/src/railway.ts';
 import { MYMC_TOOL_DECLS, MymcWorld } from '../src/world.ts';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 import { readServerGuide } from '../src/server-guide.ts';

@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ToolDef, ToolOutcome, WorldHost, WorldRequestFacts } from '../src/host-contract.ts';
 import { MYMC_DEFAULTS } from '../src/config.ts';
 import { MymcWorld } from '../src/world.ts';
-import type { MinecraftWorldProxy } from '../core/proxy.ts';
+import type { MinecraftWorldProxy } from 'agent-mc-world/extension';
 import { IdleBehaviorController, type IdleBehaviorEvent, type IdleBehaviorScene } from '../adapters/host-decisions/idle-behavior.ts';
-import { MinecraftWorld } from '../core/world.ts';
+import { MinecraftWorld } from 'agent-mc-world/extension';
 
 const sampledAt = '2026-01-01T12:00:00Z';
 const facts: WorldRequestFacts = {

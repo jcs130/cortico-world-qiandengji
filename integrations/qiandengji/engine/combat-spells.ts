@@ -1,5 +1,5 @@
-import type { Bot } from 'mineflayer';
-import { HOSTILE } from '../../../src/extension.ts';
+import type { MinecraftBot as Bot } from 'agent-mc-world/extension';
+import { HOSTILE } from 'agent-mc-world/extension';
 import { manaSnapshotFromText } from './viewer-state.ts';
 import { viewerCastResult } from './viewer-cast.ts';
 import { CombatTacticBook, type CombatCastAttempt, type CombatResult, type CombatReceipt } from './combat-tactics.ts';

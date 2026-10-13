@@ -1,6 +1,6 @@
 /** AgentFriend's private duration reply bounds the most recent local flight request. */
-import type { Bot } from 'mineflayer';
-import { setFlightExpiry } from '../../../src/extension.ts';
+import type { MinecraftBot as Bot } from 'agent-mc-world/extension';
+import { setFlightExpiry } from 'agent-mc-world/extension';
 import { observeViewerCastCommands, viewerCastCommand, viewerCastResult } from './viewer-cast.ts';
 
 export function watchAgentFriendFlight(bot: Bot): () => void {

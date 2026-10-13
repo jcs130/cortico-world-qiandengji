@@ -1,5 +1,5 @@
 import type { ConsolePanel } from 'cortico/web/shared/client-panel.ts';
-import type { PublicAccountState } from './client/authentication.ts';
+import type { PublicAccountState } from 'agent-mc-world/client';
 
 /** Thin Cortico UI adapter; credentials and challenges stay in the operator panel. */
 export const connectionPanel: ConsolePanel = {

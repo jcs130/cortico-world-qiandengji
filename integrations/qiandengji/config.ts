@@ -1,5 +1,5 @@
 import { COMBAT_EXECUTION_DEFAULTS, type CombatExecutionPolicy } from './engine/combat-decision-types.ts';
-import type { ConfigGroup } from '../../src/client/contracts.ts';
+import type { ConfigGroup } from 'agent-mc-world/contracts';
 import {
   MINECRAFT_CLIENT_CONFIG_GROUP,
   MINECRAFT_CONFIG_GROUP,
@@ -8,7 +8,7 @@ import {
   MINECRAFT_PLAYER_CONFIG_GROUP,
   MINECRAFT_RHYTHM_CONFIG_GROUP,
   type MinecraftConfigSection,
-} from '../../src/extension.ts';
+} from 'agent-mc-world/extension';
 
 type RepeatSuccessFallback = {
   enabled: boolean;

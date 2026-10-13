@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
-import { MinecraftClientWorld } from '../../src/extension.ts';
-import type { WorldHost } from '../../src/client/contracts.ts';
+import { MinecraftClientWorld } from 'agent-mc-world/extension';
+import type { WorldHost } from 'agent-mc-world/contracts';
 import { mymcGroup, SERVER_PACK_PROPERTY } from './config.ts';
 
 const adapterText = (value: string) => value.replace(/\bmc_([a-z][a-z0-9_]*)\b/g, 'mymc_$1');

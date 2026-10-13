@@ -1,13 +1,13 @@
 import { portableStorageMisuseNote } from './portable-storage.ts';
-import type { SkillCall } from '../../../src/extension.ts';
-import {chatInputError} from '../../../src/extension.ts';
-import { MinecraftWorld, type MinecraftWorldOptions } from '../../../src/extension.ts';
-import { MINECRAFT_DEFAULTS } from '../../../src/extension.ts';
+import type { SkillCall } from 'agent-mc-world/extension';
+import {chatInputError} from 'agent-mc-world/extension';
+import { MinecraftWorld, type MinecraftWorldOptions } from 'agent-mc-world/extension';
+import { MINECRAFT_DEFAULTS } from 'agent-mc-world/extension';
 import { join } from 'node:path';
 import { Vec3 } from 'vec3';
-import type { Bot } from 'mineflayer';
-import type { ToolDef, ToolOutcome } from '../../../src/client/contracts.ts';
-import { corridorSafe } from '../../../src/extension.ts';
+import type { MinecraftBot as Bot } from 'agent-mc-world/extension';
+import type { ToolDef, ToolOutcome } from 'agent-mc-world/contracts';
+import { corridorSafe } from 'agent-mc-world/extension';
 import { parseSkillsPayload, VIEWER_STATE_CHANNEL } from './viewer-state.ts';
 import { QiandengjiBridge } from './bridge.ts';
 import { parseProtectReply } from './agentfriend-protection.ts';
@@ -371,7 +371,7 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
   }
 constructor(options: MinecraftWorldOptions) { super(options); this.combatSpells = new CombatSpells(new CombatTacticBook(options.dataDir ? join(options.dataDir,'minecraft-combat-tactics.json') : null)); }
   protected override extensionTools(): ToolDef[] { return SERVER_TOOLS.map(tool => ({...tool, handler: async (args, ctx) => tool.name === 'mc_cast' ? this.castSpell(args) : this.setCombatTactic(args, ctx.role === 'host-decision')})); }
-  protected override extensionCombatReport(result: import('../../../core/combat-observation.ts').CombatResult): void {
+  protected override extensionCombatReport(result: import('agent-mc-world/extension').CombatResult): void {
 
         try {
           const receipt = this.combatSpells.recordCombat(result);

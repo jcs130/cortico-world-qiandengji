@@ -1,1 +1,12 @@
-{"extends":"./tsconfig.core.json","include":["integrations/**/*.ts","src/client/**/*.ts","core/**/*.ts"],"exclude":["node_modules","dist"]}
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "integrations/**/*.ts",
+    "src/adapters/minecraft.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "adapters/**/tests/**"
+  ]
+}

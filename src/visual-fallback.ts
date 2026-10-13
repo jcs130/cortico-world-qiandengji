@@ -1,5 +1,5 @@
 /** Compatibility names for the shared visual delivery implementation. */
-import { acceptsImages, visualArgumentError, structuredVisual } from './client/visual.ts';
+import { acceptsImages, visualArgumentError, structuredVisual } from 'agent-mc-world/extension';
 import type { WorldHost, WorldRequestFacts } from './host-contract.ts';
 export const mymcAcceptsImages = (host: WorldHost | null) => acceptsImages(host);
 export const mymcVisualArgumentError = (args: Record<string, unknown>) => visualArgumentError(args, 'mymc');

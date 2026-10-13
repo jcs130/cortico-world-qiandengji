@@ -2,14 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { EventEnvelope, WorldConsoleDecl, WorldHost } from '../src/client/contracts.ts';
+import type { EventEnvelope, WorldConsoleDecl, WorldHost } from 'agent-mc-world/contracts';
 import {renderWorldEnvPrompt} from './fixtures/host-prompt.ts';
 import { MYMC } from '../integrations/qiandengji/cortico.ts';
 import { MYMC_CONFIG_GROUP, MYMC_DEFAULTS } from '../src/config.ts';
 import { assertMymcReady } from '../src/guard.ts';
 import { MYMC_TOOL_DECLS, MymcWorld } from '../src/world.ts';
 import { SkillCatalog } from '../src/skill-catalog.ts';
-import { MinecraftWorldProxy } from '../core/proxy.ts';
+import { MinecraftWorldProxy } from 'agent-mc-world/extension';
 import { CombatSpells } from '../integrations/qiandengji/engine/combat-spells.ts';
 
 function fakeEngine() {

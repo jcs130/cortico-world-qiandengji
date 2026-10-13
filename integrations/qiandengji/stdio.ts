@@ -1,4 +1,4 @@
-import { startMcpStdio } from '../../src/mcp/stdio.ts';
+import { startMcpStdio } from 'agent-mc-world/mcp/stdio';
 import { loadMymcMcpConfig } from './mcp-config.ts';
 import { MymcAgentRuntime } from './runtime.ts';
 export const startQiandengjiMcp = () => startMcpStdio((path, log) => {
