@@ -1,6 +1,10 @@
 packages:
   - '.'
 
+# Private candidate archives are verified locally and have no registry release timestamp.
+minimumReleaseAgeExclude:
+  - agent-mc-world@0.4.0
+
 allowBuilds:
   canvas: false
   esbuild: true

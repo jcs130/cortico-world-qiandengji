@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       agent-mc-world:
-        specifier: file:vendor/agent-mc-world-0.4.0.tgz
-        version: file:vendor/agent-mc-world-0.4.0.tgz
+        specifier: file:vendor/agent-mc-world-0.4.0-perception-final-20261013.tgz
+        version: file:vendor/agent-mc-world-0.4.0-perception-final-20261013.tgz
       ses:
         specifier: 2.3.0
         version: 2.3.0
@@ -589,8 +589,8 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.4.0.tgz:
-    resolution: {integrity: sha512-2rUr9nJ3fCD8c28sHSM+KmFsvlKJexunpkMC80NWoxVTYboeGRILOV1NQpl+ua6xdXqeCLwq+zrNXS5y4wf2HA==, tarball: file:vendor/agent-mc-world-0.4.0.tgz}
+  agent-mc-world@file:vendor/agent-mc-world-0.4.0-perception-final-20261013.tgz:
+    resolution: {integrity: sha512-38Agy3B6eg6QR9CXak01Nw17tg7FilSANES5HPihTVTUTqhJ3qWchGIpLSXCCsKzvXGo+aTxS7VXGUy2Z5m2gA==, tarball: file:vendor/agent-mc-world-0.4.0-perception-final-20261013.tgz}
     version: 0.4.0
     engines: {node: '>=22'}
     hasBin: true
@@ -1963,7 +1963,7 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.4.0.tgz:
+  agent-mc-world@file:vendor/agent-mc-world-0.4.0-perception-final-20261013.tgz:
     dependencies:
       '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.5)
       ajv: 8.20.0
