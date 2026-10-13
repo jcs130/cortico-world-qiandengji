@@ -19,6 +19,7 @@ Cortico 内置示例世界保持独立，不在这里修改。
 当前 0.4.0 尚未发布到 npm。先在 MC AI Friend 的核心包目录完成构建并打包，将
 `agent-mc-world-0.4.0.tgz` 放入本仓库忽略的 `vendor/` 目录；开发锁文件校验该安装包。
 公开子包依赖仍使用版本号，发布后消费者正常安装 npm 包，无需克隆主项目或本仓库。
+根工作区只安装开发入口，`vec3` 覆盖与锁文件保持一致；公开子包在构建和打包阶段单独处理。
 
 ```sh
 pnpm install --offline --frozen-lockfile --ignore-scripts
