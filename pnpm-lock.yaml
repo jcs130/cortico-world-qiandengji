@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       agent-mc-world:
-        specifier: file:vendor/agent-mc-world-0.4.0-choice-20261013.tgz
-        version: file:vendor/agent-mc-world-0.4.0-choice-20261013.tgz
+        specifier: file:vendor/agent-mc-world-0.4.0-gallery-20261013.tgz
+        version: file:vendor/agent-mc-world-0.4.0-gallery-20261013.tgz
       ses:
         specifier: 2.3.0
         version: 2.3.0
@@ -589,8 +589,8 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.4.0-choice-20261013.tgz:
-    resolution: {integrity: sha512-L6h88jBv0YiP31d6oEvX8EW093SMW/WeW9dLtCdezVj6iVQQYJIs3igP1lATKOyc4VeRbEILTPptBSaGszLhZA==, tarball: file:vendor/agent-mc-world-0.4.0-choice-20261013.tgz}
+  agent-mc-world@file:vendor/agent-mc-world-0.4.0-gallery-20261013.tgz:
+    resolution: {integrity: sha512-DgS8ooBeRjWFh4zWzCpKnm70o0u7+jgdPOP2Gd9zoBUTsK9lumOc//WIB2b3PNvYRf870nCQud7wgzeKBgO7Bw==, tarball: file:vendor/agent-mc-world-0.4.0-gallery-20261013.tgz}
     version: 0.4.0
     engines: {node: '>=22'}
     hasBin: true
@@ -1963,7 +1963,7 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.4.0-choice-20261013.tgz:
+  agent-mc-world@file:vendor/agent-mc-world-0.4.0-gallery-20261013.tgz:
     dependencies:
       '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.5)
       ajv: 8.20.0
