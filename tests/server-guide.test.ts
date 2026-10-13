@@ -3,6 +3,21 @@ import { describe, expect, it } from 'vitest';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from '../src/server-guide.ts';
 
 describe('服务器玩法按需资料', () => {
+  it('provides only basic entry points and leaves advanced learning in the game', () => {
+    const index = readServerGuide().text;
+    for (const topic of ['stories', 'onboarding', 'skill-paths']) expect(index).toContain(topic + '：');
+    const stories = readServerGuide('stories').text;
+    expect(stories).toContain('mymc_life'); expect(stories).toContain('游戏内的 NPC');
+    expect(stories).toContain('不预先提供章节路线');
+    const skills = readServerGuide('skill-paths').text;
+    expect(skills).toContain('/mycli skills info <ID>'); expect(skills).toContain('/mycli skills points');
+    expect(skills).not.toMatch(/warrior_sky_leap|twin_legacy|respec confirm/);
+    const start = readServerGuide('onboarding').text;
+    for (const command of ['/mycli intro', '/mycli progress all 1', '/minepacks:backpack open', '/questbag', '/mycli arena stash']) expect(start).toContain(command);
+    expect(start).toContain('区分主线、实练和委托'); expect(start).toContain('超时则结果未知');
+    expect(start.length).toBeLessThan(1100); expect(skills.length).toBeLessThan(850);
+    expect(index).not.toContain('/mycli skills info flight');
+  });
   it('索引列出每个主题，省略主题不会塞入各玩法全文', () => {
     const index = readServerGuide();
     expect(index.failed).toBeUndefined();
