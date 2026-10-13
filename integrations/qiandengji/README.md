@@ -18,7 +18,15 @@
 
 ## 宿主模型调用
 
-会话身份、完整历史、上下文预算、思考参数、生成并发和模型统计由 Cortico 宿主管理。World 沿用 API 5 的认知入口与取消信号，不增加模型循环，不把模型地址、密钥或生成限额放入 `worlds.mymc`。
+### 快决策连接
+
+支持 `WorldHost.decisions` 的 Cortico 版本可复用宿主保存的 System One 连接：先在宿主供应商页保存连接和密钥，再选择 Core 的默认快决策连接。World 中 `hostDecisions.combat.connection` 设为 `host`，`decisionProvider` 留空即继承默认；指定已保存的连接名仅覆盖此 World。
+
+`connection` 为 `auto` 或省略时，新配置的空地址继承宿主；已有 `endpoint` 保持兼容。`endpoint` 模式供独立 SDK 宿主按完整地址连接；模型与密钥环境变量属于该宿主适配器，`engineConfig` 会排除整个 `hostDecisions` 配置。`host` 模式不使用留存的旧地址，宿主不可用时维持原规则控制。
+
+`timeoutMs` 限制等待，`maxAgeMs` 限制现场有效期。云端调用可分别调整；超时、换连接、换场景或候选已失效时不会应用旧建议。规则控制在请求期间继续。当前战术端口由千灯纪资料包提供；通用 Minecraft 核心只提供现场与执行能力。主决策仍复用 Cortico 的模型、人格和会话设置。
+
+会话身份、完整历史、上下文预算、思考参数、生成并发和模型统计由 Cortico 宿主管理。World 沿用 API 5 的认知入口与取消信号，主模型地址、密钥和生成限额使用宿主配置。
 
 自有 Cortico fork 的 [调用端实现](https://github.com/jcs130/Cortico/commit/a2bfc77dda254931df5c5241cea27cc8777d4db9) 包含持久会话、稳定请求、完整预算及普通/流式统计。包含该实现的宿主可在部署配置顶层设置：
 

@@ -1,24 +1,29 @@
 import type { ToolOutcome } from 'agent-mc-world/contracts';
 import type { MymcConfigSection } from '../config.ts';
 import { COMBAT_DECISION_DEFAULTS } from './defaults.ts';
-import { CombatDecisionLoop, type CombatDecisionConfig, type CombatDecisionFrame } from './combat-decision.ts';
+import { CombatDecisionLoop, usesHostDecision, type CombatDecisionOptions, type CombatDecisionConfig, type CombatDecisionFrame } from './combat-decision.ts';
 
 export interface HostCombatPort {
   call(args: Record<string, unknown>, signal: AbortSignal): Promise<string | ToolOutcome>;
   report(event: string, data: Record<string, unknown>): void;
+  decisions?: { request: NonNullable<CombatDecisionOptions['request']> };
 }
 
 export function hostCombatConfig(cfg: MymcConfigSection): CombatDecisionConfig {
-  return { ...COMBAT_DECISION_DEFAULTS, ...cfg.combatOptions, ...cfg.hostDecisions?.combat };
+  const c = { ...COMBAT_DECISION_DEFAULTS, ...cfg.combatOptions, ...cfg.hostDecisions?.combat };
+  return { ...c, endpoint: c.endpoint ?? '' };
 }
 export function validateHostCombat(cfg: MymcConfigSection): void {
   const c = hostCombatConfig(cfg);
   if (!c.enabled) return;
-  if (!c.endpoint) throw new Error('Enabled host combat decisions require an explicit endpoint.');
-  const url = new URL(c.endpoint);
-  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password)
-    throw new Error('Host combat endpoint must be an HTTP(S) URL without embedded credentials.');
-  if ((c.apiKeyEnv && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(c.apiKeyEnv)) || (c.model && c.model.length > 120))
+  if (c.connection !== undefined && !['auto', 'host', 'endpoint'].includes(c.connection)) throw new Error('Invalid decision connection mode.');
+  if (!usesHostDecision(c)) {
+    if (!c.endpoint) throw new Error('Direct host combat decisions require an explicit endpoint.');
+    const url = new URL(c.endpoint);
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password)
+      throw new Error('Host combat endpoint must be an HTTP(S) URL without embedded credentials.');
+  }
+  if (!usesHostDecision(c) && ((c.apiKeyEnv && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(c.apiKeyEnv)) || (c.model && c.model.length > 120)))
     throw new Error('Invalid host decision model or credential reference.');
   if (!['act', 'shadow'].includes(c.mode) || !Number.isFinite(c.minConfidence) || c.minConfidence < 0 || c.minConfidence > 1
     || [c.timeoutMs, c.minIntervalMs, c.maxAgeMs].some(n => !Number.isFinite(n) || n < 50 || n > 60000))
@@ -36,6 +41,7 @@ export class HostCombatDriver {
     fetchImpl?: typeof fetch) {
     this.loop = new CombatDecisionLoop({ config: () => hostCombatConfig(cfg()), sample: () => this.frame,
       refresh: () => this.refresh(), fetchImpl,
+      request: port.decisions ? (input, options) => port.decisions!.request(input, options) : undefined,
       apply: async (candidate, frame) => {
         if (this.lifetime.signal.aborted) return false;
         const value = await port.call({ choice: { candidate, tacticRevision: frame.tacticRevision,
@@ -67,7 +73,7 @@ export class HostCombatDriver {
   private async poll(): Promise<void> {
     try {
       const cfg = hostCombatConfig(this.cfg());
-      if (!cfg.enabled || !cfg.endpoint || this.lifetime.signal.aborted) return;
+      if (!cfg.enabled || this.lifetime.signal.aborted) return;
       await this.refresh();
       if (!this.lifetime.signal.aborted) this.loop.tick();
     } catch {

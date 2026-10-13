@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { HostCombatDriver } from '../integrations/qiandengji/host/combat-driver.ts';
-import { MYMC_DEFAULTS } from '../integrations/qiandengji/config.ts';
+import { HostCombatDriver, type HostCombatPort, validateHostCombat } from '../integrations/qiandengji/host/combat-driver.ts';
+import { MYMC_DEFAULTS, type MymcConfigSection } from '../integrations/qiandengji/config.ts';
 import type { CombatDecisionFrame } from '../integrations/qiandengji/host/combat-decision.ts';
 
 const frame = (): CombatDecisionFrame => ({ battlefield: { sampledAtMs: Date.now(), connectionGeneration: 1, dimension: 'overworld',
@@ -13,17 +13,44 @@ const response = () => new Response(JSON.stringify({ answers: { tactic: { type: 
   confidence: .99, probabilities: { keep: .01, option_0: .99 } } } }));
 const drivers: HostCombatDriver[] = [];
 afterEach(() => { drivers.splice(0).forEach(d => d.stop()); vi.useRealTimers(); vi.unstubAllEnvs(); });
-function rig(enabled = true, fetchImpl: typeof fetch = vi.fn(async () => response())) {
+function rig(enabled = true, fetchImpl: typeof fetch = vi.fn(async () => response()), decisions?: HostCombatPort['decisions']) {
   let current: CombatDecisionFrame | null = frame();
-  const cfg = { ...structuredClone(MYMC_DEFAULTS), hostDecisions: { combat: { enabled, mode: 'act' as const,
+  const cfg: MymcConfigSection = { ...structuredClone(MYMC_DEFAULTS), hostDecisions: { combat: { enabled, mode: 'act' as const,
     endpoint: 'http://explicit.invalid/v1/systemone', model: 'jev-test', timeoutMs: 100 } } };
   const call = vi.fn(async (args: Record<string, unknown>) => ({ text: 'opaque localized text, not parsed',
     meta: { protocol: 'agent-mc-tactics/v1', ...(args.battlefield ? { frame: current } : { receipt: { accepted: true } }) } }));
   const report = vi.fn();
-  const driver = new HostCombatDriver(() => cfg, { call, report }, fetchImpl); drivers.push(driver);
+  const driver = new HostCombatDriver(() => cfg, { call, report, decisions }, fetchImpl); drivers.push(driver);
   return { driver, cfg, call, report, fetchImpl, setFrame: (f: CombatDecisionFrame | null) => { current = f; } };
 }
 describe('explicit host decision service through neutral game tool metadata', () => {
+  it.each([undefined, 'ChoiceOverride'])('inherits the host or references a saved override %s without direct HTTP', async decisionProvider => {
+    const request = vi.fn(async () => JSON.parse(await response().text()));
+    const r = rig(true, vi.fn(), { request });
+    r.cfg.hostDecisions!.combat = { enabled: true, mode: 'act', decisionProvider };
+    expect(() => validateHostCombat(r.cfg)).not.toThrow(); r.driver.start();
+    await vi.waitFor(() => expect(r.call.mock.calls.some(([args]) => !!args.choice)).toBe(true));
+    expect(request.mock.calls[0][1]).toMatchObject({ provider: decisionProvider });
+    expect(r.fetchImpl).not.toHaveBeenCalled();
+  });
+  it('an explicit host choice ignores a retained legacy URL and never uses it on host failure', async () => {
+    const request = vi.fn(async () => { throw new Error('host-unavailable'); });
+    const r = rig(true, vi.fn(), { request }); r.cfg.hostDecisions!.combat!.connection = 'host';
+    r.cfg.hostDecisions!.combat!.apiKeyEnv = 'unused legacy value'; r.driver.start();
+    await vi.waitFor(() => expect(r.report.mock.calls.some(([event]) => event === 'fallback')).toBe(true));
+    expect(r.fetchImpl).not.toHaveBeenCalled();
+    expect(r.call.mock.calls.some(([args]) => !!args.choice)).toBe(false);
+  });
+  it('discards an in-flight host result after the override changes', async () => {
+    let finish!: (result: any) => void;
+    const request = vi.fn(() => new Promise<any>(resolve => { finish = resolve; }));
+    const r = rig(true, vi.fn(), { request });
+    r.cfg.hostDecisions!.combat!.connection = 'host'; r.cfg.hostDecisions!.combat!.decisionProvider = 'One'; r.driver.start();
+    await vi.waitFor(() => expect(request).toHaveBeenCalledOnce());
+    r.cfg.hostDecisions!.combat!.decisionProvider = 'Two'; finish(JSON.parse(await response().text()));
+    await vi.waitFor(() => expect(r.driver.inspect()).toEqual(expect.arrayContaining([expect.objectContaining({ outcome: 'configuration-changed' })])));
+    expect(r.call.mock.calls.some(([args]) => !!args.choice)).toBe(false);
+  });
   it('does not sample or contact any endpoint when disabled', async () => {
     const r = rig(false); r.driver.start(); await Promise.resolve();
     expect(r.call).not.toHaveBeenCalled(); expect(r.fetchImpl).not.toHaveBeenCalled();

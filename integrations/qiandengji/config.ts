@@ -24,7 +24,8 @@ export type MymcConfigSection = MinecraftConfigSection & {
   serverTravel?: { enabled: boolean };
   /** Explicit host adapter configuration, never passed to the game process. */
   hostDecisions?: { combat?: {
-    enabled: boolean; endpoint: string; mode: 'shadow' | 'act';
+    enabled: boolean; endpoint?: string; mode: 'shadow' | 'act';
+    connection?: 'auto' | 'host' | 'endpoint'; decisionProvider?: string;
     model?: string; apiKeyEnv?: string;
     timeoutMs?: number; minIntervalMs?: number; minConfidence?: number; maxAgeMs?: number;
   } };
@@ -115,6 +116,10 @@ export const MYMC_CONFIG_GROUP: ConfigGroup = {
       description: '仅千灯纪资料包。开启后可在指定目的地前插入服务器传送命令；需确认当前服务器支持。默认关闭，goto 保持步行。显式传送命令不受此项影响。' },
     'worlds.mymc.hostDecisions.combat.enabled': { type: 'boolean', title: '宿主快速战术选择', 'x-hot': false,
       description: '仅千灯纪资料包使用。由宿主适配器按明确配置调用选择服务，游戏核心不调用模型。默认关闭。' },
+    'worlds.mymc.hostDecisions.combat.connection': { type: 'string', enum: ['auto', 'host', 'endpoint'], title: '快决策连接来源', 'x-hot': false,
+      description: 'auto 默认继承宿主，已有服务地址保留兼容；host 使用宿主已保存连接；endpoint 使用独立完整地址。' },
+    'worlds.mymc.hostDecisions.combat.decisionProvider': { type: 'string', title: 'MC 专用快决策连接', 'x-options': 'decision-providers', 'x-hot': false,
+      description: '留空继承宿主默认快决策。选择后仅覆盖此 World，复用宿主保存的地址、密钥与模型。' },
     'worlds.mymc.hostDecisions.combat.endpoint': { type: 'string', title: '快速选择服务地址', 'x-hot': false,
       description: '完整 HTTP(S) 地址；服务需支持 state/questions 与 answers/probabilities 协议，不能直接填普通聊天接口。不扫描其他端点。' },
     'worlds.mymc.hostDecisions.combat.mode': { type: 'string', enum: ['shadow', 'act'], title: '快战术模式', 'x-hot': false,
@@ -123,6 +128,9 @@ export const MYMC_CONFIG_GROUP: ConfigGroup = {
       description: '按你的服务填写；留空使用该服务的默认模型。' },
     'worlds.mymc.hostDecisions.combat.apiKeyEnv': { type: 'string', title: '快决策密钥环境变量名', 'x-hot': false,
       description: '只填变量名，例如 JEV_API_KEY；密钥在启动环境中设置，不填写到提示词或资料包。' },
+    'worlds.mymc.hostDecisions.combat.timeoutMs': { type: 'number', minimum: 50, maximum: 60000, title: '快决策等待上限（毫秒）', 'x-hot': false,
+      description: '云端 API 按实际延迟配置；等待期间原控制继续。过期建议丢弃。' },
+    'worlds.mymc.hostDecisions.combat.maxAgeMs': { type: 'number', minimum: 50, maximum: 60000, title: '战术现场有效期（毫秒）', 'x-hot': false },
     'worlds.mymc.username': {
       ...connectionGroup.schema.properties['worlds.mymc.username'],
       type: 'string', title: 'Agent 登录名', 'x-hot': false,

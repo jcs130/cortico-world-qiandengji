@@ -3,6 +3,7 @@ import { parseTypedChoice } from 'agent-mc-world/extension';
 import type { CombatExecutionPolicy, CombatCandidate, CombatDecisionFrame } from '../engine/combat-decision-types.ts';
 export type { CombatExecutionPolicy, CombatCandidate, CombatDecisionFrame } from '../engine/combat-decision-types.ts';
 export interface CombatDecisionConfig extends CombatExecutionPolicy {
+  connection?: 'auto' | 'host' | 'endpoint'; decisionProvider?: string;
   enabled:boolean;mode:'shadow'|'act';endpoint:string;timeoutMs:number;minIntervalMs:number;minConfidence:number;maxAgeMs:number;
   model?: string; apiKeyEnv?: string;
 }
@@ -16,8 +17,14 @@ export interface CombatDecisionOptions {
   fallback?: () => void;
   report: (event: string, data: Record<string, unknown>) => void;
   fetchImpl?: typeof fetch;
+  /** Supplied by the host adapter; the game core never resolves providers or credentials. */
+  request?: (input: { state: unknown; questions: Record<string, { type: 'choice'; instructions: string; criteria: Record<string, string> }> },
+    options: { provider?: string; signal: AbortSignal; timeoutMs: number }) => Promise<{ answers?: { tactic?: unknown }; latency_ms?: unknown; usage?: unknown }>;
   now?: () => number;
 }
+
+export const usesHostDecision = (cfg: Pick<CombatDecisionConfig, 'connection' | 'endpoint'>) =>
+  cfg.connection === 'host' || (cfg.connection !== 'endpoint' && !cfg.endpoint.trim());
 
 function sceneFacts(frame: CombatDecisionFrame) {
   const f = frame.battlefield;
@@ -63,7 +70,7 @@ export class CombatDecisionLoop {
     if (this.stopped) return false;
     const cfg = { ...this.options.config() };
     const now = this.options.now?.() ?? Date.now();
-    if (!cfg.enabled || !cfg.endpoint) return false;
+    if (!cfg.enabled || (!usesHostDecision(cfg) && !cfg.endpoint)) return false;
     if (this.inFlight) return true;
     if (now - this.lastCheckedAtMs < cfg.minIntervalMs) return this.lastEligible;
     this.lastCheckedAtMs = now;
@@ -114,6 +121,12 @@ export class CombatDecisionLoop {
         timer = setTimeout(() => { controller.abort(); reject(new Error('timeout')); }, cfg.timeoutMs);
       });
       const payload = await Promise.race([(async () => {
+        if (usesHostDecision(cfg)) {
+          if (!this.options.request) throw new Error('host-decision-unavailable');
+          const { state, questions } = JSON.parse(body);
+          return this.options.request({ state, questions }, { provider: cfg.decisionProvider?.trim() || undefined,
+            signal: AbortSignal.any([controller.signal, this.lifetime.signal]), timeoutMs: cfg.timeoutMs });
+        }
         const secret = cfg.apiKeyEnv ? process.env[cfg.apiKeyEnv] : undefined;
         if (cfg.apiKeyEnv && !secret) throw new Error('credential-unavailable');
         const response = await (this.options.fetchImpl ?? fetch)(cfg.endpoint, {
@@ -138,6 +151,7 @@ export class CombatDecisionLoop {
       const changed = current ? sceneChanges(frame, current) : ['unavailable'];
       let outcome: string;
       if (!liveCfg.enabled || liveCfg.mode !== cfg.mode || liveCfg.endpoint !== cfg.endpoint
+        || liveCfg.connection !== cfg.connection || liveCfg.decisionProvider !== cfg.decisionProvider
         || liveCfg.model !== cfg.model || liveCfg.apiKeyEnv !== cfg.apiKeyEnv) outcome = 'configuration-changed';
       else if (elapsedMs > Math.min(cfg.maxAgeMs, liveCfg.maxAgeMs)) outcome = 'expired';
       else if (!current || changed.length) outcome = 'scene-changed';
@@ -182,7 +196,8 @@ export class CombatDecisionLoop {
     } catch (error) {
       if(this.stopped)return;
       const live = this.options.config();
-      if (cfg.mode === 'act' && live.enabled && live.mode === cfg.mode && live.endpoint === cfg.endpoint)
+      if (cfg.mode === 'act' && live.enabled && live.mode === cfg.mode && live.endpoint === cfg.endpoint
+        && live.connection === cfg.connection && live.decisionProvider === cfg.decisionProvider)
         this.options.fallback?.();
       const failure = { ...scope, outcome: 'error', elapsedMs: now() - startedAtMs,
         reason: controller.signal.aborted ? 'timeout' : error instanceof Error ? error.message : 'transport' };
