@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { routeViaServerCommand } from '../src/world.ts';
+import { MYMC_DEFAULTS } from '../integrations/qiandengji/config.ts';
 
 describe('千灯纪服务端快捷抵达', () => {
+  it('默认不把附近步行与依赖改写成传送，显式服务器命令仍原样执行', () => {
+    expect(MYMC_DEFAULTS.serverTravel?.enabled).toBe(false);
+    const steps = [{ skill: 'goto', at: [-543, 67, -437], needs: [] },
+      { skill: 'pickup', item: 'wheat', needs: [1] }, { skill: 'chat', text: '/mycli goto village', needs: [2] }];
+    const args = { steps };
+    expect(routeViaServerCommand(args)).toEqual({ args, note: null });
+    expect(routeViaServerCommand(args, false).args).toBe(args);
+  });
   it('个人奖励箱单独打开改查待入箱奖励，并说明不是箱内清单；组合取物仍打开 GUI', () => {
     const standalone = routeViaServerCommand({ steps: [{ skill: 'chat', text: '/mycli arena rewards' }] });
     expect(standalone.args.steps).toEqual([{ skill: 'chat', text: '/mycli arena rewards list' }]);
@@ -31,7 +40,7 @@ describe('千灯纪服务端快捷抵达', () => {
 
   it('远程去试炼场入口先使用已验证命令，随后仍核验目标坐标', () => {
     const target = { skill: 'goto', at: [-594, 91, -313], dimension: 'minecraft:overworld' };
-    const result = routeViaServerCommand({ steps: [target] });
+    const result = routeViaServerCommand({ steps: [target] }, true);
     expect(result.args.steps).toEqual([
       { skill: 'server_travel', command: '/mycli goto arena', at: [-590, 91, -322], within: 3 },
       { ...target, needs: [1] },
@@ -42,7 +51,7 @@ describe('千灯纪服务端快捷抵达', () => {
   it('已有同一命令不重复插入；普通路线保持原样', () => {
     const at = { skill: 'goto', at: [-594, 91, -313] };
     const steps = [{ skill: 'chat', text: '/mycli goto arena' }, at];
-    expect(routeViaServerCommand({ steps }).args.steps).toEqual([
+    expect(routeViaServerCommand({ steps }, true).args.steps).toEqual([
       { skill: 'server_travel', command: '/mycli goto arena', at: [-590, 91, -322], within: 3 },
       { ...at, needs: [1] },
     ]);
@@ -56,7 +65,7 @@ describe('千灯纪服务端快捷抵达', () => {
       { skill: 'goto', at: [-594, 91, -313], needs: [1] },
       { skill: 'chat', text: '抵达', needs: [2] },
     ];
-    const result = routeViaServerCommand({ steps }).args.steps as Array<{ skill: string; needs?: number[] }>;
+    const result = routeViaServerCommand({ steps }, true).args.steps as Array<{ skill: string; needs?: number[] }>;
     expect(result[1].skill).toBe('server_travel');
     expect(result[1].needs).toEqual([1]);
     expect(result[2].needs).toEqual([1, 2]);
@@ -65,7 +74,7 @@ describe('千灯纪服务端快捷抵达', () => {
 
   it('入口落点坐标与 overworld 别名也走快捷传送', () => {
     const target = { skill: 'goto', at: [-590, 91, -322], dimension: 'overworld' };
-    expect(routeViaServerCommand({ steps: [target] }).args.steps).toEqual([
+    expect(routeViaServerCommand({ steps: [target] }, true).args.steps).toEqual([
       { skill: 'server_travel', command: '/mycli goto arena', at: [-590, 91, -322], within: 3 },
       { ...target, needs: [1] },
     ]);
@@ -73,7 +82,7 @@ describe('千灯纪服务端快捷抵达', () => {
 
   it('去出生村庄时先走服务端路标，避免远距离徒步', () => {
     const target = { skill: 'goto', at: [-544, 66, -440] };
-    expect(routeViaServerCommand({ steps: [target] }).args.steps).toEqual([
+    expect(routeViaServerCommand({ steps: [target] }, true).args.steps).toEqual([
       { skill: 'server_travel', command: '/mycli goto village', at: [-544, 66, -440], within: 3 },
       { ...target, needs: [1] },
     ]);

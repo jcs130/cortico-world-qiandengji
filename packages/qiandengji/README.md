@@ -4,6 +4,8 @@
 
 默认导出具名端口：`MymcAgentRuntime`、`MymcWorld`、配置与校验、资料目录、`QIANDENGJI_PACK`。`/host-decisions` 提供显式宿主快决策服务。启用前配置服务地址；不配置时没有额外模型请求。
 
+普通 `goto` 默认保持步行。确认服务器支持并需要自动改道时，显式配置 `serverTravel.enabled: true`，才会在匹配目的地前加入服务器传送。Agent 主动请求的传送命令不受此开关限制。升级后不再把附近取物自动改成传送。
+
 原文资料在 `dist/guides/`，协议与动作校验在 `dist/engine/`。`/manifest` 声明资料包版本与能力。资料用于按需查询，实时库存、魔力、保护和任务结果以本人连接的回执为准。
 
 构建来源为本仓库独立维护的 `integrations/qiandengji/`。Cortico 专用注册入口和控制台客户端不进入本包；历史许可证和来源说明保留。

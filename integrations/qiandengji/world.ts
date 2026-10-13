@@ -158,7 +158,7 @@ const FAST_TRAVEL = [
     landing: [-544, 66, -440], command: '/mycli goto village' },
 ] as const;
 
-export function routeViaServerCommand(args: Record<string, unknown>): { args: Record<string, unknown>; note: string | null } {
+export function routeViaServerCommand(args: Record<string, unknown>, autoTravel = false): { args: Record<string, unknown>; note: string | null } {
   if (!Array.isArray(args.steps)) return { args, note: null };
   let correctedGlowBerries = false;
   const steps = (args.steps as unknown[]).map((raw) => {
@@ -196,7 +196,7 @@ export function routeViaServerCommand(args: Record<string, unknown>): { args: Re
     let travel: number | null = null;
     if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
       const step = raw as Record<string, unknown>;
-      if (step.skill === 'goto' && Array.isArray(step.at) && step.at.length === 3
+      if (autoTravel && step.skill === 'goto' && Array.isArray(step.at) && step.at.length === 3
         && step.at.every((n) => typeof n === 'number' && Number.isInteger(n))
         && (!step.dimension || step.dimension === 'minecraft:overworld' || step.dimension === 'overworld')) {
         const [x, y, z] = step.at as number[];
@@ -415,7 +415,7 @@ export class MymcWorld implements World {
           if (reason) return { text: `[mymc_do 未受理] ${reason}`, failed: true, endsTurn: true };
         }
         const planned = tool.name === 'mc_do'
-          ? routeViaServerCommand(args as Record<string, unknown>)
+          ? routeViaServerCommand(args as Record<string, unknown>, this.opts.cfg.serverTravel?.enabled === true)
           : { args, note: null };
         const result = await tool.handler(planned.args, ctx);
         const addNote = (value: string): string => {

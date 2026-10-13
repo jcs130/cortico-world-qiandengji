@@ -20,6 +20,8 @@ type RepeatSuccessFallback = {
 export type MymcConfigSection = MinecraftConfigSection & {
   /** Omitted legacy configuration must be explicitly migrated before enabling server rules. */
   serverPack?: 'none' | 'qiandengji';
+  /** Optional route rewriting; ordinary goto must preserve the requested action by default. */
+  serverTravel?: { enabled: boolean };
   /** Explicit host adapter configuration, never passed to the game process. */
   hostDecisions?: { combat?: {
     enabled: boolean; endpoint: string; mode: 'shadow' | 'act';
@@ -62,6 +64,7 @@ const baseRepeatSuccessFallback = (MINECRAFT_DEFAULTS as {
 
 export const MYMC_DEFAULTS: MymcConfigSection = {
   ...structuredClone(MINECRAFT_DEFAULTS),
+  serverTravel: { enabled: false },
   combatOptions: structuredClone(COMBAT_EXECUTION_DEFAULTS),
   // Preserve deployments created before the engine supplied this option.
   repeatSuccessFallback: { ...REPEAT_SUCCESS_FALLBACK_DEFAULTS, ...baseRepeatSuccessFallback },
@@ -108,6 +111,8 @@ export const MYMC_CONFIG_GROUP: ConfigGroup = {
   schema: { ...connectionGroup.schema, properties: {
     ...connectionGroup.schema.properties,
     'worlds.mymc.serverPack': SERVER_PACK_PROPERTY,
+    'worlds.mymc.serverTravel.enabled': { type: 'boolean', title: '自动使用服务器传送', 'x-hot': true,
+      description: '仅千灯纪资料包。开启后可在指定目的地前插入服务器传送命令；需确认当前服务器支持。默认关闭，goto 保持步行。显式传送命令不受此项影响。' },
     'worlds.mymc.hostDecisions.combat.enabled': { type: 'boolean', title: '宿主快速战术选择', 'x-hot': false,
       description: '仅千灯纪资料包使用。由宿主适配器按明确配置调用选择服务，游戏核心不调用模型。默认关闭。' },
     'worlds.mymc.hostDecisions.combat.endpoint': { type: 'string', title: '快速选择服务地址', 'x-hot': false,
