@@ -34,7 +34,8 @@ import { FLIGHT_PLAN_MAX_POINTS, parseFlightPlan, previewFlightPlan } from './fl
 import { MethodRunner, METHOD_LIMITS, METHOD_ADAPTER, type MethodOperation, type MethodRun } from './method-runner.ts';
 import { resolveProcedure, procedureReference, PROCEDURE_RECEIPT_SCHEMA, PROCEDURE_RECEIPT_MIME,
   type ProcedureReceipt } from './support/procedure.ts';
-import { MineflayerMethod, NATIVE_API, nativeApiHelp } from './method-mineflayer.ts';
+import { MineflayerMethod, NATIVE_API } from './method-mineflayer.ts';
+import { methodApiHelp } from './method-api.ts';
 import { flightState } from './flight.ts';
 import { IdleBehaviorController, IdlePresentationContext, type IdleBehaviorScene } from './idle-behavior.ts';
 import { sampleIdleActions, executeIdleAction } from './idle-actions.ts';
@@ -2206,7 +2207,7 @@ export const MINECRAFT_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [
       params: { type: 'object', additionalProperties: true },
       durationMs: { type: 'integer', minimum: 1000, maximum: METHOD_LIMITS.maxDurationMs },
       validate: { type: 'boolean' }, runId: { type: 'integer', minimum: 1 },
-      api: { type: 'string', description: 'index lists the exposed Mineflayer public API; a method name returns only its signature, transport differences and result contract.' },
+      api: { type: 'string', description: 'index lists the program SDK and exposed Mineflayer API; mc.do/mc.state/mc.flightPlan or a native method name returns its result contract on demand.' },
       call: { type: 'integer', minimum: 1, maximum: METHOD_LIMITS.calls }, stop: { type: 'boolean' },
     }, required: [] },
   },
@@ -4236,7 +4237,7 @@ export class MinecraftWorld implements World {
         try {
           if (args.api !== undefined) {
             if (typeof args.api !== 'string' || ['code', 'procedure', 'runId', 'call', 'stop', 'validate'].some(key => args[key] !== undefined)) throw new Error('api 须单独使用');
-            return this.toolLog('mc_script', args, nativeApiHelp(args.api));
+            return this.toolLog('mc_script', args, methodApiHelp(args.api));
           }
           if (args.validate !== undefined && typeof args.validate !== 'boolean') throw new Error('validate须为布尔值');
           if (args.stop !== undefined && typeof args.stop !== 'boolean') throw new Error('stop须为布尔值');

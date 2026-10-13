@@ -65,9 +65,14 @@ export class MethodRunner {
       : { result: run.result }),
     trace: run.trace.map(trace => {
       const reply = trace.result as Record<string, unknown> | undefined;
+      const steps = Array.isArray(reply?.steps) ? reply.steps : undefined;
       return { call: trace.call, method: trace.method, startedAt: trace.startedAt, endedAt: trace.endedAt,
         procedure: trace.procedure,
         error: trace.error, accepted: reply?.accepted, taskId: reply?.taskId, kind: reply?.kind, done: reply?.done,
+        ...(steps ? { stepCount: steps.length, steps: steps.slice(0, 8).map(step => ({
+          step: step?.step, outcome: step?.outcome,
+          why: typeof step?.why === 'string' ? step.why.slice(0, 160) : step?.why,
+        })), ...(steps.length > 8 ? { stepsTruncated: true } : {}) } : {}),
         receiptExcerpt: typeof reply?.receipt === 'string' ? reply.receipt.slice(0, 500) : undefined };
     }) };
   }

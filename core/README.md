@@ -16,6 +16,8 @@
 
 `mc.state()` 返回 `{sampledAt, connectionGeneration, snapshot, flight, queue, combatActive, combat, method}`。位置、维度、生命、饥饿、物品与装备在 `snapshot.position/dimension/health/food/inventory/equipment`；`snapshot` 可为 `null`。实体是 `snapshot.entities` 数组，字段为 `entityId?`、`name`、`kind`、`distance`、`direction`、`dy`、`visible`，`entitiesOmitted` 表示未列出的数量。该调用不扫描方块或地形，`blocksScanned:false`，空列表不能证明水域深度或通路。字段缺失表示未观察到。首次使用某类 SDK 回执时，展开 `{runId,call}` 核对实际结构，再比较方法目标与观测结果、保存已验证范围。
 
+`mc_script {api:"mc.do"}` 按需说明任务结果结构：各步是 `{step,outcome,why}`，不是 `{done,receipt}`。`done:true` 和 `outcome:"ok"` 表示所请求操作完成；右键没有改变世界也可以完成，不能按完成次数统计业务成果。现有 `expect` 可检查明确的局部后置条件，存量条件已满足不证明本次产生增量；净进展仍由方法比较前后实测读数。运行摘要保留前八步的实际 outcome，更多步骤和完整回执按调用编号展开。
+
 实时游戏 World：以 mineflayer 玩家客户端连原版服务器，把"游戏状态 → 文字观察"
 与"高层意图 → 游戏操作"接通。
 
