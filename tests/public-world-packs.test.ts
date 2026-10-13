@@ -18,10 +18,12 @@ describe('one public World, explicitly selected server pack', () => {
       expect(world).toBeInstanceOf(GenericMymcWorld);
       const tools = world.tools().map(t => t.name);
       expect(tools).toContain('mymc_do');
+      expect(tools).toEqual(expect.arrayContaining(['mymc_choose', 'mymc_life']));
       expect(tools).not.toContain('mymc_cast');
       expect(tools).not.toContain('mymc_guide');
       expect(JSON.stringify(await world.envPromptVars())).not.toContain('/mycli');
       expect(world.console?.().config?.flatMap(g => Object.keys(g.schema.properties))).toContain('worlds.mymc.serverPack');
+      expect(world.console?.().config?.flatMap(g => Object.keys(g.schema.properties))).toContain('worlds.mymc.hostDecisions.choice.decisionProvider');
       await world.stop();
       expect(fetch).not.toHaveBeenCalled();
     } finally { fetch.mockRestore(); }
@@ -31,7 +33,8 @@ describe('one public World, explicitly selected server pack', () => {
     const world = MYMC.create({ cfg } as never);
     expect(world).toBeInstanceOf(MymcWorld);
     expect(world.tools().map(t => t.name)).toEqual(expect.arrayContaining(['mymc_cast', 'mymc_combat_tactic', 'mymc_guide']));
-    expect(MYMC_GUIDE_TOPICS).toHaveLength(21);
+    expect(MYMC_GUIDE_TOPICS.map(t => t.id)).toContain('stories');
+    expect(readServerGuide('stories').text).toContain('不是玩家的亲历');
     expect(readServerGuide().text).toContain(QIANDENGJI_PACK.version);
     expect(mymcEngineConfig(cfg).username).toBe('ag_Alice');
   });

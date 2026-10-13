@@ -23,7 +23,7 @@ export type MymcConfigSection = MinecraftConfigSection & {
   /** Optional route rewriting; ordinary goto must preserve the requested action by default. */
   serverTravel?: { enabled: boolean };
   /** Explicit host adapter configuration, never passed to the game process. */
-  hostDecisions?: { combat?: {
+  hostDecisions?: { choice?: { decisionProvider?: string }; combat?: {
     enabled: boolean; endpoint?: string; mode: 'shadow' | 'act';
     connection?: 'auto' | 'host' | 'endpoint'; decisionProvider?: string;
     model?: string; apiKeyEnv?: string;
@@ -65,6 +65,7 @@ const baseRepeatSuccessFallback = (MINECRAFT_DEFAULTS as {
 
 export const MYMC_DEFAULTS: MymcConfigSection = {
   ...structuredClone(MINECRAFT_DEFAULTS),
+  hostDecisions: { choice: { decisionProvider: '' } },
   serverTravel: { enabled: false },
   combatOptions: structuredClone(COMBAT_EXECUTION_DEFAULTS),
   // Preserve deployments created before the engine supplied this option.
@@ -114,6 +115,8 @@ export const MYMC_CONFIG_GROUP: ConfigGroup = {
     'worlds.mymc.serverPack': SERVER_PACK_PROPERTY,
     'worlds.mymc.serverTravel.enabled': { type: 'boolean', title: '自动使用服务器传送', 'x-hot': true,
       description: '仅千灯纪资料包。开启后可在指定目的地前插入服务器传送命令；需确认当前服务器支持。默认关闭，goto 保持步行。显式传送命令不受此项影响。' },
+    'worlds.mymc.hostDecisions.choice.decisionProvider': { type: 'string', title: 'MC候选选择连接', 'x-options': 'decision-providers', 'x-hot': false,
+      description: '留空继承宿主快决策；只在用户选择时覆盖，复用保存的连接。' },
     'worlds.mymc.hostDecisions.combat.enabled': { type: 'boolean', title: '宿主快速战术选择', 'x-hot': false,
       description: '仅千灯纪资料包使用。由宿主适配器按明确配置调用选择服务，游戏核心不调用模型。默认关闭。' },
     'worlds.mymc.hostDecisions.combat.connection': { type: 'string', enum: ['auto', 'host', 'endpoint'], title: '快决策连接来源', 'x-hot': false,

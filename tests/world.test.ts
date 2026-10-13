@@ -70,6 +70,26 @@ function fakeHost() {
 }
 
 describe('Mymc World contract', () => {
+  it('keeps choice providers on the host and server stories in the optional pack', async () => {
+    const fake = fakeEngine(), cfg = structuredClone(MYMC_DEFAULTS);
+    cfg.hostDecisions = { choice: { decisionProvider: ' saved-fast ' } };
+    Object.assign(fake.engine, { requestFacts: () => ({ text: '桥面已测', snapshotTypes: [], parts: [{ key: 'place', text: '桥头' }] }) });
+    const request = vi.fn(async () => ({ answers: { action: { choice: 'bridge', confidence: .9, probabilities: { bridge: .9, _inspect: .1 } } } }));
+    const host = Object.assign(fakeHost().host, { decisions: { request } });
+    const world = new MymcWorld({ cfg }, fake.engine);
+    try {
+      await world.start(host);
+      const tool = world.tools().find(t => t.name === 'mymc_choose')!;
+      await tool.handler({ category: 'route', goal: '过河', candidates: [
+        { id: 'bridge', label: '桥', evidence: '有支撑净空', ready: true },
+        { id: 'water', label: '涉水', evidence: '水深未知', ready: false },
+      ] }, { role: 'test', log: {} as never });
+      expect(request.mock.calls[0][1].provider).toBe('saved-fast');
+      const life = await world.tools().find(t => t.name === 'mymc_life')!.handler({}, { role: 'test', log: {} as never });
+      expect(JSON.stringify(life)).not.toContain('千灯纪');
+      expect(world.tools().find(t => t.name === 'mymc_guide')!.parameters.properties).toHaveProperty('topic');
+    } finally { await world.stop(); }
+  });
   it('starts the default server assembly with its relocated protection module before any connection', async () => {
     const start = vi.spyOn(MinecraftWorldProxy.prototype, 'start').mockResolvedValue(undefined);
     const world = new MymcWorld({cfg:structuredClone(MYMC_DEFAULTS)});
@@ -224,13 +244,13 @@ describe('Mymc World contract', () => {
     const fake = fakeEngine();
     const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
     const tools = world.tools();
-    expect(tools.map((tool) => tool.name)).toEqual(['mymc_do', 'mymc_cast', 'mymc_skills', 'mymc_messages', 'mymc_guide']);
+    expect(tools.map((tool) => tool.name)).toEqual(['mymc_do', 'mymc_cast', 'mymc_choose', 'mymc_life', 'mymc_skills', 'mymc_messages', 'mymc_guide']);
     expect(tools[0].description).toContain('mymc_do emits mymc.task');
     expect(tools[0].description).toContain('attack approaches and attacks');
     expect(tools[0].description).toContain('queue:"now"');
     expect((tools[0].parameters.properties as Record<string, { description: string }>).text.description).toBe('Use mymc_do');
     expect(await tools[0].handler({}, { role: 'main', log: {} as never })).toBe('[mymc_do] 已受理');
-    expect(await tools[2].handler({}, { role: 'main', log: {} as never })).toContain('尚未收到历史 MC_SPELL 目录');
+    expect(await tools.find(t => t.name === 'mymc_skills')!.handler({}, { role: 'main', log: {} as never })).toContain('尚未收到历史 MC_SPELL 目录');
     const decl = world.console();
     expect(decl.panels?.map((panel) => panel.id)).toEqual(['mount', 'skin', 'log']);
     expect(decl.config?.every((group) => group.owner === 'world:mymc')).toBe(true);

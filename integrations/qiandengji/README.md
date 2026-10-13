@@ -22,6 +22,8 @@
 
 支持 `WorldHost.decisions` 的 Cortico 版本可复用宿主保存的 System One 连接：先在宿主供应商页保存连接和密钥，再选择 Core 的默认快决策连接。World 中 `hostDecisions.combat.connection` 设为 `host`，`decisionProvider` 留空即继承默认；指定已保存的连接名仅覆盖此 World。
 
+按需候选选择使用 `mymc_choose`（路线、生存、技能、方法、目标）；`hostDecisions.choice.decisionProvider` 留空继承宿主，显式选择仅覆盖当前 World，通用模式也可使用。它返回短建议，不接管身体或自动换目标。`mymc_life` 按需给出通用生活故事线，`mymc_guide stories` 才提供千灯纪专项线索。两类资料均标注维护者来源，实际采用、阶段与证据由宿主记忆保存。
+
 `connection` 为 `auto` 或省略时，新配置的空地址继承宿主；已有 `endpoint` 保持兼容。`endpoint` 模式供独立 SDK 宿主按完整地址连接；模型与密钥环境变量属于该宿主适配器，`engineConfig` 会排除整个 `hostDecisions` 配置。`host` 模式不使用留存的旧地址，宿主不可用时维持原规则控制。
 
 `timeoutMs` 限制等待，`maxAgeMs` 限制现场有效期。云端调用可分别调整；超时、换连接、换场景或候选已失效时不会应用旧建议。规则控制在请求期间继续。当前战术端口由千灯纪资料包提供；通用 Minecraft 核心只提供现场与执行能力。主决策仍复用 Cortico 的模型、人格和会话设置。

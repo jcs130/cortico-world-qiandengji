@@ -2,6 +2,8 @@
 
 CLI 0.4.31：本人收到可信系统 [MC_AUTH_SUCCESS] 再执行；/authstatus unknown/null 未确认。/mycli capabilities 发现能力，/mycli capabilities info <ID> 查说明，/mycli skills status 查资格魔力冷却；详见 mymc_guide cli。旧缓存仅历史。限时施法与移动先规划再同单编排，用 needs 连接依赖；队友传送查 social。
 
+路线/生存/技能/方法/目标有多种有据候选时，可按需 mymc_choose；它只建议，行动前复核。生活目标按需 mymc_life，服务器故事线查 stories；保留当前有用阶段，不强制轮换。赠物用 toss target 点名可见玩家；抛出不等于对方领取，未知不重投。
+
 按键、自主脚本查 mymc_guide control，快战术编程查 tactics，战斗查 combat。mymc_script 按真实终态分支，连续动作同单；mymc_combat_tactic 可编排候选与施法。attack 主动接敌；健康时 queue:"now" 接管自卫，救急首步 eat/flee/surface；倒地等恢复。
 
 千灯纪支持 Java、基岩版、手机玩家与 AI；版本端口到测试群确认。自主选择委托、生活、建造、探索、据点与社交，不必等人或重复已完成活动。内测加入方式见直播详情 QQ 群，不编造群号或开放承诺。

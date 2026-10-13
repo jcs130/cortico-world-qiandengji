@@ -32,6 +32,7 @@ import { TrialProgress, trialGoalLimitNote } from './trial-status.ts';
 import { ProspectEvidence } from './prospect-evidence.ts';
 import { GuildProgress } from './guild-progress.ts';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from './server-guide.ts';
+import { createMinecraftChoiceTool, minecraftLifeTool } from 'agent-mc-world/extension';
 import { observeVisual } from 'agent-mc-world/extension';
 import { combatTacticNote } from './combat-contract.ts';
 
@@ -297,6 +298,8 @@ export class MymcWorld implements World {
   private readonly requireProtectSupport: boolean;
   private host: WorldHost | null = null;
   private fastCombat: HostCombatDriver | null = null;
+  private readonly choice = createMinecraftChoiceTool(() => this.host, () => this.requestFacts(),
+    () => this.opts.cfg.hostDecisions?.choice?.decisionProvider?.trim() || undefined);
 
   constructor(private readonly opts: Omit<MinecraftWorldOptions, 'cfg'> & { cfg: MymcConfigSection; botDir?: string }, engine?: MinecraftWorldProxy) {
     this.requireProtectSupport = engine === undefined;
@@ -354,7 +357,7 @@ export class MymcWorld implements World {
   onTurnEnded() { return this.engine.onTurnEnded?.(); }
 
   tools(): ToolDef[] {
-    const engineTools = this.engine.tools();
+    const engineTools = [...this.engine.tools(), this.choice, minecraftLifeTool()];
     const bagTool = engineTools.find((tool) => tool.name === 'mc_bag');
     return [...engineTools.filter((tool) => tool.name !== 'mc_escape').map((tool): ToolDef => ({
       ...tool,
