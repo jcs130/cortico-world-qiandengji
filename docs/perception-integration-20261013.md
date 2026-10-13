@@ -10,10 +10,12 @@
 
 ## Checks
 
-Full validation passed: 340 independent core tests; 200 server/adapter tests; Cortico 7504 tests (4 skipped), host and web type checks; shared viewer tests and build. Packed MCP, Cortico and DSH consumers resolved one core and ran under network denial without starting Minecraft or a model loop. Cortico API 5 construction and tool discovery passed.
+Full validation passed: 340 independent core tests; 201 server/adapter tests; Cortico 7504 tests (4 skipped), host and web type checks; shared viewer tests and build. Packed MCP, Cortico and DSH consumers resolved one core and ran under network denial without starting Minecraft or a model loop. Cortico API 5 construction and tool discovery passed.
 
-The candidate core archive is prepared explicitly in `vendor/agent-mc-world-0.4.0-perception-final-20261013.tgz`; its integrity is pinned in the lockfile. Local unpublished archives alone are excluded from registry release-age lookup. Runtime assets are built from the locked viewer source; generated monitor captures, Python bytecode and packaging-ignored dotfiles are excluded from the verified build manifest. Derived archives and private runtime data are not source commits.
+The candidate core archive is prepared explicitly in `vendor/agent-mc-world-0.4.0-sight-20261013.tgz`; its integrity is pinned in the lockfile. Local unpublished archives alone are excluded from registry release-age lookup. Runtime assets are built from the locked viewer source; generated monitor captures, Python bytecode and packaging-ignored dotfiles are excluded from the verified build manifest. Derived archives and private runtime data are not source commits.
 
 ## Runtime evidence
 
 Deployment and actual gameplay are recorded separately in `scratch/agent-comparison/integration-20261013/` in the operator workspace. Source tests do not establish that an observation reached the model, that a threat estimate was accurate, or that gameplay improved. Missing ranges and probabilities remain unknown. Hearing returns approximate bearing and distance, never exact sound coordinates. No npm publication is included.
+
+The legacy battlefield also uses the core entity visibility check. Hidden enemies are omitted; confirmed party telemetry keeps unknown geometry, without hidden ally coordinates. A wall and rear-facing regression exercise this boundary.

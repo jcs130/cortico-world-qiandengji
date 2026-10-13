@@ -3,7 +3,7 @@ import type { MinecraftBot as Bot } from 'agent-mc-world/extension';
 import { metaOf } from 'agent-mc-world/extension';
 import { HOSTILE } from 'agent-mc-world/extension';
 import { piglinIsHostile } from 'agent-mc-world/extension';
-import { canSeeEntity } from 'agent-mc-world/extension';
+import { canSeeEntity, observedEntity } from 'agent-mc-world/extension';
 import { loadedSight } from 'agent-mc-world/extension';
 
 export const BATTLEFIELD_CHANNEL = 'mcagent:battlefield';
@@ -149,6 +149,8 @@ export class BattlefieldObserver {
     const actors: BattlefieldActor[] = [];
     for (const e of Object.values(bot.entities ?? {})) {
       if (!e?.position || e === bot.entity || e.id === bot.entity.id || e.isValid === false) continue;
+      // Native tracking and party telemetry do not grant visual knowledge through walls.
+      if (!observedEntity(bot, e)) continue;
       const distance = Math.hypot(e.position.x - p.x, e.position.y - p.y, e.position.z - p.z);
       if (distance > 24) continue;
       const rawRow = e.uuid ? rows.get(e.uuid.toLowerCase()) : undefined;

@@ -10,13 +10,14 @@ const allyUuid = '00000000-0000-0000-0000-000000000002';
 const enemyUuid = '00000000-0000-0000-0000-000000000003';
 function rig(version = '1.20.6') {
   const bot = Object.assign(new EventEmitter(), { _client: new EventEmitter(),
-    entity: { id: 1, uuid: ownUuid, position: new Vec3(0, 64, 0), height: 1.8 },
+    entity: { id: 1, uuid: ownUuid, position: new Vec3(0, 64, 0), height: 1.8, yaw: -Math.PI / 2, pitch: 0 },
     entities: {
       2: { id: 2, uuid: allyUuid, type: 'player', name: 'player', username: 'Companion', metadata: [] as unknown[], position: new Vec3(2, 64, 0) },
       3: { id: 3, uuid: enemyUuid, type: 'mob', name: 'zombie', metadata: [] as unknown[], position: new Vec3(3, 64, 0) },
     }, registry: minecraftData(version), game: { dimension: 'overworld' }, health: 18, food: 19,
     username: 'Agent', teamMap: { Agent: { team: 'blue' }, Companion: { team: 'blue' } },
     world: { raycast: () => null },
+    blockAt: (p: Vec3) => ({ name: 'air', position: p, shapes: [] as number[][] }),
   });
   const observer = new BattlefieldObserver(); observer.bind(bot as unknown as Bot);
   const sample = (now = Date.now()) => observer.sample(bot as unknown as Bot, 7,
@@ -33,6 +34,19 @@ function payload(sequence = 1) {
 afterEach(() => vi.useRealTimers());
 
 describe('programmatic battlefield observations', () => {
+  it('omits hidden enemies and keeps confirmed ally telemetry non-spatial', () => {
+    const r = rig();
+    r.observer.noteServerPayload(Buffer.from(JSON.stringify(payload())), 1000);
+    r.bot.blockAt = (p: Vec3) => ({ name: p.x === 1 ? 'stone' : 'air', position: p,
+      shapes: p.x === 1 ? [[0,0,0,1,1,1]] : [] });
+    const hidden = r.sample(1100);
+    expect(hidden.actors.find(e => e.entityId === 3)).toBeUndefined();
+    expect(hidden.actors.find(e => e.entityId === 2)).toMatchObject({ relation: 'ally', position: null, distance: null, lineOfSight: null });
+    r.bot.blockAt = (p: Vec3) => ({ name: 'air', position: p, shapes: [] });
+    expect(r.sample(1100).actors.find(e => e.entityId === 3)?.position).toEqual([3,64,0]);
+    r.bot.entity.yaw = Math.PI / 2;
+    expect(r.sample(1100).actors.find(e => e.entityId === 3)).toBeUndefined();
+  });
   it.each(['1.20.6', '1.21.4'])('reads health using the %s registry and keeps missing player health unknown', version => {
     vi.useFakeTimers(); vi.setSystemTime(1000);
     const r = rig(version);

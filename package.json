@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.integration.json"
   },
   "dependencies": {
-    "agent-mc-world": "file:vendor/agent-mc-world-0.4.0-perception-final-20261013.tgz",
+    "agent-mc-world": "file:vendor/agent-mc-world-0.4.0-sight-20261013.tgz",
     "vec3": "0.2.0",
     "ses": "2.3.0"
   },
