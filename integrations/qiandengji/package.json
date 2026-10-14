@@ -35,7 +35,7 @@
     "node": ">=22"
   },
   "dependencies": {
-    "agent-mc-world": "0.4.0",
+    "agent-mc-world": "^0.4.1",
     "agent-mc-qiandengji": "0.4.0",
     "vec3": "0.2.0"
   },
