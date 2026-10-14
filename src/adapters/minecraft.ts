@@ -1,3 +1,4 @@
+import { HostCombatDriver, validateHostCombat, type HostCombatConfig } from 'agent-mc-world/decisions';
 import type { WorldDefinition } from '../../adapters/cortico/types.ts';
 import type { ConfigGroup, WorldHost } from 'agent-mc-world/contracts';
 import { MinecraftClientWorld, assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
@@ -5,10 +6,11 @@ import type { MinecraftClientConfig } from 'agent-mc-world/client';
 import { fileURLToPath } from 'node:url';
 
 const adapterText = (text: string) => text.replace(/\bmc_([a-z][a-z0-9_]*)\b/g, 'agentmc_$1');
-type HostConfig = MinecraftClientConfig & { hostDecisions?: { choice?: { decisionProvider?: string } } };
+type HostConfig = MinecraftClientConfig & HostCombatConfig & { hostDecisions?: HostCombatConfig['hostDecisions'] & { choice?: { decisionProvider?: string } } };
 
 /** Host naming only. No game commands, server coordinates or RPG rules. */
 class CorticoMinecraftWorld extends MinecraftClientWorld {
+  private fastCombat: HostCombatDriver | null = null;
   override readonly id = 'mc';
   constructor(private readonly adapterOptions: MinecraftWorldOptions & { cfg: HostConfig }) {
     super({ ...adapterOptions, cfg: new Proxy(adapterOptions.cfg, {
@@ -42,15 +44,30 @@ class CorticoMinecraftWorld extends MinecraftClientWorld {
       } satisfies ConfigGroup)),
     };
   }
-  override start(host: WorldHost) {
-    return super.start({ ...host, pushEvent: (event, options) => host.pushEvent({ ...event, source: this.id }, options) });
+  override async start(host: WorldHost) {
+    validateHostCombat(this.adapterOptions.cfg);
+    await super.start({ ...host, pushEvent: (event, options) => host.pushEvent({ ...event, source: this.id }, options) });
+    try {
+      if (this.adapterOptions.cfg.hostDecisions?.combat?.enabled) {
+        const tool = super.tools().find(t => t.name === 'mc_combat_tactic');
+        if (!tool) throw new Error('Minecraft core tactic port unavailable');
+        this.fastCombat = new HostCombatDriver(() => this.adapterOptions.cfg, {
+          decisions: host.decisions,
+          call: (args, signal) => tool.handler(args, {role:'host-decision', log:host.log, signal}),
+          report: (event, data) => host.log.emit('info', 'host combat ' + event, {event:'host.combat.' + event, data}),
+        });
+        this.fastCombat.start();
+      }
+    } catch (error) { await this.stop(); throw error; }
   }
+  override stop() { this.fastCombat?.stop(); this.fastCombat = null; return super.stop(); }
+
 }
 
 export const MC: WorldDefinition<HostConfig> & { exclusiveResource: string } = {
   id: 'mc', label: '联机版我的世界', exclusiveResource: 'minecraft-client',
   defaults: () => ({ ...structuredClone(MINECRAFT_CLIENT_DEFAULTS), hostDecisions: { choice: { decisionProvider: '' } } }),
-  preflight: ctx => assertMinecraftReady(ctx.cfg),
+  preflight: ctx => { assertMinecraftReady(ctx.cfg); validateHostCombat(ctx.cfg); },
   create: ctx => new CorticoMinecraftWorld({ cfg: ctx.cfg,
     timezone: ctx.timezone, botName: ctx.botName, dataDir: ctx.dataDir }),
 };

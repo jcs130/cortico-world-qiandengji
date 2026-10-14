@@ -18,12 +18,14 @@ describe('one public World, explicitly selected server pack', () => {
       expect(world).toBeInstanceOf(GenericMymcWorld);
       const tools = world.tools().map(t => t.name);
       expect(tools).toContain('mymc_do');
-      expect(tools).toEqual(expect.arrayContaining(['mymc_choose', 'mymc_life']));
+      expect(tools).toEqual(expect.arrayContaining(['mymc_choose', 'mymc_life', 'mymc_combat_tactic']));
+      expect(tools.filter(t => t === 'mymc_combat_tactic')).toHaveLength(1);
       expect(tools).not.toContain('mymc_cast');
       expect(tools).not.toContain('mymc_guide');
       expect(JSON.stringify(await world.envPromptVars())).not.toContain('/mycli');
       expect(world.console?.().config?.flatMap(g => Object.keys(g.schema.properties))).toContain('worlds.mymc.serverPack');
       expect(world.console?.().config?.flatMap(g => Object.keys(g.schema.properties))).toContain('worlds.mymc.hostDecisions.choice.decisionProvider');
+      expect(world.console?.().config?.flatMap(g => Object.keys(g.schema.properties))).toContain('worlds.mymc.hostDecisions.combat.enabled');
       await world.stop();
       expect(fetch).not.toHaveBeenCalled();
     } finally { fetch.mockRestore(); }
@@ -44,9 +46,10 @@ describe('one public World, explicitly selected server pack', () => {
     expect(() => selectedServerPack({ ...MYMC.defaults(), serverPack: 'typo' } as unknown as MymcConfigSection)).toThrow('serverPack');
   });
   it('keeps host model configuration out of the child game process', () => {
-    const cfg = { ...MYMC.defaults(), hostDecisions: { combat: { enabled: true, mode: 'act' as const, endpoint: 'http://host.invalid/judge' } } };
+    const cfg = { ...MYMC.defaults(), host: 'example.test', username: 'Alice',
+      hostDecisions: { combat: { enabled: true, mode: 'act' as const, endpoint: 'http://host.invalid/judge' } } };
     expect(JSON.stringify(mymcEngineConfig(cfg))).not.toContain('host.invalid');
     expect(JSON.parse(JSON.stringify(mymcEngineConfig(cfg)))).not.toHaveProperty('hostDecisions');
-    expect(() => MYMC.preflight?.({ cfg } as never)).toThrow('requires the qiandengji pack');
+    expect(() => MYMC.preflight?.({ cfg } as never)).not.toThrow();
   });
 });

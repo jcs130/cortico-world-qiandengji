@@ -16,7 +16,7 @@ export const MYMC: WorldDefinition<MymcConfigSection> & { exclusiveResource: str
     const pack = selectedServerPack(ctx.cfg);
     if (pack === 'qiandengji') { assertMymcReady(ctx.cfg, ctx.botDir); validateHostCombat(ctx.cfg); }
     else {
-      if (ctx.cfg.hostDecisions?.combat?.enabled) throw new Error('Fast combat adapter requires the qiandengji pack.');
+      validateHostCombat(ctx.cfg);
       assertMinecraftReady(ctx.cfg);
     }
   },

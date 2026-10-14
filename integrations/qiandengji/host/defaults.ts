@@ -1,1 +1,2 @@
-export const COMBAT_DECISION_DEFAULTS = {enabled:false,mode:'shadow' as const,endpoint:'',timeoutMs:250,minIntervalMs:750,minConfidence:.75,maxAgeMs:500,maxEntities:12,maxCandidates:2,allowMovement:false,allowEngage:false,engageScope:'party' as const,movementStallMs:1500};
+/** Compatibility export; the optional host service is shared by all Minecraft consumers. */
+export * from 'agent-mc-world/decisions';

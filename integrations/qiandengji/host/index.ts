@@ -1,5 +1,2 @@
-export { CombatDecisionLoop } from './combat-decision.ts';
-export type { CombatDecisionConfig, CombatDecisionOptions, CombatDecisionFrame, CombatCandidate } from './combat-decision.ts';
-export { createDecisionAdviser } from './decision-adviser.ts';
-export { IdleBehaviorController } from './idle-behavior.ts';
-export { HostCombatDriver } from './combat-driver.ts';
+/** Compatibility export; the optional host service is shared by all Minecraft consumers. */
+export * from 'agent-mc-world/decisions';

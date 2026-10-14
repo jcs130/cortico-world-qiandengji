@@ -105,6 +105,7 @@ export const SERVER_PACK_PROPERTY = {
 /** Public World defaults: no server identity, commands, channels or performance endpoints. */
 export const WORLD_DEFAULTS: MymcConfigSection = {
   ...structuredClone(MYMC_DEFAULTS), ...structuredClone(MINECRAFT_CLIENT_DEFAULTS),
+  combatOptions: structuredClone(COMBAT_EXECUTION_DEFAULTS),
   serverPack: 'none', viewerPort: 7793,
   visual: { ...MINECRAFT_CLIENT_DEFAULTS.visual, mode: 'auto' },
 };

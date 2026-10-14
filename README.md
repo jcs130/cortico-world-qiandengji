@@ -6,13 +6,19 @@
 
 | 包 | 职责 | 核心引用 |
 | --- | --- | --- |
-| `agent-mc-world` | 身体、SDK/MCP、动作执行、事实/回执、可视化接入 | 在 MC AI Friend 主项目维护 |
-| `agent-mc-qiandengji` | 服务器协议、技能、魔力、背包、21 篇玩法资料 | `agent-mc-world@0.4.0` |
+| `agent-mc-world` | 身体、SDK/MCP、动作执行、背包同步、战场/战术程序、事实/回执、可视化接入 | 在 MC AI Friend 主项目维护 |
+| `agent-mc-qiandengji` | 千灯纪协议、技能与魔力报文解析、服务器物品用法和玩法资料 | `agent-mc-world@0.4.0` |
 | `cortico-world-qiandengji` | 唯一公开 Cortico World，显示“联机版我的世界” | 核心 + 可选服务器资料包 |
 | `dsh-minecraft-agent` | DSH 宿主适配器，独立仓库 | 同一个核心包 |
 
 核心不依赖这些宿主或资料包。通用可视化仍由 `jcs130/mc-visual-console` 维护。
 Cortico 内置示例世界保持独立，不在这里修改。
+
+通用战场、战术程序、候选验证、能力状态、战斗回执与可选快决策服务已归入核心。
+普通 Minecraft 接入可直接使用，无需开启千灯纪资料包。
+本仓库 `engine/combat-*` 与 `host/*` 的历史入口仅转出核心公开接口；
+千灯纪技能名、指令格式、试炼与自定义报文仍由显式服务器包适配。
+详见核心的 [组件边界](https://github.com/jcs130/minecraft-ai-friend/blob/main/packages/agent-mc-world/docs/component-boundaries.md)。
 
 ## 构建本地候选
 

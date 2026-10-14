@@ -1,1 +1,1 @@
-export { MC, MC as default } from 'agent-mc-world/adapters/cortico';
+export { MC, MC as default } from '../../src/adapters/minecraft.ts';
