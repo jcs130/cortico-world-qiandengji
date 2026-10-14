@@ -61,22 +61,34 @@ export class GuildProgress {
     if (!text.startsWith('[MC 系统] ') || !timestamp(at)) return false;
     const line = text.slice('[MC 系统] '.length).trim();
     const accepted = /^已接公会委托：([^。；]+)[。；]/.exec(line);
+    const advanced = /^阶段已交付，继续：([^。；]+)[。；]/.exec(line);
     const progress = /^正在进行：(.+?)\s*\[(\d+)\/(\d+)\]/.exec(line)
       ?? /^还需完成「(.+?)」[：:]\s*(\d+)\/(\d+)\s*$/.exec(line);
     const activeListing = /^(\S+)\s+(.+?)\s+·\s+.*\[in_progress\](?:\s+·.*)?$/.exec(line);
     const completed = /^\S+\s+(.+?)\s+·\s+.+\[[^\]]*今日已完成\]$/.exec(line);
     const delivered = /^委托交付成功[！!]/.test(line);
     const none = line === '当前没有在办的委托。';
-    if (!accepted && !progress && !completed && !delivered && !none && !activeListing) return false;
+    if (!accepted && !advanced && !progress && !completed && !delivered && !none && !activeListing) return false;
 
     if (completed) this.complete(completed[1], at, 'board');
     const current = this.state.current;
-    if ((accepted || progress || delivered || none) && (!current || Date.parse(at) >= Date.parse(current.at))) {
+    if ((accepted || advanced || progress || delivered || none) && (!current || Date.parse(at) >= Date.parse(current.at))) {
       if (delivered) {
         if (current?.name) this.complete(current.name, at, 'delivery');
         this.state.lastDeliveryAt = at;
         this.state.current = { name: null, at };
       } else if (none) this.state.current = { name: null, at };
+      else if (advanced) {
+        const previous = current?.name && commissionName(current.name) === commissionName(advanced[1]) ? current : undefined;
+        // A stage hand-off confirms the new stage, not its count or the whole commission's completion.
+        this.state.current = {
+          name: commissionName(advanced[1]), at,
+          ...(previous?.acceptance ? { acceptance: previous.acceptance } : {}),
+          ...(previous?.exactId ? { exactId: previous.exactId } : {}),
+          stage: { text: advanced[1].slice(0, 1_200), at },
+          status: { text: line.length > 1_200 ? line.slice(0, 1_200) + '…[后续未展开，查原始交阶段回执]' : line, at },
+        };
+      }
       else if (progress) this.state.current = {
         ...(current?.name && commissionName(current.name) === commissionName(progress[1]) ? current : {}),
         name: commissionName(progress[1]), progress: Number(progress[2]), required: Number(progress[3]), at,

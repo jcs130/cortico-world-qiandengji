@@ -5,6 +5,48 @@ import { describe, expect, it } from 'vitest';
 import { GuildProgress } from '../src/guild-progress.ts';
 
 describe('GuildProgress', () => {
+  it('replaces stale counts on a server stage hand-off and persists the new stage before any status query', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'guild-handoff-'));
+    try {
+      const progress = new GuildProgress('example.test:25565:visitor', dir);
+      progress.observe('[MC 系统] 已接公会委托：农场循环 · 1/3 收获。收获后先交阶段。', '2026-01-01T12:00:00Z');
+      progress.observe('[MC 系统] 正在进行：农场循环 · 2/3 原地补种 [9/10]', '2026-01-01T12:30:00Z');
+      progress.observe('[MC 系统] farm_cycle 农场循环 · 补种。 [in_progress]', '2026-01-01T12:30:01Z');
+      const transition = '[MC 系统] 阶段已交付，继续：农场循环 · 3/3 厨房交付。交付十根胡萝卜。';
+      expect(progress.observe(transition, '2026-01-01T12:31:00Z')).toBe(true);
+      const restored = new GuildProgress('example.test:25565:visitor', dir);
+      expect(restored.facts()).toBe(progress.facts());
+      expect(restored.facts()).toContain('在办：农场循环；进度尚未回读');
+      expect(restored.facts()).toContain('最近明确阶段观察：农场循环 · 3/3 厨房交付');
+      expect(restored.facts()).toContain('交付十根胡萝卜。');
+      expect(restored.facts()).toContain('精确ID：farm_cycle');
+      expect(restored.facts()).toContain('历史接单');
+      expect(restored.facts()).not.toContain('原地补种');
+      expect(restored.facts()).not.toContain('[9/10]');
+      expect(restored.facts()).not.toContain('确认交付');
+      restored.observe('[MC 系统] 阶段已交付，继续：农场循环 · 2/3 原地补种。补种。', '2026-01-01T12:30:30Z');
+      expect(restored.facts()).toBe(progress.facts());
+      restored.observe('[MC 系统] 还需完成「农场循环」：4/10', '2026-01-01T12:32:00Z');
+      expect(restored.facts()).toContain('在办：农场循环 [4/10]');
+      expect(restored.facts()).toContain('最近明确阶段观察：农场循环 · 3/3 厨房交付');
+      restored.observe('[MC 系统] 阶段已交付，继续：新委托 · 2/2 建造。放置木板。', '2026-01-01T12:33:00Z');
+      expect(restored.facts()).not.toContain('farm_cycle');
+      expect(restored.facts()).not.toContain('历史接单');
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  it('accepts a stage hand-off without earlier context but never from player chat', () => {
+    const progress = new GuildProgress('example.test:25565:visitor');
+    const text = '阶段已交付，继续：循环委托 · 4/5 检查；按现场验收。';
+    expect(progress.observe(`[MC 玩家] visitor: ${text}`, '2026-01-01T12:00:00Z')).toBe(false);
+    expect(progress.facts()).toBe('');
+    expect(progress.observe(`[MC 系统] ${text}`, '2026-01-01T12:01:00Z')).toBe(true);
+    expect(progress.facts()).toContain('最近明确阶段观察：循环委托 · 4/5 检查');
+    expect(progress.facts()).toContain('进度尚未回读');
+    expect(progress.facts()).not.toContain('历史接单');
+    expect(progress.facts()).not.toContain('确认交付');
+  });
+
   it('retains the current stage verbatim across reloads without presenting the acceptance stage as current', () => {
     const dir = mkdtempSync(join(tmpdir(), 'guild-stage-'));
     try {
