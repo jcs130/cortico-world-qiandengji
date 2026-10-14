@@ -7,6 +7,14 @@ import { MYMC_DEFAULTS } from '../integrations/qiandengji/config.ts';
 import { nullLogger } from 'agent-mc-world/client';
 const dirs: string[] = [];
 afterEach(() => { vi.useRealTimers(); for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
+it('maps native API query references even when a caller supplies ignored placeholder code',async()=>{
+  const dir=mkdtempSync(join(tmpdir(),'native-query-map-'));dirs.push(dir);
+  const body={tools:()=>[{name:'mc_script',description:'script',parameters:{},tags:['act'],handler:async()=>({text:'Read mc_probe and mc_do; code was not executed.'})}]};
+  const cfg={...structuredClone(MYMC_DEFAULTS),provider:'java-client' as const,serverPack:'none' as const};
+  const world=new JavaMymcWorld({cfg,dataDir:dir},body as any);
+  const query=await world.tools().find(t=>t.name==='mymc_script')!.handler({api:'index',code:'placeholder'},{log:nullLogger(),role:'test'});
+  expect((query as any).text).toContain('mymc_probe');expect((query as any).text).toContain('mymc_do');
+});
 it('native host explicitly claims/renews, preserves receipts and never renews after stop', async () => {
   vi.useFakeTimers();
   const dir = mkdtempSync(join(tmpdir(), 'native-adapter-')); dirs.push(dir);

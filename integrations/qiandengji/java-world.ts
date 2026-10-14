@@ -40,7 +40,7 @@ export class JavaMymcWorld implements World {
   tools(): ToolDef[] {
     const tools = this.body.tools().filter(tool => !(this.opts.cfg.javaHostControl?.enabled && tool.name === 'mc_control')).map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description), handler: async (args, ctx) => {
       const result = await tool.handler(args, ctx);
-      return !['mc_help', 'mc_script'].includes(tool.name) || tool.name === 'mc_script' && args.code ? result : typeof result === 'string' ? this.helpText(result) : { ...result, text: this.helpText(result.text) };
+      return !['mc_help', 'mc_script'].includes(tool.name) || tool.name === 'mc_script' && !args.api ? result : typeof result === 'string' ? this.helpText(result) : { ...result, text: this.helpText(result.text) };
     } } satisfies ToolDef));
     tools.push(createMinecraftChoiceTool(() => this.host, () => this.requestFacts(), () => this.opts.cfg.hostDecisions?.choice?.decisionProvider?.trim() || undefined));
     tools.push({ ...GAME_MEMORY_TOOL, handler: async (args, ctx) => {
