@@ -8,6 +8,15 @@ const event = (text: string, ts = '2026-01-01T00:00:00Z', senderKey = 'mymc') =>
   ({ ts, text, source: 'mymc', type: 'mymc.chat', senderKey });
 
 describe('received Minecraft messages', () => {
+  it('filters compatibility keyword searches and rejects missing or conflicting search terms', () => {
+    const inbox = new MessageInbox('example.test:25565:ag_Player');
+    inbox.observe(event('[MC 系统] 麦田成熟了'));
+    inbox.observe(event('[MC 系统] 星芒箭命中'));
+    expect(inbox.readout({ action: 'search', keyword: '麦田' }).text).toContain('匹配 1 条');
+    expect(inbox.readout({ action: 'search', keyword: '麦田' }).text).not.toContain('星芒箭');
+    expect(inbox.readout({ action: 'search' }).failed).toBe(true);
+    expect(inbox.readout({ action: 'search', query: '麦田', keyword: '星芒箭' }).failed).toBe(true);
+  });
   it('keeps private source and original timestamp without recording HUD or self echoes', () => {
     const inbox = new MessageInbox('example.test:25565:ag_Player');
     const raw = '[MC 私聊] [控制台 -> 我] 新技能说明请用 /help skills 查看。';

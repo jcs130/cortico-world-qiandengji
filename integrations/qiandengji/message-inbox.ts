@@ -8,6 +8,19 @@ export type MessageChannel = typeof MESSAGE_CHANNELS[number];
 export const MESSAGE_LIMIT = 256;
 const TEXT_LIMIT = 32_768;
 
+// Shared by both bodies so migration cannot silently remove search/review parameters.
+export const MESSAGE_PARAMETERS = { type: 'object', additionalProperties: false, properties: {
+  action: { type: 'string', enum: ['list', 'search', 'read', 'review'] },
+  id: { type: 'string', description: 'Message id returned by list/search.' },
+  ids: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 16 },
+  query: { type: 'string', description: 'Case-insensitive text search.' },
+  keyword: { type: 'string', description: 'Compatibility alias for query. Do not combine different values.' },
+  channel: { type: 'string', enum: [...MESSAGE_CHANNELS] },
+  status: { type: 'string', enum: ['pending', 'all'] },
+  limit: { type: 'integer', minimum: 1, maximum: 20 },
+  offset: { type: 'integer', minimum: 0 },
+}, required: [] };
+
 interface ReceivedMessage {
   ts: string;
   source: string;
@@ -153,7 +166,12 @@ export class MessageInbox {
     const limit = typeof args.limit === 'number' && Number.isInteger(args.limit)
       ? Math.max(1, Math.min(20, args.limit)) : 5;
     const offset = typeof args.offset === 'number' && Number.isInteger(args.offset) ? Math.max(0, args.offset) : 0;
-    const query = typeof args.query === 'string' ? args.query.toLocaleLowerCase() : '';
+    if (args.query !== undefined && args.keyword !== undefined && args.query !== args.keyword)
+      return { text: 'query 与 keyword 不一致；请只传一个搜索词。', failed: true };
+    const value = args.query ?? args.keyword;
+    if (value !== undefined && typeof value !== 'string') return { text: '搜索词必须是文本。', failed: true };
+    const query = typeof value === 'string' ? value.trim().toLocaleLowerCase() : '';
+    if (action === 'search' && !query) return { text: 'search 需要非空 query（兼容 keyword）；列出全部消息请用 list。', failed: true };
     const rows = this.sorted(this.state.messages.filter(row =>
       (args.status === 'all' || !row.reviewedAt)
       && (!args.channel || row.channel === args.channel)

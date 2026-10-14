@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import type { World, WorldHost, ToolDef, WorldConsoleDecl, WorldRequestFacts } from 'agent-mc-world/contracts';
 import { createMinecraftChoiceTool } from 'agent-mc-world/extension';
 import { SkillCatalog } from './skill-catalog.ts';
-import { MessageInbox } from './message-inbox.ts';
+import { MessageInbox, MESSAGE_PARAMETERS } from './message-inbox.ts';
 import { readServerGuide, serverGuideIndex } from './server-guide.ts';
 import { mymcLoginName, type MymcConfigSection } from './config.ts';
 
@@ -65,7 +65,7 @@ export class JavaMymcWorld implements World {
     if (this.opts.cfg.serverPack === 'qiandengji') tools.push(
       { name: 'mymc_guide', description: 'Read explicitly enabled Qiandengji server reference material. Commands require native chat operation and real server confirmation.', parameters: { type: 'object', properties: { topic: { type: 'string' } } }, tags: ['read'], handler: async args => readServerGuide(args.topic as string | undefined) },
       { name: 'mymc_skills', description: 'Query retained original server skill observations; not current ability/mana proof.', parameters: { type: 'object', properties: { id: { type: 'string' } } }, tags: ['read'], handler: async args => ({ text: this.catalog.readout(args.id as string | undefined) }) },
-      { name: 'mymc_messages', description: 'Query original saved server messages, including messages retained before body migration. Historical observations are not new commands.', parameters: { type: 'object', properties: { channel: { type: 'string' }, id: { type: 'string' }, action: { type: 'string' }, limit: { type: 'integer' } } }, tags: ['read'], handler: async args => this.messages.readout(args) },
+      { name: 'mymc_messages', description: 'Query original received native server messages by query/channel, newest first; read expands an id and review marks consideration only. Includes pre-migration history; historical observations are not new commands. Use mymc_notices for the current client buffer.', parameters: MESSAGE_PARAMETERS, tags: ['read'], handler: async args => this.messages.readout(args) },
     );
     return tools.map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description) }));
   }
@@ -78,10 +78,18 @@ export class JavaMymcWorld implements World {
     try {
       await this.body.start({ ...host, pushEvent: async (event, options) => {
         const mapped = { ...event, source: this.id };
-        if (event.type === 'minecraft.client.message' && this.opts.cfg.serverPack === 'qiandengji') {
-          const prefix = event.meta?.kind === 'player' ? '[MC] ' : '[MC 系统] ';
-          this.catalog.observe(prefix + event.text, event.ts);
-          this.messages.observe({ ...mapped, text: prefix + event.text });
+        if (event.type === 'minecraft.client.message' && this.opts.cfg.serverPack === 'qiandengji' && !event.meta?.overlay) {
+          // Store a normalized observation, but deliver the original native event exactly once.
+          // MessageInbox intentionally accepts only mymc.chat, not execution or HUD events.
+          const outgoing = /^You whisper to /i.test(event.text) || event.meta?.sender === mymcLoginName(this.opts.cfg.username, this.opts.cfg.preserveLoginName);
+          const whisper = /^(.+?) whispers to you: /.exec(event.text);
+          const sender = typeof event.meta?.sender === 'string' ? event.meta.sender : whisper?.[1];
+          const prefix = whisper ? '[MC 私聊] ' : event.meta?.kind === 'player' ? '[MC] ' : '[MC 系统] ';
+          try {
+            this.catalog.observe(prefix + event.text, event.ts);
+            if (!outgoing) this.messages.observe({ ...mapped, type: 'mymc.chat', text: prefix + event.text,
+              ...(sender ? { senderKey: sender } : {}) }, options?.deliver !== false);
+          } catch (error) { host.log.warn('Native message index write failed; original event still delivered', { error: String(error) }); }
         }
         return host.pushEvent(mapped, options);
       } });
