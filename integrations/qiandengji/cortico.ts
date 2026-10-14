@@ -5,6 +5,7 @@ import { GenericMymcWorld } from './generic-world.ts';
 import { validateHostCombat } from './host/combat-driver.ts';
 import { assertMymcReady } from './guard.ts';
 import { MymcWorld } from './world.ts';
+import { JavaMymcWorld } from './java-world.ts';
 
 /** Cortico assembly adapter for the shared game implementation. */
 export const MYMC: WorldDefinition<MymcConfigSection> & { exclusiveResource: string } = {
@@ -13,6 +14,7 @@ export const MYMC: WorldDefinition<MymcConfigSection> & { exclusiveResource: str
   exclusiveResource: 'minecraft-client',
   defaults: () => structuredClone(WORLD_DEFAULTS),
   preflight: ctx => {
+    if (ctx.cfg.provider === 'java-client') { selectedServerPack(ctx.cfg); assertMinecraftReady(ctx.cfg); return; }
     const pack = selectedServerPack(ctx.cfg);
     if (pack === 'qiandengji') { assertMymcReady(ctx.cfg, ctx.botDir); validateHostCombat(ctx.cfg); }
     else {
@@ -21,6 +23,7 @@ export const MYMC: WorldDefinition<MymcConfigSection> & { exclusiveResource: str
     }
   },
   create: ctx => {
+    if (ctx.cfg.provider === 'java-client') return new JavaMymcWorld(ctx);
     const World = selectedServerPack(ctx.cfg) === 'qiandengji' ? MymcWorld : GenericMymcWorld;
     return new World({ cfg: ctx.cfg, botDir: ctx.botDir,
       timezone: ctx.timezone, botName: ctx.botName, dataDir: ctx.dataDir });

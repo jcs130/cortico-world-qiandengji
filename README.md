@@ -14,6 +14,14 @@
 核心不依赖这些宿主或资料包。通用可视化仍由 `jcs130/mc-visual-console` 维护。
 Cortico 内置示例世界保持独立，不在这里修改。
 
+### 可选真实 Java 客户端身体
+
+`worlds.mymc.provider: "java-client"` 使用核心的真实客户端桥；原主会话、人格和模型不变，也不会启动 Mineflayer 或额外模型循环。配置 `javaClient` 的实际 UUID、服务器、私有连接文件、账本目录、控制器 ID 和租期。SDK 的 `MymcAgentRuntime` 与 API 5 World 使用同一身体。只有明确启用 `javaHostControl.enabled` 才由宿主接管并续租；控制丢失后停下，不能自动重新夺取控制权。
+
+操作以 `mymc_operations` 为准。`mymc_do` 保留旧工具名，兼容单步 chat、control、look、快捷栏主手 equip、已持有食物 eat 和无参数 use，转换后保持原动作 ID、屏障与真实回执。暂不支持旧多步依赖、寻路、采矿、合成或 Mineflayer 脚本；不把命令换名冒充这些能力已迁移。默认保留队列，显式 append/now 可用。原记忆本和服务器消息继续查询；旧目标、公会和试炼资料通过 `mymc_history` 读取，不自动重放。
+
+真实画面来自同一身体的帧缓冲。显式指定 `javaClient.viewerPageFile`（mc-visual-console 的 native-client 页面）和 `viewerPort` 才开启本机只读网页。未配置不扫描端点。旧部署的 Mineflayer 环境提示词覆盖需先备份，再换成 `ENV_PROMPT_JAVA.md`；不要混用两种身体的执行说明。
+
 通用战场、战术程序、候选验证、能力状态、战斗回执与可选快决策服务已归入核心。
 普通 Minecraft 接入可直接使用，无需开启千灯纪资料包。
 本仓库 `engine/combat-*` 与 `host/*` 的历史入口仅转出核心公开接口；

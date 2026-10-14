@@ -20,6 +20,8 @@ type RepeatSuccessFallback = {
 export type MymcConfigSection = MinecraftConfigSection & {
   /** Omitted legacy configuration must be explicitly migrated before enabling server rules. */
   serverPack?: 'none' | 'qiandengji';
+  /** Explicit host lease ownership, no model loop and no automatic takeover after loss. */
+  javaHostControl?: { enabled: boolean };
   /** Optional route rewriting; ordinary goto must preserve the requested action by default. */
   serverTravel?: { enabled: boolean };
   /** Explicit host adapter configuration, never passed to the game process. */
