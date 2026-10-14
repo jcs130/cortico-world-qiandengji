@@ -21,6 +21,7 @@ export class JavaMymcWorld implements World {
   private timer?: ReturnType<typeof setInterval>;
   private renewing = false;
   private epoch = 0;
+  private helpText(text: string) { const mapped = names(text); return this.opts.cfg.javaHostControl?.enabled ? mapped.replace('Claim mymc_control explicitly, then renew the lease before expiry.', 'The host has explicitly claimed this body and maintains its lease. Use mymc_stop to stop work; do not claim it again.') : mapped; }
   constructor(private readonly opts: { cfg: MymcConfigSection; dataDir: string; botDir?: string; timezone?: string; botName?: string }, body?: JavaClientWorld) {
     this.body = body ?? new JavaClientWorld(opts.cfg as MinecraftClientConfig);
     this.catalog = new SkillCatalog(`${opts.cfg.host}:${opts.cfg.port}`, opts.dataDir);
@@ -28,7 +29,7 @@ export class JavaMymcWorld implements World {
     const notes = join(opts.dataDir, 'minecraft-memory');
     this.memory = new GameMemoryService(new GameMemoryBook(notes), notes);
   }
-  envPromptVars() { return { nativeEnvironment: names(JAVA_CLIENT_ENVIRONMENT), serverGuideIndex: this.opts.cfg.serverPack === 'qiandengji' ? serverGuideIndex() : '' }; }
+  envPromptVars() { return { nativeEnvironment: this.helpText(JAVA_CLIENT_ENVIRONMENT), serverGuideIndex: this.opts.cfg.serverPack === 'qiandengji' ? serverGuideIndex() : '' }; }
   requestFacts(): WorldRequestFacts | null {
     const facts = this.body.requestFacts(); if (!facts) return null;
     const parts = facts.parts?.map(part => ({ ...part, text: names(part.text) })) ?? [];
@@ -37,9 +38,9 @@ export class JavaMymcWorld implements World {
     return { ...facts, parts, text: parts.map(part => part.text).join('\n') };
   }
   tools(): ToolDef[] {
-    const tools = this.body.tools().map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description), handler: async (args, ctx) => {
+    const tools = this.body.tools().filter(tool => !(this.opts.cfg.javaHostControl?.enabled && tool.name === 'mc_control')).map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description), handler: async (args, ctx) => {
       const result = await tool.handler(args, ctx);
-      return tool.name !== 'mc_help' ? result : typeof result === 'string' ? names(result) : { ...result, text: names(result.text) };
+      return !['mc_help', 'mc_script'].includes(tool.name) || tool.name === 'mc_script' && args.code ? result : typeof result === 'string' ? this.helpText(result) : { ...result, text: this.helpText(result.text) };
     } } satisfies ToolDef));
     tools.push(createMinecraftChoiceTool(() => this.host, () => this.requestFacts(), () => this.opts.cfg.hostDecisions?.choice?.decisionProvider?.trim() || undefined));
     tools.push({ ...GAME_MEMORY_TOOL, handler: async (args, ctx) => {
