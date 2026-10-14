@@ -8,6 +8,7 @@ interface CurrentCommission {
   progress?: number;
   required?: number;
   acceptance?: { text: string; at: string };
+  status?: { text: string; at: string };
   exactId?: { value: string; at: string };
 }
 interface CompletedCommission { name: string; at: string; evidence: 'delivery' | 'board' }
@@ -31,6 +32,8 @@ function validSnapshot(value: unknown): value is GuildSnapshot {
     && [state.current.progress, state.current.required].every(n => n === undefined || Number.isSafeInteger(n) && n >= 0)
     && (state.current.acceptance === undefined || !!state.current.acceptance
       && typeof state.current.acceptance.text === 'string' && timestamp(state.current.acceptance.at))
+    && (state.current.status === undefined || !!state.current.status
+      && typeof state.current.status.text === 'string' && timestamp(state.current.status.at))
     && (state.current.exactId === undefined || !!state.current.exactId
       && typeof state.current.exactId.value === 'string' && timestamp(state.current.exactId.at)))
     && Array.isArray(state.completed) && state.completed.every(item => item && typeof item.name === 'string'
@@ -74,6 +77,7 @@ export class GuildProgress {
       else if (progress) this.state.current = {
         ...(current?.name && commissionName(current.name) === commissionName(progress[1]) ? current : {}),
         name: commissionName(progress[1]), progress: Number(progress[2]), required: Number(progress[3]), at,
+        status: { text: line.length > 1_200 ? line.slice(0, 1_200) + '…[后续未展开，查原始状态回执]' : line, at },
       };
       else this.state.current = { name: commissionName(accepted![1]), at,
         acceptance: { text: line.length > 1_200 ? line.slice(0, 1_200) + '…[后续未展开，查原始接单回执]' : line, at } };
@@ -95,7 +99,8 @@ export class GuildProgress {
       ? `在办：${commissionName(current.name)}${current.progress === undefined ? '；进度尚未回读' : ` [${current.progress}/${current.required}]`}`
       : '当前没有在办的委托'}。`);
     if (current?.exactId) lines.push(`${current.exactId.at} 在办看板确认精确ID：${current.exactId.value}。`);
-    if (current?.acceptance) lines.push(`${current.acceptance.at} 服务端接单及验收要求原文：${current.acceptance.text}`);
+    if (current?.status) lines.push(`${current.status.at} 最新服务端状态原文（阶段以此为准）：${current.status.text}`);
+    if (current?.acceptance) lines.push(`${current.acceptance.at} 历史接单及验收要求原文（不代表当前阶段；阶段变化后以最新状态为准）：${current.acceptance.text}`);
     if (this.state.lastDeliveryAt) lines.push(`最近交付成功回执：${this.state.lastDeliveryAt}。`);
     for (const item of this.state.completed.slice(-6).reverse()) {
       lines.push(`${item.at} 服务端${item.evidence === 'delivery' ? '确认交付' : '看板列为今日已完成'}：${item.name}。`);

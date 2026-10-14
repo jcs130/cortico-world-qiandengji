@@ -5,6 +5,23 @@ import { describe, expect, it } from 'vitest';
 import { GuildProgress } from '../src/guild-progress.ts';
 
 describe('GuildProgress', () => {
+  it('retains the current stage verbatim across reloads without presenting the acceptance stage as current', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'guild-stage-'));
+    try {
+      const progress = new GuildProgress('example.test:25565:visitor', dir);
+      progress.observe('[MC 系统] 已接公会委托：农场循环 · 1/3 收获。收获后先交阶段。', '2026-01-01T12:00:00Z');
+      progress.observe('[MC 系统] 正在进行：农场循环 · 2/3 原地补种 [9/10]', '2026-01-01T12:30:00Z');
+      const restored = new GuildProgress('example.test:25565:visitor', dir);
+      expect(restored.facts()).toContain('最新服务端状态原文（阶段以此为准）：正在进行：农场循环 · 2/3 原地补种 [9/10]');
+      expect(restored.facts()).toContain('历史接单及验收要求原文（不代表当前阶段');
+      restored.observe('[MC 系统] 正在进行：农场循环 · 1/3 收获 [9/10]', '2026-01-01T12:20:00Z');
+      expect(restored.facts()).toBe(progress.facts());
+      restored.observe('[MC 系统] 正在进行：新委托 · 1/2 放置 [0/3]', '2026-01-01T12:31:00Z');
+      expect(restored.facts()).not.toContain('原地补种');
+      expect(restored.facts()).not.toContain('历史接单');
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
   it('updates claim progress in either direction, retaining acceptance and refusing older observations', () => {
     const progress = new GuildProgress('example.test:25565:visitor');
     progress.observe('[MC 系统] 已接公会委托：补充建材。交付24份材料。', '2026-01-01T12:00:00Z');
