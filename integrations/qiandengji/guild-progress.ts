@@ -9,6 +9,7 @@ interface CurrentCommission {
   required?: number;
   acceptance?: { text: string; at: string };
   status?: { text: string; at: string };
+  stage?: { text: string; at: string };
   exactId?: { value: string; at: string };
 }
 interface CompletedCommission { name: string; at: string; evidence: 'delivery' | 'board' }
@@ -34,6 +35,8 @@ function validSnapshot(value: unknown): value is GuildSnapshot {
       && typeof state.current.acceptance.text === 'string' && timestamp(state.current.acceptance.at))
     && (state.current.status === undefined || !!state.current.status
       && typeof state.current.status.text === 'string' && timestamp(state.current.status.at))
+    && (state.current.stage === undefined || !!state.current.stage
+      && typeof state.current.stage.text === 'string' && timestamp(state.current.stage.at))
     && (state.current.exactId === undefined || !!state.current.exactId
       && typeof state.current.exactId.value === 'string' && timestamp(state.current.exactId.at)))
     && Array.isArray(state.completed) && state.completed.every(item => item && typeof item.name === 'string'
@@ -78,6 +81,7 @@ export class GuildProgress {
         ...(current?.name && commissionName(current.name) === commissionName(progress[1]) ? current : {}),
         name: commissionName(progress[1]), progress: Number(progress[2]), required: Number(progress[3]), at,
         status: { text: line.length > 1_200 ? line.slice(0, 1_200) + '…[后续未展开，查原始状态回执]' : line, at },
+        ...(/ · \d+\/\d+\s+/.test(progress[1]) ? { stage: { text: progress[1].slice(0, 1_200), at } } : {}),
       };
       else this.state.current = { name: commissionName(accepted![1]), at,
         acceptance: { text: line.length > 1_200 ? line.slice(0, 1_200) + '…[后续未展开，查原始接单回执]' : line, at } };
@@ -100,6 +104,7 @@ export class GuildProgress {
       : '当前没有在办的委托'}。`);
     if (current?.exactId) lines.push(`${current.exactId.at} 在办看板确认精确ID：${current.exactId.value}。`);
     if (current?.status) lines.push(`${current.status.at} 最新服务端状态原文（阶段以此为准）：${current.status.text}`);
+    if (current?.stage) lines.push(`${current.stage.at} 最近明确阶段观察：${current.stage.text}；后续仅计数的回执不代表阶段变化。`);
     if (current?.acceptance) lines.push(`${current.acceptance.at} 历史接单及验收要求原文（不代表当前阶段；阶段变化后以最新状态为准）：${current.acceptance.text}`);
     if (this.state.lastDeliveryAt) lines.push(`最近交付成功回执：${this.state.lastDeliveryAt}。`);
     for (const item of this.state.completed.slice(-6).reverse()) {

@@ -16,6 +16,8 @@ describe('GuildProgress', () => {
       expect(restored.facts()).toContain('历史接单及验收要求原文（不代表当前阶段');
       restored.observe('[MC 系统] 正在进行：农场循环 · 1/3 收获 [9/10]', '2026-01-01T12:20:00Z');
       expect(restored.facts()).toBe(progress.facts());
+      restored.observe('[MC 系统] 还需完成「农场循环」：9/10', '2026-01-01T12:30:30Z');
+      expect(restored.facts()).toContain('最近明确阶段观察：农场循环 · 2/3 原地补种');
       restored.observe('[MC 系统] 正在进行：新委托 · 1/2 放置 [0/3]', '2026-01-01T12:31:00Z');
       expect(restored.facts()).not.toContain('原地补种');
       expect(restored.facts()).not.toContain('历史接单');
