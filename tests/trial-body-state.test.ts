@@ -15,3 +15,16 @@ it('ignores other players, uncorrelated replies and quoted chat',()=>{
   expect(trialBodyState(down+' status=revived',self,false)).toBeNull();
   expect(trialBodyState('MC_TRIAL_RESCUE status=revived player=other',self,true)).toBeNull();
 });
+it('releases the observed downed state on the actual team-wipe recovery receipt',()=>{
+  // 2026-10-14 15:08:15.087, r-20261014-144111-b8f0 event 907547.
+  const recovery='MC_TRIAL_RESCUE status=recovered health=10.0';
+  let downed=trialBodyState(down,self,false)==='downed';
+  expect(downed).toBe(true);
+  const state=trialBodyState(recovery,self,downed);
+  expect(state).toBe('revived');
+  downed=state==='downed';
+  expect(trialBodyState(recovery,self,downed)).toBeNull();
+  expect(trialBodyState(recovery+' player=someone-else',self,true)).toBeNull();
+  expect(trialBodyState('<player> '+recovery,self,true)).toBeNull();
+  expect(trialBodyState(recovery+' status=downed',self,true)).toBeNull();
+});

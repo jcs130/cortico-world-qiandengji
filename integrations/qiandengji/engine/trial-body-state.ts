@@ -11,7 +11,8 @@ export function trialBodyState(text: string, selfUuid: string | undefined, curre
   if (player && (!self || player !== self)) return null;
   if (fields.status === 'downed' && player && self) return 'downed';
   // Unaddressed recovery/denial receipts only update our own already-observed downed state.
-  if (currentlyDowned && fields.status === 'revived') return 'revived';
+  // Team wipe / trial exit uses recovered; teammate rescue uses revived.
+  if (currentlyDowned && (fields.status === 'revived' || fields.status === 'recovered')) return 'revived';
   if (currentlyDowned && fields.status === 'denied' && fields.reason === 'downed') return 'downed';
   return null;
 }
