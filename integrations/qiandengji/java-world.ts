@@ -37,7 +37,7 @@ export class JavaMymcWorld implements World {
   requestFacts(): WorldRequestFacts | null {
     const facts = this.body.requestFacts(); if (!facts) return null;
     const parts = facts.parts?.map(part => ({ ...part, text: names(part.text) })) ?? [];
-    parts.push({ key: 'backend', text: 'provider=java-client. The host maintains the claimed lease. Discover operations; single supported legacy steps can be converted (read mymc_help). Old navigation/scripts and combat driver are unavailable. Prior goals and memories remain host-owned. Use mymc_choose for optional host fast decisions.' });
+    parts.push({ key: 'backend', text: `provider=java-client. ${this.opts.cfg.javaHostControl?.enabled ? 'The host maintains the claimed lease.' : 'Claim mymc_control explicitly before body actions.'} Read mymc_capabilities and mymc_script api:compatibility for actual shared JavaScript/navigation support; historical pre-migration limitations do not replace the current contract. Prior goals and memories remain host-owned. Use mymc_choose for optional host fast decisions.` });
     if (this.opts.cfg.serverPack === 'qiandengji') parts.push({ key: 'serverReferences', text: `${this.catalog.compactIndex()}\n${this.messages.index()}\nThese retained observations are historical, not current mana/cooldown or new requests. Read mymc_guide and mymc_notices.` });
     const guild = this.guildProgress?.facts();
     if (guild) parts.push({ key: 'guildState', text: `[Minecraft / mymc · ${this.opts.cfg.host}:${this.opts.cfg.port}:${mymcLoginName(this.opts.cfg.username, this.opts.cfg.preserveLoginName)}]\n${guild}\n以上是带时间的最新已收服务端观察，不代表此刻已重新验证；阶段与计数以同一服务器较新回执更新。只适用于此 Minecraft 世界，不提供其他 World 的目标、背包、职业或行动点。` });
