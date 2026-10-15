@@ -9,18 +9,23 @@ import { GuildProgress } from '../integrations/qiandengji/guild-progress.ts';
 const dirs: string[] = [];
 afterEach(() => { vi.useRealTimers(); for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
-it('delegates native offline memory to the shared core and preserves the previous account/agent notebook',async()=>{
+it('delegates offline memory to the explicit UUID scope without importing an old login alias',async()=>{
   const dir=mkdtempSync(join(tmpdir(),'native-memory-parity-'));dirs.push(dir);
-  const cfg={...structuredClone(MYMC_DEFAULTS),host:'example.test',username:'visitor',preserveLoginName:false,provider:'java-client' as const,serverPack:'none' as const};
+  const cfg={...structuredClone(MYMC_DEFAULTS),host:'example.test',username:'visitor',preserveLoginName:false,provider:'java-client' as const,serverPack:'none' as const,
+    javaClient:{expectedServer:'example.test:25565',expectedUuid:'12345678-1234-1234-1234-123456789abc',controllerId:'fixture',credentialsFile:join(dir,'disconnected.json'),ledgerDir:dir,leaseMs:15000}};
   const book=new GameMemoryBook(join(dir,'minecraft-memory'));
   book.execute({action:'remember',kind:'lesson',summary:'旧版原生笔记',content:'task:blocked dirt raycast, not wheat.',source:{kind:'agent_note'}},
     {scope:{realm:'weak:example.test:25565|',account:'offline:ag_visitor',agent:'fixture-agent'},dimension:null});
   const world=new JavaMymcWorld({cfg,dataDir:dir,botName:'fixture-agent'});
   const memories=world.tools().filter(t=>t.name==='mymc_memory');expect(memories).toHaveLength(1);
-  const result:any=await memories[0].handler({action:'search',query:'旧版'},{role:'test',log:nullLogger()});
+  const legacy:any=await memories[0].handler({action:'search',query:'旧版'},{role:'test',log:nullLogger()});
+  expect(legacy.failed).not.toBe(true);expect(JSON.parse(legacy.text).total).toBe(0);
+  const saved:any=await memories[0].handler({action:'remember',kind:'lesson',summary:'UUID 原生笔记',content:'task:blocked dirt raycast, not wheat.',source:{kind:'agent_note'}},{role:'test',log:nullLogger()});
+  expect(saved.failed).not.toBe(true);
+  const result:any=await memories[0].handler({action:'search',query:'原生笔记'},{role:'test',log:nullLogger()});
   expect(result.failed).not.toBe(true);expect(JSON.parse(result.text)).toMatchObject({total:1,currentWorldVerified:false});
   const capture:any=await memories[0].handler({action:'capture'},{role:'test',log:nullLogger()});
-  expect(capture.failed).toBe(true);expect(capture.text).toContain('disconnected');
+  expect(capture.failed).toBe(true);
   const other=new JavaMymcWorld({cfg,dataDir:dir,botName:'other-agent'});
   const isolated:any=await other.tools().find(t=>t.name==='mymc_memory')!.handler({action:'search',dimension:'*'},{role:'test',log:nullLogger()});
   expect(JSON.parse(isolated.text).total).toBe(0);
@@ -146,4 +151,25 @@ it('keeps the raw native message deliverable when message indexing cannot persis
     expect(pushEvent).toHaveBeenCalledTimes(1); expect(warn).toHaveBeenCalledTimes(1);
     expect((await world.tools().find(t=>t.name==='mymc_messages')!.handler({}, {} as any) as any).text).toContain('领地保护');
   } finally { await world.stop(); }
+});
+
+it('delivers canonical player identity and explicit server arrivals once for host recall without promoting quotations', async () => {
+  const dir=mkdtempSync(join(tmpdir(),'native-social-'));dirs.push(dir);let bridge:any;
+  const body={tools:()=>[],start:async(host:any)=>{bridge=host;},stop:async()=>{},console:()=>({}),requestFacts:()=>null};
+  const cfg={...structuredClone(MYMC_DEFAULTS),provider:'java-client' as const,serverPack:'qiandengji' as const,javaHostControl:{enabled:false}};
+  const world=new JavaMymcWorld({cfg,dataDir:dir},body as any),pushEvent=vi.fn(async event=>event);
+  await world.start({log:nullLogger(),pushEvent} as any);
+  try {
+    const base={source:'minecraft',ts:'2026-10-15T14:45:32Z',text:'Alex 加入了千灯纪'};
+    await bridge.pushEvent({...base,type:'minecraft.client.message',meta:{kind:'system'}});
+    await bridge.pushEvent({...base,type:'minecraft.chat',senderKey:'Sam',meta:{kind:'player',sender:'Sam',uname:'Sam'}});
+    await bridge.pushEvent({...base,type:'minecraft.client.message',meta:{kind:'system',overlay:true}});
+    await bridge.pushEvent({...base,type:'minecraft.chat',text:'<Alex> hello',senderKey:'Alex',meta:{kind:'player',sender:'Alex',uname:'Alex',socialScope:'minecraft-server'}});
+    expect(pushEvent).toHaveBeenCalledTimes(4);
+    expect(pushEvent.mock.calls[0][0]).toMatchObject({...base,source:'mymc',type:'mymc.enter',senderKey:'Alex',meta:{uname:'Alex',nearby:false}});
+    expect(pushEvent.mock.calls[1][0]).toMatchObject({type:'mymc.chat',senderKey:'Sam',text:base.text});
+    expect(pushEvent.mock.calls[2][0]).toMatchObject({type:'minecraft.client.message'});
+    expect(pushEvent.mock.calls[2][0].senderKey).toBeUndefined();
+    expect(pushEvent.mock.calls[3][0]).toMatchObject({type:'mymc.chat',senderKey:'Alex',text:'<Alex> hello',ts:base.ts});
+  }finally{await world.stop();}
 });

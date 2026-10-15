@@ -70,14 +70,24 @@ export class JavaMymcWorld implements World {
     this.host = host; const epoch = ++this.epoch;
     try {
       await this.body.start({ ...host, pushEvent: async (event, options) => {
-        const mapped = { ...event, source: this.id };
-        if (event.type === 'minecraft.client.message' && this.opts.cfg.serverPack === 'qiandengji' && !event.meta?.overlay) {
+        const mapped = { ...event, source: this.id,
+          type: event.type === 'minecraft.chat' ? 'mymc.chat' : event.type };
+        if (['minecraft.client.message', 'minecraft.chat'].includes(event.type) && this.opts.cfg.serverPack === 'qiandengji' && !event.meta?.overlay) {
           // Store a normalized observation, but deliver the original native event exactly once.
           // MessageInbox intentionally accepts only mymc.chat, not execution or HUD events.
           const outgoing = /^You whisper to /i.test(event.text) || event.meta?.sender === mymcLoginName(this.opts.cfg.username, this.opts.cfg.preserveLoginName);
           const whisper = /^(.+?) whispers to you: /.exec(event.text);
           const sender = typeof event.meta?.sender === 'string' ? event.meta.sender : whisper?.[1];
           const prefix = whisper ? '[MC 私聊] ' : event.meta?.kind === 'player' ? '[MC] ' : '[MC 系统] ';
+          // This optional server pack has a documented system arrival line. Never
+          // interpret quoted player chat or HUD text as an encounter or authority.
+          const arrival = event.meta?.kind === 'system' && !sender && !outgoing && !whisper
+            ? /^([A-Za-z0-9_]{1,16}) 加入了千灯纪$/.exec(event.text) : null;
+          if (arrival) {
+            mapped.type = 'mymc.enter'; mapped.senderKey = arrival[1];
+            mapped.meta = { ...event.meta, uname: arrival[1], socialScope: 'minecraft-server',
+              nativeType: event.type, encounterSource: 'qiandengji.system-arrival', nearby: false };
+          }
           // Reuse the same server protocol ledger as Mineflayer. Never promote a
           // player's quotation, private message, HUD or unknown channel to state.
           if (event.meta?.kind === 'system' && !sender && !outgoing && !whisper) {

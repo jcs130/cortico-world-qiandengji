@@ -97,11 +97,11 @@ describe('independent asynchronous combat choices', () => {
     r.cfg.allowMovement = true;
     const control = { bodyFree: false, canStep: true, targetId: 3, sinceHitMs: 3000,
       fight: 'armed', fleeHealth: 6, chaseMax: 12 };
-    r.f!.candidates = combatReactions(bot, f, r.cfg, control).slice(0, 1);
+    r.f!.candidates = combatReactions(bot, f, r.cfg, control).filter(c => c.kind === 'step').slice(0, 1);
     const before = r.f!.candidates[0];
     r.loop.tick();
     bot.entity.position.x = .25; f.self.position[0] = .25; f.actors[0].distance = 2.75;
-    r.f!.candidates = combatReactions(bot, f, r.cfg, control).slice(0, 1);
+    r.f!.candidates = combatReactions(bot, f, r.cfg, control).filter(c => c.kind === 'step').slice(0, 1);
     expect(r.f!.candidates[0]).not.toEqual(before);
     r.resolve(); await vi.advanceTimersByTimeAsync(1);
     expect(r.sent).toEqual([r.f!.candidates[0]]);
@@ -270,11 +270,11 @@ describe('physically available combat candidates', () => {
     const choices = combatReactions(bot, f, cfg, control);
     expect(choices.filter(c => c.kind === 'step')).toHaveLength(2);
     expect(choices.some(c => c.kind === 'retreat')).toBe(true);
-    expect(choices.slice(0, cfg.maxCandidates).map(c => c.kind)).toEqual(['step', 'retreat']);
-    expect(combatReactions(bot, f, cfg, { ...control, sinceHitMs: 20 })).toEqual([]);
-    expect(combatReactions(bot, f, cfg, { ...control, canStep: false })).toEqual([]);
+    expect(choices.map(c => c.kind)).toEqual(['retreat', 'track', 'step', 'step']);
+    expect(combatReactions(bot, f, cfg, { ...control, sinceHitMs: 20 }).map(c => c.kind)).toEqual(['retreat', 'track']);
+    expect(combatReactions(bot, f, cfg, { ...control, canStep: false }).map(c => c.kind)).toEqual(['retreat', 'track']);
     bot.blockAt = () => null;
-    expect(combatReactions(bot, f, cfg, control).map(c => c.kind)).toEqual(['retreat']);
+    expect(combatReactions(bot, f, cfg, control).map(c => c.kind)).toEqual(['retreat', 'track']);
   });
 
   it('removes casts for unknown cost, missing abilities, occlusion and changed mana', () => {
