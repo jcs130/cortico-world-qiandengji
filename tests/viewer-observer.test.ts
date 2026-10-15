@@ -6,8 +6,8 @@ import { MYMC_DEFAULTS } from '../src/config.ts';
 import { freeViewerPort, viewerBot } from './fixtures/viewer-bot.ts';
 
 describe('packaged OBS subject integration', () => {
-  it('relays attested targets, item use and close/switch cleanup while skipping world chunk reads for overlays', async () => {
-    const { bot, protocol } = viewerBot();
+  it.each(['1.21.1','1.20.6'])('relays attested targets and close/switch cleanup on Java %s without overlay chunk reads', async version => {
+    const { bot, protocol } = viewerBot(version);
     const own = '00000000-0000-0000-0000-000000000001', target = '00000000-0000-0000-0000-000000000002';
     Object.assign(bot, { uuid: own });
     const register = vi.fn((name: string, packet: { channel: string; data: Buffer }) => {

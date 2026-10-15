@@ -1,14 +1,14 @@
 {
   "repository": "https://github.com/jcs130/mc-visual-console",
-  "commit": "eb2c9d174e213962561b391c6e0216647e54d5d6",
+  "commit": "f832ee2a0838162b18daa546f975937f72913b76",
   "inputs": [
     {
       "file": "host/viewer-appearance.mjs",
-      "sha256": "e5bee17212d3bc67652f0e783423f3671a43ddc6635867d7d66d4f117d01ed7a"
+      "sha256": "7667e4b1cf09dcf40864e365937226cb2bd7cb303f5622c234f3cffbd61c2a00"
     },
     {
       "file": "host/viewer-appearance.d.mts",
-      "sha256": "1239e03bd366d06460c39a3ba94d32dcc94fc03a52d6654c8123f2694259f837"
+      "sha256": "36f91021f53b8be248cd065189aba2b3a01a0e095677c23730b78f6c79aca51b"
     },
     {
       "file": "host/viewer-ysm-assets.mjs",
@@ -16,7 +16,15 @@
     },
     {
       "file": "host/viewer-ysm-motion.mjs",
-      "sha256": "a16907742394ba2d2bb1c4791749e52baf88a5f6e14f065a6cd5416784bce860"
+      "sha256": "224cfd892fa5ae98a993492abe8e3e52200a069fd5fd2bbb208ad1395d67d427"
+    },
+    {
+      "file": "host/viewer-observer.mjs",
+      "sha256": "f49622f833bdc1c2a886169d527a18ceb0e6ef351ae240823a9d48c460fb22bc"
+    },
+    {
+      "file": "host/viewer-observer.d.mts",
+      "sha256": "df4a5c3c9ecfe5053598129ca903ad76b1c23deadf255c3dcc7c8970d4e11651"
     }
   ]
 }

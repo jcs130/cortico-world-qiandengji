@@ -10,7 +10,7 @@ export const bubbleEntity = (id: number, text: string) => ({
     24: 320, 25: 0x40000000, 26: -1, 27: 1 },
 });
 
-export function viewerBot(version = '1.20.6') {
+export function viewerBot(version = '1.21.1') {
   const registry = minecraftData(version);
   const protocol = Object.assign(new EventEmitter(), {
     write() { throw new Error('Viewer must not send game actions'); },
