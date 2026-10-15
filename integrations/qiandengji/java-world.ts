@@ -6,6 +6,7 @@ import type { World, WorldHost, ToolDef, WorldConsoleDecl, WorldRequestFacts } f
 import { createMinecraftChoiceTool } from 'agent-mc-world/extension';
 import { SkillCatalog } from './skill-catalog.ts';
 import { MessageInbox, MESSAGE_PARAMETERS } from './message-inbox.ts';
+import { GuildProgress } from './guild-progress.ts';
 import { readServerGuide, serverGuideIndex } from './server-guide.ts';
 import { mymcLoginName, type MymcConfigSection } from './config.ts';
 
@@ -16,6 +17,7 @@ export class JavaMymcWorld implements World {
   private readonly body: JavaClientWorld;
   private readonly catalog: SkillCatalog;
   private readonly messages: MessageInbox;
+  private readonly guildProgress: GuildProgress | null;
   private readonly memory: GameMemoryService;
   private host: WorldHost | null = null;
   private timer?: ReturnType<typeof setInterval>;
@@ -26,6 +28,8 @@ export class JavaMymcWorld implements World {
     this.body = body ?? new JavaClientWorld(opts.cfg as MinecraftClientConfig);
     this.catalog = new SkillCatalog(`${opts.cfg.host}:${opts.cfg.port}`, opts.dataDir);
     this.messages = new MessageInbox(`${opts.cfg.host}:${opts.cfg.port}:${mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName)}`, opts.dataDir);
+    this.guildProgress = opts.cfg.serverPack === 'qiandengji'
+      ? new GuildProgress(`${opts.cfg.host}:${opts.cfg.port}:${mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName)}`, opts.dataDir) : null;
     const notes = join(opts.dataDir, 'minecraft-memory');
     this.memory = new GameMemoryService(new GameMemoryBook(notes), notes);
   }
@@ -35,6 +39,8 @@ export class JavaMymcWorld implements World {
     const parts = facts.parts?.map(part => ({ ...part, text: names(part.text) })) ?? [];
     parts.push({ key: 'backend', text: 'provider=java-client. The host maintains the claimed lease. Discover operations; single supported legacy steps can be converted (read mymc_help). Old navigation/scripts and combat driver are unavailable. Prior goals and memories remain host-owned. Use mymc_choose for optional host fast decisions.' });
     if (this.opts.cfg.serverPack === 'qiandengji') parts.push({ key: 'serverReferences', text: `${this.catalog.compactIndex()}\n${this.messages.index()}\nThese retained observations are historical, not current mana/cooldown or new requests. Read mymc_guide and mymc_notices.` });
+    const guild = this.guildProgress?.facts();
+    if (guild) parts.push({ key: 'guildState', text: `[Minecraft / mymc · ${this.opts.cfg.host}:${this.opts.cfg.port}:${mymcLoginName(this.opts.cfg.username, this.opts.cfg.preserveLoginName)}]\n${guild}\n以上是带时间的最新已收服务端观察，不代表此刻已重新验证；阶段与计数以同一服务器较新回执更新。只适用于此 Minecraft 世界，不提供其他 World 的目标、背包、职业或行动点。` });
     return { ...facts, parts, text: parts.map(part => part.text).join('\n') };
   }
   tools(): ToolDef[] {
@@ -85,6 +91,11 @@ export class JavaMymcWorld implements World {
           const whisper = /^(.+?) whispers to you: /.exec(event.text);
           const sender = typeof event.meta?.sender === 'string' ? event.meta.sender : whisper?.[1];
           const prefix = whisper ? '[MC 私聊] ' : event.meta?.kind === 'player' ? '[MC] ' : '[MC 系统] ';
+          // Reuse the same server protocol ledger as Mineflayer. Never promote a
+          // player's quotation, private message, HUD or unknown channel to state.
+          if (event.meta?.kind === 'system' && !sender && !outgoing && !whisper) {
+            this.guildProgress?.observe('[MC 系统] ' + event.text, event.ts);
+          }
           try {
             this.catalog.observe(prefix + event.text, event.ts);
             if (!outgoing) this.messages.observe({ ...mapped, type: 'mymc.chat', text: prefix + event.text,
