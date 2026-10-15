@@ -1,7 +1,7 @@
 import { HostCombatDriver, validateHostCombat, type HostCombatConfig } from 'agent-mc-world/decisions';
 import type { WorldDefinition } from '../../adapters/cortico/types.ts';
 import type { ConfigGroup, WorldHost } from 'agent-mc-world/contracts';
-import { MinecraftClientWorld, assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
+import { MinecraftClientWorld, WorldOperationLearning, assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import type { MinecraftClientConfig } from 'agent-mc-world/client';
 import { fileURLToPath } from 'node:url';
 
@@ -11,16 +11,18 @@ type HostConfig = MinecraftClientConfig & HostCombatConfig & { hostDecisions?: H
 /** Host naming only. No game commands, server coordinates or RPG rules. */
 class CorticoMinecraftWorld extends MinecraftClientWorld {
   private fastCombat: HostCombatDriver | null = null;
+  private readonly learning: WorldOperationLearning;
   override readonly id = 'mc';
   constructor(private readonly adapterOptions: MinecraftWorldOptions & { cfg: HostConfig }) {
     super({ ...adapterOptions, cfg: new Proxy(adapterOptions.cfg, {
       get: (target, key, receiver) => key === 'hostDecisions' ? undefined : Reflect.get(target, key, receiver),
     }) });
+    this.learning = new WorldOperationLearning(adapterOptions.dataDir, () => this.requestFacts());
   }
   protected override choiceProvider() { return this.adapterOptions.cfg.hostDecisions?.choice?.decisionProvider?.trim() || undefined; }
   override tools() {
-    return super.tools().map(tool => ({ ...tool,
-      name: tool.name.replace(/^mc_/, 'agentmc_'), description: adapterText(tool.description) }));
+    return this.learning.tools(super.tools().map(tool => ({ ...tool,
+      name: tool.name.replace(/^mc_/, 'agentmc_'), description: adapterText(tool.description) })));
   }
   override async envPromptVars() {
     const values = await super.envPromptVars();
@@ -46,10 +48,11 @@ class CorticoMinecraftWorld extends MinecraftClientWorld {
   }
   override async start(host: WorldHost) {
     validateHostCombat(this.adapterOptions.cfg);
-    await super.start({ ...host, pushEvent: (event, options) => host.pushEvent({ ...event, source: this.id }, options) });
+    const observedHost = this.learning.start(host);
     try {
+      await super.start({ ...observedHost, pushEvent: (event, options) => observedHost.pushEvent({ ...event, source: this.id }, options) });
       if (this.adapterOptions.cfg.hostDecisions?.combat?.enabled) {
-        const tool = super.tools().find(t => t.name === 'mc_combat_tactic');
+        const tool = this.learning.tools(super.tools(), 'system1').find(t => t.name === 'mc_combat_tactic');
         if (!tool) throw new Error('Minecraft core tactic port unavailable');
         this.fastCombat = new HostCombatDriver(() => this.adapterOptions.cfg, {
           decisions: host.decisions,
@@ -60,7 +63,10 @@ class CorticoMinecraftWorld extends MinecraftClientWorld {
       }
     } catch (error) { await this.stop(); throw error; }
   }
-  override stop() { this.fastCombat?.stop(); this.fastCombat = null; return super.stop(); }
+  override async stop() {
+    this.fastCombat?.stop(); this.fastCombat = null;
+    try { await super.stop(); } finally { this.learning.stop(); }
+  }
 
 }
 

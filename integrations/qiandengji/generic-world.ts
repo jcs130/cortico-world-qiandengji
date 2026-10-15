@@ -1,6 +1,6 @@
 import { HostCombatDriver, validateHostCombat, type HostCombatConfig } from 'agent-mc-world/decisions';
 import { fileURLToPath } from 'node:url';
-import { MinecraftClientWorld, type MinecraftWorldOptions } from 'agent-mc-world/extension';
+import { MinecraftClientWorld, WorldOperationLearning, type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import type { WorldHost } from 'agent-mc-world/contracts';
 import { mymcGroup, SERVER_PACK_PROPERTY, MYMC_CONFIG_GROUP, type MymcConfigSection } from './config.ts';
 
@@ -9,16 +9,18 @@ const adapterText = (value: string) => value.replace(/\bmc_([a-z][a-z0-9_]*)\b/g
 /** A host namespace adapter. Server capabilities are only loaded by an explicit pack selection. */
 export class GenericMymcWorld extends MinecraftClientWorld {
   private fastCombat: HostCombatDriver | null = null;
+  private readonly learning: WorldOperationLearning;
   override readonly id = 'mymc';
   constructor(private readonly adapterOptions: MinecraftWorldOptions & { cfg: MymcConfigSection }) {
     super({ ...adapterOptions, cfg: new Proxy(adapterOptions.cfg, {
       get: (target, key, receiver) => key === 'hostDecisions' ? undefined : Reflect.get(target, key, receiver),
     }) });
+    this.learning = new WorldOperationLearning(adapterOptions.dataDir, () => this.requestFacts());
   }
   protected override choiceProvider() { return this.adapterOptions.cfg.hostDecisions?.choice?.decisionProvider?.trim() || undefined; }
   override tools() {
-    return super.tools().map(tool => ({ ...tool,
-      name: tool.name.replace(/^mc_/, 'mymc_'), description: adapterText(tool.description) }));
+    return this.learning.tools(super.tools().map(tool => ({ ...tool,
+      name: tool.name.replace(/^mc_/, 'mymc_'), description: adapterText(tool.description) })));
   }
   override async envPromptVars() {
     const values = await super.envPromptVars();
@@ -42,10 +44,11 @@ export class GenericMymcWorld extends MinecraftClientWorld {
   }
   override async start(host: WorldHost) {
     validateHostCombat(this.adapterOptions.cfg);
-    await super.start({ ...host, pushEvent: (event, options) => host.pushEvent({ ...event, source: this.id }, options) });
+    const observedHost = this.learning.start(host);
     try {
+      await super.start({ ...observedHost, pushEvent: (event, options) => observedHost.pushEvent({ ...event, source: this.id }, options) });
       if (this.adapterOptions.cfg.hostDecisions?.combat?.enabled) {
-        const tool = super.tools().find(t => t.name === 'mc_combat_tactic');
+        const tool = this.learning.tools(super.tools(), 'system1').find(t => t.name === 'mc_combat_tactic');
         if (!tool) throw new Error('Minecraft core tactic port unavailable');
         this.fastCombat = new HostCombatDriver(() => this.adapterOptions.cfg, {
           decisions: host.decisions,
@@ -56,6 +59,9 @@ export class GenericMymcWorld extends MinecraftClientWorld {
       }
     } catch (error) { await this.stop(); throw error; }
   }
-  override stop() { this.fastCombat?.stop(); this.fastCombat = null; return super.stop(); }
+  override async stop() {
+    this.fastCombat?.stop(); this.fastCombat = null;
+    try { await super.stop(); } finally { this.learning.stop(); }
+  }
 
 }

@@ -3,6 +3,8 @@ packages:
 
 # Private candidate archives are verified locally and have no registry release timestamp.
 minimumReleaseAgeExclude:
+  - agent-mc-world@0.5.7-dev.20261016.4
+  - agent-mc-world@0.5.7-dev.20261016.7
   - agent-mc-world@0.5.7-dev.20261015.4
   - agent-mc-world@0.5.4
   - agent-mc-world@0.5.3-dev.20261015.1

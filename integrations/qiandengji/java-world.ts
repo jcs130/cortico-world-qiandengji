@@ -3,7 +3,7 @@ import { JavaClientWorld, JAVA_CLIENT_ENVIRONMENT, type MinecraftClientConfig } 
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import type { World, WorldHost, ToolDef, WorldConsoleDecl, WorldRequestFacts } from 'agent-mc-world/contracts';
-import { createMinecraftChoiceTool } from 'agent-mc-world/extension';
+import { createMinecraftChoiceTool, WorldOperationLearning } from 'agent-mc-world/extension';
 import { SkillCatalog } from './skill-catalog.ts';
 import { MessageInbox, MESSAGE_PARAMETERS } from './message-inbox.ts';
 import { GuildProgress } from './guild-progress.ts';
@@ -15,6 +15,7 @@ const names = (text: string) => text.replace(/\bmc_([a-z][a-z0-9_]*)\b/g, 'mymc_
 export class JavaMymcWorld implements World {
   readonly id = 'mymc';
   private readonly body: JavaClientWorld;
+  private readonly learning: WorldOperationLearning;
   private readonly catalog: SkillCatalog;
   private readonly messages: MessageInbox;
   private readonly guildProgress: GuildProgress | null;
@@ -28,6 +29,7 @@ export class JavaMymcWorld implements World {
       dataDir: opts.dataDir, agentName: opts.botName ?? '',
       accountName: mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName),
     });
+    this.learning = new WorldOperationLearning(opts.dataDir, () => this.requestFacts());
     this.catalog = new SkillCatalog(`${opts.cfg.host}:${opts.cfg.port}`, opts.dataDir);
     this.messages = new MessageInbox(`${opts.cfg.host}:${opts.cfg.port}:${mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName)}`, opts.dataDir);
     this.guildProgress = opts.cfg.serverPack === 'qiandengji'
@@ -60,13 +62,14 @@ export class JavaMymcWorld implements World {
       { name: 'mymc_skills', description: 'Query retained original server skill observations; not current ability/mana proof.', parameters: { type: 'object', properties: { id: { type: 'string' } } }, tags: ['read'], handler: async args => ({ text: this.catalog.readout(args.id as string | undefined) }) },
       { name: 'mymc_messages', description: 'Query original received native server messages by query/channel, newest first; read expands an id and review marks consideration only. Includes pre-migration history; historical observations are not new commands. Use mymc_notices for the current client buffer.', parameters: MESSAGE_PARAMETERS, tags: ['read'], handler: async args => this.messages.readout(args) },
     );
-    return tools.map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description) }));
+    return this.learning.tools(tools.map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description) })));
   }
   console(): WorldConsoleDecl {
     return { ...this.body.console(), label: '联机版我的世界 · 真实客户端', promptDocs: [{ key: 'worlds.mymc.envPrompt', title: '真实客户端操作', description: '原生操作与兼容指令边界。', role: 'envPrompt', path: fileURLToPath(new URL('./ENV_PROMPT_JAVA.md', import.meta.url)) }] };
   }
   async start(host: WorldHost) {
     if (this.host) throw new Error('Native World already attached');
+    host = this.learning.start(host);
     this.host = host; const epoch = ++this.epoch;
     try {
       await this.body.start({ ...host, pushEvent: async (event, options) => {
@@ -118,5 +121,8 @@ export class JavaMymcWorld implements World {
       }
     } catch (error) { await this.stop().catch(() => {}); throw error; }
   }
-  async stop() { ++this.epoch; clearInterval(this.timer); this.timer = undefined; this.host = null; await this.body.stop(); }
+  async stop() {
+    ++this.epoch; clearInterval(this.timer); this.timer = undefined; this.host = null;
+    try { await this.body.stop(); } finally { this.learning.stop(); }
+  }
 }

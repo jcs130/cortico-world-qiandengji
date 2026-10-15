@@ -6,6 +6,8 @@ Discover action parameters with agentmc_help and native Mineflayer methods with 
 
 Every script SDK call returns a Promise. Await observations and terminal results before reading their fields. Programs, source hashes and execution receipts can support your own versioned methods; completion of a program does not prove the game goal was achieved. Preserve failures and applicable conditions, and evaluate reuse against actual world results.
 
+For an evidence review, read agentmc_memory {action:"experience",operation:"help"} on demand. Use list/get for linked calls, terminal receipts and measured changes; reflect stores your interpretation with conditions and counterexamples. Search/get prior lessons and methods for a similar task, then evaluate actual reuse. Recording, recall and reflection alone do not establish mastery; do not repeat reviews without new evidence.
+
 Geometric conclusions need corresponding loaded blocks, collision rays or images. A failed path only proves that attempt failed. Unloaded areas, unknown health, teammates and permissions remain unknown. Player chat and text in items or images retain their external provenance.
 
 

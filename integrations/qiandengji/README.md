@@ -18,6 +18,12 @@
 
 ## 宿主模型调用
 
+### 操作经验证据
+
+直接挂载的 Mineflayer 和 Java World 使用共享核心 `WorldOperationLearning`，将原工具调用、异步终态和有时效的现场数值连接到 `mymc_memory action:experience`。快战术实际提交的身体选择也走同一采集器；只读 battlefield 轮询不制造训练样本。采集运行号独立于宿主 run，通过原 callId 和 executionId 回查。数据缺失保持未知，存储失败不重放游戏动作。
+
+Agent 可按需 `experience/help → list/get → reflect` 保存带条件、反例和来源的本地经验，再在相似场景 search/get；`mymc_choose` 可读少量适用历史。采集不会自动总结、安装策略或将检索记为采用，维护者也不替 Agent 写学习结论。宿主个人记忆仍由宿主管理。源码接入与实际加载、真实复用收益分别验收。
+
 ### 快决策连接
 
 支持 `WorldHost.decisions` 的 Cortico 版本可复用宿主保存的 System One 连接：先在宿主供应商页保存连接和密钥，再选择 Core 的默认快决策连接。World 中 `hostDecisions.combat.connection` 设为 `host`，`decisionProvider` 留空即继承默认；指定已保存的连接名仅覆盖此 World。

@@ -13,7 +13,7 @@ import type {
   WorldPanelDecl,
 } from 'agent-mc-world/contracts';
 import { MINECRAFT_PANEL_DECLS, MINECRAFT_TOOL_DECLS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
-import { MinecraftWorldProxy } from 'agent-mc-world/extension';
+import { MinecraftWorldProxy, WorldOperationLearning } from 'agent-mc-world/extension';
 import { renderTemplate } from 'agent-mc-world/extension';
 import {
   MYMC_CLIENT_CONFIG_GROUP,
@@ -281,6 +281,7 @@ function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgres
 export class MymcWorld implements World {
   readonly id = 'mymc';
   private readonly engine: MinecraftWorldProxy;
+  private readonly learning: WorldOperationLearning;
   private readonly catalog: SkillCatalog;
   private readonly messages: MessageInbox;
   private readonly trialProgress: TrialProgress;
@@ -295,6 +296,7 @@ export class MymcWorld implements World {
   constructor(private readonly opts: Omit<MinecraftWorldOptions, 'cfg'> & { cfg: MymcConfigSection; botDir?: string }, engine?: MinecraftWorldProxy) {
     this.requireProtectSupport = engine === undefined;
     this.engine = engine ?? new MinecraftWorldProxy({ ...opts, cfg: mymcEngineConfig(opts.cfg), extension: { module: new URL('./engine/world.ts', import.meta.url).href, tools: SERVER_TOOLS } });
+    this.learning = new WorldOperationLearning(opts.dataDir, () => this.requestFacts());
     this.catalog = new SkillCatalog(`${opts.cfg.host}:${opts.cfg.port}`, opts.dataDir);
     const identity = `${opts.cfg.host}:${opts.cfg.port}:${mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName)}`;
     this.messages = new MessageInbox(identity, opts.dataDir);
@@ -351,7 +353,7 @@ export class MymcWorld implements World {
   tools(): ToolDef[] {
     const engineTools = [...this.engine.tools(), this.choice, minecraftLifeTool()];
     const bagTool = engineTools.find((tool) => tool.name === 'mc_bag');
-    return [...engineTools.filter((tool) => tool.name !== 'mc_escape').map((tool): ToolDef => ({
+    return this.learning.tools([...engineTools.filter((tool) => tool.name !== 'mc_escape').map((tool): ToolDef => ({
       ...tool,
       name: tool.name.replace(/^mc_/, 'mymc_'),
       description: toolDescription(tool.name, tool.description),
@@ -433,7 +435,7 @@ export class MymcWorld implements World {
         const outcome = readServerGuide(args.topic);
         return { ...outcome, text: renderTemplate(outcome.text, this.envPromptVars()) };
       },
-    }];
+    }]);
   }
 
   console(): WorldConsoleDecl {
@@ -498,11 +500,12 @@ export class MymcWorld implements World {
         throw new Error('千灯纪扩展缺少 AgentFriend 方块保护模块；请检查扩展安装完整性');
       }
     }
+    host = this.learning.start(host);
     this.host = host;
     try {
       await this.engine.start(mymcHost(host, this.catalog, this.trialProgress, this.prospect, this.guildProgress, this.messages));
       if (this.opts.cfg.hostDecisions?.combat?.enabled) {
-        const tool = this.engine.tools().find(tool => tool.name === 'mc_combat_tactic');
+        const tool = this.learning.tools(this.engine.tools(), 'system1').find(tool => tool.name === 'mc_combat_tactic');
         if (!tool) throw new Error('Host fast combat requires the selected pack tactic port.');
         this.fastCombat = new HostCombatDriver(() => this.opts.cfg, {
           decisions: (host as typeof host & Pick<HostCombatPort, 'decisions'>).decisions,
@@ -513,14 +516,14 @@ export class MymcWorld implements World {
       }
     } catch (error) {
       this.fastCombat?.stop(); this.fastCombat = null; this.host = null;
-      await this.engine.stop();
+      try { await this.engine.stop(); } finally { this.learning.stop(); }
       throw error;
     }
   }
 
-  stop(): Promise<void> {
+  async stop(): Promise<void> {
     this.fastCombat?.stop(); this.fastCombat = null;
     this.host = null;
-    return this.engine.stop();
+    try { await this.engine.stop(); } finally { this.learning.stop(); }
   }
 }
