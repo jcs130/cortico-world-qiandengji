@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url';
-import { JavaClientWorld, JAVA_CLIENT_ENVIRONMENT, GameMemoryBook, GameMemoryService, GAME_MEMORY_TOOL, type MinecraftClientConfig } from 'agent-mc-world/client';
+import { JavaClientWorld, JAVA_CLIENT_ENVIRONMENT, type MinecraftClientConfig } from 'agent-mc-world/client';
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import type { World, WorldHost, ToolDef, WorldConsoleDecl, WorldRequestFacts } from 'agent-mc-world/contracts';
@@ -18,20 +18,20 @@ export class JavaMymcWorld implements World {
   private readonly catalog: SkillCatalog;
   private readonly messages: MessageInbox;
   private readonly guildProgress: GuildProgress | null;
-  private readonly memory: GameMemoryService;
   private host: WorldHost | null = null;
   private timer?: ReturnType<typeof setInterval>;
   private renewing = false;
   private epoch = 0;
   private helpText(text: string) { const mapped = names(text); return this.opts.cfg.javaHostControl?.enabled ? mapped.replace('Claim mymc_control explicitly, then renew the lease before expiry.', 'The host has explicitly claimed this body and maintains its lease. Use mymc_stop to stop work; do not claim it again.') : mapped; }
   constructor(private readonly opts: { cfg: MymcConfigSection; dataDir: string; botDir?: string; timezone?: string; botName?: string }, body?: JavaClientWorld) {
-    this.body = body ?? new JavaClientWorld(opts.cfg as MinecraftClientConfig);
+    this.body = body ?? new JavaClientWorld(opts.cfg as MinecraftClientConfig, undefined, {
+      dataDir: opts.dataDir, agentName: opts.botName ?? '',
+      accountName: mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName),
+    });
     this.catalog = new SkillCatalog(`${opts.cfg.host}:${opts.cfg.port}`, opts.dataDir);
     this.messages = new MessageInbox(`${opts.cfg.host}:${opts.cfg.port}:${mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName)}`, opts.dataDir);
     this.guildProgress = opts.cfg.serverPack === 'qiandengji'
       ? new GuildProgress(`${opts.cfg.host}:${opts.cfg.port}:${mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName)}`, opts.dataDir) : null;
-    const notes = join(opts.dataDir, 'minecraft-memory');
-    this.memory = new GameMemoryService(new GameMemoryBook(notes), notes);
   }
   envPromptVars() { return { nativeEnvironment: this.helpText(JAVA_CLIENT_ENVIRONMENT), serverGuideIndex: this.opts.cfg.serverPack === 'qiandengji' ? serverGuideIndex() : '' }; }
   requestFacts(): WorldRequestFacts | null {
@@ -49,19 +49,6 @@ export class JavaMymcWorld implements World {
       return !['mc_help', 'mc_script'].includes(tool.name) || tool.name === 'mc_script' && !args.api ? result : typeof result === 'string' ? this.helpText(result) : { ...result, text: this.helpText(result.text) };
     } } satisfies ToolDef));
     tools.push(createMinecraftChoiceTool(() => this.host, () => this.requestFacts(), () => this.opts.cfg.hostDecisions?.choice?.decisionProvider?.trim() || undefined));
-    tools.push({ ...GAME_MEMORY_TOOL, handler: async (args, ctx) => {
-      try {
-        const bag = this.body.tools().find(tool => tool.name === 'mc_state')!;
-        const result = await bag.handler({}, ctx);
-        if (typeof result !== 'string' && result.failed) return result;
-        const state = JSON.parse(typeof result === 'string' ? result : result.text);
-        const dimension = String(state.dimension ?? '').replace(/^minecraft:/, '') || null;
-        const remembered = await this.memory.execute(args, { scope: { realm: `weak:${this.opts.cfg.host}:${this.opts.cfg.port}|`, account: `${this.opts.cfg.auth ?? 'offline'}:${mymcLoginName(this.opts.cfg.username, this.opts.cfg.preserveLoginName)}`, agent: this.opts.botName ?? '' }, dimension,
-          capture: () => { if (!state.connected || !dimension) throw new Error('Native body disconnected'); return { observedAt: state.sampledAt, dimension, reference: `native:${state.generation}:${state.sampledAt}`, content: JSON.stringify({ position: state.position, health: state.health, food: state.food, inventory: state.inventory }) }; },
-        }, this.opts.cfg.memory, ctx.signal);
-        return { text: JSON.stringify(remembered), meta: { gameMemory: remembered } };
-      } catch (error) { return { text: String(error), failed: true }; }
-    } });
     const histories = ['minecraft-works.json', 'mymc-trial-progress.json', 'mymc-guild-progress.json'];
     tools.push({ name: 'mymc_history', description: 'Read retained pre-migration goals, trial and guild records. Historical evidence only; does not submit or replay actions. Omit file to list. Long originals support character offset/limit.', parameters: { type: 'object', properties: { file: { type: 'string', enum: histories }, offset: { type: 'integer', minimum: 0 }, limit: { type: 'integer', minimum: 1, maximum: 16000 } } }, tags: ['read'], handler: async args => {
       if (!args.file) return { text: JSON.stringify({ historical: true, files: histories }) };

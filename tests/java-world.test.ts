@@ -4,10 +4,27 @@ import { join } from 'node:path';
 import { afterEach, expect, it, vi } from 'vitest';
 import { JavaMymcWorld } from '../integrations/qiandengji/java-world.ts';
 import { MYMC_DEFAULTS } from '../integrations/qiandengji/config.ts';
-import { nullLogger } from 'agent-mc-world/client';
+import { nullLogger, GameMemoryBook } from 'agent-mc-world/client';
 import { GuildProgress } from '../integrations/qiandengji/guild-progress.ts';
 const dirs: string[] = [];
 afterEach(() => { vi.useRealTimers(); for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
+
+it('delegates native offline memory to the shared core and preserves the previous account/agent notebook',async()=>{
+  const dir=mkdtempSync(join(tmpdir(),'native-memory-parity-'));dirs.push(dir);
+  const cfg={...structuredClone(MYMC_DEFAULTS),host:'example.test',username:'visitor',preserveLoginName:false,provider:'java-client' as const,serverPack:'none' as const};
+  const book=new GameMemoryBook(join(dir,'minecraft-memory'));
+  book.execute({action:'remember',kind:'lesson',summary:'旧版原生笔记',content:'task:blocked dirt raycast, not wheat.',source:{kind:'agent_note'}},
+    {scope:{realm:'weak:example.test:25565|',account:'offline:ag_visitor',agent:'fixture-agent'},dimension:null});
+  const world=new JavaMymcWorld({cfg,dataDir:dir,botName:'fixture-agent'});
+  const memories=world.tools().filter(t=>t.name==='mymc_memory');expect(memories).toHaveLength(1);
+  const result:any=await memories[0].handler({action:'search',query:'旧版'},{role:'test',log:nullLogger()});
+  expect(result.failed).not.toBe(true);expect(JSON.parse(result.text)).toMatchObject({total:1,currentWorldVerified:false});
+  const capture:any=await memories[0].handler({action:'capture'},{role:'test',log:nullLogger()});
+  expect(capture.failed).toBe(true);expect(capture.text).toContain('disconnected');
+  const other=new JavaMymcWorld({cfg,dataDir:dir,botName:'other-agent'});
+  const isolated:any=await other.tools().find(t=>t.name==='mymc_memory')!.handler({action:'search',dimension:'*'},{role:'test',log:nullLogger()});
+  expect(JSON.parse(isolated.text).total).toBe(0);
+});
 
 it('pins native guild stages with the same ledger as Mineflayer and persists dated observations', async () => {
   const dir=mkdtempSync(join(tmpdir(),'native-guild-'));dirs.push(dir);
