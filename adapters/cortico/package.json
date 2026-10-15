@@ -43,7 +43,7 @@
     "node": ">=22"
   },
   "dependencies": {
-    "agent-mc-world": "0.4.0"
+    "agent-mc-world": "^0.5.2"
   },
   "peerDependenciesMeta": {
     "cortico": {

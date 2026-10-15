@@ -11,7 +11,7 @@
     "./manifest": "./dist/data-packs/qiandengji/manifest.js"
   },
   "dependencies": {
-    "agent-mc-world": "^0.5.0",
+    "agent-mc-world": "^0.5.2",
     "vec3": "0.2.0"
   },
   "engines": {
