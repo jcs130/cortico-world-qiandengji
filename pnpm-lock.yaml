@@ -587,7 +587,7 @@ packages:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
   agent-mc-world@file:vendor/agent-mc-world-0.5.4.tgz:
-    resolution: {integrity: sha512-Ic/7FMX7L6vtO9b6flYKLkc3Q3qwYkUuAS5vF8HDoIBQhN7PL4VJfFrpi4p+2A3UFYBfNdo6sp+ipN0D15XAtA==, tarball: file:vendor/agent-mc-world-0.5.4.tgz}
+    resolution: {integrity: sha512-Ncg5IHO0FfprfAmfdnczTJkT9Lxpwx0Pve3YYGamFVtUiGsWPNtU2JmqeyPpxfYkA0fmQaj++YXRKxVl5kWpmQ==, tarball: file:vendor/agent-mc-world-0.5.4.tgz}
     version: 0.5.4
     engines: {node: '>=22'}
     hasBin: true
