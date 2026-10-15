@@ -23,8 +23,8 @@ it('does not register or request server plugin channels without an explicit exte
   expect(protocol.listenerCount('custom_payload')).toBe(0);
 });
 
-it('relays verified original appearance assets over both existing viewer paths and releases all observers', async () => {
-  const { bot, protocol } = viewerBot();
+it.each(['1.20.6', '1.21.1'])('relays verified original appearance assets on Java %s over both viewer paths and releases observers', async version => {
+  const { bot, protocol } = viewerBot(version);
   const uuid = '00000000-0000-4000-8000-000000000001';
   const writes: Array<{ channel: string; data: Buffer }> = [];
   let registrations = 0;
@@ -62,7 +62,9 @@ it('relays verified original appearance assets over both existing viewer paths a
   const viewer = await startModernViewer(bot as never, {
     serverProtocol: serverViewerProtocol, port: await freeViewerPort(), assetsDir: MYMC_DEFAULTS.viewerAssetsDir,
   });
-  expect(registrations).toBe(1);
+  // The spectator-window bridge has a separate version gate; appearance must
+  // also work on the original player's 1.21.1 connection without that bridge.
+  expect(registrations).toBe(version === '1.20.6' ? 1 : 0);
   const clients: Socket[] = [];
   const connect = async (path: string) => {
     const events: Array<{ name: string; value: Record<string, unknown> }> = [];

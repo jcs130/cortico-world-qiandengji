@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       agent-mc-world:
-        specifier: file:vendor/agent-mc-world-0.4.1-native-budget-20261014.tgz
-        version: file:vendor/agent-mc-world-0.4.1-native-budget-20261014.tgz
+        specifier: file:vendor/agent-mc-world-0.4.8-dev.20261015.1.tgz
+        version: file:vendor/agent-mc-world-0.4.8-dev.20261015.1.tgz
       vec3:
         specifier: 0.2.0
         version: 0.2.0
@@ -586,9 +586,9 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.4.1-native-budget-20261014.tgz:
-    resolution: {integrity: sha512-L2l1Ims8DBf5B3Hbz2DlEei7JtBwnu2QPyyOvrsBEdJcE7pmTM9IkL8UpPliJsmSI/MyhaQ3V0wjOSDOwuBENQ==, tarball: file:vendor/agent-mc-world-0.4.1-native-budget-20261014.tgz}
-    version: 0.4.1
+  agent-mc-world@file:vendor/agent-mc-world-0.4.8-dev.20261015.1.tgz:
+    resolution: {integrity: sha512-LEi8Ls+aEikkk1bpvdW2/2H6R5duyl9gaSyqf9oVJ4KbDTpGxeuQyk9sGQKJmEpHyXdtQnAVYDwehW6bqj9S1A==, tarball: file:vendor/agent-mc-world-0.4.8-dev.20261015.1.tgz}
+    version: 0.4.8-dev.20261015.1
     engines: {node: '>=22'}
     hasBin: true
 
@@ -1960,7 +1960,7 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.4.1-native-budget-20261014.tgz:
+  agent-mc-world@file:vendor/agent-mc-world-0.4.8-dev.20261015.1.tgz:
     dependencies:
       '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.5)
       ajv: 8.20.0
@@ -1970,6 +1970,7 @@ snapshots:
       playwright-core: 1.63.0
       prismarine-auth: 3.1.1
       prismarine-block: 1.23.0
+      prismarine-chunk: 1.41.0
       prismarine-viewer: 1.33.0
       ses: 2.3.0
       socket.io: 4.8.3

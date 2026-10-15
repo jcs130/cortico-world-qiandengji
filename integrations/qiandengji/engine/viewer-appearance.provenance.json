@@ -1,0 +1,22 @@
+{
+  "repository": "https://github.com/jcs130/mc-visual-console",
+  "commit": "eb2c9d174e213962561b391c6e0216647e54d5d6",
+  "inputs": [
+    {
+      "file": "host/viewer-appearance.mjs",
+      "sha256": "e5bee17212d3bc67652f0e783423f3671a43ddc6635867d7d66d4f117d01ed7a"
+    },
+    {
+      "file": "host/viewer-appearance.d.mts",
+      "sha256": "1239e03bd366d06460c39a3ba94d32dcc94fc03a52d6654c8123f2694259f837"
+    },
+    {
+      "file": "host/viewer-ysm-assets.mjs",
+      "sha256": "236e1491afad6ac19136cd5b19d1c550a522d07a7649535db1eab2d5ea8a9382"
+    },
+    {
+      "file": "host/viewer-ysm-motion.mjs",
+      "sha256": "a16907742394ba2d2bb1c4791749e52baf88a5f6e14f065a6cd5416784bce860"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { createViewerAppearanceBridge } from './viewer-appearance.mjs';
+import { createViewerAppearanceBridge, supportsViewerAppearanceVersion } from './viewer-appearance.mjs';
 import { createViewerObserverBridge } from './viewer-observer.mjs';
 import { viewerCastCommand, viewerCastResult } from './viewer-cast.ts';
 import type { ViewerSkills } from 'agent-mc-world/extension';
@@ -151,6 +151,6 @@ export function parseViewerCustomEvent(channel: unknown, data: unknown): ViewerC
     body: row.body, tone: tones.has(String(row.tone)) ? row.tone as ViewerCustomEvent['tone'] : 'arcane',
     ...(position ? { position } : {}) };
 }
-export const serverViewerProtocol: ViewerServerProtocol = { createAppearance: bot => bot.version === '1.20.6' ? createViewerAppearanceBridge(bot) : null, createObserver: bot => bot.version === '1.20.6' ? createViewerObserverBridge(bot) : null, castCommand:viewerCastCommand,castResult:viewerCastResult,stateChannel: VIEWER_STATE_CHANNEL, parseSkillsPayload, manaSnapshotFromText, spellCatalogueFromText, mergeViewerSkillState, mergeViewerSpellCatalogue, parseViewerCustomEvent };
+export const serverViewerProtocol: ViewerServerProtocol = { createAppearance: bot => supportsViewerAppearanceVersion(bot.version) ? createViewerAppearanceBridge(bot) : null, createObserver: bot => bot.version === '1.20.6' ? createViewerObserverBridge(bot) : null, castCommand:viewerCastCommand,castResult:viewerCastResult,stateChannel: VIEWER_STATE_CHANNEL, parseSkillsPayload, manaSnapshotFromText, spellCatalogueFromText, mergeViewerSkillState, mergeViewerSpellCatalogue, parseViewerCustomEvent };
 
 const point = (x:unknown,y:unknown,z:unknown) => finite(x) && finite(y) && finite(z) ? {x,y,z} : null;
