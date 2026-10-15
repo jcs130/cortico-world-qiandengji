@@ -1,5 +1,6 @@
 import { COMBAT_EXECUTION_DEFAULTS, type CombatExecutionPolicy } from './engine/combat-decision-types.ts';
 import type { ConfigGroup } from 'agent-mc-world/contracts';
+import { COMBAT_DECISION_DEFAULTS } from 'agent-mc-world/decisions';
 import {
   MINECRAFT_CLIENT_CONFIG_GROUP,
   MINECRAFT_CONFIG_GROUP,
@@ -67,7 +68,9 @@ const baseRepeatSuccessFallback = (MINECRAFT_DEFAULTS as {
 
 export const MYMC_DEFAULTS: MymcConfigSection = {
   ...structuredClone(MINECRAFT_DEFAULTS),
-  hostDecisions: { choice: { decisionProvider: '' } },
+  hostDecisions: { choice: { decisionProvider: '' }, combat: {
+    ...COMBAT_DECISION_DEFAULTS, connection: 'auto', decisionProvider: '', model: '', apiKeyEnv: '',
+  } },
   serverTravel: { enabled: false },
   combatOptions: structuredClone(COMBAT_EXECUTION_DEFAULTS),
   // Preserve deployments created before the engine supplied this option.

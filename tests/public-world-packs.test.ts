@@ -7,6 +7,18 @@ import { readServerGuide, MYMC_GUIDE_TOPICS } from '../integrations/qiandengji/s
 import { QIANDENGJI_PACK } from '../integrations/qiandengji/data-packs/qiandengji/manifest.ts';
 
 describe('one public World, explicitly selected server pack', () => {
+  it('supplies every declared console configuration from the owning defaults without enabling host inference',()=>{
+    const cfg=MYMC.defaults(),world=MYMC.create({cfg} as never);
+    for(const group of world.console?.().config??[])for(const path of Object.keys(group.schema.properties)){
+      const keys=path.replace(/^worlds\.mymc\./,'').split('.');
+      const value=keys.reduce((object:any,key)=>object?.[key],cfg);
+      expect(value,path).not.toBeUndefined();
+    }
+    expect(cfg.hostDecisions?.combat?.enabled).toBe(false);
+    expect(cfg.hostDecisions?.combat?.connection).toBe('auto');
+    expect(cfg.hostDecisions?.combat?.decisionProvider).toBe('');
+    expect(JSON.parse(JSON.stringify(mymcEngineConfig(cfg)))).not.toHaveProperty('hostDecisions');
+  });
   it('defaults to generic tools, normal account identity and no server commands or network', async () => {
     const fetch = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network forbidden'));
     try {
