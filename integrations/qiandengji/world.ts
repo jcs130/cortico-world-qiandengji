@@ -338,6 +338,7 @@ export class MymcWorld implements World {
       return text ? { text, parts: [{ key: 'messages', text }], snapshotTypes: [] } : null;
     }
     return {
+      ...facts,
       text: [toMymcText(facts.text), ...additions.map(part => part.text)].join('\n'),
       ...(facts.parts?.length ? { parts: [...facts.parts.map(part => ({ ...part, text: toMymcText(part.text) })),
         ...additions] } : {}),

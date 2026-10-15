@@ -148,12 +148,14 @@ describe('Mymc World contract', () => {
   it('maps complete observed facts and their snapshot coverage without changing engine data', () => {
     const fake = fakeEngine();
     const observed = { text: '[Minecraft 观察于 2026-01-01T00:00:00Z] mc_queue: 工作中，背包已同步',
-      snapshotTypes: ['minecraft.world.snapshot', 'minecraft.task.queue'] };
+      snapshotTypes: ['minecraft.world.snapshot', 'minecraft.task.queue'],experience:{scope:{realm:'test',account:'offline:Test',agent:'Test'},
+        observation:{at:new Date().toISOString(),position:{x:1,y:64,z:2},dimension:'overworld',health:20,food:18,inventory:null}} };
     Object.assign(fake.engine, { requestFacts: () => observed });
     const before = structuredClone(observed);
     const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
     const facts = world.requestFacts()!;
     expect(facts.snapshotTypes).toEqual(['mymc.world.snapshot', 'mymc.task.queue']);
+    expect(facts.experience).toEqual(observed.experience);
     expect(facts.text).toContain('mymc_queue');
     expect(facts.text).toContain('2026-01-01T00:00:00Z');
     expect(facts.text).toContain('/mycli capabilities');
