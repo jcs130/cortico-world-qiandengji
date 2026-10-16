@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       agent-mc-world:
-        specifier: file:vendor/agent-mc-world-0.5.7-dev.20261016.38.tgz
-        version: file:vendor/agent-mc-world-0.5.7-dev.20261016.38.tgz
+        specifier: file:vendor/agent-mc-world-0.5.7-dev.20261016.39.tgz
+        version: file:vendor/agent-mc-world-0.5.7-dev.20261016.39.tgz
       vec3:
         specifier: 0.2.0
         version: 0.2.0
@@ -586,8 +586,8 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-dev.20261016.38.tgz:
-    resolution: {integrity: sha512-pHyvxLBA/bVkx1aA92LXvZl95HxuSdkB0FPa3sM0T4trPGinC6naLBTtCslvzznSc0AWtvcX64/44zNtv13zgg==, tarball: file:vendor/agent-mc-world-0.5.7-dev.20261016.38.tgz}
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-dev.20261016.39.tgz:
+    resolution: {integrity: sha512-2VQHni/08/OQsxkVDx3tQOYyU9u9jVjdcagst1ssU4L8kgAn+MAr/+wtkXsEJFbP8c9djqq6gl9N1h+Wi9DOFQ==, tarball: file:vendor/agent-mc-world-0.5.7-dev.20261016.39.tgz}
     version: 0.5.7-dev.20261016.30
     engines: {node: '>=22'}
     hasBin: true
@@ -1948,7 +1948,7 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-dev.20261016.38.tgz:
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-dev.20261016.39.tgz:
     dependencies:
       '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.5)
       ajv: 8.20.0
