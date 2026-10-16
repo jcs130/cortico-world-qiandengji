@@ -22,8 +22,8 @@
  */
 
 import type {
-  ConsoleClientBundle,
-  ConsolePanelContext,
+  WebUiClientBundle,
+  WebUiPanelContext,
 } from 'cortico/web/shared/client-panel.ts';
 import './style.css';
 import { accessPanel } from './access.ts';
@@ -218,7 +218,7 @@ export interface MinecraftMsgLine {
   say(text?: string | null, bad?: boolean): void;
 }
 
-export function msgLine(ctx: ConsolePanelContext, cls?: string): MinecraftMsgLine {
+export function msgLine(ctx: WebUiPanelContext, cls?: string): MinecraftMsgLine {
   const el = ctx.ui.msgline('');
   if (cls) el.classList.add(cls);
   return {
@@ -232,7 +232,7 @@ export function msgLine(ctx: ConsolePanelContext, cls?: string): MinecraftMsgLin
 
 // ---------------------------------------------------------------------------
 
-const bundle: ConsoleClientBundle = {
+const bundle: WebUiClientBundle = {
   // 键是**局部** panel id,与服务端 `console().panels[].id` 一一对应。
   panels: {
     mount: mountPanel,

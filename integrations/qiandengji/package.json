@@ -1,8 +1,8 @@
 {
   "name": "cortico-world-qiandengji",
-  "version": "0.4.1-dev.20261017.1",
+  "version": "0.4.1-rc.1",
   "type": "module",
-  "description": "联机版我的世界：内置现代 Web 可视化、丰富的游戏信息，适配千灯纪服务器技能、玩法和模组内容。",
+  "description": "通用 Minecraft Agent World，内置现代 Web 可视化，可选千灯纪服务器资料包。",
   "main": "./dist/world/index.js",
   "exports": {
     ".": "./dist/world/index.js",
@@ -11,10 +11,11 @@
   },
   "cortico": {
     "kind": "world",
-    "api": 5,
+    "api": 6,
     "displayName": "联机版我的世界",
-    "consoleClient": "dist/console.js",
-    "consoleStyle": "dist/console.css"
+    "webUiClient": "dist/console.js",
+    "webUiStyle": "dist/console.css",
+    "describe": "describe.json"
   },
   "keywords": [
     "cortico-world",
@@ -35,12 +36,12 @@
     "node": ">=22"
   },
   "dependencies": {
-    "agent-mc-world": "^0.5.7-dev.20261017.2",
-    "agent-mc-qiandengji": "^0.5.0-dev.20261017.1",
+    "agent-mc-world": "^0.5.7-rc.2",
+    "agent-mc-qiandengji": "^0.5.0-rc.1",
     "vec3": "0.2.0"
   },
   "peerDependencies": {
-    "cortico": ">=0.1.8 <0.2.0"
+    "cortico": ">=0.2.1 <0.3.0"
   },
   "peerDependenciesMeta": {
     "cortico": {
@@ -50,7 +51,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "describe.json"
   ],
   "scripts": {
     "build": "node ../../scripts/build-extensions.mjs",

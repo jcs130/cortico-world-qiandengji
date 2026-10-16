@@ -5,8 +5,8 @@
  */
 
 import type {
-  ConsolePanelContext,
-  ConsolePanel,
+  WebUiPanelContext,
+  WebUiPanel,
 } from 'cortico/web/shared/client-panel.ts';
 import type { MinecraftLogEntry } from './client.ts';
 
@@ -30,8 +30,8 @@ const LANE_ZH: Record<string, string> = Object.fromEntries(LANES);
 const KEEP = 2000;
 const POLL_MS = 2000;
 
-export const logPanel: ConsolePanel = {
-  mount(ctx: ConsolePanelContext) {
+export const logPanel: WebUiPanel = {
+  mount(ctx: WebUiPanelContext) {
     const { ui, root } = ctx;
     const card = ui.foldSheet('log', { title: 'World 日志', en: 'module log', desc: DESC });
     const s = card.body;

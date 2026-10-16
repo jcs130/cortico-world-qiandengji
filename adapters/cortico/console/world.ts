@@ -15,8 +15,8 @@
  */
 
 import type {
-  ConsolePanelContext,
-  ConsolePanel,
+  WebUiPanelContext,
+  WebUiPanel,
 } from 'cortico/web/shared/client-panel.ts';
 import {
   errText,
@@ -125,8 +125,8 @@ function infoRows(w: MinecraftWorldInfo, now: Date): Array<{ k: string; v: strin
   return rows;
 }
 
-export const worldPanel: ConsolePanel = {
-  mount(ctx: ConsolePanelContext) {
+export const worldPanel: WebUiPanel = {
+  mount(ctx: WebUiPanelContext) {
     const { ui, root } = ctx;
 
     // -----------------------------------------------------------------------
@@ -439,7 +439,7 @@ export const worldPanel: ConsolePanel = {
  * 卡片内的折叠块。`ui.foldSheet` 折的是整张卡,而这里要的是"卡里那几项平时收着"
  * ——把次要参数摊在主表单里,主表单就没有主次可言了。
  */
-function fold(ctx: ConsolePanelContext, title: string, note: string): { el: HTMLElement; body: HTMLElement } {
+function fold(ctx: WebUiPanelContext, title: string, note: string): { el: HTMLElement; body: HTMLElement } {
   const el = ctx.ui.h('details', 'mc-fold');
   const sum = ctx.ui.h('summary', null, title);
   const body = ctx.ui.h('div', 'mc-foldbody');

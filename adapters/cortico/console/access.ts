@@ -16,8 +16,8 @@
  */
 
 import type {
-  ConsolePanelContext,
-  ConsolePanel,
+  WebUiPanelContext,
+  WebUiPanel,
 } from 'cortico/web/shared/client-panel.ts';
 import {
   errText,
@@ -46,8 +46,8 @@ const LEVELS = [
   { value: '4', label: '4 级 · 全部(含 /stop)' },
 ];
 
-export const accessPanel: ConsolePanel = {
-  mount(ctx: ConsolePanelContext) {
+export const accessPanel: WebUiPanel = {
+  mount(ctx: WebUiPanelContext) {
     const { ui, root } = ctx;
 
     // -----------------------------------------------------------------------

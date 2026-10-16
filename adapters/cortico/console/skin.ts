@@ -14,8 +14,8 @@
  */
 
 import type {
-  ConsolePanelContext,
-  ConsolePanel,
+  WebUiPanelContext,
+  WebUiPanel,
 } from 'cortico/web/shared/client-panel.ts';
 import {
   errText,
@@ -37,8 +37,8 @@ const ROLE_ZH: Record<MinecraftSkinRole['role'], { label: string; note: string }
 
 const FACE_PX = 72;
 
-export const skinPanel: ConsolePanel = {
-  mount(ctx: ConsolePanelContext) {
+export const skinPanel: WebUiPanel = {
+  mount(ctx: WebUiPanelContext) {
     const { ui, root } = ctx;
 
     const card = ui.sheet({ title: '皮肤', en: 'skins', desc: DESC });

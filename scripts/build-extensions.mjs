@@ -1,8 +1,9 @@
-/** Build installable API 5 Worlds from this repository's owned sources. */
+/** Build the public API 6 World and private API 5 compatibility adapter. */
 import { build, transform } from 'esbuild';
-import { cp, mkdir, readFile, readdir, writeFile, rm } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, writeFile, rm, mkdtemp } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { tmpdir } from 'node:os';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const walk = async dir => (await Promise.all((await readdir(dir, { withFileTypes: true })).map(e =>
@@ -41,8 +42,8 @@ for (const folder of ['adapters/cortico', 'integrations/qiandengji']) {
   await cp(join(root, 'LICENSE'), join(base, 'LICENSE'));
   await writeFile(join(base, 'dist/verify.mjs'), `import {readFile,access} from 'node:fs/promises';
 const root=new URL('../',import.meta.url),p=JSON.parse(await readFile(new URL('package.json',root),'utf8'));
-if(p.type!=='module'||p.cortico?.kind!=='world'||p.cortico.api!==5||!p.keywords?.includes('cortico-world'))throw Error('Invalid Cortico World manifest');
-for(const file of [p.main,p.cortico.consoleClient,p.cortico.consoleStyle,'LICENSE','README.md'])await access(new URL(file,root));
+if(p.type!=='module'||p.cortico?.kind!=='world'||![5,6].includes(p.cortico.api)||!p.keywords?.includes('cortico-world'))throw Error('Invalid Cortico World manifest');
+for(const file of [p.main,p.cortico.webUiClient??p.cortico.consoleClient,p.cortico.webUiStyle??p.cortico.consoleStyle,'LICENSE','README.md',...(p.cortico.api===6?[p.cortico.describe]:[])])await access(new URL(file,root));
 console.log('Cortico World package files verified');
 `);
   if (folder === 'adapters/cortico') {
@@ -61,4 +62,27 @@ console.log('Cortico World package files verified');
   await writeFile(join(base, 'dist/host-decisions.js'), 'export * from "agent-mc-qiandengji/host-decisions";\n');
   await writeFile(join(base, 'dist/pack.js'), 'export * from "agent-mc-qiandengji/manifest";\n');
 }
-console.log('Built neutral server pack and thin API 5 adapters; no host framework enters the server pack.');
+
+// Generate the market catalog from real generic, server and Java tool
+// declarations in an empty temporary data directory, never a deployment.
+const neutral = await import(pathToFileURL(join(pack, 'dist/neutral.js')).href);
+const { describeMymcImplementations } = await import(pathToFileURL(join(pack, 'dist/describe.js')).href);
+const temporary = await mkdtemp(join(tmpdir(), 'mymc-describe-'));
+try {
+  const context = cfg => ({ cfg, timezone: 'UTC', botName: 'DescribeOnly', botDir: temporary, dataDir: temporary });
+  const generic = new neutral.GenericMymcWorld(context(structuredClone(neutral.WORLD_DEFAULTS)));
+  const server = new neutral.MymcWorld(context({ ...structuredClone(neutral.WORLD_DEFAULTS), serverPack: 'qiandengji' }));
+  const java = new neutral.JavaMymcWorld(context({ ...structuredClone(neutral.WORLD_DEFAULTS), provider: 'java-client', serverPack: 'qiandengji' }));
+  const describe = describeMymcImplementations([generic, server, java]);
+  const prompts = [];
+  for (const doc of generic.console?.('zh')?.promptDocs ?? []) if (doc.role === 'envPrompt')
+    prompts.push({ key: doc.key, title: doc.title, role: doc.role, content: await readFile(doc.path, 'utf8') });
+  const base = join(root, 'integrations/qiandengji');
+  await writeFile(join(base, 'describe.json'), JSON.stringify({ ...describe, ...(prompts.length ? { prompts } : {}) }, null, 2) + '\n');
+  const entry = join(base, 'dist/world/cortico.js');
+  await writeFile(entry, (await readFile(entry, 'utf8')) + '\nMYMC.describe = ' + JSON.stringify(describe) + ';\n');
+} finally {
+  if (dirname(temporary) !== resolve(tmpdir()) || !temporary.split(/[\\/]/).at(-1).startsWith('mymc-describe-')) throw Error('Invalid description temporary path');
+  await rm(temporary, { recursive: true, force: true });
+}
+console.log('Built neutral server pack, API 6 public World and private compatibility adapter; no host framework enters the server pack.');

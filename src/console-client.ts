@@ -1,8 +1,8 @@
-import type { ConsoleClientBundle } from 'cortico/web/shared/client-panel.ts';
+import type { WebUiClientBundle } from 'cortico/web/shared/client-panel.ts';
 import minecraftBundle from '../adapters/cortico/console/client.ts';
 import { connectionPanel } from './connection-panel.ts';
 
-const bundle: ConsoleClientBundle = {
+const bundle: WebUiClientBundle = {
   panels: {
     connection: connectionPanel,
     mount: minecraftBundle.panels.mount,

@@ -4,6 +4,7 @@ packages:
 # Private candidate archives are verified locally and have no registry release timestamp.
 minimumReleaseAgeExclude:
   - agent-mc-world
+  - cortico@0.2.1
 
 allowBuilds:
   canvas: false

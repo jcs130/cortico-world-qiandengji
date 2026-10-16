@@ -4,8 +4,8 @@
  */
 
 import type {
-  ConsolePanelContext,
-  ConsolePanel,
+  WebUiPanelContext,
+  WebUiPanel,
 } from 'cortico/web/shared/client-panel.ts';
 import {
   errText,
@@ -56,7 +56,7 @@ interface MountRow {
 }
 
 /** 一条链路一行（.mountrow：圆点、名字、状态词、细节、动作区）。 */
-function mountRow(ctx: ConsolePanelContext, name: string): MountRow {
+function mountRow(ctx: WebUiPanelContext, name: string): MountRow {
   const { ui } = ctx;
   const el = ui.h('div', 'mountrow');
   const dot = ui.h('span', 'navdot');
@@ -84,7 +84,7 @@ interface LaneView {
   stop: HTMLButtonElement;
 }
 
-function laneView(ctx: ConsolePanelContext, name: string): LaneView {
+function laneView(ctx: WebUiPanelContext, name: string): LaneView {
   const row = mountRow(ctx, name);
   const stop = ctx.ui.button('停止', { size: 'sm', variant: 'danger' });
   const start = ctx.ui.button('启动', { size: 'sm', variant: 'primary' });
@@ -121,8 +121,8 @@ function renderMount<T extends LaneState>(
 
 // ---------------------------------------------------------------------------
 
-export const mountPanel: ConsolePanel = {
-  mount(ctx: ConsolePanelContext) {
+export const mountPanel: WebUiPanel = {
+  mount(ctx: WebUiPanelContext) {
     const { ui, root } = ctx;
     const card = ui.sheet({ title: '挂载', en: 'bring-up', desc: DESC });
 
@@ -252,7 +252,7 @@ export const mountPanel: ConsolePanel = {
 
     const choose = async (
       button: HTMLButtonElement,
-      options: Parameters<ConsolePanelContext['pickPath']>[0],
+      options: Parameters<WebUiPanelContext['pickPath']>[0],
       groupId: string,
       key: string,
       after: () => Promise<unknown>,
@@ -382,7 +382,7 @@ export const mountPanel: ConsolePanel = {
  * 不替人做主**,只带起已声明要用的那几条。
  */
 async function mountAll(
-  ctx: ConsolePanelContext,
+  ctx: WebUiPanelContext,
   msg: MinecraftMsgLine,
   btnAll: HTMLButtonElement,
   render: (lane: Lane, st: LaneState | null) => void,

@@ -1,0 +1,3590 @@
+{
+  "tools": [
+    {
+      "name": "mymc_attention",
+      "description": "Read up to 3 directly visible highlights. Optional mode changes only observation focus (combat: threats; peaceful: people/life plus urgent threats; explore: nearby variety). Does not alter tasks, combat policy or movement. Occlusion/unknown chunks fail closed. Hearing and predictions are separate on-demand tools.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "peaceful",
+              "explore",
+              "combat"
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8,
+            "description": "Default 3; compact highlights only."
+          }
+        },
+        "additionalProperties": false
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_bag",
+      "description": "Read your inventory right now: how many of the 36 slots are used, what is in them, what is in your hand, and what armour you are wearing. Read-only and instant — it never moves you, never touches the world and never touches the work queue. Set item to a material ID, Chinese material name, or exact custom display name to locate it in your inventory, the currently open container, and last observed chest records; closed virtual backpacks are not included, and chest records are historical until reopened. Ask this instead of re-submitting a task to find out what you are carrying. Once per turn: asking again in the same turn returns a one-line pointer to the answer above.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "type": "string",
+            "description": "Optional focused stock lookup by material ID, Chinese material name, or exact custom display name."
+          }
+        },
+        "required": []
+      },
+      "tags": [
+        "read",
+        "snapshot"
+      ]
+    },
+    {
+      "name": "mymc_blocked",
+      "description": "Read the last few steps that did not work out: when, which task, which step, and the verbatim reason each one reported. Read-only and instant. Ask this instead of re-submitting a task to find out why it failed. Once per turn: asking again in the same turn returns a one-line pointer to the answer above.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tags": [
+        "read",
+        "snapshot"
+      ]
+    },
+    {
+      "name": "mymc_blueprint",
+      "description": "Design and hold Minecraft project blueprints: buildings, farms, mob systems, pits, redstone, and other functional structures. Submit a host-authored finished design, inspect what is loaded, or drop one. A loaded blueprint is what mymc_do build works from. Designs survive a world change; how far one is built does not.",
+      "parameters": {
+        "type": "object",
+        "description": "五件事,一次只受理一件;设计由当前 Agent 完成,核心不另起模型或后台构思:\n· {\"save\":{…}} —— 交一份现成的设计;\n  太大就分批:每批带同样的 key/size_xyz/palette,加 \"append\":true,layers 只放接着的几层。分批齐了先成为 draft,不会替换当前可执行版本。\n· {\"accept\":{\"key\":\"farm-v2\",\"version_id\":\"…\",\"content_hash\":\"…\"}} —— 核对回执里的版本与摘要后,把完整 draft 提升成当前可执行版本。\n· {\"reserve_override\":{\"reason\":\"紧急脱困\",\"ttl_sec\":30,\"max_blocks\":8}} —— 限时借用蓝图保留料;原因、时效和最大块数缺一不可,用后标记需补料。\n· {} —— 看现在装载着哪几份、施工到哪儿了、还缺什么。\n· {\"unload\":\"home-v2\"} —— 卸掉一份(设计连缓存一起没,本世界的施工进度也没)。\n装载着的图用 mc_do 的 build 施工:{\"skill\":\"build\",\"blueprint\":\"farm-v2\",\"at\":[x,y,z]}。\n材料表中的名称是施工所需物品，材料表不等于采集计划。木板、楼梯等先核对库存与配方，选择采原料再加工或已获许可的来源；从既有结构拆取须确认授权。\nretrofit 首次只做初探。两种工地同待遇:有冲突格就要审阅无误后同锚点加 \"confirm\":true,才会清掉那些格再施工——没有哪一种会自动清场。\n\n交稿格式(Palette 方案),整份是一个 JSON 对象:\n{\"key\":\"<键>\",\"name\":\"<人话名字>\",\"site_mode\":\"new|retrofit\",\"size_xyz\":[X,Y,Z],\"axis_order\":\"YZX\",\n \"palette\":[\"minecraft:air\",\"minecraft:oak_planks\",\"minecraft:oak_stairs[facing=north,half=bottom]\"],\n \"layers\":[ 第0层, 第1层, … ]}\n· layers[y][z][x] 是 palette 的整数索引;实际画出的矩阵是尺寸权威,size_xyz 写偏会按实测尺寸登记并在回执说明;\n· y=0 是最低层(地面那层),X 从西到东,Z 从北到南;\n· site_mode 必须选:new=空地新建;retrofit=在现有结构上改,第一次 build 只探测不动方块。两种一样:矩阵里有冲突格就得审阅后带 confirm:true 才清掉,谁都不会自动清场;\n· palette 写完整的 Java block-state 串,带属性就整串写;不写属性会按 1.20.6 的默认值补;\n· 不限某一条边;palette 编码后的整份输出 ≤131072 字符,超了按层 append 也不会绕过总预算;\n· 不属于设计的格默认用 minecraft:structure_void(保留原状);minecraft:air 只表示明确清空,施工仍需 confirm:true;\n· 水/岩浆源、耕地、土径、age=0 作物、火会编译成桶/工具/种植动作;刷怪塔、农场、陷阱坑与红石机构都按最终方块状态画进同一张图;\n· 流动液体、成熟作物等过程状态不收;传送门等没有可靠施工动作的状态仍会点名拒收;\n· 门、床这类占两格的:只写主部件那一格与它的从部件(上半格/床头),两格都要在矩阵里对得上。\n· 作物图自带耕地层:melon_stem/pumpkin_stem/小麦/胡萝卜这些的正下方要画 minecraft:farmland(它会自动垫泥土再锄出来);图里没有那一层,种子就一直放不下去;\n· 门、床、火把、作物这些要贴着别的方块才立得住:支撑格要么画进图里,要么确认现场已经有。门底下要一格顶面完整的方块——栅栏、栅栏门、墙、下半砖、另一扇门都撑不住门;\n· 想保留现场原样的格(河道、树干、已有墙体)画 minecraft:structure_void,别画成 minecraft:air——air 是\"这一格必须清空\"。",
+        "additionalProperties": false,
+        "properties": {
+          "save": {
+            "type": "object",
+            "description": "交一份现成的设计(Palette 方案;分批加 append:true)。后台构思必须带任务说明里的 job_id。",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "job_id": {
+                "type": "string",
+                "description": "只给后台构思交稿：照任务说明里的不可变 job_id 原样填写。"
+              },
+              "version_id": {
+                "type": "string",
+                "description": "分批续交时照首批回执里的不可变 version_id 原样填写；首批不填。"
+              },
+              "site_mode": {
+                "type": "string",
+                "enum": [
+                  "new",
+                  "retrofit"
+                ],
+                "description": "new=空地新建;retrofit=先探测再改造现有结构。两种都不会自动清场。"
+              },
+              "size_xyz": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "minItems": 3,
+                "maxItems": 3
+              },
+              "axis_order": {
+                "type": "string",
+                "enum": [
+                  "YZX"
+                ],
+                "description": "轴序只有这一种;不写按它解释。"
+              },
+              "palette": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "layers": {
+                "type": "array",
+                "description": "满矩阵 layers[y][z][x],每个值是 palette 的整数索引。",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              },
+              "append": {
+                "type": "boolean",
+                "description": "这一批接着上一批的层往后放。"
+              }
+            },
+            "required": [
+              "key",
+              "site_mode",
+              "size_xyz",
+              "palette",
+              "layers"
+            ]
+          },
+          "accept": {
+            "type": "object",
+            "description": "把完整 draft 提升成当前可执行版本；版本 id 与内容摘要都要照回执原样填写。",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "version_id": {
+                "type": "string"
+              },
+              "content_hash": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "version_id",
+              "content_hash"
+            ]
+          },
+          "reserve_override": {
+            "type": "object",
+            "description": "紧急情况下限时借用蓝图保留料；首次实际借料后登记需补料。",
+            "properties": {
+              "reason": {
+                "type": "string",
+                "description": "为什么这次必须动保留料。"
+              },
+              "ttl_sec": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 600
+              },
+              "max_blocks": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 64
+              }
+            },
+            "required": [
+              "reason",
+              "ttl_sec",
+              "max_blocks"
+            ]
+          },
+          "unload": {
+            "type": "string",
+            "description": "卸掉这一份(设计连缓存一起没)。"
+          }
+        },
+        "required": []
+      },
+      "tags": [
+        "write"
+      ]
+    },
+    {
+      "name": "mymc_cancel",
+      "description": "Cancel this controller action by its original ID and release held game inputs. A cancelled wait alone does not stop an action.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "action_id"
+        ],
+        "additionalProperties": false
+      },
+      "tags": [
+        "act"
+      ]
+    },
+    {
+      "name": "mymc_capabilities",
+      "description": "Read actual client/backend capabilities, including the common Mineflayer-shaped JavaScript subset; no control claim or launcher.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_cast",
+      "description": "Cast one server-listed /mycli spell immediately, even during combat or retreat. This does not enter the task queue or take movement control. The reply only confirms sending; the server message and observed effects determine whether the spell worked. For planned timed movement, prepare the route first and queue the cast chat command with dependent flight steps in one mymc_do group; do not start the timer while earlier queued work is still running. Pass server-required arguments as separate tokens, such as arguments:[\"bread\"] for a creation spell. Use /mycli goddess skills or /mycli spells to discover available spell IDs.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "spell": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_:-]{0,63}$",
+            "description": "Server spell ID, such as selfheal, starbolt, frostnova, or flamewave."
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[^\\s\\u0000-\\u001f\\u007f-\\u009f\\u00a7<>]+$"
+            },
+            "description": "Optional command arguments in server order, one token per item. No whitespace, control characters or <placeholder> text; read the spell description for required values."
+          }
+        },
+        "required": [
+          "spell"
+        ]
+      },
+      "tags": [
+        "act"
+      ]
+    },
+    {
+      "name": "mymc_check",
+      "description": "Check what you believe against the world: hand in a list of assertions, get back only the differences. Read-only and instant: it never moves you and never touches the world, it only reads chunks that are already loaded. Use it before writing a conclusion (where something is, whether it exists, whether it worked) into your notes.",
+      "parameters": {
+        "type": "object",
+        "description": "一次最多 16 条断言,写成 checks 数组。回执只报差异:符合的合并一句带过。\n· {\"at\":[x,y,z],\"is\":\"chest\"} —— 这一格该是什么。只比方块种类,朝向、连接面不算数;\"is\":\"air\" = 这格该空着。\n· {\"box\":[[x1,y1,z1],[x2,y2,z2]],\"count\":{\"chest\":4,\"torch\":\">=8\"}} —— 区域里各有几个。整数 = 恰好,\">=N\" / \"<=N\" = 一侧的界。\n· {\"box\":…,\"all\":\"oak_planks\"} —— 区域里每一格都是它;{\"box\":…,\"air\":true} —— 区域里每一格都空着。\n· {\"box\":…,\"sealed\":true,\"from\":[x,y,z]} —— 这个盒子封不封得住(from 可不填,默认从盒中心起)。水和岩浆按通路算(会灌进来),不当墙;漏口报盒内那一格。\n· {\"inv\":{\"torch\":\">=8\",\"bread\":1}} —— 包里现有多少。物品名精确对(torch 只数火把,不含灵魂火把);要数一整族就每样写一条。值写成 {\"enchant\":\"efficiency\"} 就改问「带这个附魔的有几件」(默认至少一件,可加 \"count\")。\n· {\"blueprint\":\"home-v2\"} —— 这份图的工地现在对上多少格、缺哪几格。\n· {\"mark\":\"熔炉\"} —— 路标登记的东西那一格还在不在。\n区域断言一次最多 4096 格,sealed 最多 32768 格;超了那一条不算,会说清。\n只读已加载的区块:没加载的格照实说\"没加载\",既不算符合也不算不符——走近了再对一次。",
+        "properties": {
+          "checks": {
+            "type": "array",
+            "description": "一组断言;每条一个对象,形状见上。",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "checks"
+        ]
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_choose",
+      "description": "按需用宿主快模型在路线、生存、技能、方法或长期目标候选中选择。传2–12个简短候选及实测依据、ready；未知条件填false。返回建议与置信度，不行动、不改目标；执行前再验条件。无宿主服务则交还主Agent。",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "category",
+          "goal",
+          "candidates"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "route",
+              "survival",
+              "skill",
+              "method",
+              "goal"
+            ]
+          },
+          "goal": {
+            "type": "string",
+            "maxLength": 240
+          },
+          "candidates": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 12,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "label",
+                "evidence",
+                "ready"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "label": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "evidence": {
+                  "type": "string",
+                  "maxLength": 400
+                },
+                "ready": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_combat_tactic",
+      "description": "Read or update combat spell rules and an agent-authored fast tactic program. {} reads it; omitted fields keep their current values; {enabled:false} clears it. A spell list of server-listed combat spell IDs sets priority order while fighting; healAtOrBelow is the optional ability provider healing threshold. Without a provider it never sends a command. Nonempty rules replace the unconditional spell priority: ordered observed conditions are rechecked each combat tick and the first ready match wins; no match means no automatic offensive cast. rules:[] restores spells/default priority. The host selects candidates from {battlefield:true}; submit {choice:{candidate,tacticRevision,connectionGeneration}} for fresh validation. No inference runs in this extension. program:{name,code,params?} installs your JavaScript synchronous function body with frame and params; return {candidates,instructions}. frame.actionPool contains currently executable casts, engagements and collision-checked directions; you may select, reorder or relabel them, or construct step destinations 0.5 to 1.6 blocks away. Read actors from frame.battlefield.actors (relation, health, distance, lineOfSight); candidate kinds are cast, engage, step, retreat and track. Track maintains a bounded distance lease without attacking, including before combat starts. There is no frame.snapshot.enemies or melee candidate. The program constructs choices from fresh battlefield facts independently of the main model; the fast model chooses and the combat controller executes. Direct steps last at most 700ms and share the combat body lease; survival, task ownership and collisions remain checked. Use program:null to remove it. No imports, files, network or raw bot; 50ms worker execution budget, separate 500ms response deadline. Runtime failure revokes that program until updated; built-in choices remain a fallback. {decisions:true} lists recent submitted choices; {decision:id} reads the receipt. Sending an action does not prove a successful encounter. Keep source and previous versions in your own methods library; compare combat reports before calling a revision an improvement. The World checks observed spell availability, mana, targets and announced cooldowns; server replies still decide success. Settings and the last five observed combat receipts persist per world across restarts. {} also reads current capability constraints and recent receipt IDs; {report:id} expands one receipt. Receipts are observations for reviewing and revising a tactic, not learned conclusions.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "choice": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "candidate",
+              "tacticRevision",
+              "connectionGeneration"
+            ],
+            "properties": {
+              "candidate": {
+                "type": "object"
+              },
+              "tacticRevision": {
+                "type": "integer"
+              },
+              "connectionGeneration": {
+                "type": "integer"
+              }
+            }
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "spells": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_:-]{0,63}$"
+            }
+          },
+          "healAtOrBelow": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "rules": {
+            "type": "array",
+            "maxItems": 16,
+            "description": "Ordered conditional rules re-evaluated against current facts while fighting. First matching, ready rule wins; no match means no automatic offensive cast. [] restores spells/default priority. This is not a timed sequence; use mc_do for a bounded movement/action group.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "spell",
+                "when"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_:-]{0,63}$",
+                  "description": "Unique rule ID, retained in cast observations."
+                },
+                "spell": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_:-]{0,63}$",
+                  "description": "Observed ability ID from an explicitly installed server capability provider."
+                },
+                "intent": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "description": "Optional concise effect and tactical purpose from the skill documentation. Required to offer this rule to the asynchronous fast selector; does not prove the spell is learned."
+                },
+                "when": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "within": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 16,
+                      "description": "Count matching enemies within this 3D distance; default 12. Not a claim about spell range or line of sight."
+                    },
+                    "enemyTypes": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 16,
+                      "uniqueItems": true,
+                      "items": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9_:-]{0,63}$"
+                      },
+                      "description": "Optional exact entity types to count; omitted counts all observed hostiles."
+                    },
+                    "hostilesAtLeast": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 64,
+                      "description": "Minimum matching enemy count; default 1."
+                    },
+                    "hostilesAtMost": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 64
+                    },
+                    "healthAtOrBelow": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 20
+                    },
+                    "healthAtOrAbove": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 20
+                    },
+                    "manaAtLeast": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 10000
+                    },
+                    "reserveMana": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 10000,
+                      "description": "Require at least this much mana after the observed spell cost. Unknown mana/cost fails the predicate."
+                    },
+                    "dimension": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100,
+                      "description": "Exact current dimension identifier."
+                    },
+                    "onGround": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "program": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 12000
+                  },
+                  "params": {
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "name",
+                  "code"
+                ]
+              }
+            ]
+          },
+          "decisions": {
+            "type": "boolean",
+            "description": "Read the last eight decision summaries; use alone."
+          },
+          "decision": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Expand one decision input, chosen action and subsequent physical observation; use alone."
+          },
+          "battlefield": {
+            "type": "boolean",
+            "description": "Read the current programmatic battlefield, abilities and eligible choices; use alone. Missing health or party identity stays unknown."
+          },
+          "report": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Read one observed combat receipt by its returned ID; do not combine with setting fields."
+          }
+        },
+        "required": []
+      },
+      "tags": [
+        "write"
+      ]
+    },
+    {
+      "name": "mymc_control",
+      "description": "Explicitly claim, renew or release this controller lease. Renew before expiry; no implicit takeover.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "claim",
+              "renew",
+              "release"
+            ]
+          },
+          "ttlMs": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 30000
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "tags": [
+        "write"
+      ]
+    },
+    {
+      "name": "mymc_do",
+      "description": "Queue an ordered group of Minecraft skills and return immediately with a task id. Known next steps in one intention can be submitted together; steps and queued tasks continue in the background without another model turn. Put a timed permission chat command and its planned movement in the same group, linked by needs. Flight waits up to 2 seconds for actual server permission; sending a command alone does not prove its effect. Use queue:\"now\" for immediate food or escape during combat; default submission waits for combat and replaces pending tasks. Start the group with eat, flee or surface to take control even during low-health combat. Environmental rescue still has priority. Use queue:\"append\" to add work after existing tasks. Use queue:\"afterCheckpoint\" to do this group at a safe checkpoint of current work, then resume that work; container and transaction groups wait until their operation is complete. Each task reports completion or obstruction as a minecraft.task event; a blocked task leaves later tasks queued. A single plain chat or vanilla /msg, /tell, /w to a named player, with default queue and no needs/expect, sends immediately while movement continues. Other slash commands and chat inside a multi-step group retain queue order.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "steps": {
+            "type": "array",
+            "description": "一步一个对象,skill 写技能名。* = 该字段适用的形态必填;? = 可选或条件参数。\n复杂形态、执行条件和完整示例用 mc_help {\"skill\":\"技能名\"} 查询。\ncontrol(keys*,durationMs?,mode?,yawDeg?,pitchDeg?)\nlook(at*)\ngoto(at*,dimension?,exact?,walkOnly?,dryRun?)\ntransit(at*)\ngoto_player(name*)\nfollow(name*)\nfind(target*,direction?,distance?,until?)\nflee(distance?)\nsurface()\nflight(at*,land?,dryRun?)\nland()\ncleanup(dryRun?)\ncollect(block*,count?,buried?,mature?,tool?)\nfish(at?)\ntunnel(at*,spiral?,dryRun?,tool?,until?)\nbuild(blueprint?,stopAfter?,rebindFrom?,confirm?,skipConflicts?,shape?,on?,anchors?,material*,temporary?,at?,fill?,dryRun?)\nexcavate(shape*,anchors*,fill?,dryRun?,tool?)\nprobe(shape*,anchors*,fill?,slice?,where?)\nobserve(mode*,sites?,bounds?,rays?)\nuse(item?,at?,target?,entityId?,index?,times?,open?,text?,back?,face?)\nride(target?,to?,off?)\nlead(target?,to?,tolerance?,tie?,keep?,off?)\ncraft(item?,grid?,count?)\nsmelt(input*,count?,fuel*,at?)\nbrew(input*,bottle*,count?,fuel*,at?)\nenchant(at*,item*,index?)\nanvil(op*,item*,with?,name?,pick?,withPick?,at?)\ngrindstone(item*,with?,pick?,withPick?,at?)\neat(item*)\nattack(target*,mode?)\nequip(item?,pick?,hand?)\npickup(item?)\ntoss(item*,count?,at?,pick?,target?)\nstow(item*,count?,pick?,at?,into?)\ncompact()\ntake(item?,count?,at?,from?,all?,pick?)\nserver_travel(command*,at*,within?)\nchat(text*)\ngesture(name*,motion*)\n坐标写成 [x,y,z];at 是一个坐标,anchors 是一串坐标。\n每个分量是绝对数字,或 \"~\"/\"~-3\" 相对写法——原点是**这一步开始执行那一刻**我脚下那一格,\n所以 goto 之后接 \"~\" 指的是那个 goto 的落点。没有前后左右的写法。\n回执一律报解析后的绝对坐标。\n方块/物品/实体一律用英文 id(oak_log、cobblestone、skeleton);target 也收玩家名。\n类别名有两套:target/block/material 认 log、planks、ore、wool 这样的裸名(它们本身不是物品 id),把所有同类算进去;\nuntil 名单认带井号的 #ores/#logs/#leaves/#chests/#liquids/#beds。\n**写一个真实物品 id 就只认它自己**:obsidian 不会拿哭泣的黑曜石顶,torch 不是灵魂火把,\nchest 不是末影箱,dirt 不是土径 —— 要\"随便哪种木板\"就写裸类别名 planks。\ncount 一律 1-64;distance:flee 1-128,find 1-1024(不给 direction 时站着扫,最远 48)。\n\"needs\" 声明这一步依赖哪些更早的步(序号 1 起);\"needs\":[] = 独立步。缺省见字段说明。\n容器窗口在每单结束时关闭；from/into:\"open\" 的搬运和开窗步骤须在同一次 mc_do.steps 中，不能跨单沿用窗口。\n每一步都会核验:判据由执行器按 (skill, 参数) 推,达成与落空都写进回执\n(「该步按『背包内原木 ≥5』核验:达成(实测 7)」)。",
+            "items": {
+              "type": "object",
+              "properties": {
+                "skill": {
+                  "type": "string",
+                  "enum": [
+                    "control",
+                    "look",
+                    "goto",
+                    "transit",
+                    "goto_player",
+                    "follow",
+                    "find",
+                    "flee",
+                    "surface",
+                    "flight",
+                    "land",
+                    "cleanup",
+                    "collect",
+                    "fish",
+                    "tunnel",
+                    "build",
+                    "excavate",
+                    "probe",
+                    "observe",
+                    "use",
+                    "ride",
+                    "lead",
+                    "craft",
+                    "smelt",
+                    "brew",
+                    "enchant",
+                    "anvil",
+                    "grindstone",
+                    "eat",
+                    "attack",
+                    "equip",
+                    "pickup",
+                    "toss",
+                    "stow",
+                    "compact",
+                    "take",
+                    "server_travel",
+                    "chat",
+                    "gesture"
+                  ]
+                },
+                "keys": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "forward",
+                      "back",
+                      "left",
+                      "right",
+                      "jump",
+                      "sneak",
+                      "sprint"
+                    ]
+                  },
+                  "description": "用于 control"
+                },
+                "durationMs": {
+                  "type": "integer",
+                  "minimum": 50,
+                  "maximum": 2000,
+                  "description": "用于 control"
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "ground",
+                    "water",
+                    "flight",
+                    "sites",
+                    "voxels",
+                    "rays",
+                    "auto",
+                    "melee",
+                    "ranged",
+                    "kite"
+                  ],
+                  "description": "用于 control / observe / attack(不写 = auto)"
+                },
+                "yawDeg": {
+                  "type": "number",
+                  "minimum": -180,
+                  "maximum": 180,
+                  "description": "用于 control(相对视角，正数左转，单位度)"
+                },
+                "pitchDeg": {
+                  "type": "number",
+                  "minimum": -90,
+                  "maximum": 90,
+                  "description": "用于 control(相对视角，正数抬头，单位度)"
+                },
+                "at": {
+                  "type": [
+                    "array",
+                    "string"
+                  ],
+                  "items": {
+                    "type": [
+                      "number",
+                      "string"
+                    ]
+                  },
+                  "minItems": 2,
+                  "maxItems": 3,
+                  "description": "用于 look(要面向的目标格，支持相对坐标和已登记路标。) / goto(只写 [x,z] = 到附近可达落脚点(不强制爬屋顶);指定楼层请给 [x,y,z];给字符串 = mc_map 路标名) / transit(当前维度里的一格传送门方块;给字符串 = 当前维度的 mc_map 路标名) / flight / fish / tunnel(通道终点) / build(按蓝图施工时:蓝图 [0,0,0] 落在世界的哪一格) / use(世界里要点击的方块绝对坐标，点击已有方块不要求背包有同名物品；face 指它的表面；放置目标用 build.anchors；与 target 二选一) / smelt(指定用哪一座炉子) / brew(指定用哪一座酿造台) / enchant / anvil(指定用哪一座铁砧;不写用最近的) / grindstone(指定用哪一座砂轮;不写用最近的) / toss(朝那一格扔;不写 = 自己挑一个开阔方向) / stow(只存进指定箱子;与 into:open 二选一) / take(点名哪一格容器) / server_travel"
+                },
+                "dimension": {
+                  "type": "string",
+                  "description": "用于 goto(可选的当前维度前置条件(overworld/the_nether/the_end))"
+                },
+                "exact": {
+                  "type": "boolean",
+                  "description": "用于 goto(完整 [x,y,z] 的精确落脚格；缺省允许邻格到达)"
+                },
+                "walkOnly": {
+                  "type": "boolean",
+                  "description": "用于 goto(只沿现有通路走，不挖掘或垫脚；dryRun 也只试算这条走法)"
+                },
+                "dryRun": {
+                  "type": "boolean",
+                  "description": "用于 goto / flight(只试算当前已加载路线；回报预计毫秒、速度来源和当前许可) / cleanup / tunnel / build / excavate"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "用于 goto_player / follow / anvil(rename 必写；repair/combine 可选:同时改成此名字，不写保留原名) / gesture"
+                },
+                "target": {
+                  "type": "string",
+                  "description": "用于 find(当前连接的方块或实体英文 id，方块可用 log 等名称匹配；不支持 hostile/tree 类别，# 名单只用于 until；未命中不能证明区域安全) / use(要右键的活物名称，不是方块或背包物品；与 at 二选一。点击世界里的方块只给 at，不填 target) / ride(骑上哪种(实体英文 id:pig/boat/horse…);已骑着时可省) / lead(拴哪种(实体英文 id);已经牵着时可省) / attack / toss(可见玩家的完整名字；与at互斥)"
+                },
+                "direction": {
+                  "type": "string",
+                  "enum": [
+                    "north",
+                    "south",
+                    "east",
+                    "west",
+                    "northeast",
+                    "northwest",
+                    "southeast",
+                    "southwest"
+                  ],
+                  "description": "用于 find(给了就边走边找;不给就站着扫)"
+                },
+                "distance": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1024,
+                  "description": "用于 find / flee(1-128)"
+                },
+                "until": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 12,
+                  "description": "用于 find(边走边找时:路上碰到这里头任何一样就停) / tunnel(挖的路上碰到这里头任何一样就停)"
+                },
+                "land": {
+                  "type": "boolean",
+                  "description": "用于 flight(false=抵达后悬停；省略或true=平台落地)"
+                },
+                "block": {
+                  "type": "string",
+                  "description": "用于 collect"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 64,
+                  "description": "用于 collect / craft(item=要新增的产物个数(按配方产量向上取整);grid=配方重复次数。不是原料数。) / smelt / brew(1-3;放几瓶(三个瓶位)) / toss / stow / take(定量取物必须显式写;不再默认成 1)"
+                },
+                "buried": {
+                  "type": "boolean",
+                  "description": "用于 collect"
+                },
+                "mature": {
+                  "type": "boolean",
+                  "description": "用于 collect"
+                },
+                "tool": {
+                  "type": "string",
+                  "description": "用于 collect(只覆盖本步;不写时节约耐久) / tunnel(只覆盖本步;不写时节约耐久) / excavate(只覆盖本步;不写时节约耐久)"
+                },
+                "spiral": {
+                  "type": "boolean",
+                  "description": "用于 tunnel(正上/正下时改挖 2×2 螺旋楼梯(上下都能走))"
+                },
+                "blueprint": {
+                  "type": "string",
+                  "description": "用于 build(按蓝图施工;形状与材料都在图里)"
+                },
+                "stopAfter": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991,
+                  "description": "用于 build(按蓝图施工时:做到这个 y 层就收工(0 是最低层))"
+                },
+                "rebindFrom": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "description": "用于 build(按蓝图施工改绑到新 at 时，给出当前绑定的绝对锚点；dryRun 可先试算新位置)"
+                },
+                "confirm": {
+                  "type": "boolean",
+                  "description": "用于 build(retrofit 有冲突时:确认清掉冲突格后施工)"
+                },
+                "skipConflicts": {
+                  "type": "boolean",
+                  "description": "用于 build(retrofit 有冲突时:留着冲突格,先放能放的)"
+                },
+                "shape": {
+                  "type": "string",
+                  "enum": [
+                    "line",
+                    "rect",
+                    "triangle",
+                    "arc",
+                    "box"
+                  ],
+                  "description": "用于 build(不写 = 就 anchors 那些格) / excavate / probe"
+                },
+                "on": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "at": {
+                        "type": [
+                          "array",
+                          "string"
+                        ],
+                        "items": {
+                          "type": [
+                            "number",
+                            "string"
+                          ]
+                        },
+                        "minItems": 3,
+                        "maxItems": 3
+                      },
+                      "face": {
+                        "type": "string",
+                        "enum": [
+                          "down",
+                          "up",
+                          "north",
+                          "south",
+                          "west",
+                          "east"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "at",
+                      "face"
+                    ]
+                  },
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "description": "用于 build(贴着 at 那一格的 face 面放;与 anchors 二选一)"
+                },
+                "anchors": {
+                  "type": "array",
+                  "items": {
+                    "type": [
+                      "array",
+                      "string"
+                    ],
+                    "items": {
+                      "type": [
+                        "number",
+                        "string"
+                      ]
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  },
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "description": "用于 build(不写 shape = 就这些格;与 on 二选一) / excavate(数量由 shape 定) / probe(数量由 shape 定)"
+                },
+                "material": {
+                  "type": "string",
+                  "description": "用于 build"
+                },
+                "temporary": {
+                  "type": "boolean",
+                  "description": "用于 build(只用于材料/锚点或贴面形态；本次确认的临时支撑用完后 cleanup，已有方块不接管)"
+                },
+                "fill": {
+                  "type": "string",
+                  "enum": [
+                    "solid",
+                    "outline",
+                    "edges"
+                  ],
+                  "description": "用于 build(只对 box 有意义) / excavate / probe(只对 box 有意义)"
+                },
+                "slice": {
+                  "type": "string",
+                  "enum": [
+                    "x",
+                    "y",
+                    "z"
+                  ],
+                  "description": "用于 probe(box 空间切片；体积=(|dx|+1)(|dy|+1)(|dz|+1)≤512，不与 where 同用)"
+                },
+                "where": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 12,
+                  "description": "用于 probe(只报这几样在这片里当前可见的坐标；遮挡、超距或未加载保持未知)"
+                },
+                "sites": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 4,
+                  "items": {
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer",
+                      "minimum": -30000000,
+                      "maximum": 30000000
+                    }
+                  },
+                  "description": "用于 observe(sites：绝对格 [x,y,z] 列表，短报占用/支撑高度/邻接面/0.6×1.8方块净空；非可达或放置许可)"
+                },
+                "bounds": {
+                  "type": "array",
+                  "minItems": 6,
+                  "maxItems": 6,
+                  "items": {
+                    "type": "integer",
+                    "minimum": -16,
+                    "maximum": 16
+                  },
+                  "description": "用于 observe(voxels 相对脚下格 [xmin,ymin,zmin,xmax,ymax,zmax]，含端点；三轴长度相乘≤512)"
+                },
+                "rays": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 64,
+                  "items": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": [
+                      {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                      },
+                      {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                      },
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "maximum": 64
+                      }
+                    ]
+                  },
+                  "description": "用于 observe(rays 的 [相对pitch角±90,相对yaw角±180,距离>0且≤64] 列表；相对执行时身体朝向，yaw=0 沿当前朝向)"
+                },
+                "item": {
+                  "type": "string",
+                  "description": "用于 use(从背包拿在手里使用的物品，不是被点击对象的名字。填原版英文 id 或 mc_bag 的自定义显示名；有 at 时不写 = 腾空主手右键方块，有 target 时不写 = 用当前手持物) / craft(已知目标物品优先使用;按游戏配方表摆;与 grid 二选一) / enchant / anvil / grindstone / eat / equip(自定义物品可用 mc_bag 中的显示名;不写 = 把指定手腾空，默认主手) / pickup(不写就近扫并避开2分钟内刚主动丢弃的已识别掉落物；明确写物品可取回) / toss / stow / take(定量取物时与 count 一起写)"
+                },
+                "entityId": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647,
+                  "description": "用于 use(可选；本连接里观察到的实体 ID，与 target 一起给，精确点该实体，不退回最近者)"
+                },
+                "index": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 99,
+                  "description": "用于 use / enchant(1-3;不写 = 只看报价;写了 = 按那一档下手)"
+                },
+                "times": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 16,
+                  "description": "用于 use(连着右键几次;带 index 时是成交几次)"
+                },
+                "open": {
+                  "type": "boolean",
+                  "description": "用于 use(门、活板门、栅栏门的期望状态；true 开、false 关，已符合不点击；与 at 一起给)"
+                },
+                "text": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "description": "用于 use(写在告示牌上的字,\\n 分行;最多 4 行、每行 45 字符) / chat"
+                },
+                "back": {
+                  "type": "boolean",
+                  "description": "用于 use(写在牌子背面;缺省正面)"
+                },
+                "face": {
+                  "type": "string",
+                  "enum": [
+                    "down",
+                    "up",
+                    "north",
+                    "south",
+                    "west",
+                    "east"
+                  ],
+                  "description": "用于 use(右键那一格的哪一面;缺省顶面)"
+                },
+                "to": {
+                  "type": [
+                    "array",
+                    "string"
+                  ],
+                  "items": {
+                    "type": [
+                      "number",
+                      "string"
+                    ]
+                  },
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "description": "用于 ride(驾着去哪;猪、炽足兽和船能驾，马科暂不支持驾驶) / lead(牵去哪)"
+                },
+                "off": {
+                  "type": "boolean",
+                  "description": "用于 ride(下坐骑;与 target/to 互斥) / lead(松开;与 target/to/tie/keep 互斥)"
+                },
+                "tolerance": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 16,
+                  "description": "用于 lead(牵到 to 多少格内算到)"
+                },
+                "tie": {
+                  "type": [
+                    "array",
+                    "string"
+                  ],
+                  "items": {
+                    "type": [
+                      "number",
+                      "string"
+                    ]
+                  },
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "description": "用于 lead(到了系在这一格的栅栏上)"
+                },
+                "keep": {
+                  "type": "boolean",
+                  "description": "用于 lead(到了继续牵着,不松开)"
+                },
+                "grid": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "description": "用于 craft(与 item 二选一)"
+                },
+                "input": {
+                  "type": "string",
+                  "description": "用于 smelt / brew"
+                },
+                "fuel": {
+                  "type": "string",
+                  "description": "用于 smelt / brew"
+                },
+                "bottle": {
+                  "type": "string",
+                  "description": "用于 brew"
+                },
+                "op": {
+                  "type": "string",
+                  "enum": [
+                    "repair",
+                    "combine",
+                    "rename"
+                  ],
+                  "description": "用于 anvil"
+                },
+                "with": {
+                  "type": "string",
+                  "description": "用于 anvil(repair/combine 必写:右格放什么) / grindstone(合修:同种的另一件)"
+                },
+                "pick": {
+                  "type": "string",
+                  "description": "用于 anvil(同 id 的几件里挑哪一件:写清单括号里的字(「无限」「效率IV」,英文附魔 id 也认);不写 = 撞上哪件算哪件。按内容匹配,不是序号,存掉一件不影响其余几件怎么写) / grindstone / equip / toss / stow / take"
+                },
+                "withPick": {
+                  "type": "string",
+                  "description": "用于 anvil(同 pick,筛的是 with 那一格) / grindstone"
+                },
+                "hand": {
+                  "type": "string",
+                  "enum": [
+                    "main",
+                    "off"
+                  ],
+                  "description": "用于 equip(不写 = 按物品分槽)"
+                },
+                "into": {
+                  "type": "string",
+                  "enum": [
+                    "open"
+                  ],
+                  "description": "用于 stow(open = 存进当前打开的窗口;不写 = 找附近箱子)"
+                },
+                "from": {
+                  "type": "string",
+                  "enum": [
+                    "open"
+                  ],
+                  "description": "用于 take(从当前打开的容器窗口取;不写 = 找附近箱子)"
+                },
+                "all": {
+                  "type": "boolean",
+                  "description": "用于 take(at+all:true 取指定容器;炉子有原料时保留原料和燃料)"
+                },
+                "command": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "description": "用于 server_travel"
+                },
+                "within": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 16,
+                  "description": "用于 server_travel"
+                },
+                "motion": {
+                  "type": "string",
+                  "enum": [
+                    "wave",
+                    "bow",
+                    "nod",
+                    "beckon",
+                    "shake_head"
+                  ],
+                  "description": "用于 gesture"
+                },
+                "needs": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "description": "任何技能都可带:依赖本次 steps 数组内哪些更早的步(每次调用重新从 1 起，第一步只能省略或写 [])。不写=只拦因果:要用更早某步的产出、那一步又没做成时才跳过,其余照跑;[]=独立步"
+                }
+              },
+              "required": [
+                "skill"
+              ]
+            }
+          },
+          "queue": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "append",
+              "now",
+              "afterCheckpoint"
+            ],
+            "description": "这一单跟队列的关系。不写 = replace:撤掉排着的那些,接在正在做的那件后面(回执点名撤了谁);append:排到队尾,排着的都保留;now:中断正在做的那件、插到队头立刻开做,排着的保留(低血战斗可让位给首步 eat/flee/surface;已在执行的逃命、进食或环境自保不抢);afterCheckpoint:当前任务到安全检查点后先做这一单,再续做原任务;容器存取、交易等完整操作段结束前等待,不抢救命动作"
+          }
+        },
+        "required": [
+          "steps"
+        ]
+      },
+      "tags": [
+        "act"
+      ]
+    },
+    {
+      "name": "mymc_escape",
+      "description": "Cheat: teleport to the NEAREST safe anchor (your respawn bed/anchor, the world spawn, or a place you marked as 家/床 on mymc_map) keeping all items, and clear the work queue. ONLY for getting genuinely unstuck — when movement or the task truly cannot make progress. It is NOT a way to travel: do not use it to get somewhere you could walk to. Say something to the audience first. The nearest anchor may still be far from here; the receipt lists every candidate with its distance and says which one it used.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tags": [
+        "act"
+      ]
+    },
+    {
+      "name": "mymc_evidence",
+      "description": "Read original native evidence by raw.key and optional raw.sha256. part:script pages the program report directly without repeated inventory/books; default full preserves the entire original.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "sha256": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "part": {
+            "enum": [
+              "full",
+              "script"
+            ]
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 16000
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_flight_plan",
+      "description": "Preview a whole flight route before casting, without moving or consuming permission. Use subdivide:true to turn distant endpoints into short diagonal or vertical legs with executable dependent steps. Each point starts at the previous projected endpoint, including relative coordinates. Returns collisions, total time, budget fit and final support. Only loaded geometry is checked; execution revalidates. Unknown duration is not unlimited.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "points": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "properties": {
+                "at": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "array",
+                      "minItems": 3,
+                      "maxItems": 3,
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "land": {
+                  "type": "boolean",
+                  "description": "false=hover; default=true requires safe support at this point"
+                }
+              },
+              "required": [
+                "at"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "budgetMs": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Available milliseconds from current server instructions, supplied by caller; does not grant or renew flight"
+          },
+          "subdivide": {
+            "type": "boolean",
+            "description": "Split distant endpoints into client-sized legs; intermediate legs hover, each requested point keeps its land choice. Returns absolute mc_do steps with needs dependencies."
+          }
+        },
+        "required": [
+          "points"
+        ]
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_goal",
+      "description": "Register and track what you are working towards in this world: up to five slots (#1..#5). Targets can be builds, gathered items, entity kills or captures, exploration, transport, farming, redstone work, survival time, or any other project. A verify condition must directly establish its milestone result. The evaluator only tests the supplied predicate; it does not check its semantic relevance. Use judgment with actual evidence for understood information, conversation and server command results. For observable position, inventory or entity conditions, use verify probes. A failed observation or a scan without a hit does not establish absence or safety. Judgment registration records the host claim; it is not independent world verification. Call with no fields to read them all back. Tied to the current world and empty after a restart or a world change, so the lasting copy belongs in your own notes. Rejected done requests are marked failed and include the missing evidence. Every request checks current conditions. Repeated rejection does not close the host decision turn or change the goal.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "add": {
+            "type": "object",
+            "description": "挂一条新目标并给出可核验的实施计划,落在最小的空格上;五格全占着就不挂。",
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "一句话说清这条目标是什么。"
+              },
+              "plan": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 12,
+                "description": "按执行顺序列里程碑。每步恰好给 verify 或 judgment；verify 数组按 AND 求值。只在读数能直接证明本步成果时用 verify；信息理解、对话和服务端命令回执用 judgment 登记实际依据。",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "description": "这一步要实施什么。"
+                    },
+                    "verify": {
+                      "type": [
+                        "object",
+                        "array",
+                        "null"
+                      ],
+                      "description": "直接证明本步成果的当前读数，或最多 8 个读数组成的 AND 数组。最近已通过的机械步骤会继续现读，条件不再符合时登记进度可退回。若要保存一次已经发生的动作及其回执，用 judgment；当前库存不等于历史采集、消耗或交付量，离开区域也不否定曾经到达。无关状态不能代替成果。",
+                      "properties": {
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "block",
+                            "inventory",
+                            "blueprint",
+                            "position",
+                            "entity",
+                            "item",
+                            "status"
+                          ]
+                        },
+                        "at": {
+                          "type": "array",
+                          "minItems": 3,
+                          "maxItems": 3,
+                          "items": {
+                            "type": "integer"
+                          }
+                        },
+                        "is": {
+                          "type": "string",
+                          "description": "block 的精确方块 id。"
+                        },
+                        "item": {
+                          "type": "string",
+                          "description": "inventory/item 的精确物品 id。"
+                        },
+                        "type": {
+                          "type": "string",
+                          "description": "entity 的精确实体 id。"
+                        },
+                        "count": {
+                          "type": [
+                            "number",
+                            "string"
+                          ],
+                          "description": "非负数表示恰好；也可写 \">=8\" / \"<=2\"。"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "blueprint 的蓝图键。"
+                        },
+                        "loaded": {
+                          "type": "boolean",
+                          "description": "blueprint 是否已装载。"
+                        },
+                        "matched": {
+                          "type": [
+                            "number",
+                            "string"
+                          ],
+                          "description": "非负数表示恰好；也可写 \">=8\" / \"<=2\"。"
+                        },
+                        "region": {
+                          "type": "array",
+                          "minItems": 2,
+                          "maxItems": 2,
+                          "items": {
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "items": {
+                              "type": "integer"
+                            }
+                          },
+                          "description": "两个角 [[x1,y1,z1],[x2,y2,z2]]；必须同时给 dimension。position 仅比较当前位置，不扫描区域；entity/item 的计数区域最多 4096 格并须完整加载。"
+                        },
+                        "dimension": {
+                          "type": "string",
+                          "description": "region 所在维度，如 minecraft:overworld。"
+                        },
+                        "field": {
+                          "type": "string",
+                          "enum": [
+                            "health",
+                            "food",
+                            "oxygen",
+                            "burning"
+                          ]
+                        },
+                        "equals": {
+                          "type": [
+                            "number",
+                            "string",
+                            "boolean"
+                          ],
+                          "description": "status 的目标值；数值状态也可写 \">=8\" / \"<=2\"。"
+                        }
+                      },
+                      "required": [
+                        "source"
+                      ],
+                      "items": {
+                        "type": "object",
+                        "description": "现读你指定的条件。它必须直接证明本步成果；读数符合不核验条件与步骤的语义关系。source 决定字段：block(at,is)；inventory(item,count)；blueprint(key,loaded?/matched?)；position(region,dimension)；entity(type,region,dimension,count)；item(item,region,dimension,count)；status(field,equals)。",
+                        "properties": {
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "block",
+                              "inventory",
+                              "blueprint",
+                              "position",
+                              "entity",
+                              "item",
+                              "status"
+                            ]
+                          },
+                          "at": {
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "items": {
+                              "type": "integer"
+                            }
+                          },
+                          "is": {
+                            "type": "string",
+                            "description": "block 的精确方块 id。"
+                          },
+                          "item": {
+                            "type": "string",
+                            "description": "inventory/item 的精确物品 id。"
+                          },
+                          "type": {
+                            "type": "string",
+                            "description": "entity 的精确实体 id。"
+                          },
+                          "count": {
+                            "type": [
+                              "number",
+                              "string"
+                            ],
+                            "description": "非负数表示恰好；也可写 \">=8\" / \"<=2\"。"
+                          },
+                          "key": {
+                            "type": "string",
+                            "description": "blueprint 的蓝图键。"
+                          },
+                          "loaded": {
+                            "type": "boolean",
+                            "description": "blueprint 是否已装载。"
+                          },
+                          "matched": {
+                            "type": [
+                              "number",
+                              "string"
+                            ],
+                            "description": "非负数表示恰好；也可写 \">=8\" / \"<=2\"。"
+                          },
+                          "region": {
+                            "type": "array",
+                            "minItems": 2,
+                            "maxItems": 2,
+                            "items": {
+                              "type": "array",
+                              "minItems": 3,
+                              "maxItems": 3,
+                              "items": {
+                                "type": "integer"
+                              }
+                            },
+                            "description": "两个角 [[x1,y1,z1],[x2,y2,z2]]；必须同时给 dimension。position 仅比较当前位置，不扫描区域；entity/item 的计数区域最多 4096 格并须完整加载。"
+                          },
+                          "dimension": {
+                            "type": "string",
+                            "description": "region 所在维度，如 minecraft:overworld。"
+                          },
+                          "field": {
+                            "type": "string",
+                            "enum": [
+                              "health",
+                              "food",
+                              "oxygen",
+                              "burning"
+                            ]
+                          },
+                          "equals": {
+                            "type": [
+                              "number",
+                              "string",
+                              "boolean"
+                            ],
+                            "description": "status 的目标值；数值状态也可写 \">=8\" / \"<=2\"。"
+                          }
+                        },
+                        "required": [
+                          "source"
+                        ]
+                      },
+                      "minItems": 1,
+                      "maxItems": 8
+                    },
+                    "judgment": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "说明需要核对的成果与证据来源；完成时用 milestone 引用实际观察、对方回复或服务端回执。适合已发生的动作与净变化，保留来源时间；它是宿主判断，不是核心独立证明。前提被新证据否定时用 reopen/revise 订正，不必填一个无关的 verify。"
+                    }
+                  },
+                  "required": [
+                    "do"
+                  ]
+                }
+              },
+              "blueprint": {
+                "type": "string",
+                "description": "这条目标对应的蓝图键(可不填)。绑了蓝图就不再收计数:进度以蓝图游标为准,current/total/unit 会被丢掉。"
+              },
+              "kind": {
+                "type": "string",
+                "description": "可选追踪类型,自由写:建造/收集/击杀/捕获/探索/运输/种植/收获/红石/生存等。"
+              },
+              "target": {
+                "type": "string",
+                "description": "可选计数对象:物品、实体、地点、距离或工程阶段。"
+              },
+              "current": {
+                "type": "number",
+                "minimum": 0,
+                "description": "可选初始进度,默认 0。"
+              },
+              "total": {
+                "type": "number",
+                "minimum": 0,
+                "description": "可选目标总数。"
+              },
+              "unit": {
+                "type": "string",
+                "description": "可选单位,如 个/只/格/趟/分钟/阶段。"
+              }
+            },
+            "required": [
+              "text",
+              "plan"
+            ]
+          },
+          "revise": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "slot",
+              "expectedRevision",
+              "text",
+              "plan",
+              "reason"
+            ],
+            "description": "Host-authored revision of an existing goal; preserves identity and returns both original and replacement plans. New milestones require fresh evidence.",
+            "properties": {
+              "slot": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "plan": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 12,
+                "description": "按执行顺序列里程碑。每步恰好给 verify 或 judgment；verify 数组按 AND 求值。只在读数能直接证明本步成果时用 verify；信息理解、对话和服务端命令回执用 judgment 登记实际依据。",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "description": "这一步要实施什么。"
+                    },
+                    "verify": {
+                      "type": [
+                        "object",
+                        "array",
+                        "null"
+                      ],
+                      "description": "直接证明本步成果的当前读数，或最多 8 个读数组成的 AND 数组。最近已通过的机械步骤会继续现读，条件不再符合时登记进度可退回。若要保存一次已经发生的动作及其回执，用 judgment；当前库存不等于历史采集、消耗或交付量，离开区域也不否定曾经到达。无关状态不能代替成果。",
+                      "properties": {
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "block",
+                            "inventory",
+                            "blueprint",
+                            "position",
+                            "entity",
+                            "item",
+                            "status"
+                          ]
+                        },
+                        "at": {
+                          "type": "array",
+                          "minItems": 3,
+                          "maxItems": 3,
+                          "items": {
+                            "type": "integer"
+                          }
+                        },
+                        "is": {
+                          "type": "string",
+                          "description": "block 的精确方块 id。"
+                        },
+                        "item": {
+                          "type": "string",
+                          "description": "inventory/item 的精确物品 id。"
+                        },
+                        "type": {
+                          "type": "string",
+                          "description": "entity 的精确实体 id。"
+                        },
+                        "count": {
+                          "type": [
+                            "number",
+                            "string"
+                          ],
+                          "description": "非负数表示恰好；也可写 \">=8\" / \"<=2\"。"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "blueprint 的蓝图键。"
+                        },
+                        "loaded": {
+                          "type": "boolean",
+                          "description": "blueprint 是否已装载。"
+                        },
+                        "matched": {
+                          "type": [
+                            "number",
+                            "string"
+                          ],
+                          "description": "非负数表示恰好；也可写 \">=8\" / \"<=2\"。"
+                        },
+                        "region": {
+                          "type": "array",
+                          "minItems": 2,
+                          "maxItems": 2,
+                          "items": {
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "items": {
+                              "type": "integer"
+                            }
+                          },
+                          "description": "两个角 [[x1,y1,z1],[x2,y2,z2]]；必须同时给 dimension。position 仅比较当前位置，不扫描区域；entity/item 的计数区域最多 4096 格并须完整加载。"
+                        },
+                        "dimension": {
+                          "type": "string",
+                          "description": "region 所在维度，如 minecraft:overworld。"
+                        },
+                        "field": {
+                          "type": "string",
+                          "enum": [
+                            "health",
+                            "food",
+                            "oxygen",
+                            "burning"
+                          ]
+                        },
+                        "equals": {
+                          "type": [
+                            "number",
+                            "string",
+                            "boolean"
+                          ],
+                          "description": "status 的目标值；数值状态也可写 \">=8\" / \"<=2\"。"
+                        }
+                      },
+                      "required": [
+                        "source"
+                      ],
+                      "items": {
+                        "type": "object",
+                        "description": "现读你指定的条件。它必须直接证明本步成果；读数符合不核验条件与步骤的语义关系。source 决定字段：block(at,is)；inventory(item,count)；blueprint(key,loaded?/matched?)；position(region,dimension)；entity(type,region,dimension,count)；item(item,region,dimension,count)；status(field,equals)。",
+                        "properties": {
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "block",
+                              "inventory",
+                              "blueprint",
+                              "position",
+                              "entity",
+                              "item",
+                              "status"
+                            ]
+                          },
+                          "at": {
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "items": {
+                              "type": "integer"
+                            }
+                          },
+                          "is": {
+                            "type": "string",
+                            "description": "block 的精确方块 id。"
+                          },
+                          "item": {
+                            "type": "string",
+                            "description": "inventory/item 的精确物品 id。"
+                          },
+                          "type": {
+                            "type": "string",
+                            "description": "entity 的精确实体 id。"
+                          },
+                          "count": {
+                            "type": [
+                              "number",
+                              "string"
+                            ],
+                            "description": "非负数表示恰好；也可写 \">=8\" / \"<=2\"。"
+                          },
+                          "key": {
+                            "type": "string",
+                            "description": "blueprint 的蓝图键。"
+                          },
+                          "loaded": {
+                            "type": "boolean",
+                            "description": "blueprint 是否已装载。"
+                          },
+                          "matched": {
+                            "type": [
+                              "number",
+                              "string"
+                            ],
+                            "description": "非负数表示恰好；也可写 \">=8\" / \"<=2\"。"
+                          },
+                          "region": {
+                            "type": "array",
+                            "minItems": 2,
+                            "maxItems": 2,
+                            "items": {
+                              "type": "array",
+                              "minItems": 3,
+                              "maxItems": 3,
+                              "items": {
+                                "type": "integer"
+                              }
+                            },
+                            "description": "两个角 [[x1,y1,z1],[x2,y2,z2]]；必须同时给 dimension。position 仅比较当前位置，不扫描区域；entity/item 的计数区域最多 4096 格并须完整加载。"
+                          },
+                          "dimension": {
+                            "type": "string",
+                            "description": "region 所在维度，如 minecraft:overworld。"
+                          },
+                          "field": {
+                            "type": "string",
+                            "enum": [
+                              "health",
+                              "food",
+                              "oxygen",
+                              "burning"
+                            ]
+                          },
+                          "equals": {
+                            "type": [
+                              "number",
+                              "string",
+                              "boolean"
+                            ],
+                            "description": "status 的目标值；数值状态也可写 \">=8\" / \"<=2\"。"
+                          }
+                        },
+                        "required": [
+                          "source"
+                        ]
+                      },
+                      "minItems": 1,
+                      "maxItems": 8
+                    },
+                    "judgment": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "说明需要核对的成果与证据来源；完成时用 milestone 引用实际观察、对方回复或服务端回执。适合已发生的动作与净变化，保留来源时间；它是宿主判断，不是核心独立证明。前提被新证据否定时用 reopen/revise 订正，不必填一个无关的 verify。"
+                    }
+                  },
+                  "required": [
+                    "do"
+                  ]
+                }
+              }
+            }
+          },
+          "milestone": {
+            "type": "object",
+            "description": "完成当前最前面的 judgment 里程碑；机械里程碑不能用它代填。",
+            "properties": {
+              "slot": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              "step": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12
+              },
+              "judgment": {
+                "type": "string",
+                "description": "现场复看后的明确判断及依据。"
+              }
+            },
+            "required": [
+              "slot",
+              "step",
+              "judgment"
+            ]
+          },
+          "reopen": {
+            "type": "object",
+            "description": "显式撤回一项已经登记的 judgment 里程碑。",
+            "properties": {
+              "slot": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              "step": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12
+              },
+              "reason": {
+                "type": "string",
+                "description": "为什么需要重新判断。"
+              }
+            },
+            "required": [
+              "slot",
+              "step",
+              "reason"
+            ]
+          },
+          "done": {
+            "type": "integer",
+            "description": "明确结案,槽位号 1..5。plan 的每项里程碑都有新鲜旁证后才受理。"
+          },
+          "drop": {
+            "type": "integer",
+            "description": "这一格不干了(不是干完),槽位号 1..5。"
+          }
+        },
+        "required": []
+      },
+      "tags": [
+        "write"
+      ]
+    },
+    {
+      "name": "mymc_guide",
+      "description": "Read one Qiandengji manual topic when needed. Omit topic for the index. Local guidance records observed mechanisms; current server replies decide rules, locations, costs and availability. Generic Minecraft action parameters are available through mymc_help.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "topic": {
+            "type": "string",
+            "enum": [
+              "index",
+              "cli",
+              "world",
+              "stories",
+              "onboarding",
+              "skill-paths",
+              "protection",
+              "travel",
+              "guild",
+              "trial",
+              "storage",
+              "tasks",
+              "skills",
+              "flight",
+              "control",
+              "combat",
+              "tactics",
+              "mining",
+              "living",
+              "building",
+              "railway",
+              "social",
+              "vision",
+              "broadcast",
+              "state"
+            ]
+          }
+        },
+        "required": []
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_hear",
+      "description": "Read recent actual server sound packets, merged by sound kind/direction. Returns coarse direction and distance bands at the time heard, age and source; no precise coordinates, entity IDs/counts or invented sounds. No record does not prove safety.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8,
+            "description": "Default 3; compact highlights only."
+          }
+        },
+        "additionalProperties": false
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_help",
+      "description": "Read Minecraft action skill documentation. Empty arguments return the complete compact directory with parameter signatures. Choose skill, or a short list of skills, to read their full examples and execution conditions. This reads the action registry without executing actions or contacting the server.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "skill": {
+            "type": "string",
+            "description": "One action skill name from the directory."
+          },
+          "skills": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            },
+            "description": "Several action skill names; omit skill when using this."
+          }
+        },
+        "required": []
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_history",
+      "description": "Read retained pre-migration goals, trial and guild records. Historical evidence only; does not submit or replay actions. Omit file to list. Long originals support character offset/limit.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "enum": [
+              "minecraft-works.json",
+              "mymc-trial-progress.json",
+              "mymc-guild-progress.json"
+            ]
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 16000
+          }
+        }
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_knowledge",
+      "description": "Read versioned vanilla Minecraft knowledge on demand: food/cooking/health, bed/sleep, night shelter, equipment, base, storage, farming, items, mining blocks and crafting. search returns summaries; get(id) reads one entry. Offline local lookup, no model/network/action. Baseline reference only; mymc_memory holds historical experience. Main semantic target Java 1.21.1.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "help",
+              "search",
+              "get"
+            ],
+            "description": "Omit: id implies get; query/filter/paging implies search; empty arguments imply help."
+          },
+          "query": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "guide",
+              "food",
+              "item",
+              "block",
+              "recipe"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Exact returned ID, e.g. food/beef or guide/cooking."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_life",
+      "description": "按需读取通用Minecraft生活故事线；省略id给简短索引。供Agent选择和改写，不自动换目标。",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "forge",
+              "harvest",
+              "expedition",
+              "home",
+              "visit"
+            ]
+          }
+        }
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_map",
+      "description": "Register dimension-tagged named places in this world: home, bed, chest, workstation, danger zone, resource spot, portal, farm, landmark — up to 24. Call with no fields to read them all back with the bearing and distance for places in your current dimension. Tied to the current world and empty after a restart or a world change, so the lasting copy belongs in your own notes. Rejected done requests are marked failed and include the missing evidence. Every request checks current conditions. Repeated rejection does not close the host decision turn or change the goal.",
+      "parameters": {
+        "type": "object",
+        "description": "一次只受理一件事。set 收数组 = 一次把笔记里那份地图整个装载回来。",
+        "properties": {
+          "set": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "这地方叫什么,你说了算;名字就是主键,重名 = 改那一处。"
+                },
+                "dimension": {
+                  "type": "string",
+                  "description": "坐标所属维度:overworld / the_nether / the_end(或完整 minecraft: id)。不写按主世界记,回执会点名是哪几条 —— 下界/末地的坐标一定要写。"
+                },
+                "pos": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "description": "[x, y, z] 整数格。"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "家",
+                    "床",
+                    "箱",
+                    "工作站",
+                    "危险区",
+                    "资源点",
+                    "门户",
+                    "农田",
+                    "地标"
+                  ],
+                  "description": "这地方是什么。"
+                },
+                "note": {
+                  "type": "string",
+                  "description": "一句备注(可不填)。"
+                },
+                "radius": {
+                  "type": "integer",
+                  "description": "只对危险区有用:圈多大(格)。标了半径,受理任务时目标点落进圈里我会说一声。"
+                }
+              },
+              "required": [
+                "name",
+                "pos",
+                "kind"
+              ]
+            },
+            "description": "登记路标:一条也写成一条的数组,一次交多条 = 把笔记里那份地图整个装载回来。名字已经有了 = 改那一处。"
+          },
+          "drop": {
+            "type": "string",
+            "description": "撤掉这个名字的路标。"
+          },
+          "rename": {
+            "type": "object",
+            "description": "给一处路标改名。",
+            "properties": {
+              "from": {
+                "type": "string",
+                "description": "现在的名字。"
+              },
+              "to": {
+                "type": "string",
+                "description": "改成的新名字。"
+              }
+            },
+            "required": [
+              "from",
+              "to"
+            ]
+          }
+        },
+        "required": []
+      },
+      "tags": [
+        "write"
+      ]
+    },
+    {
+      "name": "mymc_memory",
+      "description": "Persistent game-only notebook, isolated by server/account/agent. Search summaries, then get details. Historical observations and attributed notes never establish current facts, permissions or goal success. remember needs top-level kind/summary/content/source (your conclusion: source.kind=agent_note). capture only samples current runtime facts. Use action:help,topic:remember for exact arguments. Use action:experience,operation:help for shared decision/execution evidence and evidence-linked local reflection. Optional service learning uses action:service; local lessons need no remote service. No body actions; requires dataDir.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "help",
+              "search",
+              "get",
+              "remember",
+              "capture",
+              "revise",
+              "archive",
+              "sync",
+              "replication",
+              "service",
+              "experience"
+            ]
+          },
+          "preference": {
+            "type": "string",
+            "enum": [
+              "local-first",
+              "balanced",
+              "remote-first"
+            ],
+            "description": "Only search: choose retrieval emphasis for this task. Does not disable local persistence or enable an unconfigured service."
+          },
+          "topic": {
+            "type": "string",
+            "enum": [
+              "search",
+              "remember",
+              "capture",
+              "revise"
+            ],
+            "description": "Only for action:help; returns one action schema and example."
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "help",
+              "capabilities",
+              "prepare",
+              "capture_source",
+              "record_outcome",
+              "propose_experience",
+              "generate_experience",
+              "generate_skill",
+              "revise_experience",
+              "dream",
+              "dream_get",
+              "dreams",
+              "candidates",
+              "candidate",
+              "artifact",
+              "source",
+              "operation",
+              "list",
+              "get",
+              "stats",
+              "reflect"
+            ],
+            "description": "Only for action:service or experience, not local capture or remember."
+          },
+          "input": {
+            "type": "object",
+            "maxProperties": 12,
+            "description": "Only service/experience-operation arguments. Local note fields stay at the top level."
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 48
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "place",
+              "resource",
+              "relationship",
+              "task",
+              "method",
+              "lesson",
+              "note"
+            ]
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 180
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 6000
+          },
+          "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "agent_note",
+                  "user_report",
+                  "hypothesis"
+                ]
+              },
+              "reference": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "speaker": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "observedAt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              }
+            }
+          },
+          "tags": {
+            "type": "array",
+            "maxItems": 12,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 48
+            }
+          },
+          "dimension": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "query": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "includeArchived": {
+            "type": "boolean"
+          }
+        }
+      },
+      "tags": [
+        "read",
+        "write"
+      ]
+    },
+    {
+      "name": "mymc_messages",
+      "description": "Query received server chat, announcements and private messages by channel or text, newest first. list/search returns short entries; read expands one id. review marks explicit ids as considered, never as completed or executed. Sender names do not prove administrator authority.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "list",
+              "search",
+              "read",
+              "review"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "Message id returned by list/search. With id and no action, read is selected; an id is never silently used as a list query."
+          },
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 16
+          },
+          "query": {
+            "type": "string",
+            "description": "Case-insensitive text search."
+          },
+          "keyword": {
+            "type": "string",
+            "description": "Compatibility alias for query. Do not combine different values."
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "system",
+              "login",
+              "plugin",
+              "private",
+              "public"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "all"
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": []
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_notices",
+      "description": "Read recent original server guides/rules and player chat, including pre-attachment notices. This is an observation query, not a new inbox; do not replay old requests.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "after": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_operations",
+      "description": "Discover exact real-client operations. Uninstalled Minescript/Baritone are unavailable.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_photo",
+      "description": "Photography and art. capabilities describes explicitly configured image generation. capture saves an ordinary web screenshot paired with fresh game data; no image model is needed. read/list retrieve archived originals and results. The host interprets the screenshot and game data and supplies the final prompt. enhance requires a captured source_id; its scene is image 1, followed by character reference_handles. create makes an explicitly imagined scene. Generation is optional and may cost money. It returns a job id, not a finished image or completed goal. Consume minecraft.photo events or use status/read. cancel aborts local HTTP waiting; remote billing/computation may continue. No provider: enhancement returns the original with an explicit fallback; creation is unavailable. Never automatically retry an uncertain generation; inspect its archived status. No hidden model or vision loop.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "capabilities",
+              "capture",
+              "enhance",
+              "create",
+              "status",
+              "read",
+              "list",
+              "cancel"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "source_id": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16000
+          },
+          "reference_handles": {
+            "type": "array",
+            "maxItems": 14,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "maxLength": 256
+            }
+          },
+          "size": {
+            "type": "string",
+            "maxLength": 16
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "first",
+              "third",
+              "3dview"
+            ]
+          },
+          "fov": {
+            "type": "number",
+            "minimum": 30,
+            "maximum": 140
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "tags": [
+        "act"
+      ]
+    },
+    {
+      "name": "mymc_policy",
+      "description": "Set standing rules for how the work gets done in Minecraft. Takes effect immediately, does not queue behind tasks. Call with no fields to read the current rules back.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "scaffold": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "垫一格用哪些方块,顺序即优先;[] = 不垫"
+          },
+          "light": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "插一根用哪些;[] = 不插"
+          },
+          "lightWhen": {
+            "type": "string",
+            "enum": [
+              "dig",
+              "anywhere"
+            ],
+            "description": "什么场合黑了才插:dig 只在挖通道/挖空间的时候,anywhere 赶路和采集途中也插"
+          },
+          "travel": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "dig",
+              "place"
+            ],
+            "description": "赶路遇到坎是挖开还是垫过去"
+          },
+          "reserve": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "收着不主动拿去挖的家伙什;[] = 都不收着"
+          },
+          "fight": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "armed",
+              "off"
+            ],
+            "description": "怪贴到跟前主动动手的条件;挨打一律还手,这一条管不了"
+          }
+        },
+        "required": [],
+        "description": "干活的常驻规矩,给哪个字段就改哪个,立即生效直到下次改。不排队,不占任务号。\n一个字段都不给 = 只念一遍现在生效的规矩。\nscaffold  [\"dirt\",\"cobblestone\"]   脚下没底时垫一格用哪些方块,顺序即优先。\n                                   赶路、逃跑、tunnel 垫桥、塔的每一格、上露天的\n                                   每一格都用这份。[] = 不垫\nlight     [\"torch\"]                周身黑下来插一根用哪些。[] = 不插\nlightWhen \"dig\" | \"anywhere\"       什么场合黑了才插:dig 只在挖通道/挖空间的时候\n                                   (默认),anywhere 赶路和采集途中也插\ntravel    \"auto\" | \"dig\" | \"place\" 赶路遇到坎:auto 按代价自选,dig 能挖就不垫,\n                                   place 能垫就不挖\nreserve   [\"iron_pickaxe\"]         这几件家伙什收着,挖东西不主动拿。\n                                   收着的那把是唯一挖得出掉落的时候仍然会拿。[] = 都不收着\nfight     \"auto\" | \"armed\" | \"off\" 怪贴到跟前主动动手的条件:armed 手上有趁手的\n                                   家伙才动手(默认),auto 空手也一律动手,\n                                   off 不主动动手。挨打一律还手,这一条改不了。\n                                   这一格重连之后回 armed,别的五格留着\n方块/物品一律用英文 id(dirt、cobblestone、torch、iron_pickaxe)。\n料不在包里的那一条就不做,不算受阻;做过的进收工回执报数。\n回执一律念出六条当下生效的规矩,没改过的念默认值。"
+      },
+      "tags": [
+        "write"
+      ]
+    },
+    {
+      "name": "mymc_queue",
+      "description": "Read the Minecraft work queue right now: the task being executed and which step it is on, the tasks waiting behind it, and how the most recent finished task ended. Read-only and instant — it changes nothing. Ask this instead of re-submitting a task to check progress. Once per turn: asking again in the same turn returns a one-line pointer to the answer above.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tags": [
+        "read",
+        "snapshot"
+      ]
+    },
+    {
+      "name": "mymc_railway",
+      "description": "Read rail shapes and height-compatible reciprocal connections in an absolute inclusive bounds box of the currently loaded world. No movement, queue changes, redstone activation or building. At most 4096 cells, 128 per axis and 256 rails. Optional start/end rail cells test connectivity within this sample and return the complete path. The default summary bounds examples and reports omitted counts; narrow bounds to inspect another section. Counts and adjacency alone never certify connection; unobserved continuations remain unknown. powered=false is a current reading, not proof of a failed circuit. detail adds rail/edge and nearby collision data; oversized detail fails with instructions to narrow bounds. This is static topology, not a passenger clearance, launch or round-trip test. Use mymc_guide railway for interpretation and design.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "bounds": {
+            "type": "array",
+            "minItems": 6,
+            "maxItems": 6,
+            "items": {
+              "type": "integer"
+            },
+            "description": "Absolute [xmin,ymin,zmin,xmax,ymax,zmax], inclusive. Read only the corridor needed; unloaded cells are unknown."
+          },
+          "start": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "integer"
+            },
+            "description": "Optional start rail cell inside bounds; requires end."
+          },
+          "end": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "integer"
+            },
+            "description": "Optional destination rail cell inside bounds; requires start."
+          },
+          "detail": {
+            "type": "boolean",
+            "description": "Include compact rails/edges and bounded examples of support/overhead collision readings."
+          }
+        },
+        "required": [
+          "bounds"
+        ]
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_result",
+      "description": "Reconcile the original action ID, including uncertain dispatch and archived terminals.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "action_id"
+        ],
+        "additionalProperties": false
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_risk",
+      "description": "On-demand risk highlights from currently visible threats. Separates received facts from short constant-motion estimates; probabilities/attack/sight ranges remain null without authoritative evidence. Optional entityId narrows to one currently visible entity. Does not use occluded live positions. No full grid by default; ask mymc_visual overview for an image.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "entityId": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8,
+            "description": "Default 3; compact highlights only."
+          }
+        },
+        "additionalProperties": false
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_scout",
+      "description": "Queue read-only observations in steps:[{skill,...}]. For probe, shape is required: line/rect/triangle/arc/box, together with that shape’s coordinates; use mymc_help skill:probe for its exact signature. For a simple nearby scene use mymc_visual or observe. Also supports observe (compact site geometry, voxels or collision rays), plus goto/flight/build/excavate/tunnel (always dry-run). Each trial uses the actual current position and world, without projecting an earlier trial destination or materials. needs gates on prior trial outcomes only, not hypothetical execution. Flight checks one segment before permission is granted; use mymc_flight_plan for a projected multi-leg flight. Same queue and task events; does not change the world.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "steps": {
+            "type": "array",
+            "description": "一步一个对象,按顺序读取真实现场并试算,不动世界。每步从当时真实位置开始，不推进假定位置或材料；needs 只判断前步试算结果，不表示前步已执行。收 goto / flight / cleanup / tunnel / build / excavate / probe / observe 这几个技能,写法与参数跟 mc_do 的 steps 完全一样完整示例和条件用 mc_help 按技能查询;一律按试算跑,不用自己写 dryRun。",
+            "items": {
+              "type": "object",
+              "properties": {
+                "skill": {
+                  "type": "string",
+                  "enum": [
+                    "goto",
+                    "flight",
+                    "cleanup",
+                    "tunnel",
+                    "build",
+                    "excavate",
+                    "probe",
+                    "observe"
+                  ]
+                },
+                "at": {
+                  "type": [
+                    "array",
+                    "string"
+                  ],
+                  "items": {
+                    "type": [
+                      "number",
+                      "string"
+                    ]
+                  },
+                  "minItems": 2,
+                  "maxItems": 3,
+                  "description": "用于 goto(只写 [x,z] = 到附近可达落脚点(不强制爬屋顶);指定楼层请给 [x,y,z];给字符串 = mc_map 路标名) / flight / tunnel(通道终点) / build(按蓝图施工时:蓝图 [0,0,0] 落在世界的哪一格)"
+                },
+                "dimension": {
+                  "type": "string",
+                  "description": "用于 goto(可选的当前维度前置条件(overworld/the_nether/the_end))"
+                },
+                "exact": {
+                  "type": "boolean",
+                  "description": "用于 goto(完整 [x,y,z] 的精确落脚格；缺省允许邻格到达)"
+                },
+                "walkOnly": {
+                  "type": "boolean",
+                  "description": "用于 goto(只沿现有通路走，不挖掘或垫脚；dryRun 也只试算这条走法)"
+                },
+                "dryRun": {
+                  "type": "boolean",
+                  "description": "用于 goto / flight(只试算当前已加载路线；回报预计毫秒、速度来源和当前许可) / cleanup / tunnel / build / excavate"
+                },
+                "land": {
+                  "type": "boolean",
+                  "description": "用于 flight(false=抵达后悬停；省略或true=平台落地)"
+                },
+                "spiral": {
+                  "type": "boolean",
+                  "description": "用于 tunnel(正上/正下时改挖 2×2 螺旋楼梯(上下都能走))"
+                },
+                "tool": {
+                  "type": "string",
+                  "description": "用于 tunnel(只覆盖本步;不写时节约耐久) / excavate(只覆盖本步;不写时节约耐久)"
+                },
+                "until": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 12,
+                  "description": "用于 tunnel(挖的路上碰到这里头任何一样就停)"
+                },
+                "blueprint": {
+                  "type": "string",
+                  "description": "用于 build(按蓝图施工;形状与材料都在图里)"
+                },
+                "stopAfter": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991,
+                  "description": "用于 build(按蓝图施工时:做到这个 y 层就收工(0 是最低层))"
+                },
+                "rebindFrom": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "description": "用于 build(按蓝图施工改绑到新 at 时，给出当前绑定的绝对锚点；dryRun 可先试算新位置)"
+                },
+                "confirm": {
+                  "type": "boolean",
+                  "description": "用于 build(retrofit 有冲突时:确认清掉冲突格后施工)"
+                },
+                "skipConflicts": {
+                  "type": "boolean",
+                  "description": "用于 build(retrofit 有冲突时:留着冲突格,先放能放的)"
+                },
+                "shape": {
+                  "type": "string",
+                  "enum": [
+                    "line",
+                    "rect",
+                    "triangle",
+                    "arc",
+                    "box"
+                  ],
+                  "description": "用于 build(不写 = 就 anchors 那些格) / excavate / probe"
+                },
+                "on": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "at": {
+                        "type": [
+                          "array",
+                          "string"
+                        ],
+                        "items": {
+                          "type": [
+                            "number",
+                            "string"
+                          ]
+                        },
+                        "minItems": 3,
+                        "maxItems": 3
+                      },
+                      "face": {
+                        "type": "string",
+                        "enum": [
+                          "down",
+                          "up",
+                          "north",
+                          "south",
+                          "west",
+                          "east"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "at",
+                      "face"
+                    ]
+                  },
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "description": "用于 build(贴着 at 那一格的 face 面放;与 anchors 二选一)"
+                },
+                "anchors": {
+                  "type": "array",
+                  "items": {
+                    "type": [
+                      "array",
+                      "string"
+                    ],
+                    "items": {
+                      "type": [
+                        "number",
+                        "string"
+                      ]
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  },
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "description": "用于 build(不写 shape = 就这些格;与 on 二选一) / excavate(数量由 shape 定) / probe(数量由 shape 定)"
+                },
+                "material": {
+                  "type": "string",
+                  "description": "用于 build"
+                },
+                "temporary": {
+                  "type": "boolean",
+                  "description": "用于 build(只用于材料/锚点或贴面形态；本次确认的临时支撑用完后 cleanup，已有方块不接管)"
+                },
+                "fill": {
+                  "type": "string",
+                  "enum": [
+                    "solid",
+                    "outline",
+                    "edges"
+                  ],
+                  "description": "用于 build(只对 box 有意义) / excavate / probe(只对 box 有意义)"
+                },
+                "slice": {
+                  "type": "string",
+                  "enum": [
+                    "x",
+                    "y",
+                    "z"
+                  ],
+                  "description": "用于 probe(box 空间切片；体积=(|dx|+1)(|dy|+1)(|dz|+1)≤512，不与 where 同用)"
+                },
+                "where": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 12,
+                  "description": "用于 probe(只报这几样在这片里当前可见的坐标；遮挡、超距或未加载保持未知)"
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "sites",
+                    "voxels",
+                    "rays"
+                  ],
+                  "description": "用于 observe"
+                },
+                "sites": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 4,
+                  "items": {
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer",
+                      "minimum": -30000000,
+                      "maximum": 30000000
+                    }
+                  },
+                  "description": "用于 observe(sites：绝对格 [x,y,z] 列表，短报占用/支撑高度/邻接面/0.6×1.8方块净空；非可达或放置许可)"
+                },
+                "bounds": {
+                  "type": "array",
+                  "minItems": 6,
+                  "maxItems": 6,
+                  "items": {
+                    "type": "integer",
+                    "minimum": -16,
+                    "maximum": 16
+                  },
+                  "description": "用于 observe(voxels 相对脚下格 [xmin,ymin,zmin,xmax,ymax,zmax]，含端点；三轴长度相乘≤512)"
+                },
+                "rays": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 64,
+                  "items": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": [
+                      {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                      },
+                      {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                      },
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "maximum": 64
+                      }
+                    ]
+                  },
+                  "description": "用于 observe(rays 的 [相对pitch角±90,相对yaw角±180,距离>0且≤64] 列表；相对执行时身体朝向，yaw=0 沿当前朝向)"
+                },
+                "needs": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "description": "任何技能都可带:依赖本次 steps 数组内哪些更早的步(每次调用重新从 1 起，第一步只能省略或写 [])。不写=只拦因果:要用更早某步的产出、那一步又没做成时才跳过,其余照跑;[]=独立步"
+                }
+              },
+              "required": [
+                "skill"
+              ]
+            }
+          },
+          "queue": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "append",
+              "now",
+              "afterCheckpoint"
+            ],
+            "description": "这一单跟队列的关系。不写 = replace:撤掉排着的那些,接在正在做的那件后面(回执点名撤了谁);append:排到队尾,排着的都保留;now:中断正在做的那件、插到队头立刻开做,排着的保留(低血战斗可让位给首步 eat/flee/surface;已在执行的逃命、进食或环境自保不抢);afterCheckpoint:当前任务到安全检查点后先做这一单,再续做原任务;容器存取、交易等完整操作段结束前等待,不抢救命动作"
+          }
+        },
+        "required": [
+          "steps"
+        ]
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_script",
+      "description": "Run an agent-authored JavaScript async function body with params and a restricted mc SDK. Nearby blocks: {find:{names:[\"water\"],maxDistance:8,count:4},waitMs:1000} runs a bounded read recipe without scan loops. name is optional for code; omitted names use its stable source hash. Explicit names are1–80 characters. mc.state() returns {sampledAt,connectionGeneration,snapshot,flight,queue,combatActive,combat,method}. Read position, dimension, health, food, inventory and equipment under snapshot, which can be null. snapshot.entities is a bounded array of {entityId?,name,kind,distance,direction,dy,visible}; snapshot.entitiesOmitted reports truncation. snapshot.blocksScanned is false here; empty nearbyBlocks/terrain do not establish water depth or traversability. Missing fields are unknown observations. await mc.do(steps) submits one ordered group to the normal executor and waits for its actual terminal result: accepted, taskId, kind, done, receipt, steps and fresh state. A sent server command still needs observed effects; done is the executor result, not proof of an external quest. await mc.flightPlan(args) uses the same read-only geometry/budget contract as mymc_flight_plan. Use JavaScript conditions, calculations and bounded loops to adapt to feedback. Prepare a timed route before casting; combine already-known cast/movement/blink steps with needs in one mc.do to avoid model delays. bot and Vec3 expose a bounded asynchronous transport for Mineflayer public primitives; use {api:\"index\"} then {api:\"blockAt\"}, {api:\"activateItem\"}, etc. for native signatures and differences. Native calls preserve the current hand and do not navigate or select tools. bot.blockAt returns Block|null with getProperties() for your own JavaScript result checks. The first native body call queues a body lease held until program end; after it, mc.do is unavailable in that program. Read calls do not acquire the body. No imports, process, filesystem, network or protected raw bot access. Calls must be awaited serially. Limits: 12000 source chars, 32 SDK calls, 16 action groups, default 60000ms including queue waits, maximum 120000ms. Only one program runs at a time. New admitted body work, stop, death, disconnect, World stop or timeout revoke it and its own pending task. Returns a run id immediately; {runId} reads result and call summaries, {runId,call} expands one complete SDK call; {} lists the last eight run summaries, {stop:true} cancels the current run. {validate:true,name,code} checks syntax without running any action. Program completion does not certify a learned method. Expand an SDK call to inspect its actual fields before interpreting results; compare the returned observations with the method objective before saving verified claims. Alternatively use {procedure:{handle,revision},params,validate?} to resolve and run a pinned agent-mc.procedure/v1 dependency graph (legacy cortico.procedure/v1 is also accepted) for adapter minecraft-method/v1. await methods.run(alias,params) composes only declared dependency versions; all share this program's budgets and body lease. Source is loaded directly from the selected blobs, without copying it through model context. Procedure terminal events carry an execution UUID and persistent receipt for explicit goal review/adoption by the owning Persona; completion alone is not proof of improvement. {library:{op:\"list\"}} lists your scoped editable methods; read uses id and optional revision. After a validated syntax run, save uses id, code, description, conditions, parent (null for new; current revision for edits), validationRunId. Returns a pinned procedure reference; execution is explicit. Earlier revisions remain runnable for rollback. Library saves never edit engine files or claim verified improvement.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "library": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "list",
+                  "read",
+                  "save"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "revision": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string",
+                "maxLength": 12000
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 800
+              },
+              "conditions": {
+                "type": "array",
+                "maxItems": 8,
+                "items": {
+                  "type": "string",
+                  "maxLength": 400
+                }
+              },
+              "parent": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "validationRunId": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "after": {
+                "type": "string"
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              }
+            },
+            "required": [
+              "op"
+            ]
+          },
+          "find": {
+            "type": "object",
+            "properties": {
+              "names": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 16,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                }
+              },
+              "maxDistance": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 32
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 32
+              }
+            },
+            "required": [
+              "names"
+            ],
+            "additionalProperties": false
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 12000
+          },
+          "procedure": {
+            "type": "object",
+            "properties": {
+              "handle": {
+                "type": "string"
+              },
+              "revision": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "handle",
+              "revision"
+            ]
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "durationMs": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 120000
+          },
+          "waitMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30000,
+            "description": "Wait for the same run within this reply; zero keeps immediate admission. Expiring this wait does not cancel execution."
+          },
+          "validate": {
+            "type": "boolean"
+          },
+          "runId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "api": {
+            "type": "string",
+            "description": "index lists the program SDK and exposed Mineflayer API; mc.do/mc.state/mc.flightPlan or a native method name returns its result contract on demand."
+          },
+          "call": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 32
+          },
+          "stop": {
+            "type": "boolean"
+          }
+        },
+        "required": []
+      },
+      "tags": [
+        "act"
+      ]
+    },
+    {
+      "name": "mymc_skills",
+      "description": "Read historically observed Qiandengji MC_SPELL entries. Pass id for a cached full detail. The current CLI uses /mycli capabilities, /mycli capabilities info <ID> and /mycli skills status; read mymc_guide cli for authentication and pagination. Old cached commands and unknown cooldowns do not establish current availability.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Optional stable spell ID, e.g. flight or frostnova."
+          }
+        },
+        "required": []
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_state",
+      "description": "Read fresh actual client state, position, health, food, GUI identity and action queue. detail:body omits inventory/menu stack lists; use mymc_bag when those change. detail:summary returns the original full summary. No action or cached disconnected observation.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "enum": [
+              "body",
+              "summary"
+            ]
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_stop",
+      "description": "Clear the Minecraft work queue: stop what is being done right now and drop everything waiting behind it.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tags": [
+        "act"
+      ]
+    },
+    {
+      "name": "mymc_view_map",
+      "description": "Look at a filled map you are carrying: returns the map picture (top = north/-z, right = east/+x) plus its id, scale, how much of it is explored, its world centre when readable, and every icon on it (you, other players, banners, markers) with world coordinates. Read-only and instant. Without id it shows the map in your main hand, then off hand, then the first one in your bag.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "地图编号(回执里的 #N);不写 = 手上那张,手上没有就包里第一张"
+          }
+        },
+        "required": []
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_visual",
+      "description": "Observe the current Minecraft scene. Image-capable hosts receive the real screenshot; otherwise return timestamped game facts. No independent vision model is required. This does not move the body or establish unseen geometry.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "first",
+              "third",
+              "3dview",
+              "overview"
+            ],
+            "description": "Default first: your eye position and look direction, without your own avatar in view. third=explicit external view of surroundings/avatar, 3dview=angled spectator view, overview=north-up coordinate photograph of loaded terrain."
+          },
+          "overview": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "overview only. North-up image of the top surfaces in client-loaded terrain, including areas outside your first-person view. Unloaded chunks are marked; roofs and other top surfaces occlude lower geometry. No movement or extra terrain loading. Defaults center=self, span=32, grid/labels=auto. Block pins use cell centers; position pins preserve exact XYZ. Heights are supplied, not measured.",
+            "properties": {
+              "center": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number",
+                  "minimum": -30000000,
+                  "maximum": 30000000
+                },
+                "description": "Absolute [x,z] at image center."
+              },
+              "span": {
+                "type": "number",
+                "minimum": 8,
+                "maximum": 2048,
+                "description": "Image width in blocks; height follows image aspect ratio. Unloaded terrain remains unknown."
+              },
+              "grid": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "auto"
+                    ]
+                  },
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2048
+                  }
+                ],
+                "description": "Block boundary interval; auto scales with span, 0 hides lines."
+              },
+              "labels": {
+                "type": "string",
+                "enum": [
+                  "auto",
+                  "full",
+                  "ids"
+                ],
+                "description": "auto uses IDs for dense scenes. Full labels include coordinates; overlapping labels may be hidden, never the points."
+              },
+              "markers": {
+                "type": "array",
+                "maxItems": 128,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "at"
+                  ],
+                  "properties": {
+                    "at": {
+                      "type": "array",
+                      "minItems": 3,
+                      "maxItems": 3,
+                      "items": {
+                        "type": "number",
+                        "minimum": -30000000,
+                        "maximum": 30000000
+                      }
+                    },
+                    "anchor": {
+                      "type": "string",
+                      "enum": [
+                        "block",
+                        "position"
+                      ],
+                      "description": "Default block: integer XYZ cell, drawn at XYZ+0.5. position: exact continuous XYZ, no offset (including integer positions)."
+                    },
+                    "label": {
+                      "type": "string",
+                      "maxLength": 24
+                    }
+                  }
+                }
+              },
+              "attention": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "regions"
+                ],
+                "description": "Caller-selected task regions: highlight relevant evidence, not inferred importance. One image; optional detail panel.",
+                "properties": {
+                  "regions": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 32,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "bounds"
+                      ],
+                      "properties": {
+                        "bounds": {
+                          "type": "array",
+                          "minItems": 4,
+                          "maxItems": 4,
+                          "items": {
+                            "type": "number",
+                            "minimum": -30000000,
+                            "maximum": 30000000
+                          },
+                          "description": "[minX,minZ,maxX,maxZ] exact boundaries; positive sides <=2048. A1,A2,... follow input order."
+                        },
+                        "label": {
+                          "type": "string",
+                          "maxLength": 24
+                        }
+                      }
+                    }
+                  },
+                  "detail": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 32,
+                    "description": "1-based region to magnify on right; default 1, 0=highlight only. Must name an existing region."
+                  }
+                }
+              }
+            }
+          },
+          "fov": {
+            "type": "number",
+            "minimum": 30,
+            "maximum": 140,
+            "description": "first/third vertical field of view in degrees; default 120. Does not change look direction or reveal occluded terrain."
+          },
+          "focus": {
+            "type": "string",
+            "maxLength": 160,
+            "description": "What you want to inspect: an entrance, nearby player, combat result, menu, item or building. This labels the observation; it does not move the camera."
+          },
+          "include_hud": {
+            "type": "boolean",
+            "description": "Include visible health, items, notices and open menus. Default false captures the 3D scene alone."
+          },
+          "raw": {
+            "type": "boolean",
+            "description": "Return the image directly instead of a separate focused observation. Default false."
+          },
+          "background": {
+            "type": "boolean",
+            "description": "Accept a background observation job and deliver its actual result in a minecraft.visual event. Analyzed reports retain saved image references; raw or fallback results include the image. Omitted follows the World visual.background setting (default false). Explicit false waits for the result. Local background waiting is capped at 75 seconds; a model request already running may finish later."
+          }
+        },
+        "required": []
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_wait",
+      "description": "Wait cancellably for the original action terminal. Cancelling this wait does not cancel the body action.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30000
+          }
+        },
+        "required": [
+          "action_id"
+        ],
+        "additionalProperties": false
+      },
+      "tags": [
+        "read"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "type": "mymc.body",
+      "description": "身体控制权、当前执行状态和恢复条件。"
+    },
+    {
+      "type": "mymc.chat",
+      "description": "同一游戏连接实际收到的玩家聊天，保留发言人。"
+    },
+    {
+      "type": "mymc.client.action",
+      "description": "原生客户端动作回执；受理和完成分开记录。"
+    },
+    {
+      "type": "mymc.client.disconnected",
+      "description": "原生客户端连接中断及其原因。"
+    },
+    {
+      "type": "mymc.client.message",
+      "description": "原生客户端实际收到的系统或界面消息。"
+    },
+    {
+      "type": "mymc.client.message_gap",
+      "description": "原生客户端消息序列缺口，不能当成完整历史。"
+    },
+    {
+      "type": "mymc.client.control_lost",
+      "description": "原生客户端控制租约丢失，动作需要重新核验。"
+    },
+    {
+      "type": "mymc.combat",
+      "description": "真实战斗现场或战斗执行反馈。"
+    },
+    {
+      "type": "mymc.enter",
+      "description": "当前连接观测到的玩家进入游戏。"
+    },
+    {
+      "type": "mymc.event",
+      "description": "Minecraft 生命周期、危险或环境通知。"
+    },
+    {
+      "type": "mymc.goal.metrics",
+      "description": "目标执行统计；计数本身不证明目标完成。"
+    },
+    {
+      "type": "mymc.goal.revision",
+      "description": "目标或阶段的有来源修订回执。"
+    },
+    {
+      "type": "mymc.leave",
+      "description": "当前连接观测到的玩家离开游戏。"
+    },
+    {
+      "type": "mymc.lifecycle",
+      "description": "引擎启动、中断或恢复的生命周期通知。"
+    },
+    {
+      "type": "mymc.memory",
+      "description": "带来源和适用条件的游戏历史记忆，不代表当前现场。"
+    },
+    {
+      "type": "mymc.method",
+      "description": "方法运行、源码版本与执行终态证据。"
+    },
+    {
+      "type": "mymc.photo",
+      "description": "摄影或图像处理的异步结果及失败状态。"
+    },
+    {
+      "type": "mymc.reflex",
+      "description": "已有反射控制的实际触发和执行证据。"
+    },
+    {
+      "type": "mymc.skill",
+      "description": "显式服务器资料包收到的技能或魔力回执。"
+    },
+    {
+      "type": "mymc.sleep",
+      "description": "实际游戏睡眠状态事件。"
+    },
+    {
+      "type": "mymc.tactic",
+      "description": "战术程序的执行或终态回执。"
+    },
+    {
+      "type": "mymc.task",
+      "description": "任务执行终态；须进一步核对世界净变化。"
+    },
+    {
+      "type": "mymc.task.progress",
+      "description": "当前身体任务的中间进度和路线反馈。"
+    },
+    {
+      "type": "mymc.task.queue",
+      "description": "任务排队、启动或拒绝信息。"
+    },
+    {
+      "type": "mymc.visual",
+      "description": "异步观察画面和关联的现场事实。"
+    },
+    {
+      "type": "mymc.wake",
+      "description": "实际游戏起床或睡眠结束事件。"
+    },
+    {
+      "type": "mymc.world",
+      "description": "当前连接收到的世界状态变化。"
+    },
+    {
+      "type": "mymc.world.snapshot",
+      "description": "带采样时间的世界状态快照。"
+    },
+    {
+      "type": "minecraft.client.action",
+      "description": "原生客户端动作回执；受理和完成分开记录。"
+    },
+    {
+      "type": "minecraft.client.disconnected",
+      "description": "原生客户端连接中断及其原因。"
+    },
+    {
+      "type": "minecraft.client.message",
+      "description": "原生客户端实际收到的系统或界面消息。"
+    },
+    {
+      "type": "minecraft.client.message_gap",
+      "description": "原生客户端消息序列缺口，不能当成完整历史。"
+    },
+    {
+      "type": "minecraft.client.control_lost",
+      "description": "原生客户端控制租约丢失，动作需要重新核验。"
+    },
+    {
+      "type": "minecraft.memory",
+      "description": "带来源和适用条件的游戏历史记忆，不代表当前现场。"
+    }
+  ],
+  "prompts": [
+    {
+      "key": "worlds.mymc.envPrompt",
+      "title": "Minecraft client",
+      "role": "envPrompt",
+      "content": "You control an independently maintained Minecraft Java execution client. Protocol: agent-mc/v1.\r\n\r\nYour Agent owns goals, reasoning, memory and event wakeups. This client executes game operations and returns observations. No server-specific RPG commands, permissions, account prefix or spell availability are assumed.\r\n\r\nDiscover action parameters with mymc_help and native Mineflayer methods with mymc_script {\"api\":\"index\"}; read only the needed guide. mymc_do submits ordered steps to a persistent body queue. Acceptance is not completion: consume events and verify the terminal receipt plus the relevant position, block, inventory or entity change. A useful running task continues while you reason; submitting replacement work can cancel it. Explicit dependencies prevent later steps from running if a prerequisite fails.\r\n\r\nEvery script SDK call returns a Promise. Await observations and terminal results before reading their fields. Programs, source hashes and execution receipts can support your own versioned methods; completion of a program does not prove the game goal was achieved. Preserve failures and applicable conditions, and evaluate reuse against actual world results.\r\n\r\nFor an evidence review, read mymc_memory {action:\"experience\",operation:\"help\"} on demand. Use list/get for linked calls, terminal receipts and measured changes; reflect stores your interpretation with conditions and counterexamples. Search/get prior lessons and methods for a similar task, then evaluate actual reuse. Recording, recall and reflection alone do not establish mastery; do not repeat reviews without new evidence.\r\n\r\nGeometric conclusions need corresponding loaded blocks, collision rays or images. A failed path only proves that attempt failed. Unloaded areas, unknown health, teammates and permissions remain unknown. Player chat and text in items or images retain their external provenance.\r\n\r\n\r\nUse mymc_protocol to mark actual decision turns and read current facts. Current facts belong at the request tail and replace previous facts with the same key; keep this prefix unchanged. Retrieve complete originals by artifact handle or archive query. A returned tool barrier or end-turn request is control information for the host, never proof that a task or goal has finished.\r\n"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/console-client.ts",
+    "src/connection-panel.ts",
+    "adapters/cortico/console/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist", "adapters/**/tests/**"]
+}

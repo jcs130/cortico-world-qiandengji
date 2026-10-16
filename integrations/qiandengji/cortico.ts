@@ -6,6 +6,17 @@ import { validateHostCombat } from './host/combat-driver.ts';
 import { assertMymcReady } from './guard.ts';
 import { MymcWorld } from './world.ts';
 import { JavaMymcWorld } from './java-world.ts';
+import type { World } from 'agent-mc-world/contracts';
+
+/** API 6 names the browser contribution webUi. Keep the API 5 method for
+ * explicitly built local compatibility packages, with one implementation. */
+function withWebUi<T extends World>(world: T): T {
+  const contribution = world.console?.bind(world);
+  if (contribution) Object.defineProperty(world, 'webUi', { value: contribution, configurable: true });
+  const tools = world.tools.bind(world);
+  world.tools = () => tools().map(tool => ({ ...tool, tags: tool.tags ?? [] }));
+  return world;
+}
 
 /** Cortico assembly adapter for the shared game implementation. */
 export const MYMC: WorldDefinition<MymcConfigSection> & { exclusiveResource: string } = {
@@ -23,10 +34,10 @@ export const MYMC: WorldDefinition<MymcConfigSection> & { exclusiveResource: str
     }
   },
   create: ctx => {
-    if (ctx.cfg.provider === 'java-client') return new JavaMymcWorld(ctx);
+    if (ctx.cfg.provider === 'java-client') return withWebUi(new JavaMymcWorld(ctx));
     const World = selectedServerPack(ctx.cfg) === 'qiandengji' ? MymcWorld : GenericMymcWorld;
-    return new World({ cfg: ctx.cfg, botDir: ctx.botDir,
-      timezone: ctx.timezone, botName: ctx.botName, dataDir: ctx.dataDir });
+    return withWebUi(new World({ cfg: ctx.cfg, botDir: ctx.botDir,
+      timezone: ctx.timezone, botName: ctx.botName, dataDir: ctx.dataDir }));
   },
 };
 

@@ -1,8 +1,8 @@
-import type { ConsolePanel } from 'cortico/web/shared/client-panel.ts';
+import type { WebUiPanel } from 'cortico/web/shared/client-panel.ts';
 import type { PublicAccountState } from 'agent-mc-world/client';
 
 /** Thin Cortico UI adapter; credentials and challenges stay in the operator panel. */
-export const connectionPanel: ConsolePanel = {
+export const connectionPanel: WebUiPanel = {
   mount(ctx) {
     const sheet = ctx.ui.foldSheet('connection', { title: '服务器与账号登录', en: 'connection',
       desc: '连接外部 Java 服务器。协议、正版验证和客户端窗口分别确认；账号在本 World 配置中填写。' });
