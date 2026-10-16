@@ -8,6 +8,19 @@ const event = (text: string, ts = '2026-01-01T00:00:00Z', senderKey = 'mymc') =>
   ({ ts, text, source: 'mymc', type: 'mymc.chat', senderKey });
 
 describe('received Minecraft messages', () => {
+  it('reads an exact id without action, never silently ignores a selector, and exposes stable scoped revisions', () => {
+    const inbox=new MessageInbox('example.test:25565:ag_Player');
+    inbox.observe(event('[MC 系统] Original message body.'));
+    const explicit=inbox.readout({action:'read',id:'message_1'}),implicit=inbox.readout({id:'message_1'});
+    expect(implicit).toEqual(explicit);expect(implicit.text).toContain('[千灯纪收到的消息 message_1]');
+    expect(inbox.readout({action:'search',query:'Original',id:'message_1'}).failed).toBe(true);
+    inbox.observe(event('[MC 系统] Unrelated body.','2026-01-01T00:01:00Z'));
+    expect(inbox.readout({id:'message_1'}).meta).toEqual(explicit.meta);
+    inbox.observe(event('[MC 系统] Original message body.','2026-01-01T00:02:00Z'));
+    expect(inbox.readout({id:'message_1'}).meta).not.toEqual(explicit.meta);
+    const other=new MessageInbox('other.test:25565:ag_Player');other.observe(event('[MC 系统] Original message body.'));
+    expect(other.readout({id:'message_1'}).meta).not.toEqual(explicit.meta);
+  });
   it('filters compatibility keyword searches and rejects missing or conflicting search terms', () => {
     const inbox = new MessageInbox('example.test:25565:ag_Player');
     inbox.observe(event('[MC 系统] 麦田成熟了'));

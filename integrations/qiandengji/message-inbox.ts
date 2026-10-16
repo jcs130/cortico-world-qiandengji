@@ -11,7 +11,7 @@ const TEXT_LIMIT = 32_768;
 // Shared by both bodies so migration cannot silently remove search/review parameters.
 export const MESSAGE_PARAMETERS = { type: 'object', additionalProperties: false, properties: {
   action: { type: 'string', enum: ['list', 'search', 'read', 'review'] },
-  id: { type: 'string', description: 'Message id returned by list/search.' },
+  id: { type: 'string', description: 'Message id returned by list/search. With id and no action, read is selected; an id is never silently used as a list query.' },
   ids: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 16 },
   query: { type: 'string', description: 'Case-insensitive text search.' },
   keyword: { type: 'string', description: 'Compatibility alias for query. Do not combine different values.' },
@@ -139,12 +139,18 @@ export class MessageInbox {
         .map(row => `\n${heading(row)}`).join('');
   }
 
-  readout(args: Record<string, unknown>): { text: string; failed?: true } {
-    const action = args.action ?? 'list';
+  readout(args: Record<string, unknown>): { text: string; failed?: true; meta?: Record<string, unknown> } {
+    const action = args.action ?? (typeof args.id === 'string' ? 'read' : 'list');
+    if (args.id !== undefined && action !== 'read') return { text: 'id 选择一条消息原文，请用 read（或省略 action）；不能把 id 与 list/search/review 混用。未执行查询或修改考虑标记。',
+      failed: true, meta: { admission: { accepted: false, kind: 'correction', rule: 'messages.selector' } } };
     if (action === 'read') {
       const row = this.state.messages.find(row => row.id === args.id);
-      if (!row) return { text: '消息 id 不在保留范围内；用 list/search 查询。', failed: true };
-      return { text: this.storageNote() + `[千灯纪收到的消息 ${row.id}] 服务器与账号 ${this.state.identity}\n`
+      if (!row) return { text: '消息 id 不在保留范围内；用 list/search 查询。', failed: true,
+        meta: { admission: { accepted: false, kind: 'correction', rule: 'messages.retained-id' } } };
+      return { meta: { readback: { protocol: 'agent-mc-readback/v1',
+          resource: `qiandengji-message:${createHash('sha256').update(this.state.identity).digest('hex').slice(0,16)}:${row.id}`,
+          revision: createHash('sha256').update(JSON.stringify(row)).digest('hex') } },
+        text: this.storageNote() + `[千灯纪收到的消息 ${row.id}] 服务器与账号 ${this.state.identity}\n`
         + `channel=${row.channel} source=${row.source} senderKey=${row.senderKey ?? '未提供'}\n`
         + `首次 ${row.firstAt}；最近 ${row.lastAt}；收到 ${row.repeats} 次；`
         + `考虑标记 ${row.reviewedAt ?? '无'}\n${row.text}`
