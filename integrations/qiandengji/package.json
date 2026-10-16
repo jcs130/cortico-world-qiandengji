@@ -1,6 +1,6 @@
 {
   "name": "cortico-world-qiandengji",
-  "version": "0.4.0",
+  "version": "0.4.1-dev.20261016.1",
   "type": "module",
   "description": "联机版我的世界：内置现代 Web 可视化、丰富的游戏信息，适配千灯纪服务器技能、玩法和模组内容。",
   "main": "./dist/world/index.js",
@@ -35,8 +35,8 @@
     "node": ">=22"
   },
   "dependencies": {
-    "agent-mc-world": "^0.5.7-dev.20261016.22",
-    "agent-mc-qiandengji": "^0.5.0",
+    "agent-mc-world": "^0.5.7-dev.20261016.30",
+    "agent-mc-qiandengji": "^0.5.0-dev.20261016.4",
     "vec3": "0.2.0"
   },
   "peerDependencies": {

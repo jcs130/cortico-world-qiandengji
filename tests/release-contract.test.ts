@@ -52,7 +52,7 @@ describe('installable World', () => {
   it('uses packaged modern assets with all three camera pages and an original asset manifest', () => {
     const viewer = MYMC_DEFAULTS.viewerAssetsDir;
     expect(viewer).toBe(MINECRAFT_CLIENT_DEFAULTS.viewerAssetsDir);
-    for (const page of ['index.html', 'third/index.html', 'dungeon/index.html']) {
+    for (const page of ['index.html', 'third/index.html', '3dview/index.html']) {
       expect(existsSync(join(viewer, 'public', page)), page).toBe(true);
     }
     expect(existsSync(join(viewer, 'dist', 'modern-viewer.js'))).toBe(true);
