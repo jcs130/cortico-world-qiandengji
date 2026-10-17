@@ -1,13 +1,15 @@
 # 联机版我的世界 / 千灯纪资料包
 
-本仓库维护 Cortico API 6 World（Cortico 0.2.1）和可选千灯纪服务器扩展。通用 Minecraft 核心的唯一源码位于 [minecraft-ai-friend/packages/agent-mc-world](https://github.com/jcs130/minecraft-ai-friend/tree/main/packages/agent-mc-world)。
+**首要项目是通用核心包 `agent-mc-world`**，唯一源码位于 [minecraft-ai-friend/packages/agent-mc-world](https://github.com/jcs130/minecraft-ai-friend/tree/main/packages/agent-mc-world)。本仓库是核心的消费端，维护 Cortico API 6 薄 World 适配器和可选千灯纪服务器扩展；宿主兼容版本以公开子包的 `peerDependencies` 为准。
+
+通用感知、动作、导航、背包与合成、脚本与技能库、游戏记忆、学习评估和快决策状态/候选契约，先在核心实现并公开导出，供不同大模型和宿主通过 SDK/MCP/公开接口复用。本仓库负责接口映射、配置和生命周期，以及显式选择的服务器协议；不单独维护可米专用的通用游戏能力。
 
 ## 包与依赖
 
 | 包 | 职责 | 核心引用 |
 | --- | --- | --- |
-| `agent-mc-world` | 身体、SDK/MCP、动作执行、背包同步、战场/战术程序、事实/回执、可视化接入 | 在 MC AI Friend 主项目维护 |
-| `agent-mc-qiandengji` | 千灯纪协议、技能与魔力报文解析、服务器物品用法和玩法资料 | `agent-mc-world@0.5.7-rc.4` |
+| `agent-mc-world` | 通用感知与身体、SDK/MCP、动作/合成、脚本与技能库、游戏记忆与学习证据、快决策契约、可视化接入 | 首要项目，在 MC AI Friend 维护 |
+| `agent-mc-qiandengji` | 千灯纪协议、技能与魔力报文解析、服务器物品用法和玩法资料 | 版本见子包声明；本地归档来源见 `vendor/core-source.json` |
 | `cortico-world-qiandengji` | 唯一公开 Cortico World，显示“联机版我的世界” | 核心 + 可选服务器资料包 |
 | `dsh-minecraft-agent` | DSH 宿主适配器，独立仓库 | 同一个核心包 |
 
@@ -30,8 +32,8 @@ Cortico 内置示例世界保持独立，不在这里修改。
 
 ## 构建本地候选
 
-当前准备 `cortico-world-qiandengji@0.4.1-rc.2`，尚未发布到 npm。先在 MC AI Friend 的核心包目录完成构建并打包，将
-`agent-mc-world-0.5.7-rc.4.tgz` 放入本仓库忽略的 `vendor/` 目录；开发锁文件校验该安装包。
+候选版本以 `integrations/qiandengji/package.json` 为准，源码候选与 npm 发布分别记录。先在 MC AI Friend 的核心包目录完成构建并打包，将
+与根 `package.json` 和 `vendor/core-source.json` 版本、文件名、SHA 一致的核心归档放入本仓库忽略的 `vendor/` 目录；开发锁文件校验该安装包。
 公开子包依赖仍使用版本号，发布后消费者正常安装 npm 包，无需克隆主项目或本仓库。
 根工作区只安装开发入口，`vec3` 覆盖与锁文件保持一致；公开子包在构建和打包阶段单独处理。
 
