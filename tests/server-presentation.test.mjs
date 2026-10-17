@@ -97,3 +97,17 @@ test('explicit read-only refresh stays bounded and keeps connection attestation 
   assert.equal(own.snapshot().self.maxHealth,20);assert.equal(own.snapshot().serverItemPackId,'qiandengji-items-1.21.1');
   own.close();assert.equal(own.refresh(),false);
 });
+
+test('a late status reply cannot double the refresh interval and expire the HUD',async t=>{
+  t.mock.timers.enable({apis:['setInterval']});
+  const {bot,observer}=setup();observer.close();let time=100_000,sequence=1,queries=0;
+  const own=createPresentationObserver(bot,{now:()=>time,stateRefreshMs:30_000});t.after(()=>own.close());
+  const envelope={schemaVersion:1,scope:'self',readOnly:true,playerUuid:uuid,sessionId:'01b87763-dcbb-4714-8087-baa04adff2b4'};
+  const message=(kind,values)=>bot.emit('message',{toString:()=>`${kind} ${JSON.stringify({...envelope,sequence:sequence++,observedAt:time,...values})}`},'system',null);
+  message('MC_GUIDE',{kind:'guidance',guideVersion:'test',stateCommand:'/mycli status',capabilitiesCommand:'/mycli capabilities'});
+  time+=1_000;t.mock.timers.tick(1_000);
+  message('MC_STATUS',{kind:'state',health:21.2,maxHealth:21.2});
+  bot.chat=command=>{assert.equal(command,'/mycli status');queries++;message('MC_STATUS',{kind:'state',health:21.2,maxHealth:21.2});};
+  for(let i=0;i<120;i++){time+=1_000;t.mock.timers.tick(1_000);assert.ok(own.snapshot(),'fresh own-player state must not blink out');}
+  assert.ok(queries>=3&&queries<=4,'read-only requests remain bounded to one per 30 seconds');
+});
