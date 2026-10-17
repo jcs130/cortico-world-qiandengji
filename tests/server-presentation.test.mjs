@@ -79,3 +79,21 @@ test('automatic detection activates only after current direct MC_GUIDE, then rec
   bot.emit('message',{toString:()=>`MC_GUIDE ${JSON.stringify(guide)}`},'system',null);
   assert.equal(registered.length,2);send();assert.equal(auto.capabilities().active,true);auto.close();
 });
+test('explicit read-only refresh stays bounded and keeps connection attestation across native death',()=>{
+  const {bot,observer,advance}=setup();observer.close();
+  const sent=[];bot.chat=text=>sent.push(text);let time=100_000;
+  const own=createPresentationObserver(bot,{now:()=>time,stateRefreshMs:30_000});
+  assert.equal(own.refresh(),false);assert.deepEqual(sent,[]);
+  const envelope={schemaVersion:1,scope:'self',readOnly:true,playerUuid:uuid,sessionId:'01b87763-dcbb-4714-8087-baa04adff2b4',observedAt:time};
+  const guide={...envelope,kind:'guidance',sequence:1,guideVersion:'2026-10-12.8',stateCommand:'/mycli status',capabilitiesCommand:'/mycli capabilities'};
+  const state={...envelope,kind:'state',sequence:2,health:20,maxHealth:20,food:20,mana:26,maxMana:26};
+  bot.emit('message',{toString:()=>`MC_GUIDE ${JSON.stringify(guide)}`},'system',null);
+  bot.emit('message',{toString:()=>`MC_STATUS ${JSON.stringify(state)}`},'system',null);
+  assert.equal(own.refresh(),false);time+=30_001;assert.equal(own.refresh(),true);
+  assert.equal(own.refresh(),false);assert.deepEqual(sent,['/mycli status']);
+  bot.emit('death');assert.equal(own.snapshot(),null);bot.entity.id=43;time+=30_001;
+  assert.equal(own.refresh(),true);
+  bot.emit('message',{toString:()=>`MC_STATUS ${JSON.stringify({...state,observedAt:time,sequence:3})}`},'system',null);
+  assert.equal(own.snapshot().self.maxHealth,20);assert.equal(own.snapshot().serverItemPackId,'qiandengji-items-1.21.1');
+  own.close();assert.equal(own.refresh(),false);
+});

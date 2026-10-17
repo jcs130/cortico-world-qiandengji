@@ -17,6 +17,9 @@ for (const source of await walk(sourceBase)) {
   const name = relative(sourceBase, source).replaceAll('\\', '/');
   if (name.startsWith('dist/') || name.startsWith('node_modules/') || ['index.ts', 'cortico.ts'].includes(name)
     || /(?:^|\/)(?:package\.json|LICENSE)$/.test(name) || name === 'README.md') continue;
+  if(name.startsWith('data-packs/qiandengji/viewer-items/')&&/\.(?:png|json)$/.test(name)){
+    const target=join(pack,'dist',name);await mkdir(dirname(target),{recursive:true});await cp(source,target);continue;
+  }
   if (!/\.(?:ts|mjs|js|md)$/.test(name) || /\.d\.ts$/.test(name)) continue;
   const target = join(pack, 'dist', name.replace(/\.ts$/, '.js'));
   await mkdir(dirname(target), { recursive: true });

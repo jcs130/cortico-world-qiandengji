@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "agent-mc-world": "^0.5.7-rc.7",
-    "agent-mc-qiandengji": "^0.5.0-dev.20261017.4",
+    "agent-mc-qiandengji": "^0.5.0-dev.20261017.5",
     "vec3": "0.2.0"
   },
   "peerDependencies": {
