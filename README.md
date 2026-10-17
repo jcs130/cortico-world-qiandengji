@@ -7,7 +7,7 @@
 | 包 | 职责 | 核心引用 |
 | --- | --- | --- |
 | `agent-mc-world` | 身体、SDK/MCP、动作执行、背包同步、战场/战术程序、事实/回执、可视化接入 | 在 MC AI Friend 主项目维护 |
-| `agent-mc-qiandengji` | 千灯纪协议、技能与魔力报文解析、服务器物品用法和玩法资料 | `agent-mc-world@0.5.7-rc.2` |
+| `agent-mc-qiandengji` | 千灯纪协议、技能与魔力报文解析、服务器物品用法和玩法资料 | `agent-mc-world@0.5.7-rc.4` |
 | `cortico-world-qiandengji` | 唯一公开 Cortico World，显示“联机版我的世界” | 核心 + 可选服务器资料包 |
 | `dsh-minecraft-agent` | DSH 宿主适配器，独立仓库 | 同一个核心包 |
 
@@ -30,8 +30,8 @@ Cortico 内置示例世界保持独立，不在这里修改。
 
 ## 构建本地候选
 
-当前准备 `cortico-world-qiandengji@0.4.1-rc.1`，尚未发布到 npm。先在 MC AI Friend 的核心包目录完成构建并打包，将
-`agent-mc-world-0.5.7-rc.2.tgz` 放入本仓库忽略的 `vendor/` 目录；开发锁文件校验该安装包。
+当前准备 `cortico-world-qiandengji@0.4.1-rc.2`，尚未发布到 npm。先在 MC AI Friend 的核心包目录完成构建并打包，将
+`agent-mc-world-0.5.7-rc.4.tgz` 放入本仓库忽略的 `vendor/` 目录；开发锁文件校验该安装包。
 公开子包依赖仍使用版本号，发布后消费者正常安装 npm 包，无需克隆主项目或本仓库。
 根工作区只安装开发入口，`vec3` 覆盖与锁文件保持一致；公开子包在构建和打包阶段单独处理。
 
@@ -47,7 +47,7 @@ cd packages/qiandengji && npm pack
 不要在现役部署目录构建；使用独立源码副本。构建只编译服务器扩展和宿主适配器，不复制、抽取或修补核心源码。
 `adapters/cortico` 是私有的通用装配示例，不额外发布第二个 World。
 公开包使用 API 6 的 `webUi` 和离线 `describe.json`；自描述从实际工具声明生成，默认不连接游戏或模型。
-旧 API 5 宿主仅使用单独准备的私有兼容包。发布次序、检查与回退见 [发布说明](docs/release-0.4.1-rc.1.md)。
+旧 API 5 宿主仅使用单独准备的私有兼容包。发布次序、检查与回退见 [发布说明](docs/release-0.4.1-rc.2.md)。
 
 ## 连接与服务器能力
 
