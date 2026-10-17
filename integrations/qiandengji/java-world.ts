@@ -3,7 +3,7 @@ import { JavaClientWorld, JAVA_CLIENT_ENVIRONMENT, type MinecraftClientConfig } 
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import type { World, WorldHost, ToolDef, WorldConsoleDecl, WorldRequestFacts } from 'agent-mc-world/contracts';
-import { createMinecraftChoiceTool, WorldOperationLearning } from 'agent-mc-world/extension';
+import { createMinecraftChoiceTool, WorldOperationLearning, withToolHelp } from 'agent-mc-world/extension';
 import { SkillCatalog } from './skill-catalog.ts';
 import { MessageInbox, MESSAGE_PARAMETERS } from './message-inbox.ts';
 import { GuildProgress } from './guild-progress.ts';
@@ -28,6 +28,9 @@ export class JavaMymcWorld implements World {
     this.body = body ?? new JavaClientWorld(opts.cfg as MinecraftClientConfig, undefined, {
       dataDir: opts.dataDir, agentName: opts.botName ?? '',
       accountName: mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName),
+      // The explicit server pack already owns one legacy-named shared book.
+      ...(opts.cfg.serverPack === 'qiandengji' ? { messageInbox: false as const }
+        : { messageInboxOptions: { toolName: 'mymc_messages' } }),
     });
     this.learning = new WorldOperationLearning(opts.dataDir, () => this.requestFacts());
     this.catalog = new SkillCatalog(`${opts.cfg.host}:${opts.cfg.port}`, opts.dataDir);
@@ -38,7 +41,7 @@ export class JavaMymcWorld implements World {
   envPromptVars() { return { nativeEnvironment: this.helpText(JAVA_CLIENT_ENVIRONMENT), serverGuideIndex: this.opts.cfg.serverPack === 'qiandengji' ? serverGuideIndex() : '' }; }
   requestFacts(): WorldRequestFacts | null {
     const facts = this.body.requestFacts(); if (!facts) return null;
-    const parts = facts.parts?.map(part => ({ ...part, text: names(part.text) })) ?? [];
+    const parts = facts.parts?.map(part => ({ ...part, text: part.key === 'messages' ? part.text : names(part.text) })) ?? [];
     parts.push({ key: 'backend', text: `provider=java-client. ${this.opts.cfg.javaHostControl?.enabled ? 'The host maintains the claimed lease.' : 'Claim mymc_control explicitly before body actions.'} Read mymc_capabilities and mymc_script api:compatibility for actual shared JavaScript/navigation support; historical pre-migration limitations do not replace the current contract. Prior goals and memories remain host-owned. Use mymc_choose for optional host fast decisions.` });
     if (this.opts.cfg.serverPack === 'qiandengji') parts.push({ key: 'serverReferences', text: `${this.catalog.compactIndex()}\n${this.messages.index()}\nThese retained observations are historical, not current mana/cooldown or new requests. Read mymc_guide and mymc_notices.` });
     const guild = this.guildProgress?.facts();
@@ -60,9 +63,9 @@ export class JavaMymcWorld implements World {
     if (this.opts.cfg.serverPack === 'qiandengji') tools.push(
       { name: 'mymc_guide', description: 'Read explicitly enabled Qiandengji server reference material. Commands require native chat operation and real server confirmation.', parameters: { type: 'object', properties: { topic: { type: 'string' } } }, tags: ['read'], handler: async args => readServerGuide(args.topic as string | undefined) },
       { name: 'mymc_skills', description: 'Query retained original server skill observations; not current ability/mana proof.', parameters: { type: 'object', properties: { id: { type: 'string' } } }, tags: ['read'], handler: async args => ({ text: this.catalog.readout(args.id as string | undefined) }) },
-      { name: 'mymc_messages', description: 'Query original received native server messages by query/channel, newest first; read expands an id and review marks consideration only. Includes pre-migration history; historical observations are not new commands. Use mymc_notices for the current client buffer.', parameters: MESSAGE_PARAMETERS, tags: ['read'], handler: async args => this.messages.readout(args) },
+      { name: 'mymc_messages', description: 'Query original received native server messages by query/channel, newest first; read expands an id and review marks consideration only. Includes pre-migration history; historical observations are not new commands. Use mymc_notices for the current client buffer.', parameters: MESSAGE_PARAMETERS, tags: ['read', 'write'], readOnlyCall: args => args.action !== 'review', handler: async args => this.messages.readout(args) },
     );
-    return this.learning.tools(tools.map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description) })));
+    return withToolHelp(this.learning.tools(tools.map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description) }))), 'mymc_tool_help');
   }
   console(): WorldConsoleDecl {
     return { ...this.body.console(), label: '联机版我的世界 · 真实客户端', promptDocs: [{ key: 'worlds.mymc.envPrompt', title: '真实客户端操作', description: '原生操作与兼容指令边界。', role: 'envPrompt', path: fileURLToPath(new URL('./ENV_PROMPT_JAVA.md', import.meta.url)) }] };

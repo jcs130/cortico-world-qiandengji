@@ -246,7 +246,7 @@ describe('Mymc World contract', () => {
     const fake = fakeEngine();
     const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
     const tools = world.tools();
-    expect(tools.map((tool) => tool.name)).toEqual(['mymc_do', 'mymc_cast', 'mymc_choose', 'mymc_life', 'mymc_skills', 'mymc_messages', 'mymc_guide']);
+    expect(tools.map((tool) => tool.name)).toEqual(['mymc_do', 'mymc_cast', 'mymc_choose', 'mymc_life', 'mymc_skills', 'mymc_messages', 'mymc_guide', 'mymc_tool_help']);
     expect(tools[0].description).toContain('mymc_do emits mymc.task');
     expect(tools[0].description).toContain('attack approaches and attacks');
     expect(tools[0].description).toContain('queue:"now"');

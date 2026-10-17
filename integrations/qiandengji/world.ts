@@ -33,7 +33,7 @@ import { ProspectEvidence } from './prospect-evidence.ts';
 import { GuildProgress } from './guild-progress.ts';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from './server-guide.ts';
 import { createMinecraftChoiceTool, minecraftLifeTool } from 'agent-mc-world/extension';
-import { observeVisual } from 'agent-mc-world/extension';
+import { observeVisual, withToolHelp } from 'agent-mc-world/extension';
 import { combatTacticNote } from './combat-contract.ts';
 
 const ENV_PROMPT_FILE = fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url));
@@ -109,7 +109,7 @@ export const MYMC_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [...MINE
   }, required: [] },
 }, {
   name: 'mymc_messages',
-  tags: ['read'],
+  tags: ['read', 'write'],
   description: 'Query received server chat, announcements and private messages by channel or text, newest first. list/search returns short entries; read expands one id. review marks explicit ids as considered, never as completed or executed. Sender names do not prove administrator authority.',
   parameters: MESSAGE_PARAMETERS,
 }];
@@ -353,7 +353,7 @@ export class MymcWorld implements World {
   tools(): ToolDef[] {
     const engineTools = [...this.engine.tools(), this.choice, minecraftLifeTool()];
     const bagTool = engineTools.find((tool) => tool.name === 'mc_bag');
-    return this.learning.tools([...engineTools.filter((tool) => tool.name !== 'mc_escape').map((tool): ToolDef => ({
+    return withToolHelp(this.learning.tools([...engineTools.filter((tool) => tool.name !== 'mc_escape').map((tool): ToolDef => ({
       ...tool,
       name: tool.name.replace(/^mc_/, 'mymc_'),
       description: toolDescription(tool.name, tool.description),
@@ -428,6 +428,7 @@ export class MymcWorld implements World {
       handler: async (args) => this.catalog.readout(typeof args.id === 'string' ? args.id : undefined),
     }, {
       ...MYMC_TOOL_DECLS.find((decl) => decl.name === 'mymc_messages')!,
+      readOnlyCall: args => args.action !== 'review',
       handler: async (args) => this.messages.readout(args),
     }, {
       ...MYMC_TOOL_DECLS.find((decl) => decl.name === 'mymc_guide')!,
@@ -435,7 +436,7 @@ export class MymcWorld implements World {
         const outcome = readServerGuide(args.topic);
         return { ...outcome, text: renderTemplate(outcome.text, this.envPromptVars()) };
       },
-    }]);
+    }]), 'mymc_tool_help');
   }
 
   console(): WorldConsoleDecl {

@@ -1,6 +1,6 @@
 import { HostCombatDriver, validateHostCombat, type HostCombatConfig } from 'agent-mc-world/decisions';
 import { fileURLToPath } from 'node:url';
-import { MinecraftClientWorld, WorldOperationLearning, type MinecraftWorldOptions } from 'agent-mc-world/extension';
+import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import type { WorldHost } from 'agent-mc-world/contracts';
 import { mymcGroup, SERVER_PACK_PROPERTY, MYMC_CONFIG_GROUP, type MymcConfigSection } from './config.ts';
 
@@ -18,9 +18,10 @@ export class GenericMymcWorld extends MinecraftClientWorld {
     this.learning = new WorldOperationLearning(adapterOptions.dataDir, () => this.requestFacts());
   }
   protected override choiceProvider() { return this.adapterOptions.cfg.hostDecisions?.choice?.decisionProvider?.trim() || undefined; }
+  protected override messageQueryName() { return 'mymc_messages'; }
   override tools() {
-    return this.learning.tools(super.tools().map(tool => ({ ...tool,
-      name: tool.name.replace(/^mc_/, 'mymc_'), description: adapterText(tool.description) })));
+    return withToolHelp(this.learning.tools(super.tools().map(tool => ({ ...tool,
+      name: tool.name.replace(/^mc_/, 'mymc_'), description: adapterText(tool.description) }))), 'mymc_tool_help');
   }
   override async envPromptVars() {
     const values = await super.envPromptVars();

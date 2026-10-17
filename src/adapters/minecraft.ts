@@ -1,7 +1,7 @@
 import { HostCombatDriver, validateHostCombat, type HostCombatConfig } from 'agent-mc-world/decisions';
 import type { WorldDefinition } from '../../adapters/cortico/types.ts';
 import type { ConfigGroup, WorldHost } from 'agent-mc-world/contracts';
-import { MinecraftClientWorld, WorldOperationLearning, assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
+import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import type { MinecraftClientConfig } from 'agent-mc-world/client';
 import { fileURLToPath } from 'node:url';
 
@@ -20,9 +20,10 @@ class CorticoMinecraftWorld extends MinecraftClientWorld {
     this.learning = new WorldOperationLearning(adapterOptions.dataDir, () => this.requestFacts());
   }
   protected override choiceProvider() { return this.adapterOptions.cfg.hostDecisions?.choice?.decisionProvider?.trim() || undefined; }
+  protected override messageQueryName() { return 'agentmc_messages'; }
   override tools() {
-    return this.learning.tools(super.tools().map(tool => ({ ...tool,
-      name: tool.name.replace(/^mc_/, 'agentmc_'), description: adapterText(tool.description) })));
+    return withToolHelp(this.learning.tools(super.tools().map(tool => ({ ...tool,
+      name: tool.name.replace(/^mc_/, 'agentmc_'), description: adapterText(tool.description) }))), 'agentmc_tool_help');
   }
   override async envPromptVars() {
     const values = await super.envPromptVars();

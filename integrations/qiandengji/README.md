@@ -6,9 +6,9 @@
 
 这里保存千灯纪账号规范、传送、公会/试炼、技能目录、服务器资料及旧 `mymc_*` World/MCP 装配。它们不属于默认 Agent MC World 产品，也不在通用发行包的 files 白名单中。
 
-默认导出 `MYMC`，World ID 为 `mymc`，配置位于 `worlds.mymc`，工具前缀为 `mymc_`。在 Cortico 扩展页安装 `cortico-world-qiandengji`，或在扩展目录安装已发布版本，重启宿主加载。配置服务器地址与账号后再启用；安装不会自动连接服务器。此发布候选为 `0.4.1-dev.20261017.2`，面向 Cortico `>=0.2.1 <0.3.0`、World API 6，尚未发布。
+默认导出 `MYMC`，World ID 为 `mymc`，配置位于 `worlds.mymc`，工具前缀为 `mymc_`。在 Cortico 扩展页安装 `cortico-world-qiandengji`，或在扩展目录安装已发布版本，重启宿主加载。配置服务器地址与账号后再启用；安装不会自动连接服务器。此发布候选为 `0.4.1-dev.20261017.4`，面向 Cortico `>=0.2.2 <0.3.0`、World API 6，尚未发布。
 
-独立核心 `agent-mc-world@^0.5.7-dev.20261017.2` 和可选服务器实现 `agent-mc-qiandengji@^0.5.0-dev.20261017.2` 是普通依赖；Cortico 由宿主提供。发行包包含编译后的浏览器界面与离线自描述，不依赖邻接源码目录。已有部署继续沿用 `mymc`、原账号、记忆和账本；升级前备份部署目录。默认 `serverPack:none` 是通用 Minecraft 接入，千灯纪资料包需显式开启。私有 API 5 兼容包不另行公开发布。
+独立核心 `agent-mc-world@^0.5.7-rc.7` 和可选服务器实现 `agent-mc-qiandengji@^0.5.0-dev.20261017.4` 是普通依赖；Cortico 由宿主提供。发行包包含编译后的浏览器界面与离线自描述，不依赖邻接源码目录。已有部署继续沿用 `mymc`、原账号、记忆和账本；升级前备份部署目录。默认 `serverPack:none` 是通用 Minecraft 接入，千灯纪资料包需显式开启。私有 API 5 兼容包不另行公开发布。
 
 源码入口是 `cortico.ts` 的 `MYMC`、`runtime.ts` 的 `MymcAgentRuntime` 以及 `stdio.ts`；核心扩展端口为 `agent-mc-world/extension`。构建命令在仓库根执行 `pnpm build:extensions`。旧操作说明保存在 `LEGACY-README.md` / `LEGACY-DEPLOYMENT.md`，只用于兼容维护。
 
@@ -53,3 +53,7 @@ Agent 命名空间保存在宿主的 `data/agent-identity.json`，主会话身�
 用量账本中的 `attempt.clientQueueMs` 是调用端准入等待，`inferenceStats.queueMs` 是服务端排队，`executionMs` 是服务报告的推理执行耗时。缺失值保持 `null`，输出上限不充当独立思考预算。接入与采样只记录元数据，不新增周期推理。这些宿主改动保持本 World 的 API、工具、消息与回执契约兼容，无需为调用端优化替换游戏执行器。
 
 方块保护默认不逐格预检。正常操作失败或服务端拒绝后，才对目标查询原因；已明确被拒的格子仍跳过。可选 `protectionPreflight:true` 恢复操作前预检。
+
+## 通用信息能力
+
+消息索引实现已迁入独立核心；本包只保留旧文件名、作用域与工具前缀适配，不复制查询逻辑。普通 MC 模式也提供消息检索和考虑标记。`mymc_tool_help` 从当前实际装配的工具生成说明，可按 JSON pointer 展开参数；`mymc_help` 继续负责动作手册。查询不重放消息、不调用模型，也不证明自主学习。公会、试炼、魔法等服务端协议仍通过显式服务器包启用。各宿主需要更新核心与服务器包的固定依赖后才能取得相同实现。
