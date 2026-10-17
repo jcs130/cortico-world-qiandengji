@@ -2525,6 +2525,31 @@
       ]
     },
     {
+      "name": "mymc_options",
+      "description": "Discover a bounded shortlist by intended outcome: food, travel, water, inventory, explore or method. Empty arguments show an index and current clues. Returns purposes, observed evidence, missing prerequisites and focused read-tool arguments. Includes explicitly installed server observations where available. No model, scan, body task, cast or automatic choice; discovery does not certify readiness or success.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "intent": {
+            "type": "string",
+            "enum": [
+              "index",
+              "food",
+              "travel",
+              "water",
+              "inventory",
+              "explore",
+              "method"
+            ]
+          }
+        }
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
       "name": "mymc_photo",
       "description": "Photography and art. capabilities describes explicitly configured image generation. capture saves an ordinary web screenshot paired with fresh game data; no image model is needed. read/list retrieve archived originals and results. The host interprets the screenshot and game data and supplies the final prompt. enhance requires a captured source_id; its scene is image 1, followed by character reference_handles. create makes an explicitly imagined scene. Generation is optional and may cost money. It returns a job id, not a finished image or completed goal. Consume minecraft.photo events or use status/read. cancel aborts local HTTP waiting; remote billing/computation may continue. No provider: enhancement returns the original with an explicit fallback; creation is unavailable. Never automatically retry an uncertain generation; inspect its archived status. No hidden model or vision loop.",
       "parameters": {

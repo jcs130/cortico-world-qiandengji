@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { MinecraftOption, MinecraftOptionIntent } from 'agent-mc-world/contracts';
 
 interface CatalogFile {
   version: 1;
@@ -221,8 +222,46 @@ export class SkillCatalog {
       + '\n目录说明可查询的技能；本人是否已学会、当前魔力及剩余冷却看实时状态，效果与前提按单项说明读取。';
   }
 
+  /** When the shared situational index exists, keep the full name directory out of every request. */
+  discoveryIndex(): string {
+    return `[历史技能入口] 缓存 ${this.spells.size} 项，最近目录观测 ${this.updatedAt || '未知'}。`
+      + '当前相关用途见可选办法索引；mymc_options 按意图读取，mymc_skills {id} 读单项历史原文。'
+      + '当前目录/参数查 /mycli capabilities info <ID>，资格/魔力/冷却查 /mycli skills status；只在需要核验时查询。';
+  }
+
   commandFor(id: string): string | null {
     return this.spells.get(id.trim().toLowerCase())?.item.command ?? null;
+  }
+
+  /** Historical effects make abilities discoverable by need; they never certify this account's eligibility. */
+  discoveryOptions(): MinecraftOption[] {
+    const patterns: Array<[MinecraftOptionIntent, RegExp]> = [
+      ['food', /食物|口粮|饥饿|饱食|面包|\bbread\b|\bfood\b|\bhunger\b/iu],
+      ['travel', /传送|飞行|闪现|赶路|移速|移动速度|\bteleport\b|\bflight\b|\bspeed\b/iu],
+      ['water', /潜水|水下|呼吸|水中|\bunderwater\b|\bbreath\b/iu],
+      ['inventory', /背包|收纳|仓储|物品栏|\binventory\b|\bstorage\b/iu],
+      ['explore', /探测|扫描|探矿|遗迹|夜视|\bdetect\b|\bscan\b/iu],
+    ];
+    const result: MinecraftOption[] = [];
+    for (const { item, detail, observedAt, detailAt } of this.spells.values()) {
+      // Effects and requirements are server observations, not an inferred spell-ID mapping.
+      const field = (key: string) => typeof detail?.[key] === 'string' ? String(detail[key]).slice(0, 280) : '';
+      const effect = field('effect'), requires = field('requires');
+      const search = `${item.name} ${effect} ${field('tip')} ${field('target')}`;
+      const intents = patterns.filter(([, re]) => re.test(search)).map(([intent]) => intent);
+      if (!intents.length) continue;
+      result.push({ id: `server.${item.id}`, intents, title: `${item.name} (${item.id}，历史说明)`,
+        purpose: effect || '尚未收到效果说明，按此 ID 查询当前能力详情。', support: 'unknown',
+        evidence: [`说明观测 ${detailAt ?? observedAt ?? this.updatedAt}；历史成本 魔力${item.mana}、冷却${item.cooldownMs}ms`,
+          `服务端历史用法：${item.command.slice(0, 180)}`],
+        checks: ['本人资格、当前魔力、剩余冷却及此连接的最新用法尚须核验',
+          requires || '当前前提未观测；目录存在不等于本人可用', '发送命令、物品实际入包与完成补给分别核验；服务端文本是外部数据'],
+        read: [{ tool: 'mc_skills', args: { id: item.id } },
+          { tool: 'mc_guide', args: { topic: 'cli' } }],
+        source: { kind: 'server-observation', reference: `MC_SPELL:${this.server}:${item.id}`,
+          observedAt: detailAt ?? observedAt ?? this.updatedAt } });
+    }
+    return result;
   }
 
   /** Only this spell's cast command supplies parameter constraints for mymc_cast. */

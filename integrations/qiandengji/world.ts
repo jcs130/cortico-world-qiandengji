@@ -11,9 +11,11 @@ import type {
   WorldConsoleDecl,
   WorldHost,
   WorldPanelDecl,
+  WorldRequestFacts,
 } from 'agent-mc-world/contracts';
 import { MINECRAFT_PANEL_DECLS, MINECRAFT_TOOL_DECLS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import { MinecraftWorldProxy, WorldOperationLearning } from 'agent-mc-world/extension';
+import { extendMinecraftOptions, readMinecraftOptions, renderMinecraftOptionIndex } from 'agent-mc-world/extension';
 import { renderTemplate } from 'agent-mc-world/extension';
 import {
   MYMC_CLIENT_CONFIG_GROUP,
@@ -330,22 +332,26 @@ export class MymcWorld implements World {
 
   requestFacts() {
     const engine = this.engine as MinecraftWorldProxy & {
-      requestFacts?: () => { text: string; snapshotTypes: readonly string[];
-        parts?: readonly { key: string; text: string }[] } | null;
+      requestFacts?: () => WorldRequestFacts | null;
     };
     const facts = engine.requestFacts?.();
-    const additions = [{ key:'trialHistory',text:this.verifiedFacts()??'' }, { key: 'skillCatalog', text: this.catalog.compactIndex() },
+    const additions = [{ key:'trialHistory',text:this.verifiedFacts()??'' },
+      { key: 'skillCatalog', text: facts?.options ? this.catalog.discoveryIndex() : this.catalog.compactIndex() },
       { key: 'guildState', text: this.guildProgress.facts() },
       { key: 'messages', text: this.messages.index() }].filter(part => part.text);
     if (!facts) {
       const text = this.messages.index();
       return text ? { text, parts: [{ key: 'messages', text }], snapshotTypes: [] } : null;
     }
+    const options = facts.options ? extendMinecraftOptions(facts.options, this.catalog.discoveryOptions()) : undefined;
+    const parts = facts.parts?.map(part => ({ ...part,
+      text: toMymcText(part.key === 'options' && options ? renderMinecraftOptionIndex(options) : part.text) }));
+    const baseText = parts?.length ? parts.map(p => p.text).filter(Boolean).join('\n') : toMymcText(facts.text);
     return {
       ...facts,
-      text: [toMymcText(facts.text), ...additions.map(part => part.text)].join('\n'),
-      ...(facts.parts?.length ? { parts: [...facts.parts.map(part => ({ ...part, text: toMymcText(part.text) })),
-        ...additions] } : {}),
+      ...(options ? { options } : {}),
+      text: [baseText, ...additions.map(part => part.text)].join('\n'),
+      ...(parts?.length ? { parts: [...parts, ...additions] } : {}),
       snapshotTypes: facts.snapshotTypes.map((type) => type.replace(/^minecraft\./, 'mymc.')),
     };
   }
@@ -361,6 +367,13 @@ export class MymcWorld implements World {
       description: toolDescription(tool.name, tool.description),
       parameters: toolParameters(tool.name, tool.parameters),
       handler: async (args, ctx) => {
+        if (tool.name === 'mc_options') {
+          ctx.signal?.throwIfAborted();
+          try {
+            const result = readMinecraftOptions(this.requestFacts()?.options, args);
+            return { text: toMymcText(JSON.stringify(result)), meta: { discovery: result } };
+          } catch (error) { return { failed: true, text: String(error) }; }
+        }
         if (tool.name === 'mc_visual') {
           return observeVisual(tool, args, ctx, this.host, () => this.requestFacts(),
             this.opts.cfg.visual.mode === 'structured', 'mymc', toMymcText);
