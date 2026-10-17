@@ -1,0 +1,11 @@
+# Optional thinking and tool presentation
+
+The World observes the official Cortico `outputTap` and `onRunPhase` ports, and forwards its own actual tool results and body-task events. The tap explicitly returns `externalizes:false`; displaying a thought never changes whether the host may cancel generation. Stream updates are batched at 200 ms and never dispatch tools. `worlds.mymc.viewerActivity.enabled` can disable this read-only presentation.
+
+An optional Cortico-only adapter for the existing local `/ws/debug` stream supplements other extensions' tool results and classifier metrics. Configure `worlds.mymc.viewerActivity.consoleUrl` with the operator's explicit loopback console origin; the default is empty/disabled. No address is discovered, credentials are not copied into source, authentication is not weakened, and connection errors do not pause or reconnect Minecraft. `stop()` closes this observation connection and its retry timer.
+
+The mapper forwards returned assistant reasoning/text, completed function-call arguments and actual tool results to the shared `publishAgentActivity` port in `agent-mc-world`. It excludes user/system prompt records, raw image bytes and encrypted reasoning. Body-task terminal receipts remain separate from tool admission. Decision `started` and `finished` records join by actual request ID, preserving source/model metadata and unknown token/cache fields. System one and system two use the shared viewer's existing orange/blue palette. Thought deltas appear only when the provider and host actually forward them; otherwise the completed returned text appears without fabricated streaming.
+
+Generic normalization, limits, redaction, IPC and the presentation UI live in the independent core/shared viewer, not in this adapter. The optional mapper does not enter the host-neutral server package. Java adapters without the presentation port do not claim support. No framework or Bot source changes are required.
+
+The API 6 extension uses `webUi` and derives its declared tools from the actual implementations. A separate private API 5 manifest may be prepared for the older live host. Source changes, packed verification, web asset hot updates, host reload and real live delivery are recorded separately. A live reload still requires a fresh matching operator approval in this thread.

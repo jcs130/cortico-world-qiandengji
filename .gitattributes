@@ -1,0 +1,4 @@
+# Catalogs advertise exact resource hashes. Preserve authored bytes on Windows.
+integrations/qiandengji/data-packs/qiandengji/viewer-items/catalog.json -text
+integrations/qiandengji/data-packs/qiandengji/viewer-items/models/*.json -text
+integrations/qiandengji/data-packs/qiandengji/viewer-items/**/*.png -text

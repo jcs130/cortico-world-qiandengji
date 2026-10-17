@@ -288,6 +288,8 @@ export class MymcWorld implements World {
   private readonly guildProgress: GuildProgress;
   private readonly prospect = new ProspectEvidence();
   private readonly requireProtectSupport: boolean;
+  /** Host-owned read-only model/tool telemetry forwarded through the shared core. */
+  publishAgentActivity(value: unknown): void { this.engine.publishAgentActivity(value); }
   private host: WorldHost | null = null;
   private fastCombat: HostCombatDriver | null = null;
   private readonly choice = createMinecraftChoiceTool(() => this.host, () => this.requestFacts(),
