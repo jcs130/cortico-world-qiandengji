@@ -34,11 +34,12 @@ for (const source of await walk(sourceBase)) {
 }
 for (const folder of ['adapters/cortico', 'integrations/qiandengji']) {
   const base = join(root, folder);
+  const browserName = folder === 'integrations/qiandengji' ? 'webui' : 'console';
   await rm(join(base, 'dist'), { recursive: true, force: true });
   await mkdir(join(base, 'dist'), { recursive: true });
-  await build({ entryPoints: [join(root, 'src/console-client.ts')], outfile: join(base, 'dist/console.js'),
+  await build({ entryPoints: [join(root, 'src/console-client.ts')], outfile: join(base, `dist/${browserName}.js`),
     bundle: true, format: 'esm', platform: 'browser', target: 'es2022' });
-  await cp(join(root, 'adapters/cortico/console/style.css'), join(base, 'dist/console.css'));
+  await cp(join(root, 'adapters/cortico/console/style.css'), join(base, `dist/${browserName}.css`));
   await cp(join(root, 'LICENSE'), join(base, 'LICENSE'));
   await writeFile(join(base, 'dist/verify.mjs'), `import {readFile,access} from 'node:fs/promises';
 const root=new URL('../',import.meta.url),p=JSON.parse(await readFile(new URL('package.json',root),'utf8'));

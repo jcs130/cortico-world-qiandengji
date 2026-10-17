@@ -18,7 +18,7 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json"
   },
   "dependencies": {
-    "agent-mc-world": "file:vendor/agent-mc-world-0.5.7-dev.20261017.1.tgz",
+    "agent-mc-world": "file:vendor/agent-mc-world-0.5.7-dev.20261017.2.tgz",
     "vec3": "0.2.0"
   },
   "devDependencies": {
@@ -30,6 +30,6 @@
     "@modelcontextprotocol/sdk": "1.32.1",
     "minecraft-data": "3.112.0",
     "mineflayer": "4.37.1",
-    "cortico": "0.2.1"
+    "cortico": "0.2.2"
   }
 }

@@ -29,9 +29,9 @@ describe('current Cortico World release contract', () => {
   it('publishes API 6 self-description and the supported Cortico version range', () => {
     const pkg = JSON.parse(readFileSync(resolve('integrations/qiandengji/package.json'), 'utf8'));
     expect(pkg.cortico.api).toBe(6);
-    expect(pkg.cortico.webUiClient).toBe('dist/console.js');
+    expect(pkg.cortico.webUiClient).toBe('dist/webui.js');
     expect(pkg.cortico.describe).toBe('describe.json');
     expect(pkg.files).toContain('describe.json');
-    expect(pkg.peerDependencies.cortico).toBe('>=0.2.1 <0.3.0');
+    expect(pkg.peerDependencies.cortico).toBe('>=0.2.2 <0.3.0');
   });
 });

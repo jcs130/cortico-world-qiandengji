@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       agent-mc-world:
-        specifier: file:vendor/agent-mc-world-0.5.7-dev.20261017.1.tgz
-        version: file:vendor/agent-mc-world-0.5.7-dev.20261017.1.tgz
+        specifier: file:vendor/agent-mc-world-0.5.7-dev.20261017.2.tgz
+        version: file:vendor/agent-mc-world-0.5.7-dev.20261017.2.tgz
       vec3:
         specifier: 0.2.0
         version: 0.2.0
@@ -25,8 +25,8 @@ importers:
         specifier: ^22.10.0
         version: 22.20.4
       cortico:
-        specifier: 0.2.1
-        version: 0.2.1
+        specifier: 0.2.2
+        version: 0.2.2
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
@@ -637,9 +637,9 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-dev.20261017.1.tgz:
-    resolution: {integrity: sha512-wYe/xDVLH6MkWbcE5BVGxgfi2im9EEAOJuyG8JNtYvyrpP74UlcekS3pcIbdMGid/R/u7EXs2ocogaCjNgH+6A==, tarball: file:vendor/agent-mc-world-0.5.7-dev.20261017.1.tgz}
-    version: 0.5.7-dev.20261017.1
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-dev.20261017.2.tgz:
+    resolution: {integrity: sha512-I892NyKwflucmJOE4Gyae0hJTI+Q+1Zxp5DVU2KGi+vDChJkRGO52aGjjEjS1kxa0wktBaEnwgh0sHxdknSL1A==, tarball: file:vendor/agent-mc-world-0.5.7-dev.20261017.2.tgz}
+    version: 0.5.7-dev.20261017.2
     engines: {node: '>=22'}
     hasBin: true
 
@@ -807,8 +807,8 @@ packages:
     resolution: {integrity: sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw==}
     engines: {node: '>= 0.10'}
 
-  cortico@0.2.1:
-    resolution: {integrity: sha512-8XzKp9vl/XrYR5pNSh1/xTVyQrvE4Z7RqNLWCmqWJGk70b/na6jRCAt0i6OYAriS86CKb8L8CkPU0B20zXt9eA==}
+  cortico@0.2.2:
+    resolution: {integrity: sha512-9j8dkIA5JndKQRKwm+8aECHZ8EienR0wGPmeHCyDGCxzbmCZpDKGF7a4pcSNzVWNIxdIDFTE7UGbJ8/+W2kdXw==}
     engines: {node: '>=22'}
 
   cross-spawn@7.0.6:
@@ -2177,7 +2177,7 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-dev.20261017.1.tgz:
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-dev.20261017.2.tgz:
     dependencies:
       '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.5)
       ajv: 8.20.0
@@ -2366,7 +2366,7 @@ snapshots:
       object-assign: 4.1.1
       vary: 1.1.2
 
-  cortico@0.2.1:
+  cortico@0.2.2:
     dependencies:
       '@types/express': 4.17.25
       '@types/react': 19.3.0
