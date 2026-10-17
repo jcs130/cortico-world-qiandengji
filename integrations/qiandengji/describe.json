@@ -348,7 +348,7 @@
     },
     {
       "name": "mymc_combat_tactic",
-      "description": "Read or update combat spell rules and an agent-authored fast tactic program. {} reads it; omitted fields keep their current values; {enabled:false} clears it. A spell list of server-listed combat spell IDs sets priority order while fighting; healAtOrBelow is the optional ability provider healing threshold. Without a provider it never sends a command. Nonempty rules replace the unconditional spell priority: ordered observed conditions are rechecked each combat tick and the first ready match wins; no match means no automatic offensive cast. rules:[] restores spells/default priority. The host selects candidates from {battlefield:true}; submit {choice:{candidate,tacticRevision,connectionGeneration}} for fresh validation. No inference runs in this extension. program:{name,code,params?} installs your JavaScript synchronous function body with frame and params; return {candidates,instructions}. frame.actionPool contains currently executable casts, engagements and collision-checked directions; you may select, reorder or relabel them, or construct step destinations 0.5 to 1.6 blocks away. Read actors from frame.battlefield.actors (relation, health, distance, lineOfSight); candidate kinds are cast, engage, step, retreat and track. Track maintains a bounded distance lease without attacking, including before combat starts. There is no frame.snapshot.enemies or melee candidate. The program constructs choices from fresh battlefield facts independently of the main model; the fast model chooses and the combat controller executes. Direct steps last at most 700ms and share the combat body lease; survival, task ownership and collisions remain checked. Use program:null to remove it. No imports, files, network or raw bot; 50ms worker execution budget, separate 500ms response deadline. Runtime failure revokes that program until updated; built-in choices remain a fallback. {decisions:true} lists recent submitted choices; {decision:id} reads the receipt. Sending an action does not prove a successful encounter. Keep source and previous versions in your own methods library; compare combat reports before calling a revision an improvement. The World checks observed spell availability, mana, targets and announced cooldowns; server replies still decide success. Settings and the last five observed combat receipts persist per world across restarts. {} also reads current capability constraints and recent receipt IDs; {report:id} expands one receipt. Receipts are observations for reviewing and revising a tactic, not learned conclusions.",
+      "description": "Read or update combat spell rules and an agent-authored fast tactic program. {} reads it; omitted fields keep their current values; {enabled:false} clears it. A spell list of server-listed combat spell IDs sets priority order while fighting; healAtOrBelow is the optional ability provider healing threshold. Without a provider it never sends a command. Nonempty rules replace the unconditional spell priority: ordered observed conditions are rechecked each combat tick and the first ready match wins; no match means no automatic offensive cast. rules:[] restores spells/default priority. The host selects candidates from {battlefield:true}; submit {choice:{candidate,tacticRevision,connectionGeneration}} for fresh validation. No inference runs in this extension. program:{name,code,params?} installs your JavaScript synchronous function body with frame and params; return {candidates,instructions}. frame.actionPool contains currently executable casts, engagements and collision-checked directions; you may select, reorder or relabel them, or construct step destinations 0.5 to 1.6 blocks away. Read actors from frame.battlefield.actors (relation, health, distance, lineOfSight); candidate kinds are cast, engage, step, retreat, track and method. Track maintains a bounded distance lease without attacking, including before combat starts. There is no frame.snapshot.enemies or melee candidate. The program constructs choices from fresh battlefield facts independently of the main model; the fast model chooses and the combat controller executes. routines:[{id,intent,procedure,params?,durationMs?}] registers exact saved mymc_script library references in the fast menu; routines:[] removes them. Read and validate/save a method first. Registration checks its immutable version and does not execute it or claim it effective. A method option starts that existing script only when the body is free; its original run ID, SDK trace and terminal remain readable with mymc_script. An installed program may filter/reorder method options from actionPool; its returned priority order is preserved. Direct steps last at most 700ms and share the combat body lease; survival, task ownership and collisions remain checked. Use program:null to remove it. No imports, files, network or raw bot; 50ms worker execution budget, separate 500ms response deadline. Runtime failure revokes that program until updated; built-in choices remain a fallback. {decisions:true} lists recent submitted choices; {decision:id} reads the receipt. Sending an action does not prove a successful encounter. Keep source and previous versions in your own methods library; compare combat reports before calling a revision an improvement. The World checks observed spell availability, mana, targets and announced cooldowns; server replies still decide success. Settings and the last five observed combat receipts persist per world across restarts. {} also reads current capability constraints and recent receipt IDs; {report:id} expands one receipt. Receipts are observations for reviewing and revising a tactic, not learned conclusions.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -369,6 +369,11 @@
               },
               "connectionGeneration": {
                 "type": "integer"
+              },
+              "decisionId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
               }
             }
           },
@@ -482,6 +487,56 @@
                       "type": "boolean"
                     }
                   }
+                }
+              }
+            }
+          },
+          "routines": {
+            "type": "array",
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "intent",
+                "procedure"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_:-]{0,63}$"
+                },
+                "intent": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                },
+                "procedure": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "handle",
+                    "revision"
+                  ],
+                  "properties": {
+                    "handle": {
+                      "type": "string",
+                      "pattern": "^mem:mc-method/[a-z][a-z0-9-]{0,63}/[a-f0-9]{64}$"
+                    },
+                    "revision": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    }
+                  }
+                },
+                "params": {
+                  "type": "object"
+                },
+                "durationMs": {
+                  "type": "integer",
+                  "minimum": 1000,
+                  "maximum": 120000
                 }
               }
             }

@@ -62,10 +62,13 @@ describe('independent asynchronous combat choices', () => {
     const r = rig();
     expect(r.loop.tick()).toBe(true);
     expect(r.requests).toHaveLength(1);
-    expect((r.requests[0].state as CombatDecisionFrame).battlefield.actors).toMatchObject([
-      { type: 'skeleton', health: { current: 12 }, targetEntityId: 1 },
-      { relation: 'ally', health: { current: 5, max: 30 } },
+    const sent = r.requests[0].state as { battlefield: { actors: unknown[]; action: unknown } };
+    // The wire carries compact tuples; the loop keeps the full frame for execution checks.
+    expect(sent.battlefield.actors).toMatchObject([
+      { type: 'skeleton', health: [12, 20, 'server', r.f!.battlefield.sampledAtMs], targetEntityId: 1 },
+      { relation: 'ally', health: [5, 30, 'server', r.f!.battlefield.sampledAtMs] },
     ]);
+    expect(JSON.stringify(r.requests[0].questions)).toContain('[current,max,source,ageMs]');
     expect((r.requests[0].state as CombatDecisionFrame).battlefield.action).toMatchObject({ targetEntityId: 3, sinceHitMs: 3000, canStep: true });
     r.f!.battlefield.action.sinceHitMs = 3050;
     expect(r.sent).toHaveLength(0);

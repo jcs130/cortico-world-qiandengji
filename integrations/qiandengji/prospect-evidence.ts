@@ -41,7 +41,7 @@ export class ProspectEvidence {
         && n <= Math.max(a[axis] as number, b[axis] as number))) {
         return `服务端探矿术刚给出 ${target.ore} 的绝对坐标 ${target.dimension} (${target.x},${target.y},${target.z})。`
           + 'probe 只读取客户端已收到的区块数据；隐藏矿石可能未按真实材质发来，空结果不能推翻服务端定位。'
-          + '不要重复扫描这个坐标；先规划安全可达的路线，动方块前仍须做保护预检。';
+          + '不要重复扫描这个坐标；先规划安全可达的路线，默认不查询保护；操作未确认生效或收到权限拒绝后，再查失败坐标的保护回执。';
       }
     }
     return null;

@@ -11,7 +11,7 @@ describe('server prospect evidence', () => {
     const reason = evidence.redundantProbe({ steps: [{ skill: 'probe', shape: 'box',
       where: ['minecraft:iron_ore'], anchors: [[-501, 55, -461], [-499, 57, -459]] }] }, now);
     expect(reason).toContain('(-500,56,-460)');
-    expect(reason).toContain('保护预检');
+    expect(reason).toContain('默认不查询保护');
   });
 
   it('does not block unrelated scans or stale coordinates', () => {

@@ -3,6 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from '../src/server-guide.ts';
 
 describe('服务器玩法按需资料', () => {
+  it('uses failure-directed protection diagnosis rather than a query before each action', () => {
+    const protection = readServerGuide('protection').text;
+    expect(protection).toContain('默认不逐格查询保护');
+    expect(protection).toContain('失败坐标查询一次');
+    expect(protection).toContain('`deny`');
+    expect(readServerGuide('mining').text).toContain('默认直接操作');
+  });
   it('provides only basic entry points and leaves advanced learning in the game', () => {
     const index = readServerGuide().text;
     for (const topic of ['stories', 'onboarding', 'skill-paths']) expect(index).toContain(topic + '：');
