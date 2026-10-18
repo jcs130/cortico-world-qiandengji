@@ -5,6 +5,49 @@ import { describe, expect, it } from 'vitest';
 import { GuildProgress } from '../src/guild-progress.ts';
 
 describe('GuildProgress', () => {
+  it('keeps current-task machine phase/nextAction without turning ready into completion or mixing another task', () => {
+    const p = new GuildProgress('example.test:25565:visitor');
+    p.observe('[MC 系统] 正在进行：现场调查 [3/4]', '2026-01-01T12:00:00Z');
+    p.observe('[MC 系统] survey_task 现场调查 · 调查。 [in_progress]', '2026-01-01T12:00:01Z');
+    const signal = {type:'MC_MARKET_CHECK',schemaVersion:1,task:'survey_task',phase:'ready_to_submit',summary:'本阶段就绪，交付记录',nextAction:'用 /mycli guild claim 交付本阶段',ready:true};
+    expect(p.observe('[MC 系统] '+JSON.stringify(signal), '2026-01-01T12:00:02Z')).toBe(true);
+    expect(p.facts()).toContain('phase=ready_to_submit'); expect(p.facts()).toContain('下一步原文：用 /mycli guild claim');
+    expect(p.facts()).toContain('[3/4]'); expect(p.facts()).not.toContain('确认交付：');
+    expect(p.observe('[MC 系统] '+JSON.stringify({...signal,task:'another_task',nextAction:'不要混入'}), '2026-01-01T12:00:03Z')).toBe(false);
+    expect(p.facts()).not.toContain('不要混入');
+    p.observe('[MC 系统] 委托交付成功！声望 +12。', '2026-01-01T12:00:04Z');
+    expect(p.facts()).toContain('服务端确认交付：现场调查'); expect(p.facts()).not.toContain('ready_to_submit');
+  });
+
+  it('retains the actual multiline status stage, checklist, missing requirement and next step across reloads', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'guild-details-'));
+    try {
+      const p = new GuildProgress('example.test:25565:visitor', dir);
+      p.observe('[MC 系统] 已接公会委托：图上的远行 · 1/1 寻图、调查与归来。天然藏宝箱须亲自新开。', '2026-10-17T10:00:00Z');
+      const lines = ['正在进行：图上的远行 · 1/1 寻图、调查与归来 [2/4]', '【当前阶段】回到原遗迹继续', '✓ 抵达地图标记附近', '➤ 找到入口并进入目标遗迹', '○ 实地走查', '还缺：返回原遗迹的有效调查区域', '下一步：回到已记录的同一座遗迹内部继续；不必放弃重接，也不要换一座凑数。'];
+      lines.forEach(line => p.observe('[MC 系统] '+line, '2026-10-18T06:36:03.605Z'));
+      const restored = new GuildProgress('example.test:25565:visitor', dir);
+      expect(restored.facts()).toContain('回到原遗迹继续');
+      expect(restored.facts()).toContain('➤ 找到入口并进入目标遗迹');
+      expect(restored.facts()).toContain('还缺：返回原遗迹的有效调查区域');
+      expect(restored.facts()).toContain('不要换一座凑数');
+      expect(restored.facts()).toContain('[2/4]');
+      expect(restored.facts()).toBe(p.facts());
+      expect(restored.facts()).not.toContain('确认交付：图上的远行');
+      restored.observe('[MC 系统] 正在进行：图上的远行 · 1/1 寻图、调查与归来 [3/4]', '2026-10-18T06:40:00Z');
+      expect(restored.facts()).not.toContain('还缺：返回原遗迹的有效调查区域');
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  it('does not bind isolated, late or player-authored next-step lines to a commission', () => {
+    const p = new GuildProgress('example.test:25565:visitor');
+    expect(p.observe('[MC 系统] 下一步：不属于委托的提示', '2026-01-01T12:00:00Z')).toBe(false);
+    p.observe('[MC 系统] 正在进行：调查 [1/4]', '2026-01-01T12:01:00Z');
+    expect(p.observe('[MC 玩家] visitor: 【当前阶段】玩家编造', '2026-01-01T12:01:00Z')).toBe(false);
+    expect(p.observe('[MC 系统] 下一步：迟到的无关提示', '2026-01-01T12:02:00Z')).toBe(false);
+    expect(p.facts()).not.toContain('玩家编造'); expect(p.facts()).not.toContain('无关提示');
+  });
+
   it('replaces stale counts on a server stage hand-off and persists the new stage before any status query', () => {
     const dir = mkdtempSync(join(tmpdir(), 'guild-handoff-'));
     try {

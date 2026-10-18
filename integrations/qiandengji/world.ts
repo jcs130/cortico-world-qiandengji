@@ -249,18 +249,21 @@ function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgres
     // System chat uses the normal batch timer; action-bar HUD remains piggyback-only.
     const trigger = options?.deliver !== false && channel && ['system', 'login', 'plugin'].includes(channel)
       && options?.trigger === 'piggyback' ? 'debounce' as const : options?.trigger;
-    const saved = await host.pushEvent(mapped, { ...options, ...(trigger ? { trigger } : {}) });
+    let heading: string | null = null;
     if (mapped.type === 'mymc.chat') {
       prospect.observe(mapped.text, mapped.ts);
       progress.observe(mapped.text, mapped.ts);
       guild.observe(mapped.text, mapped.ts);
-      const heading = catalog.observe(mapped.text, mapped.ts);
-      if (heading) {
+      heading = catalog.observe(mapped.text, mapped.ts);
+    }
+    // A host may start the next request while admitting this event. Publish facts
+    // first and in receipt order; an async store must not reorder a status block.
+    const saved = await host.pushEvent(mapped, { ...options, ...(trigger ? { trigger } : {}) });
+    if (heading) {
         await host.pushEvent({
           ts: mapped.ts, source: 'mymc', type: 'mymc.skill', senderKey: 'mymc.skills',
           text: `[千灯纪] 服务端技能目录「${heading}」有变化。用 mymc_skills 读取服务端原话，再决定是否学习或调整用法。`,
         }, { trigger: 'debounce' });
-      }
     }
     return toMinecraftEvent(saved);
   };
@@ -335,7 +338,9 @@ export class MymcWorld implements World {
       requestFacts?: () => WorldRequestFacts | null;
     };
     const facts = engine.requestFacts?.();
-    const additions = [{ key:'trialHistory',text:this.verifiedFacts()??'' },
+    const clear = this.trialProgress.clear;
+    const additions = [{ key:'trialHistory',text:clear
+      ? `服务端回执 ${clear.at}：试炼已通关第 ${clear.floor}/${clear.maxFloor} 层。` : '' },
       { key: 'skillCatalog', text: facts?.options ? this.catalog.discoveryIndex() : this.catalog.compactIndex() },
       { key: 'guildState', text: this.guildProgress.facts() },
       { key: 'messages', text: this.messages.index() }].filter(part => part.text);

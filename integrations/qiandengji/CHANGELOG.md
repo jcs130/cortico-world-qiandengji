@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1-dev.20261018.9
+
+- Consume shared core rc.30 current HUD readings and semantic title/progress updates through SDK and text-only observation.
+- Retain multiline guild status phase, checklist, missing requirements and next step, correlated with the same fresh response.
+- Retain current-task MC_MARKET_SURVEY/CHECK phase and nextAction without promoting ready to completed or mixing task IDs.
+- Update observations before event admission and include the guild state once in request facts; historical acceptance remains explicitly dated.
+
 ## 0.4.1-dev.20261018.8
 
 - Consume shared core rc.29: finish offhand replacement once the requested equipment and empty cursor are server-confirmed.

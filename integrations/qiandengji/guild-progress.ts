@@ -11,6 +11,8 @@ interface CurrentCommission {
   status?: { text: string; at: string };
   stage?: { text: string; at: string };
   exactId?: { value: string; at: string };
+  statusDetails?: { headerAt: string; at: string; lines: string[] };
+  signal?: { type: string; task: string; phase: string; summary: string; nextAction: string; at: string; ready?: boolean };
 }
 interface CompletedCommission { name: string; at: string; evidence: 'delivery' | 'board' }
 interface GuildSnapshot {
@@ -38,7 +40,14 @@ function validSnapshot(value: unknown): value is GuildSnapshot {
     && (state.current.stage === undefined || !!state.current.stage
       && typeof state.current.stage.text === 'string' && timestamp(state.current.stage.at))
     && (state.current.exactId === undefined || !!state.current.exactId
-      && typeof state.current.exactId.value === 'string' && timestamp(state.current.exactId.at)))
+      && typeof state.current.exactId.value === 'string' && timestamp(state.current.exactId.at))
+    && (state.current.statusDetails === undefined || !!state.current.statusDetails
+      && timestamp(state.current.statusDetails.headerAt) && timestamp(state.current.statusDetails.at)
+      && Array.isArray(state.current.statusDetails.lines) && state.current.statusDetails.lines.length <= 16
+      && state.current.statusDetails.lines.every(line => typeof line === 'string' && line.length <= 1_240))
+    && (state.current.signal === undefined || !!state.current.signal && timestamp(state.current.signal.at)
+      && (['type', 'task', 'phase', 'summary', 'nextAction'] as const).every(key => typeof state.current!.signal![key] === 'string')
+      && (state.current.signal.ready === undefined || typeof state.current.signal.ready === 'boolean')))
     && Array.isArray(state.completed) && state.completed.every(item => item && typeof item.name === 'string'
       && timestamp(item.at) && (item.evidence === 'delivery' || item.evidence === 'board'))
     && (state.lastDeliveryAt === null || timestamp(state.lastDeliveryAt));
@@ -47,6 +56,8 @@ function validSnapshot(value: unknown): value is GuildSnapshot {
 export class GuildProgress {
   private state: GuildSnapshot = { current: null, completed: [], lastDeliveryAt: null };
   private readonly file: string | null;
+  /** A detail line must belong to the just-observed status response, never an old saved header. */
+  private statusFrame: { name: string; headerAt: string; lastAt: string } | null = null;
 
   constructor(private readonly server: string, dataDir?: string) {
     this.file = dataDir ? join(dataDir, 'mymc-guild-progress.json') : null;
@@ -60,6 +71,39 @@ export class GuildProgress {
   observe(text: string, at: string): boolean {
     if (!text.startsWith('[MC 系统] ') || !timestamp(at)) return false;
     const line = text.slice('[MC 系统] '.length).trim();
+    if (line.startsWith('{')) {
+      this.statusFrame = null;
+      let value: Record<string, unknown>;
+      try { value = JSON.parse(line); } catch { return false; }
+      const current = this.state.current;
+      if (!value || !['MC_MARKET_SURVEY', 'MC_MARKET_CHECK'].includes(String(value.type)) || value.schemaVersion !== 1
+        || !current?.name || !current.exactId || value.task !== current.exactId.value
+        || Date.parse(at) < Date.parse(current.at) || typeof value.phase !== 'string'
+        || typeof value.summary !== 'string' || typeof value.nextAction !== 'string'
+        || (value.ready !== undefined && typeof value.ready !== 'boolean')) return false;
+      const bounded = (text: string) => text.length <= 1_200 ? text : text.slice(0, 1_200)+'…[后续查原始回执]';
+      current.at = at;
+      current.signal = { type: String(value.type), task: String(value.task), phase: bounded(value.phase),
+        summary: bounded(value.summary), nextAction: bounded(value.nextAction), at,
+        ...(typeof value.ready === 'boolean' ? { ready: value.ready } : {}) };
+      current.stage = { text: bounded(value.summary || value.phase), at };
+      current.statusDetails = undefined;
+      this.save(); return true;
+    }
+    if (/^(?:【当前阶段】|[✓✔➤○]\s|还缺[：:]|下一步[：:])/.test(line)) {
+      const frame = this.statusFrame, current = this.state.current;
+      const age = frame ? Date.parse(at) - Date.parse(frame.headerAt) : -1;
+      if (!frame || !current?.name || current.name !== frame.name || age < 0 || age > 5_000
+        || Date.parse(at) < Date.parse(frame.lastAt) || Date.parse(at) < Date.parse(current.at)) return false;
+      const detail = line.length <= 1_200 ? line : line.slice(0, 1_200)+'…[后续查原始状态回执]';
+      const previous = current.statusDetails?.headerAt === frame.headerAt ? current.statusDetails.lines : [];
+      current.statusDetails = { headerAt: frame.headerAt, at, lines: [...new Set([...previous, detail])].slice(-16) };
+      current.at = at; frame.lastAt = at;
+      const phase = /^【当前阶段】\s*(.+)/.exec(line);
+      if (phase) current.stage = { text: phase[1].slice(0, 1_200), at };
+      this.save(); return true;
+    }
+    this.statusFrame = null;
     const accepted = /^已接公会委托：([^。；]+)[。；]/.exec(line);
     const advanced = /^阶段已交付，继续：([^。；]+)[。；]/.exec(line);
     const progress = /^正在进行：(.+?)\s*\[(\d+)\/(\d+)\]/.exec(line)
@@ -89,12 +133,17 @@ export class GuildProgress {
           status: { text: line.length > 1_200 ? line.slice(0, 1_200) + '…[后续未展开，查原始交阶段回执]' : line, at },
         };
       }
-      else if (progress) this.state.current = {
+      else if (progress) {
+        this.state.current = {
         ...(current?.name && commissionName(current.name) === commissionName(progress[1]) ? current : {}),
         name: commissionName(progress[1]), progress: Number(progress[2]), required: Number(progress[3]), at,
         status: { text: line.length > 1_200 ? line.slice(0, 1_200) + '…[后续未展开，查原始状态回执]' : line, at },
+        statusDetails: undefined,
+        signal: undefined,
         ...(/ · \d+\/\d+\s+/.test(progress[1]) ? { stage: { text: progress[1].slice(0, 1_200), at } } : {}),
-      };
+        };
+        if (line.startsWith('正在进行：')) this.statusFrame = { name: this.state.current.name!, headerAt: at, lastAt: at };
+      }
       else this.state.current = { name: commissionName(accepted![1]), at,
         acceptance: { text: line.length > 1_200 ? line.slice(0, 1_200) + '…[后续未展开，查原始接单回执]' : line, at } };
     }
@@ -117,6 +166,8 @@ export class GuildProgress {
     if (current?.exactId) lines.push(`${current.exactId.at} 在办看板确认精确ID：${current.exactId.value}。`);
     if (current?.status) lines.push(`${current.status.at} 最新服务端状态原文（阶段以此为准）：${current.status.text}`);
     if (current?.stage) lines.push(`${current.stage.at} 最近明确阶段观察：${current.stage.text}；后续仅计数的回执不代表阶段变化。`);
+    if (current?.statusDetails) lines.push(`${current.statusDetails.at} 本次状态回复的阶段、缺项和下一步（优先于历史接单条件与旧计划）：\n${current.statusDetails.lines.join('\n')}`);
+    if (current?.signal) lines.push(`${current.signal.at} 服务端 ${current.signal.type} task=${current.signal.task} phase=${current.signal.phase}${current.signal.ready === undefined ? '' : ` ready=${current.signal.ready}`}：${current.signal.summary}\n下一步原文：${current.signal.nextAction}；就绪不等于已交付。`);
     if (current?.acceptance) lines.push(`${current.acceptance.at} 历史接单及验收要求原文（不代表当前阶段；阶段变化后以最新状态为准）：${current.acceptance.text}`);
     if (this.state.lastDeliveryAt) lines.push(`最近交付成功回执：${this.state.lastDeliveryAt}。`);
     for (const item of this.state.completed.slice(-6).reverse()) {
