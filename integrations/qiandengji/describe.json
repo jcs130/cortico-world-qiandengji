@@ -63,7 +63,7 @@
       "description": "Design and hold Minecraft project blueprints: buildings, farms, mob systems, pits, redstone, and other functional structures. Submit a host-authored finished design, inspect what is loaded, or drop one. A loaded blueprint is what mymc_do build works from. Designs survive a world change; how far one is built does not.",
       "parameters": {
         "type": "object",
-        "description": "五件事,一次只受理一件;设计由当前 Agent 完成,核心不另起模型或后台构思:\n· {\"save\":{…}} —— 交一份现成的设计;\n  太大就分批:每批带同样的 key/size_xyz/palette,加 \"append\":true,layers 只放接着的几层。分批齐了先成为 draft,不会替换当前可执行版本。\n· {\"accept\":{\"key\":\"farm-v2\",\"version_id\":\"…\",\"content_hash\":\"…\"}} —— 核对回执里的版本与摘要后,把完整 draft 提升成当前可执行版本。\n· {\"reserve_override\":{\"reason\":\"紧急脱困\",\"ttl_sec\":30,\"max_blocks\":8}} —— 限时借用蓝图保留料;原因、时效和最大块数缺一不可,用后标记需补料。\n· {} —— 看现在装载着哪几份、施工到哪儿了、还缺什么。\n· {\"unload\":\"home-v2\"} —— 卸掉一份(设计连缓存一起没,本世界的施工进度也没)。\n装载着的图用 mc_do 的 build 施工:{\"skill\":\"build\",\"blueprint\":\"farm-v2\",\"at\":[x,y,z]}。\n材料表中的名称是施工所需物品，材料表不等于采集计划。木板、楼梯等先核对库存与配方，选择采原料再加工或已获许可的来源；从既有结构拆取须确认授权。\nretrofit 首次只做初探。两种工地同待遇:有冲突格就要审阅无误后同锚点加 \"confirm\":true,才会清掉那些格再施工——没有哪一种会自动清场。\n\n交稿格式(Palette 方案),整份是一个 JSON 对象:\n{\"key\":\"<键>\",\"name\":\"<人话名字>\",\"site_mode\":\"new|retrofit\",\"size_xyz\":[X,Y,Z],\"axis_order\":\"YZX\",\n \"palette\":[\"minecraft:air\",\"minecraft:oak_planks\",\"minecraft:oak_stairs[facing=north,half=bottom]\"],\n \"layers\":[ 第0层, 第1层, … ]}\n· layers[y][z][x] 是 palette 的整数索引;实际画出的矩阵是尺寸权威,size_xyz 写偏会按实测尺寸登记并在回执说明;\n· y=0 是最低层(地面那层),X 从西到东,Z 从北到南;\n· site_mode 必须选:new=空地新建;retrofit=在现有结构上改,第一次 build 只探测不动方块。两种一样:矩阵里有冲突格就得审阅后带 confirm:true 才清掉,谁都不会自动清场;\n· palette 写完整的 Java block-state 串,带属性就整串写;不写属性会按 1.20.6 的默认值补;\n· 不限某一条边;palette 编码后的整份输出 ≤131072 字符,超了按层 append 也不会绕过总预算;\n· 不属于设计的格默认用 minecraft:structure_void(保留原状);minecraft:air 只表示明确清空,施工仍需 confirm:true;\n· 水/岩浆源、耕地、土径、age=0 作物、火会编译成桶/工具/种植动作;刷怪塔、农场、陷阱坑与红石机构都按最终方块状态画进同一张图;\n· 流动液体、成熟作物等过程状态不收;传送门等没有可靠施工动作的状态仍会点名拒收;\n· 门、床这类占两格的:只写主部件那一格与它的从部件(上半格/床头),两格都要在矩阵里对得上。\n· 作物图自带耕地层:melon_stem/pumpkin_stem/小麦/胡萝卜这些的正下方要画 minecraft:farmland(它会自动垫泥土再锄出来);图里没有那一层,种子就一直放不下去;\n· 门、床、火把、作物这些要贴着别的方块才立得住:支撑格要么画进图里,要么确认现场已经有。门底下要一格顶面完整的方块——栅栏、栅栏门、墙、下半砖、另一扇门都撑不住门;\n· 想保留现场原样的格(河道、树干、已有墙体)画 minecraft:structure_void,别画成 minecraft:air——air 是\"这一格必须清空\"。",
+        "description": "五件事,一次只受理一件;设计由当前 Agent 完成,核心不另起模型或后台构思:\n· {\"save\":{…}} —— 交一份现成的设计;\n  太大就分批:每批带同样的 key/size_xyz/palette,加 \"append\":true,layers 只放接着的几层。分批齐了先成为 draft,不会替换当前可执行版本。\n· {\"accept\":{\"key\":\"farm-v2\",\"version_id\":\"…\",\"content_hash\":\"…\"}} —— 核对回执里的版本与摘要后,把完整 draft 提升成当前可执行版本。\n· {\"reserve_override\":{\"reason\":\"紧急脱困\",\"ttl_sec\":30,\"max_blocks\":8}} —— 限时借用蓝图保留料;原因、时效和最大块数缺一不可,用后标记需补料。\n· {} —— 看现在装载着哪几份、施工到哪儿了、还缺什么。\n· {\"unload\":\"home-v2\"} —— 卸掉一份(设计连缓存一起没,本世界的施工进度也没)。\n装载着的图用 mymc_do 的 build 施工:{\"skill\":\"build\",\"blueprint\":\"farm-v2\",\"at\":[x,y,z]}。\n材料表中的名称是施工所需物品，材料表不等于采集计划。木板、楼梯等先核对库存与配方，选择采原料再加工或已获许可的来源；从既有结构拆取须确认授权。\nretrofit 首次只做初探。两种工地同待遇:有冲突格就要审阅无误后同锚点加 \"confirm\":true,才会清掉那些格再施工——没有哪一种会自动清场。\n\n交稿格式(Palette 方案),整份是一个 JSON 对象:\n{\"key\":\"<键>\",\"name\":\"<人话名字>\",\"site_mode\":\"new|retrofit\",\"size_xyz\":[X,Y,Z],\"axis_order\":\"YZX\",\n \"palette\":[\"minecraft:air\",\"minecraft:oak_planks\",\"minecraft:oak_stairs[facing=north,half=bottom]\"],\n \"layers\":[ 第0层, 第1层, … ]}\n· layers[y][z][x] 是 palette 的整数索引;实际画出的矩阵是尺寸权威,size_xyz 写偏会按实测尺寸登记并在回执说明;\n· y=0 是最低层(地面那层),X 从西到东,Z 从北到南;\n· site_mode 必须选:new=空地新建;retrofit=在现有结构上改,第一次 build 只探测不动方块。两种一样:矩阵里有冲突格就得审阅后带 confirm:true 才清掉,谁都不会自动清场;\n· palette 写完整的 Java block-state 串,带属性就整串写;不写属性会按 1.20.6 的默认值补;\n· 不限某一条边;palette 编码后的整份输出 ≤131072 字符,超了按层 append 也不会绕过总预算;\n· 不属于设计的格默认用 minecraft:structure_void(保留原状);minecraft:air 只表示明确清空,施工仍需 confirm:true;\n· 水/岩浆源、耕地、土径、age=0 作物、火会编译成桶/工具/种植动作;刷怪塔、农场、陷阱坑与红石机构都按最终方块状态画进同一张图;\n· 流动液体、成熟作物等过程状态不收;传送门等没有可靠施工动作的状态仍会点名拒收;\n· 门、床这类占两格的:只写主部件那一格与它的从部件(上半格/床头),两格都要在矩阵里对得上。\n· 作物图自带耕地层:melon_stem/pumpkin_stem/小麦/胡萝卜这些的正下方要画 minecraft:farmland(它会自动垫泥土再锄出来);图里没有那一层,种子就一直放不下去;\n· 门、床、火把、作物这些要贴着别的方块才立得住:支撑格要么画进图里,要么确认现场已经有。门底下要一格顶面完整的方块——栅栏、栅栏门、墙、下半砖、另一扇门都撑不住门;\n· 想保留现场原样的格(河道、树干、已有墙体)画 minecraft:structure_void,别画成 minecraft:air——air 是\"这一格必须清空\"。",
         "additionalProperties": false,
         "properties": {
           "save": {
@@ -398,7 +398,7 @@
           "rules": {
             "type": "array",
             "maxItems": 16,
-            "description": "Ordered conditional rules re-evaluated against current facts while fighting. First matching, ready rule wins; no match means no automatic offensive cast. [] restores spells/default priority. This is not a timed sequence; use mc_do for a bounded movement/action group.",
+            "description": "Ordered conditional rules re-evaluated against current facts while fighting. First matching, ready rule wins; no match means no automatic offensive cast. [] restores spells/default priority. This is not a timed sequence; use mymc_do for a bounded movement/action group.",
             "items": {
               "type": "object",
               "additionalProperties": false,
@@ -632,9 +632,10 @@
         "properties": {
           "steps": {
             "type": "array",
-            "description": "一步一个对象,skill 写技能名。* = 该字段适用的形态必填;? = 可选或条件参数。\n复杂形态、执行条件和完整示例用 mc_help {\"skill\":\"技能名\"} 查询。\ncontrol(keys*,durationMs?,mode?,yawDeg?,pitchDeg?)\nlook(at*)\ngoto(at*,dimension?,exact?,walkOnly?,dryRun?)\ntransit(at*)\ngoto_player(name*)\nfollow(name*)\nfind(target*,direction?,distance?,until?)\nflee(distance?)\nsurface()\nflight(at*,land?,dryRun?)\nland()\ncleanup(dryRun?)\ncollect(block*,count?,buried?,mature?,tool?)\nfish(at?)\ntunnel(at*,spiral?,dryRun?,tool?,until?)\nbuild(blueprint?,stopAfter?,rebindFrom?,confirm?,skipConflicts?,shape?,on?,anchors?,material*,temporary?,at?,fill?,dryRun?)\nexcavate(shape*,anchors*,fill?,dryRun?,tool?)\nprobe(shape*,anchors*,fill?,slice?,where?)\nobserve(mode*,sites?,bounds?,rays?)\nuse(item?,at?,target?,entityId?,index?,times?,open?,text?,back?,face?)\nride(target?,to?,off?)\nlead(target?,to?,tolerance?,tie?,keep?,off?)\ncraft(item?,grid?,count?)\nsmelt(input*,count?,fuel*,at?)\nbrew(input*,bottle*,count?,fuel*,at?)\nenchant(at*,item*,index?)\nanvil(op*,item*,with?,name?,pick?,withPick?,at?)\ngrindstone(item*,with?,pick?,withPick?,at?)\neat(item*)\nattack(target*,mode?)\nequip(item?,pick?,hand?)\npickup(item?)\ntoss(item*,count?,at?,pick?,target?)\nstow(item*,count?,pick?,at?,into?)\ncompact()\ntake(item?,count?,at?,from?,all?,pick?)\nserver_travel(command*,at*,within?)\nchat(text*)\ngesture(name*,motion*)\n坐标写成 [x,y,z];at 是一个坐标,anchors 是一串坐标。\n每个分量是绝对数字,或 \"~\"/\"~-3\" 相对写法——原点是**这一步开始执行那一刻**我脚下那一格,\n所以 goto 之后接 \"~\" 指的是那个 goto 的落点。没有前后左右的写法。\n回执一律报解析后的绝对坐标。\n方块/物品/实体一律用英文 id(oak_log、cobblestone、skeleton);target 也收玩家名。\n类别名有两套:target/block/material 认 log、planks、ore、wool 这样的裸名(它们本身不是物品 id),把所有同类算进去;\nuntil 名单认带井号的 #ores/#logs/#leaves/#chests/#liquids/#beds。\n**写一个真实物品 id 就只认它自己**:obsidian 不会拿哭泣的黑曜石顶,torch 不是灵魂火把,\nchest 不是末影箱,dirt 不是土径 —— 要\"随便哪种木板\"就写裸类别名 planks。\ncount 一律 1-64;distance:flee 1-128,find 1-1024(不给 direction 时站着扫,最远 48)。\n\"needs\" 声明这一步依赖哪些更早的步(序号 1 起);\"needs\":[] = 独立步。缺省见字段说明。\n容器窗口在每单结束时关闭；from/into:\"open\" 的搬运和开窗步骤须在同一次 mc_do.steps 中，不能跨单沿用窗口。\n每一步都会核验:判据由执行器按 (skill, 参数) 推,达成与落空都写进回执\n(「该步按『背包内原木 ≥5』核验:达成(实测 7)」)。",
+            "description": "steps 必须是实际 JSON 数组 [{\"skill\":...},...]，不要 stringify 成字符串。一步一个对象,skill 写技能名。* = 该字段适用的形态必填;? = 可选或条件参数。\n复杂形态、执行条件和完整示例用 mymc_help {\"skill\":\"技能名\"} 查询。\ncontrol(keys*,durationMs?,mode?,yawDeg?,pitchDeg?)\nlook(at*)\ngoto(at*,dimension?,exact?,walkOnly?,dryRun?)\ntransit(at*)\ngoto_player(name*)\nfollow(name*)\nfind(target*,direction?,distance?,until?)\nflee(distance?)\nsurface()\nflight(at*,land?,dryRun?)\nland()\ncleanup(dryRun?)\ncollect(block*,count?,buried?,mature?,tool?)\nfish(at?)\ntunnel(at*,spiral?,dryRun?,tool?,until?)\nbuild(blueprint?,stopAfter?,rebindFrom?,confirm?,skipConflicts?,shape?,on?,anchors?,material*,temporary?,at?,fill?,dryRun?) — 材料放置：material+anchors（坐标数组）或 material+on（参照格/面）；单格可用 material+at，不能再给 anchors/on/shape。蓝图施工：blueprint+at，at 是蓝图原点。\nexcavate(shape*,anchors*,fill?,dryRun?,tool?)\nprobe(shape*,anchors*,fill?,slice?,where?) — 定位目标用 shape+anchors+where；空间切片用 shape:\"box\"+anchors+slice（x/y/z），不带 where，fill 省略或 solid。不要把两种观察混在同一步。\nobserve(mode*,sites?,bounds?,rays?)\nuse(item?,at?,target?,entityId?,index?,times?,open?,text?,back?,face?)\nride(target?,to?,off?)\nlead(target?,to?,tolerance?,tie?,keep?,off?)\ncraft(item?,grid?,count?)\nsmelt(input*,count?,fuel*,at?)\nbrew(input*,bottle*,count?,fuel*,at?)\nenchant(at*,item*,index?)\nanvil(op*,item*,with?,name?,pick?,withPick?,at?)\ngrindstone(item*,with?,pick?,withPick?,at?)\neat(item*)\nattack(target*,mode?)\nequip(item?,pick?,hand?)\npickup(item?)\ntoss(item*,count?,at?,pick?,target?)\nstow(item*,count?,pick?,at?,into?)\ncompact()\ntake(item?,count?,at?,from?,all?,pick?)\nserver_travel(command*,at*,within?)\nchat(text*)\ngesture(name*,motion*)\n坐标写成 [x,y,z];at 是一个坐标,anchors 是一串坐标。\n每个分量是绝对数字,或 \"~\"/\"~-3\" 相对写法——原点是**这一步开始执行那一刻**我脚下那一格,\n所以 goto 之后接 \"~\" 指的是那个 goto 的落点。没有前后左右的写法。\n回执一律报解析后的绝对坐标。\n方块/物品/实体一律用英文 id(oak_log、cobblestone、skeleton);target 也收玩家名。\n类别名有两套:target/block/material 认 log、planks、ore、wool 这样的裸名(它们本身不是物品 id),把所有同类算进去;\nuntil 名单认带井号的 #ores/#logs/#leaves/#chests/#liquids/#beds。\n**写一个真实物品 id 就只认它自己**:obsidian 不会拿哭泣的黑曜石顶,torch 不是灵魂火把,\nchest 不是末影箱,dirt 不是土径 —— 要\"随便哪种木板\"就写裸类别名 planks。\ncount 一律 1-64;distance:flee 1-128,find 1-1024(不给 direction 时站着扫,最远 48)。\n\"needs\" 声明这一步依赖哪些更早的步(序号 1 起);\"needs\":[] = 独立步。缺省见字段说明。\n容器窗口在每单结束时关闭；from/into:\"open\" 的搬运和开窗步骤须在同一次 mymc_do.steps 中，不能跨单沿用窗口。\n每一步都会核验:判据由执行器按 (skill, 参数) 推,达成与落空都写进回执\n(「该步按『背包内原木 ≥5』核验:达成(实测 7)」)。",
             "items": {
               "type": "object",
+              "description": "build: 材料放置：material+anchors（坐标数组）或 material+on（参照格/面）；单格可用 material+at，不能再给 anchors/on/shape。蓝图施工：blueprint+at，at 是蓝图原点。\nprobe: 定位目标用 shape+anchors+where；空间切片用 shape:\"box\"+anchors+slice（x/y/z），不带 where，fill 省略或 solid。不要把两种观察混在同一步。",
               "properties": {
                 "skill": {
                   "type": "string",
@@ -743,7 +744,7 @@
                   },
                   "minItems": 2,
                   "maxItems": 3,
-                  "description": "用于 look(要面向的目标格，支持相对坐标和已登记路标。) / goto(只写 [x,z] = 到附近可达落脚点(不强制爬屋顶);指定楼层请给 [x,y,z];给字符串 = mc_map 路标名) / transit(当前维度里的一格传送门方块;给字符串 = 当前维度的 mc_map 路标名) / flight / fish / tunnel(通道终点) / build(按蓝图施工时:蓝图 [0,0,0] 落在世界的哪一格) / use(世界里要点击的方块绝对坐标，点击已有方块不要求背包有同名物品；face 指它的表面；放置目标用 build.anchors；与 target 二选一) / smelt(指定用哪一座炉子) / brew(指定用哪一座酿造台) / enchant / anvil(指定用哪一座铁砧;不写用最近的) / grindstone(指定用哪一座砂轮;不写用最近的) / toss(朝那一格扔;不写 = 自己挑一个开阔方向) / stow(只存进指定箱子;与 into:open 二选一) / take(点名哪一格容器) / server_travel"
+                  "description": "用于 look(要面向的目标格，支持相对坐标和已登记路标。) / goto(只写 [x,z] = 到附近可达落脚点(不强制爬屋顶);指定楼层请给 [x,y,z];给字符串 = mymc_map 路标名) / transit(当前维度里的一格传送门方块;给字符串 = 当前维度的 mymc_map 路标名) / flight / fish / tunnel(通道终点) / build(蓝图施工时是原点；无 blueprint 的单格材料放置可作 anchors:[at] 别名，不与 anchors/on/shape 同用) / use(世界里要点击的方块绝对坐标，点击已有方块不要求背包有同名物品；face 指它的表面；放置目标用 build.anchors；与 target 二选一) / smelt(指定用哪一座炉子) / brew(指定用哪一座酿造台) / enchant / anvil(指定用哪一座铁砧;不写用最近的) / grindstone(指定用哪一座砂轮;不写用最近的) / toss(朝那一格扔;不写 = 自己挑一个开阔方向) / stow(只存进指定箱子;与 into:open 二选一) / take(点名哪一格容器) / server_travel"
                 },
                 "dimension": {
                   "type": "string",
@@ -956,8 +957,7 @@
                   "items": {
                     "type": "string"
                   },
-                  "maxItems": 12,
-                  "description": "用于 probe(只报这几样在这片里当前可见的坐标；遮挡、超距或未加载保持未知)"
+                  "description": "用于 probe(定位模式：只报指定种类在范围内当前可见的坐标，不与 slice 同用；名单去重，不套用 until 的项数上限；遮挡、超距或未加载保持未知)"
                 },
                 "sites": {
                   "type": "array",
@@ -1017,7 +1017,7 @@
                 },
                 "item": {
                   "type": "string",
-                  "description": "用于 use(从背包拿在手里使用的物品，不是被点击对象的名字。填原版英文 id 或 mc_bag 的自定义显示名；有 at 时不写 = 腾空主手右键方块，有 target 时不写 = 用当前手持物) / craft(已知目标物品优先使用;按游戏配方表摆;与 grid 二选一) / enchant / anvil / grindstone / eat / equip(自定义物品可用 mc_bag 中的显示名;不写 = 把指定手腾空，默认主手) / pickup(不写就近扫并避开2分钟内刚主动丢弃的已识别掉落物；明确写物品可取回) / toss / stow / take(定量取物时与 count 一起写)"
+                  "description": "用于 use(从背包拿在手里使用的物品，不是被点击对象的名字。填原版英文 id 或 mymc_bag 的自定义显示名；有 at 时不写 = 腾空主手右键方块，有 target 时不写 = 用当前手持物) / craft(已知目标物品优先使用;按游戏配方表摆;与 grid 二选一) / enchant / anvil / grindstone / eat / equip(自定义物品可用 mymc_bag 中的显示名;不写 = 把指定手腾空，默认主手) / pickup(不写就近扫并避开2分钟内刚主动丢弃的已识别掉落物；明确写物品可取回) / toss / stow / take(定量取物时与 count 一起写)"
                 },
                 "entityId": {
                   "type": "integer",
@@ -1338,7 +1338,7 @@
           },
           "subdivide": {
             "type": "boolean",
-            "description": "Split distant endpoints into client-sized legs; intermediate legs hover, each requested point keeps its land choice. Returns absolute mc_do steps with needs dependencies."
+            "description": "Split distant endpoints into client-sized legs; intermediate legs hover, each requested point keeps its land choice. Returns absolute mymc_do steps with needs dependencies."
           }
         },
         "required": [
@@ -2795,9 +2795,10 @@
         "properties": {
           "steps": {
             "type": "array",
-            "description": "一步一个对象,按顺序读取真实现场并试算,不动世界。每步从当时真实位置开始，不推进假定位置或材料；needs 只判断前步试算结果，不表示前步已执行。收 goto / flight / cleanup / tunnel / build / excavate / probe / observe 这几个技能,写法与参数跟 mc_do 的 steps 完全一样完整示例和条件用 mc_help 按技能查询;一律按试算跑,不用自己写 dryRun。",
+            "description": "steps 使用实际 JSON 数组，不要写成转义字符串。一步一个对象,按顺序读取真实现场并试算,不动世界。每步从当时真实位置开始，不推进假定位置或材料；needs 只判断前步试算结果，不表示前步已执行。收 goto / flight / cleanup / tunnel / build / excavate / probe / observe 这几个技能,写法与参数跟 mymc_do 的 steps 完全一样完整示例和条件用 mymc_help 按技能查询;一律按试算跑,不用自己写 dryRun。",
             "items": {
               "type": "object",
+              "description": "build: 材料放置：material+anchors（坐标数组）或 material+on（参照格/面）；单格可用 material+at，不能再给 anchors/on/shape。蓝图施工：blueprint+at，at 是蓝图原点。\nprobe: 定位目标用 shape+anchors+where；空间切片用 shape:\"box\"+anchors+slice（x/y/z），不带 where，fill 省略或 solid。不要把两种观察混在同一步。",
               "properties": {
                 "skill": {
                   "type": "string",
@@ -2825,7 +2826,7 @@
                   },
                   "minItems": 2,
                   "maxItems": 3,
-                  "description": "用于 goto(只写 [x,z] = 到附近可达落脚点(不强制爬屋顶);指定楼层请给 [x,y,z];给字符串 = mc_map 路标名) / flight / tunnel(通道终点) / build(按蓝图施工时:蓝图 [0,0,0] 落在世界的哪一格)"
+                  "description": "用于 goto(只写 [x,z] = 到附近可达落脚点(不强制爬屋顶);指定楼层请给 [x,y,z];给字符串 = mymc_map 路标名) / flight / tunnel(通道终点) / build(蓝图施工时是原点；无 blueprint 的单格材料放置可作 anchors:[at] 别名，不与 anchors/on/shape 同用)"
                 },
                 "dimension": {
                   "type": "string",
@@ -2992,8 +2993,7 @@
                   "items": {
                     "type": "string"
                   },
-                  "maxItems": 12,
-                  "description": "用于 probe(只报这几样在这片里当前可见的坐标；遮挡、超距或未加载保持未知)"
+                  "description": "用于 probe(定位模式：只报指定种类在范围内当前可见的坐标，不与 slice 同用；名单去重，不套用 until 的项数上限；遮挡、超距或未加载保持未知)"
                 },
                 "mode": {
                   "type": "string",

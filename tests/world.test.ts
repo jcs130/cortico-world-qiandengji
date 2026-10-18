@@ -70,6 +70,25 @@ function fakeHost() {
 }
 
 describe('Mymc World contract', () => {
+  it('keeps structured correction calls callable after mounting the core with the mymc namespace', async () => {
+    const fake = fakeEngine();
+    const tools = fake.engine.tools();
+    const outcome = { text: '[mc_do 失败] mc_help {"skill":"probe"}', failed: true,
+      meta: { admission: { accepted: false, dispatched: false, recovery: [
+        { tool: 'mc_help', arguments: { skill: 'probe' }, text: 'mc_help is read-only' },
+        { tool: 'mc_tool_help', arguments: { name: 'mc_do', path: '/properties/steps' } },
+      ] } } };
+    Object.assign(fake.engine, { tools: () => tools.map(tool => tool.name === 'mc_do'
+      ? { ...tool, handler: async () => outcome } : tool) });
+    const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
+    const result = await world.tools().find(t => t.name === 'mymc_do')!.handler({ steps: [] }, { role: 'test', log: {} as never });
+    expect(result).toMatchObject({ failed: true, text: '[mymc_do 失败] mymc_help {"skill":"probe"}',
+      meta: { admission: { accepted: false, dispatched: false, recovery: [
+        { tool: 'mymc_help', arguments: { skill: 'probe' }, text: 'mymc_help is read-only' },
+        { tool: 'mymc_tool_help', arguments: { name: 'mymc_do', path: '/properties/steps' } },
+      ] } } });
+    expect(outcome.meta.admission.recovery[0].tool).toBe('mc_help');
+  });
   it('keeps choice providers on the host and server stories in the optional pack', async () => {
     const fake = fakeEngine(), cfg = structuredClone(MYMC_DEFAULTS);
     cfg.hostDecisions = { choice: { decisionProvider: ' saved-fast ' } };

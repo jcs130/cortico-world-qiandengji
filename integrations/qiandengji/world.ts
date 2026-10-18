@@ -35,7 +35,7 @@ import { ProspectEvidence } from './prospect-evidence.ts';
 import { GuildProgress } from './guild-progress.ts';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from './server-guide.ts';
 import { createMinecraftChoiceTool, minecraftLifeTool } from 'agent-mc-world/extension';
-import { observeVisual, withToolHelp } from 'agent-mc-world/extension';
+import { observeVisual, withToolHelp, mapToolRecovery } from 'agent-mc-world/extension';
 import { combatTacticNote } from './combat-contract.ts';
 
 const ENV_PROMPT_FILE = fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url));
@@ -436,7 +436,8 @@ export class MymcWorld implements World {
         };
         return typeof result === 'string'
           ? addNote(toMymcText(result))
-          : { ...result, text: addNote(toMymcText((result as ToolOutcome).text)) };
+          : { ...mapToolRecovery(result as ToolOutcome, name => toMymcText(name), toMymcText),
+            text: addNote(toMymcText((result as ToolOutcome).text)) };
       },
     })), {
       ...MYMC_TOOL_DECLS.find((decl) => decl.name === 'mymc_skills')!,

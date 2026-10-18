@@ -1,10 +1,18 @@
 import { HostCombatDriver, validateHostCombat, type HostCombatConfig } from 'agent-mc-world/decisions';
 import { fileURLToPath } from 'node:url';
-import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, type MinecraftWorldOptions } from 'agent-mc-world/extension';
+import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, mapToolRecovery, type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import type { WorldHost } from 'agent-mc-world/contracts';
 import { mymcGroup, SERVER_PACK_PROPERTY, MYMC_CONFIG_GROUP, type MymcConfigSection } from './config.ts';
 
 const adapterText = (value: string) => value.replace(/\bmc_([a-z][a-z0-9_]*)\b/g, 'mymc_$1');
+// Naming belongs to this thin mount. Schema constants and examples remain data.
+function adapterSchema(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(adapterSchema);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key,
+    ['enum', 'const', 'default', 'examples', 'required'].includes(key) ? item
+      : ['description', 'title'].includes(key) && typeof item === 'string' ? adapterText(item) : adapterSchema(item)]));
+}
 
 /** A host namespace adapter. Server capabilities are only loaded by an explicit pack selection. */
 export class GenericMymcWorld extends MinecraftClientWorld {
@@ -21,7 +29,13 @@ export class GenericMymcWorld extends MinecraftClientWorld {
   protected override messageQueryName() { return 'mymc_messages'; }
   override tools() {
     return withToolHelp(this.learning.tools(super.tools().map(tool => ({ ...tool,
-      name: tool.name.replace(/^mc_/, 'mymc_'), description: adapterText(tool.description) }))), 'mymc_tool_help');
+      name: tool.name.replace(/^mc_/, 'mymc_'), description: adapterText(tool.description),
+      parameters: adapterSchema(tool.parameters) as Record<string, unknown>,
+      handler: async (args, ctx) => {
+        const result = await tool.handler(args, ctx);
+        return typeof result === 'string' ? adapterText(result)
+          : { ...mapToolRecovery(result, adapterText, adapterText), text: adapterText(result.text) };
+      } }))), 'mymc_tool_help');
   }
   override async envPromptVars() {
     const values = await super.envPromptVars();

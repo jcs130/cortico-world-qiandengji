@@ -1,11 +1,19 @@
 import { HostCombatDriver, validateHostCombat, type HostCombatConfig } from 'agent-mc-world/decisions';
 import type { WorldDefinition } from '../../adapters/cortico/types.ts';
 import type { ConfigGroup, WorldHost } from 'agent-mc-world/contracts';
-import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
+import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, mapToolRecovery, assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import type { MinecraftClientConfig } from 'agent-mc-world/client';
 import { fileURLToPath } from 'node:url';
 
 const adapterText = (text: string) => text.replace(/\bmc_([a-z][a-z0-9_]*)\b/g, 'agentmc_$1');
+// Rename schema prose at the mount boundary, preserving actual argument values.
+function adapterSchema(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(adapterSchema);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key,
+    ['enum', 'const', 'default', 'examples', 'required'].includes(key) ? item
+      : ['description', 'title'].includes(key) && typeof item === 'string' ? adapterText(item) : adapterSchema(item)]));
+}
 type HostConfig = MinecraftClientConfig & HostCombatConfig & { hostDecisions?: HostCombatConfig['hostDecisions'] & { choice?: { decisionProvider?: string } } };
 
 /** Host naming only. No game commands, server coordinates or RPG rules. */
@@ -23,7 +31,13 @@ class CorticoMinecraftWorld extends MinecraftClientWorld {
   protected override messageQueryName() { return 'agentmc_messages'; }
   override tools() {
     return withToolHelp(this.learning.tools(super.tools().map(tool => ({ ...tool,
-      name: tool.name.replace(/^mc_/, 'agentmc_'), description: adapterText(tool.description) }))), 'agentmc_tool_help');
+      name: tool.name.replace(/^mc_/, 'agentmc_'), description: adapterText(tool.description),
+      parameters: adapterSchema(tool.parameters) as Record<string, unknown>,
+      handler: async (args, ctx) => {
+        const result = await tool.handler(args, ctx);
+        return typeof result === 'string' ? adapterText(result)
+          : { ...mapToolRecovery(result, name => adapterText(name), adapterText), text: adapterText(result.text) };
+      } }))), 'agentmc_tool_help');
   }
   override async envPromptVars() {
     const values = await super.envPromptVars();
