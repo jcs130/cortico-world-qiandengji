@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1-dev.20261018.8
+
+- Consume shared core rc.29: finish offhand replacement once the requested equipment and empty cursor are server-confirmed.
+- Remove the unnecessary post-goal layout restoration that failed during live acceptance; retain all items and the selected hotbar.
+- Keep rejection and unknown-outcome evidence intact; do not rewrite the original failed task as success.
+
 ## 0.4.1-dev.20261018.7
 
 - Consume shared core rc.28 offhand equipment exchanges that preserve an empty cursor and original hotbar contents.
