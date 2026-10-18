@@ -5,6 +5,21 @@ import { describe, expect, it } from 'vitest';
 import { GuildProgress } from '../src/guild-progress.ts';
 
 describe('GuildProgress', () => {
+  it.each(['已接公会委托：', '阶段已交付，继续：'])('retains the live exploration contract after %s including the intervening acceptance requirements', header => {
+    const p = new GuildProgress('example.test:25565:visitor');
+    const lines = [header+'绯红林海的路标 · 1/2 林海走查。在真实绯红森林中走过不同区域。；完成后用 /mycli guild claim。',
+      '探索验收：下界 / minecraft:crimson_forest；走查 6 个不同的 16 格分区，行进至少128 格、有效行进至少30 秒。原地等待、重复原路和传送位移不增加探索证据。',
+      '【当前阶段】当前维度不符合本阶段要求。', '➤ 抵达本阶段有效调查区域', '○ 完成实际走查',
+      '还缺：返回下界', '下一步：先经已知门户或本人地点回下界；中转坐标不是探索目标。'];
+    lines.forEach(line=>p.observe('[MC 系统] '+line,'2026-10-18T07:01:56.445Z'));
+    const facts=p.facts();
+    expect(facts).toContain('6 个不同的 16 格分区'); expect(facts).toContain('还缺：返回下界');
+    expect(facts).toContain('当前维度不符合本阶段要求'); expect(facts).toContain('中转坐标不是探索目标');
+    p.observe('[MC 系统] 其他独立的服务器通知','2026-10-18T07:01:56.446Z');
+    expect(p.observe('[MC 系统] 下一步：无关回复','2026-10-18T07:01:56.447Z')).toBe(false);
+    expect(p.facts()).not.toContain('无关回复'); expect(p.facts()).not.toContain('确认交付：');
+  });
+
   it('keeps current-task machine phase/nextAction without turning ready into completion or mixing another task', () => {
     const p = new GuildProgress('example.test:25565:visitor');
     p.observe('[MC 系统] 正在进行：现场调查 [3/4]', '2026-01-01T12:00:00Z');

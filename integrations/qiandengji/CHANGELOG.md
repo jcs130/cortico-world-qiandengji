@@ -2,6 +2,7 @@
 
 ## 0.4.1-dev.20261018.9
 
+- Retain exploration requirements, phase and next step from acceptance and stage hand-off replies; an unrelated server notice still ends response correlation.
 - Consume shared core rc.30 current HUD readings and semantic title/progress updates through SDK and text-only observation.
 - Retain multiline guild status phase, checklist, missing requirements and next step, correlated with the same fresh response.
 - Retain current-task MC_MARKET_SURVEY/CHECK phase and nextAction without promoting ready to completed or mixing task IDs.

@@ -90,7 +90,7 @@ export class GuildProgress {
       current.statusDetails = undefined;
       this.save(); return true;
     }
-    if (/^(?:【当前阶段】|[✓✔➤○]\s|还缺[：:]|下一步[：:])/.test(line)) {
+    if (/^(?:【当前阶段】|[✓✔➤○]\s|探索验收[：:]|还缺[：:]|下一步[：:])/.test(line)) {
       const frame = this.statusFrame, current = this.state.current;
       const age = frame ? Date.parse(at) - Date.parse(frame.headerAt) : -1;
       if (!frame || !current?.name || current.name !== frame.name || age < 0 || age > 5_000
@@ -132,6 +132,7 @@ export class GuildProgress {
           stage: { text: advanced[1].slice(0, 1_200), at },
           status: { text: line.length > 1_200 ? line.slice(0, 1_200) + '…[后续未展开，查原始交阶段回执]' : line, at },
         };
+        this.statusFrame = { name: this.state.current.name!, headerAt: at, lastAt: at };
       }
       else if (progress) {
         this.state.current = {
@@ -144,8 +145,11 @@ export class GuildProgress {
         };
         if (line.startsWith('正在进行：')) this.statusFrame = { name: this.state.current.name!, headerAt: at, lastAt: at };
       }
-      else this.state.current = { name: commissionName(accepted![1]), at,
-        acceptance: { text: line.length > 1_200 ? line.slice(0, 1_200) + '…[后续未展开，查原始接单回执]' : line, at } };
+      else {
+        this.state.current = { name: commissionName(accepted![1]), at,
+          acceptance: { text: line.length > 1_200 ? line.slice(0, 1_200) + '…[后续未展开，查原始接单回执]' : line, at } };
+        this.statusFrame = { name: this.state.current.name!, headerAt: at, lastAt: at };
+      }
     }
     if (activeListing && this.state.current?.name
       && commissionName(this.state.current.name) === commissionName(activeListing[2])
