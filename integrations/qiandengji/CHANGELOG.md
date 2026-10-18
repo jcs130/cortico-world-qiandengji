@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1-dev.20261018.10
+
+- Consume shared core rc.31 feet-cell coordinates consistently in task queues, progress and observations.
+- Preserve successful spatial checks, their named coordinates and unknown cells instead of hiding confirmed support among failed assertions.
+- Keep Minecraft logic in the shared core; no framework, model, voice or server changes.
+
 ## 0.4.1-dev.20261018.9
 
 - Retain exploration requirements, phase and next step from acceptance and stage hand-off replies; an unrelated server notice still ends response correlation.
