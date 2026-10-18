@@ -3307,7 +3307,7 @@
     },
     {
       "name": "mymc_stop",
-      "description": "Clear the Minecraft work queue: stop what is being done right now and drop everything waiting behind it.",
+      "description": "Clear the Minecraft work queue: stop what is being done right now and drop everything waiting behind it. Death recovery continues on this connection; stopping the World or disconnecting cancels it.",
       "parameters": {
         "type": "object",
         "properties": {},
