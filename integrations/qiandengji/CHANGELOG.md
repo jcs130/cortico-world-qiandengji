@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1-dev.20261018.7
+
+- Consume shared core rc.28 offhand equipment exchanges that preserve an empty cursor and original hotbar contents.
+- Retain authoritative server confirmation, refusal evidence and unknown-outcome recovery.
+- Distinguish missing inventory snapshots from received snapshots whose slots or cursor disagree; no framework, model or voice changes.
+
 ## 0.4.1-dev.20261017.4
 
 - Reuse shared received-message search, retention and provenance logic while preserving legacy files.
