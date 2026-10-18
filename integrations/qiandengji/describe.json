@@ -744,7 +744,7 @@
                   },
                   "minItems": 2,
                   "maxItems": 3,
-                  "description": "用于 look(要面向的目标格，支持相对坐标和已登记路标。) / goto(只写 [x,z] = 到附近可达落脚点(不强制爬屋顶);指定楼层请给 [x,y,z];给字符串 = mymc_map 路标名) / transit(当前维度里的一格传送门方块;给字符串 = 当前维度的 mymc_map 路标名) / flight / fish / tunnel(通道终点) / build(蓝图施工时是原点；无 blueprint 的单格材料放置可作 anchors:[at] 别名，不与 anchors/on/shape 同用) / use(世界里要点击的方块绝对坐标，点击已有方块不要求背包有同名物品；face 指它的表面；放置目标用 build.anchors；与 target 二选一) / smelt(指定用哪一座炉子) / brew(指定用哪一座酿造台) / enchant / anvil(指定用哪一座铁砧;不写用最近的) / grindstone(指定用哪一座砂轮;不写用最近的) / toss(朝那一格扔;不写 = 自己挑一个开阔方向) / stow(只存进指定箱子;与 into:open 二选一) / take(点名哪一格容器) / server_travel"
+                  "description": "用于 look(要面向的目标格，支持相对坐标和已登记路标。) / goto(只写 [x,z] = 到附近可达落脚点(不强制爬屋顶);指定楼层请给 [x,y,z];给字符串 = mymc_map 路标名) / transit(当前维度里的一格传送门方块;给字符串 = 当前维度的 mymc_map 路标名) / flight / fish / tunnel(通道终点) / build(蓝图施工时是原点；无 blueprint 的单格材料放置可作 anchors:[at] 别名，不与 anchors/on/shape 同用) / use(世界里要点击的方块绝对坐标，点击已有方块不要求背包有同名物品；face 指它的表面；放置目标用 build.anchors；与 target 二选一) / smelt(指定用哪一座炉子) / brew(指定用哪一座酿造台) / enchant / anvil(指定用哪一座铁砧;不写用最近的) / grindstone(指定用哪一座砂轮;不写用最近的) / toss(朝那一格扔；不写优先选已测较开阔方向，没有已测空隙则按当前朝向丢弃并报告未知) / stow(只存进指定箱子;与 into:open 二选一) / take(点名哪一格容器) / server_travel"
                 },
                 "dimension": {
                   "type": "string",
