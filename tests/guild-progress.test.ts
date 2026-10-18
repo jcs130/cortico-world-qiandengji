@@ -5,6 +5,23 @@ import { describe, expect, it } from 'vitest';
 import { GuildProgress } from '../src/guild-progress.ts';
 
 describe('GuildProgress', () => {
+  it('exposes exact occurrence closure evidence while leaving legacy/unidentified work unbound', () => {
+    const p = new GuildProgress('example.test:25565:visitor');
+    const scope = { realm: 'example.test:25565', account: 'visitor', agent: 'test' };
+    p.observe('[MC 系统] 已接公会委托：测试调查 · 1/1 调查。', '2026-10-18T10:00:00Z');
+    expect(p.workStates(scope)).toEqual([]);
+    p.observe('[MC 系统] survey 测试调查 · 调查。 [in_progress]', '2026-10-18T10:00:01Z');
+    expect(p.workStates(scope)[0]).toMatchObject({ subject: 'survey', instance: '2026-10-18T10:00:00Z', status: 'active', scope });
+    p.observe('[MC 系统] 委托交付成功！声望 +12。', '2026-10-18T10:05:00Z');
+    expect(p.workStates(scope)[0]).toMatchObject({ subject: 'survey', instance: '2026-10-18T10:00:00Z', status: 'completed',
+      evidence: { source: 'server', text: '委托交付成功！声望 +12。' } });
+    p.observe('[MC 系统] survey 测试调查 · 调查。 [今日已完成]', '2026-10-18T11:00:00Z');
+    expect(p.workStates(scope)[0]).toMatchObject({ subject: 'survey', instance: '2026-10-18T10:00:00Z', status: 'completed' });
+    p.observe('[MC 系统] 已接公会委托：测试调查 · 1/1 调查。', '2026-10-19T10:00:00Z');
+    p.observe('[MC 系统] survey 测试调查 · 调查。 [in_progress]', '2026-10-19T10:00:01Z');
+    expect(p.workStates(scope).map(state => [state.status, state.instance])).toEqual([
+      ['completed', '2026-10-18T10:00:00Z'], ['active', '2026-10-19T10:00:00Z']]);
+  });
   it.each(['已接公会委托：', '阶段已交付，继续：'])('retains the live exploration contract after %s including the intervening acceptance requirements', header => {
     const p = new GuildProgress('example.test:25565:visitor');
     const lines = [header+'绯红林海的路标 · 1/2 林海走查。在真实绯红森林中走过不同区域。；完成后用 /mycli guild claim。',

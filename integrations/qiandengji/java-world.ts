@@ -46,7 +46,8 @@ export class JavaMymcWorld implements World {
     if (this.opts.cfg.serverPack === 'qiandengji') parts.push({ key: 'serverReferences', text: `${this.catalog.compactIndex()}\n${this.messages.index()}\nThese retained observations are historical, not current mana/cooldown or new requests. Read mymc_guide and mymc_notices.` });
     const guild = this.guildProgress?.facts();
     if (guild) parts.push({ key: 'guildState', text: `[Minecraft / mymc · ${this.opts.cfg.host}:${this.opts.cfg.port}:${mymcLoginName(this.opts.cfg.username, this.opts.cfg.preserveLoginName)}]\n${guild}\n以上是带时间的最新已收服务端观察，不代表此刻已重新验证；阶段与计数以同一服务器较新回执更新。只适用于此 Minecraft 世界，不提供其他 World 的目标、背包、职业或行动点。` });
-    return { ...facts, parts, text: parts.map(part => part.text).join('\n') };
+    return { ...facts, parts, text: parts.map(part => part.text).join('\n'),
+      ...(facts.experience?.scope && this.guildProgress ? { workStates: this.guildProgress.workStates(facts.experience.scope) } : {}) };
   }
   tools(): ToolDef[] {
     const tools = this.body.tools().filter(tool => !(this.opts.cfg.javaHostControl?.enabled && tool.name === 'mc_control')).map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description), handler: async (args, ctx) => {

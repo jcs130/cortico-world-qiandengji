@@ -1,15 +1,32 @@
 {
-  "version": "0.5.7-rc.7",
-  "file": "agent-mc-world-0.5.7-rc.7.tgz",
-  "sha256": "17a4a077f5d60154dab7ed89e9fab3c674e86b4b6e2c646ea847551651794c4d",
+  "version": "0.5.7-rc.35",
+  "file": "agent-mc-world-0.5.7-rc.35-fe108fe4.tgz",
+  "sha256": "fe108fe4d27aacbb00184362fa4a34ae55f68a2f2b8a8ce9fe61117ce677b261",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
+  "sourceCommit": "0b6515fb",
   "channel": "private-development",
-  "sourceCommit": "a81e25f392850a7326fe66073e550cd9fabff37f",
-  "sourceCommitStatus": "committed and packed consumer checks passed",
-  "sourceFilesSha256": "3903c0881134c2b5345bf03a31a6cec0b507d638c3c169e444b209ecd43b611e",
-  "upstreamBaseline": "733e659977a6d062129e4e273d2101d44effe529",
-  "viewerSource": "b5a41c37d8f503df5344762bd5df5e61c1734f4b",
+  "sourceCommitStatus": "pushed; full core tests and isolated SDK/MCP passed",
+  "viewerIncluded": true,
   "completeAudio": true,
-  "buildRecordedParent": "6367e0bc902a08ec7db8b5b4e1a059d7ea2767a7"
+  "sourceFilesSha256": "d4927f12cee9627ae56027a8e88bacc10f724e725a914d0133ff13eb18d42f31",
+  "viewer": {
+    "repository": "https://github.com/jcs130/mc-visual-console",
+    "commit": "5f2576b34f9a4eef1218c8ade020b6c03df42f3a",
+    "assetPack": "java-1.21.1",
+    "additionalPacks": [
+      "java-1.20.6"
+    ],
+    "preset": null,
+    "artifact": "vendor/mc-visual-console-java-1.21.1-5f2576b3-activity.tgz",
+    "sha256": "01748d08b64c367c96694d4809b1a8f31b444ac1ecd1bdb685080fa28a5560d6",
+    "soundPacks": [
+      "java-1.21.1-sounds",
+      "java-1.20.6-sounds",
+      "original-bgm"
+    ],
+    "completeAudio": true,
+    "publicOriginalBgmTracks": 8,
+    "included": true
+  }
 }

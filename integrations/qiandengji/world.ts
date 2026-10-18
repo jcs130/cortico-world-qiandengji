@@ -354,6 +354,7 @@ export class MymcWorld implements World {
     const baseText = parts?.length ? parts.map(p => p.text).filter(Boolean).join('\n') : toMymcText(facts.text);
     return {
       ...facts,
+      ...(facts.experience?.scope ? { workStates: this.guildProgress.workStates(facts.experience.scope) } : {}),
       ...(options ? { options } : {}),
       text: [baseText, ...additions.map(part => part.text)].join('\n'),
       ...(parts?.length ? { parts: [...parts, ...additions] } : {}),

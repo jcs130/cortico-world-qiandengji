@@ -1,6 +1,7 @@
 /** Latest server-authored commission state and completion evidence. */
 import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { WorkReference, WorkState } from 'agent-mc-world/contracts';
 
 interface CurrentCommission {
   name: string | null;
@@ -14,7 +15,7 @@ interface CurrentCommission {
   statusDetails?: { headerAt: string; at: string; lines: string[] };
   signal?: { type: string; task: string; phase: string; summary: string; nextAction: string; at: string; ready?: boolean };
 }
-interface CompletedCommission { name: string; at: string; evidence: 'delivery' | 'board' }
+interface CompletedCommission { name: string; at: string; evidence: 'delivery' | 'board'; subject?: string; instance?: string; receipt?: string }
 interface GuildSnapshot {
   current: CurrentCommission | null;
   completed: CompletedCommission[];
@@ -49,7 +50,10 @@ function validSnapshot(value: unknown): value is GuildSnapshot {
       && (['type', 'task', 'phase', 'summary', 'nextAction'] as const).every(key => typeof state.current!.signal![key] === 'string')
       && (state.current.signal.ready === undefined || typeof state.current.signal.ready === 'boolean')))
     && Array.isArray(state.completed) && state.completed.every(item => item && typeof item.name === 'string'
-      && timestamp(item.at) && (item.evidence === 'delivery' || item.evidence === 'board'))
+      && timestamp(item.at) && (item.evidence === 'delivery' || item.evidence === 'board')
+      && (item.subject === undefined || typeof item.subject === 'string' && !!item.subject.trim())
+      && (item.instance === undefined || timestamp(item.instance))
+      && (item.receipt === undefined || typeof item.receipt === 'string' && !!item.receipt.trim()))
     && (state.lastDeliveryAt === null || timestamp(state.lastDeliveryAt));
 }
 
@@ -118,7 +122,8 @@ export class GuildProgress {
     const current = this.state.current;
     if ((accepted || advanced || progress || delivered || none) && (!current || Date.parse(at) >= Date.parse(current.at))) {
       if (delivered) {
-        if (current?.name) this.complete(current.name, at, 'delivery');
+        if (current?.name) this.complete(current.name, at, 'delivery', current.exactId && current.acceptance
+          ? { subject: current.exactId.value, instance: current.acceptance.at, receipt: line } : undefined);
         this.state.lastDeliveryAt = at;
         this.state.current = { name: null, at };
       } else if (none) this.state.current = { name: null, at };
@@ -180,10 +185,28 @@ export class GuildProgress {
     return lines.join('\n');
   }
 
-  private complete(name: string, at: string, evidence: CompletedCommission['evidence']): void {
-    const previous = this.state.completed.find(item => item.name === name);
+  /** Structured lifecycle evidence; unbound legacy completions remain historical text only. */
+  workStates(scope: WorkReference['scope']): WorkState[] {
+    const current = this.state.current;
+    const records: WorkState[] = this.state.completed.flatMap(item => item.evidence === 'delivery'
+      && item.subject && item.instance && item.receipt ? [{ scope, subject: item.subject, instance: item.instance,
+      revision: Date.parse(item.at), status: 'completed' as const, observedAt: item.at,
+      evidence: { source: 'server' as const, reference: `guild:${this.server}:${item.subject}:${item.at}`, text: item.receipt } }] : []);
+    if (current?.name && current.exactId && current.acceptance) records.push({ scope,
+      subject: current.exactId.value, instance: current.acceptance.at, revision: Date.parse(current.at),
+      status: 'active', observedAt: current.at, evidence: { source: 'server',
+        reference: `guild:${this.server}:${current.exactId.value}:${current.at}`,
+        text: current.status?.text ?? current.acceptance.text } });
+    return records;
+  }
+
+  private complete(name: string, at: string, evidence: CompletedCommission['evidence'], identity?: Pick<CompletedCommission, 'subject' | 'instance' | 'receipt'>): void {
+    const sameOccurrence = (item: CompletedCommission): boolean => item.name === name && (identity?.instance
+      ? item.instance === identity.instance
+      : !item.instance && item.evidence === evidence && item.at.slice(0, 10) === at.slice(0, 10));
+    const previous = this.state.completed.find(sameOccurrence);
     if (previous && Date.parse(previous.at) >= Date.parse(at)) return;
-    this.state.completed = [...this.state.completed.filter(item => item.name !== name), { name, at, evidence }]
+    this.state.completed = [...this.state.completed.filter(item => !sameOccurrence(item)), { name, at, evidence, ...identity }]
       .sort((a, b) => Date.parse(a.at) - Date.parse(b.at)).slice(-24);
   }
 
