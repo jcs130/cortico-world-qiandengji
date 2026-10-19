@@ -14,11 +14,13 @@
     "build": "node scripts/build-extensions.mjs",
     "build:extensions": "node scripts/build-extensions.mjs",
     "test": "vitest run",
+    "test:release": "vitest run --maxWorkers=4 --minWorkers=1",
     "typecheck": "tsc --noEmit -p tsconfig.integration.json && tsc --noEmit -p tsconfig.web.json",
+    "release:pack": "node scripts/prepare-release.mjs",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json"
   },
   "dependencies": {
-    "agent-mc-world": "file:vendor/agent-mc-world-0.5.7-rc.45-fe0e900e.tgz",
+    "agent-mc-world": "file:vendor/agent-mc-world-0.5.7-rc.47-279d6f53.tgz",
     "vec3": "0.2.0"
   },
   "devDependencies": {

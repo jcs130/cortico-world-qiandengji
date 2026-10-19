@@ -273,7 +273,7 @@ describe('Mymc World contract', () => {
     expect(await tools[0].handler({}, { role: 'main', log: {} as never })).toBe('[mymc_do] 已受理');
     expect(await tools.find(t => t.name === 'mymc_skills')!.handler({}, { role: 'main', log: {} as never })).toContain('尚未收到历史 MC_SPELL 目录');
     const decl = world.console();
-    expect(decl.panels?.map((panel) => panel.id)).toEqual(['mount', 'skin', 'log']);
+    expect(decl.panels?.map((panel) => panel.id)).toEqual(['connection', 'mount', 'skin', 'log']);
     expect(decl.config?.every((group) => group.owner === 'world:mymc')).toBe(true);
     expect(decl.storage?.[0].key).toBe('mymc-chests');
     expect(decl.storage?.[0].clear()).toBe('已清空');

@@ -62,6 +62,9 @@
 /* 藏起来的 file input:点的是旁边那颗按钮,它本身不该占位 */
 .mc-hidden { display: none; }
 
+.mc-quick-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 16px; }
+.mc-quick-form input.field, .mc-quick-form select.field { width: 100%; box-sizing: border-box; }
+
 /* ---- 存档分组:一组一份 <details>,最近活跃的那组默认展开 ---- */
 .mc-group { border-top: 1px solid var(--line); }
 .mc-group > summary {

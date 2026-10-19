@@ -1,6 +1,6 @@
 import type { WorldDefinition } from '../../adapters/cortico/types.ts';
 import { WORLD_DEFAULTS, type MymcConfigSection } from './config.ts';
-import { assertMinecraftReady } from 'agent-mc-world/extension';
+import { assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS } from 'agent-mc-world/extension';
 import { GenericMymcWorld } from './generic-world.ts';
 import { validateHostCombat } from './host/combat-driver.ts';
 import { assertMymcReady } from './guard.ts';
@@ -9,6 +9,7 @@ import { JavaMymcWorld } from './java-world.ts';
 import type { World } from 'agent-mc-world/contracts';
 import { activityConsoleUrl, connectCorticoActivity, createCorticoActivityMapper } from './cortico-activity.ts';
 import { createActivityOutputTap } from './cortico-activity-tap.ts';
+import { withQuickStart } from './cortico-quick-start.ts';
 type CorticoConfig = MymcConfigSection & { viewerActivity?: { enabled?: boolean; consoleUrl?: string } };
 
 /** API 6 names the browser contribution webUi. Keep the API 5 method for
@@ -81,10 +82,17 @@ export const MYMC: WorldDefinition<CorticoConfig> & { exclusiveResource: string 
     }
   },
   create: ctx => {
-    if (ctx.cfg.provider === 'java-client') return withWebUi(new JavaMymcWorld(ctx));
+    let preparedViewer: string | null = null;
+    const templateDir = () => ctx.cfg.viewerAssetsDir.trim() || MINECRAFT_CLIENT_DEFAULTS.viewerAssetsDir;
+    // Resolve package defaults and prepared paths at runtime, never pin an installed package/cache path into user config.
+    const cfg = new Proxy(ctx.cfg, { get: (target, key, receiver) => key === 'viewerAssetsDir'
+      ? preparedViewer ?? templateDir() : Reflect.get(target, key, receiver) });
+    const setup = <T extends World>(world: T) => withQuickStart(world, ctx, candidate => MYMC.preflight?.({ ...ctx, cfg: candidate }),
+      { templateDir, setDirectory: value => { preparedViewer = value; } });
+    if (ctx.cfg.provider === 'java-client') return setup(withWebUi(new JavaMymcWorld({ ...ctx, cfg })));
     const World = selectedServerPack(ctx.cfg) === 'qiandengji' ? MymcWorld : GenericMymcWorld;
-    return withWebUi(new World({ cfg: ctx.cfg, botDir: ctx.botDir,
-      timezone: ctx.timezone, botName: ctx.botName, dataDir: ctx.dataDir }), ctx.cfg);
+    return setup(withWebUi(new World({ cfg, botDir: ctx.botDir,
+      timezone: ctx.timezone, botName: ctx.botName, dataDir: ctx.dataDir }), ctx.cfg));
   },
 };
 

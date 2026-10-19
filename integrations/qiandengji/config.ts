@@ -113,7 +113,7 @@ export const SERVER_PACK_PROPERTY = {
 export const WORLD_DEFAULTS: MymcConfigSection = {
   ...structuredClone(MYMC_DEFAULTS), ...structuredClone(MINECRAFT_CLIENT_DEFAULTS),
   combatOptions: structuredClone(COMBAT_EXECUTION_DEFAULTS),
-  serverPack: 'none', viewerPort: 7793,
+  serverPack: 'none', viewerPort: 7793, viewerAssetsDir: '',
   visual: { ...MINECRAFT_CLIENT_DEFAULTS.visual, mode: 'auto' },
 };
 export const MYMC_CONFIG_GROUP: ConfigGroup = {

@@ -16,7 +16,7 @@ await cp(join(root, 'LICENSE'), join(pack, 'LICENSE'));
 for (const source of await walk(sourceBase)) {
   const name = relative(sourceBase, source).replaceAll('\\', '/');
   if (name.startsWith('dist/') || name.startsWith('node_modules/') || ['index.ts', 'cortico.ts'].includes(name)
-    || /(?:^|\/)(?:package\.json|LICENSE)$/.test(name) || ['README.md', 'cortico-activity.ts', 'cortico-activity-tap.ts'].includes(name)) continue;
+    || /(?:^|\/)(?:package\.json|LICENSE)$/.test(name) || ['README.md', 'cortico-activity.ts', 'cortico-activity-tap.ts', 'cortico-quick-start.ts'].includes(name)) continue;
   if(name.startsWith('data-packs/qiandengji/viewer-items/')&&/\.(?:png|json)$/.test(name)){
     const target=join(pack,'dist',name);await mkdir(dirname(target),{recursive:true});await cp(source,target);continue;
   }
@@ -61,10 +61,11 @@ console.log('Cortico World package files verified');
   let adapter = (await transform(await readFile(join(base, 'cortico.ts'), 'utf8'),
     { loader: 'ts', format: 'esm', target: 'node22' })).code;
   adapter = adapter.replace(/from (['"])\.\/([^'"\r\n]+)\1/g, (_all, _quote, source) =>
-    /^cortico-activity(?:-tap)?\.[jt]s$/.test(source) ? 'from "./' + source.replace(/\.ts$/, '.js') + '"' : 'from "agent-mc-qiandengji"');
-  for (const file of ['cortico-activity', 'cortico-activity-tap']) {
+    /^cortico-(?:activity(?:-tap)?|quick-start)\.[jt]s$/.test(source) ? 'from "./' + source.replace(/\.ts$/, '.js') + '"' : 'from "agent-mc-qiandengji"');
+  for (const file of ['cortico-activity', 'cortico-activity-tap', 'cortico-quick-start']) {
     const activityAdapter = (await transform(await readFile(join(base, file + '.ts'), 'utf8'),
-      { loader: 'ts', format: 'esm', target: 'node22' })).code.replaceAll('./cortico-activity.ts', './cortico-activity.js');
+      { loader: 'ts', format: 'esm', target: 'node22' })).code.replaceAll('./cortico-activity.ts', './cortico-activity.js')
+      .replaceAll('from "./config.ts"', 'from "agent-mc-qiandengji"');
     await writeFile(join(base, 'dist/world/' + file + '.js'), activityAdapter);
   }
   await writeFile(join(base, 'dist/world/cortico.js'), adapter);

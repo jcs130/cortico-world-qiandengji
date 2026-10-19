@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.1-rc.3
+
+- Add an operator quick-start panel: server address and account, save/start/stop and actual viewer links, through Cortico WorldContext only.
+- Preserve host models, memory and unrelated settings; keep Microsoft authorization visible and server-specific rules opt-in.
+- Consume core rc.47 shared address parsing and resumable, hash-verified full audio setup in a deployment cache; no missing-file success claims.
+- Restore the account/connection panel when the optional server pack is enabled; keep request acceptance separate from game readiness.
+- Include viewer archive identity in cache selection and keep prepared paths out of saved operator settings, so later renderer updates take effect.
+- Follow Cortico 0.2.3 / API 6 self-description, tags and isolated package verification; retain a separate private API 5 build.
+
 ## 0.4.1-dev.20261019.7
 
 - Consume shared core rc.45 ranked-choice validation and candidate-specific combat intents through the existing host decision port.
