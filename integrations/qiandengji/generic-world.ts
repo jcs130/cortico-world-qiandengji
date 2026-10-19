@@ -35,7 +35,7 @@ export class GenericMymcWorld extends MinecraftClientWorld {
         const result = await tool.handler(args, ctx);
         return typeof result === 'string' ? adapterText(result)
           : { ...mapToolRecovery(result, adapterText, adapterText), text: adapterText(result.text) };
-      } }))), 'mymc_tool_help');
+      } }))), 'mymc_tool_help', { parameterDescriptions: this.adapterOptions.cfg.toolParameterDescriptions });
   }
   override async envPromptVars() {
     const values = await super.envPromptVars();
@@ -50,6 +50,7 @@ export class GenericMymcWorld extends MinecraftClientWorld {
         const mapped = mymcGroup(group, group.schema.title.replace('Minecraft', '联机版我的世界'));
         if (index === 0) {
           mapped.schema.properties['worlds.mymc.serverPack'] = SERVER_PACK_PROPERTY;
+          mapped.schema.properties['worlds.mymc.toolParameterDescriptions'] = MYMC_CONFIG_GROUP.schema.properties['worlds.mymc.toolParameterDescriptions'];
           Object.assign(mapped.schema.properties, Object.fromEntries(Object.entries(MYMC_CONFIG_GROUP.schema.properties)
             .filter(([key]) => /\.hostDecisions\.|\.combatOptions\./.test(key))));
         }

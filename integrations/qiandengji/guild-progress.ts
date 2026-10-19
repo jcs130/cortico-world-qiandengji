@@ -20,6 +20,7 @@ interface GuildSnapshot {
   current: CurrentCommission | null;
   completed: CompletedCommission[];
   lastDeliveryAt: string | null;
+  acceptanceFailure?: { text: string; at: string };
 }
 
 function timestamp(value: unknown): value is string {
@@ -31,7 +32,10 @@ const commissionName = (text: string): string => text.split(' · ')[0].trim();
 function validSnapshot(value: unknown): value is GuildSnapshot {
   if (!value || typeof value !== 'object') return false;
   const state = value as GuildSnapshot;
-  return (state.current === null || !!state.current && timestamp(state.current.at)
+  return (state.acceptanceFailure === undefined || !!state.acceptanceFailure
+    && typeof state.acceptanceFailure.text === 'string' && state.acceptanceFailure.text.length <= 1_200
+    && timestamp(state.acceptanceFailure.at))
+    && (state.current === null || !!state.current && timestamp(state.current.at)
     && (state.current.name === null || typeof state.current.name === 'string')
     && [state.current.progress, state.current.required].every(n => n === undefined || Number.isSafeInteger(n) && n >= 0)
     && (state.current.acceptance === undefined || !!state.current.acceptance
@@ -75,6 +79,13 @@ export class GuildProgress {
   observe(text: string, at: string): boolean {
     if (!text.startsWith('[MC 系统] ') || !timestamp(at)) return false;
     const line = text.slice('[MC 系统] '.length).trim();
+    if (/^已有在途任务[；;]/.test(line)) {
+      if (Date.parse(at) < Math.max(Date.parse(this.state.current?.at ?? '') || 0,
+        Date.parse(this.state.acceptanceFailure?.at ?? '') || 0)) return false;
+      this.statusFrame = null;
+      this.state.acceptanceFailure = { at, text: line.slice(0, 1_200) };
+      this.save(); return true;
+    }
     if (line.startsWith('{')) {
       this.statusFrame = null;
       let value: Record<string, unknown>;
@@ -121,6 +132,8 @@ export class GuildProgress {
     if (completed) this.complete(completed[1], at, 'board');
     const current = this.state.current;
     if ((accepted || advanced || progress || delivered || none) && (!current || Date.parse(at) >= Date.parse(current.at))) {
+      if ((accepted || delivered || none) && (!this.state.acceptanceFailure
+        || Date.parse(at) >= Date.parse(this.state.acceptanceFailure.at))) this.state.acceptanceFailure = undefined;
       if (delivered) {
         if (current?.name) this.complete(current.name, at, 'delivery', current.exactId && current.acceptance
           ? { subject: current.exactId.value, instance: current.acceptance.at, receipt: line } : undefined);
@@ -168,6 +181,7 @@ export class GuildProgress {
 
   facts(): string {
     const lines: string[] = [];
+    if (this.state.acceptanceFailure) lines.push(`${this.state.acceptanceFailure.at} 最近接单拒绝原文（本次未接到新委托；核对在途状态后再选择）：${this.state.acceptanceFailure.text}`);
     const current = this.state.current;
     if (current) lines.push(`[公会委托服务端观察 ${current.at}] ${current.name
       ? `在办：${commissionName(current.name)}${current.progress === undefined ? '；进度尚未回读' : ` [${current.progress}/${current.required}]`}`

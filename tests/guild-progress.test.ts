@@ -5,6 +5,34 @@ import { describe, expect, it } from 'vitest';
 import { GuildProgress } from '../src/guild-progress.ts';
 
 describe('GuildProgress', () => {
+  it('retains a server rejection across restart without replacing the active work or blocking another action', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'guild-rejected-'));
+    try {
+      const p = new GuildProgress('example.test:25565:visitor', dir);
+      p.observe('[MC 系统] 已接公会委托：测试调查 · 1/1 调查。', '2026-10-19T00:00:00Z');
+      p.observe('[MC 系统] survey 测试调查 · 调查。 [in_progress]', '2026-10-19T00:00:01Z');
+      const rejection = '[MC 系统] 已有在途任务；先 /mycli tasks status 查进度，完成后 guild claim。';
+      expect(p.observe(rejection, '2026-10-19T00:01:00Z')).toBe(true);
+      const restored = new GuildProgress('example.test:25565:visitor', dir);
+      expect(restored.facts()).toContain('最近接单拒绝原文');
+      expect(restored.facts()).toContain('/mycli tasks status');
+      expect(restored.workStates({ realm: 'r', account: 'a', agent: 'b' })).toMatchObject([{ subject: 'survey', status: 'active' }]);
+      restored.observe('[MC 系统] 委托交付成功！声望 +12。', '2026-10-19T00:02:00Z');
+      expect(restored.facts()).not.toContain('最近接单拒绝原文');
+      expect(restored.observe(rejection, '2026-10-19T00:01:00Z')).toBe(false);
+      expect(restored.facts()).not.toContain('最近接单拒绝原文');
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  it('does not turn a player quote into a rejection or infer the identity of unknown active work', () => {
+    const p = new GuildProgress('example.test:25565:visitor');
+    expect(p.observe('[MC] Player: 已有在途任务；先查进度。', '2026-10-19T00:01:00Z')).toBe(false);
+    p.observe('[MC 系统] 已有在途任务；先 /mycli tasks status 查进度。', '2026-10-19T00:01:00Z');
+    expect(p.facts()).toContain('本次未接到新委托');
+    expect(p.workStates({ realm: 'r', account: 'a', agent: 'b' })).toEqual([]);
+    p.observe('[MC 系统] 当前没有在办的委托。', '2026-10-19T00:02:00Z');
+    expect(p.facts()).not.toContain('最近接单拒绝原文');
+  });
   it('exposes exact occurrence closure evidence while leaving legacy/unidentified work unbound', () => {
     const p = new GuildProgress('example.test:25565:visitor');
     const scope = { realm: 'example.test:25565', account: 'visitor', agent: 'test' };

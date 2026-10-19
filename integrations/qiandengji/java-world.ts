@@ -66,7 +66,7 @@ export class JavaMymcWorld implements World {
       { name: 'mymc_skills', description: 'Query retained original server skill observations; not current ability/mana proof.', parameters: { type: 'object', properties: { id: { type: 'string' } } }, tags: ['read'], handler: async args => ({ text: this.catalog.readout(args.id as string | undefined) }) },
       { name: 'mymc_messages', description: 'Query original received native server messages by query/channel, newest first; read expands an id and review marks consideration only. Includes pre-migration history; historical observations are not new commands. Use mymc_notices for the current client buffer.', parameters: MESSAGE_PARAMETERS, tags: ['read', 'write'], readOnlyCall: args => args.action !== 'review', handler: async args => this.messages.readout(args) },
     );
-    return withToolHelp(this.learning.tools(tools.map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description) }))), 'mymc_tool_help');
+    return withToolHelp(this.learning.tools(tools.map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description) }))), 'mymc_tool_help', { parameterDescriptions: this.opts.cfg.toolParameterDescriptions });
   }
   console(): WorldConsoleDecl {
     return { ...this.body.console(), label: '联机版我的世界 · 真实客户端', promptDocs: [{ key: 'worlds.mymc.envPrompt', title: '真实客户端操作', description: '原生操作与兼容指令边界。', role: 'envPrompt', path: fileURLToPath(new URL('./ENV_PROMPT_JAVA.md', import.meta.url)) }] };

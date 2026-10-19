@@ -458,7 +458,7 @@ export class MymcWorld implements World {
         const outcome = readServerGuide(args.topic);
         return { ...outcome, text: renderTemplate(outcome.text, this.envPromptVars()) };
       },
-    }]), 'mymc_tool_help');
+    }]), 'mymc_tool_help', { parameterDescriptions: this.opts.cfg.toolParameterDescriptions });
   }
 
   console(): WorldConsoleDecl {

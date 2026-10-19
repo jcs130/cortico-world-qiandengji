@@ -19,6 +19,7 @@ type RepeatSuccessFallback = {
 };
 
 export type MymcConfigSection = MinecraftConfigSection & {
+  toolParameterDescriptions?: 'inline' | 'on-demand';
   /** Omitted legacy configuration must be explicitly migrated before enabling server rules. */
   serverPack?: 'none' | 'qiandengji';
   /** Explicit host lease ownership, no model loop and no automatic takeover after loss. */
@@ -68,6 +69,7 @@ const baseRepeatSuccessFallback = (MINECRAFT_DEFAULTS as {
 
 export const MYMC_DEFAULTS: MymcConfigSection = {
   ...structuredClone(MINECRAFT_DEFAULTS),
+  toolParameterDescriptions: 'inline',
   hostDecisions: { choice: { decisionProvider: '' }, combat: {
     ...COMBAT_DECISION_DEFAULTS, connection: 'auto', decisionProvider: '', model: '', apiKeyEnv: '',
   } },
@@ -118,6 +120,8 @@ export const MYMC_CONFIG_GROUP: ConfigGroup = {
   ...connectionGroup,
   schema: { ...connectionGroup.schema, properties: {
     ...connectionGroup.schema.properties,
+    'worlds.mymc.toolParameterDescriptions': { type: 'string', enum: ['inline', 'on-demand'], title: '工具参数说明', 'x-hot': false,
+      description: 'inline 在每次请求提供参数说明；on-demand 保留全部参数和校验约束，详细说明通过 mymc_tool_help 按需读取。更改后重新挂载 World。' },
     'worlds.mymc.serverPack': SERVER_PACK_PROPERTY,
     'worlds.mymc.serverTravel.enabled': { type: 'boolean', title: '自动使用服务器传送', 'x-hot': true,
       description: '仅千灯纪资料包。开启后可在指定目的地前插入服务器传送命令；需确认当前服务器支持。默认关闭，goto 保持步行。显式传送命令不受此项影响。' },
