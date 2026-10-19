@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.1-dev.20261019.4
+
+- Consume independent core rc.41 with codec-correct acknowledgements for first and subsequent End exits.
+- Lock shared viewer 1cbd5574 with generated crossbow direction, native enchantment glint, compact skill panels and reconnect repairs.
+- Check the public API 6 extension against Cortico 0.2.3; retain the separate private API 5 compatibility package.
+
+## 0.4.1-dev.20261019.3
+
+- Offer on-demand parameter descriptions through the shared core while retaining full tool help and validation constraints.
+- Retain trusted work-acceptance rejections with their timestamp until a newer accepted, delivered or empty work state.
+
 ## 0.4.1-dev.20261018.10
 
 - Consume shared core rc.31 feet-cell coordinates consistently in task queues, progress and observations.
