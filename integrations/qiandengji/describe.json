@@ -3108,7 +3108,7 @@
     },
     {
       "name": "mymc_script",
-      "description": "Run an agent-authored JavaScript async function body with params and a restricted mc SDK. Nearby blocks: {find:{names:[\"water\"],maxDistance:8,count:4},waitMs:1000} runs a bounded read recipe without scan loops. name is optional for code; omitted names use its stable source hash. Explicit names are1–80 characters. mc.state() returns {sampledAt,connectionGeneration,snapshot,flight,queue,combatActive,combat,method}. Read position, dimension, health, food, inventory and equipment under snapshot, which can be null. snapshot.entities is a bounded array of {entityId?,name,kind,distance,direction,dy,visible}; snapshot.entitiesOmitted reports truncation. snapshot.blocksScanned is false here; empty nearbyBlocks/terrain do not establish water depth or traversability. Missing fields are unknown observations. await mc.do(steps) submits one ordered group to the normal executor and waits for its actual terminal result: accepted, taskId, kind, done, receipt, steps and fresh state. A sent server command still needs observed effects; done is the executor result, not proof of an external quest. await mc.flightPlan(args) uses the same read-only geometry/budget contract as mymc_flight_plan. Use JavaScript conditions, calculations and bounded loops to adapt to feedback. Prepare a timed route before casting; combine already-known cast/movement/blink steps with needs in one mc.do to avoid model delays. bot and Vec3 expose a bounded asynchronous transport for Mineflayer public primitives; use {api:\"index\"} then {api:\"blockAt\"}, {api:\"activateItem\"}, etc. for native signatures and differences. Native calls preserve the current hand and do not navigate or select tools. bot.blockAt returns Block|null with getProperties() for your own JavaScript result checks. The first native body call queues a body lease held until program end; after it, mc.do is unavailable in that program. Read calls do not acquire the body. No imports, process, filesystem, network or protected raw bot access. Calls must be awaited serially. Limits: 12000 source chars, 32 SDK calls, 16 action groups, default 60000ms including queue waits, maximum 120000ms. Only one program runs at a time. New admitted body work, stop, death, disconnect, World stop or timeout revoke it and its own pending task. Returns a run id immediately; {runId} reads result and call summaries, {runId,call} expands one complete SDK call; {} lists the last eight run summaries, {stop:true} cancels the current run. {validate:true,name,code} checks syntax without running any action. Program completion does not certify a learned method. Expand an SDK call to inspect its actual fields before interpreting results; compare the returned observations with the method objective before saving verified claims. Alternatively use {procedure:{handle,revision},params,validate?} to resolve and run a pinned agent-mc.procedure/v1 dependency graph (legacy cortico.procedure/v1 is also accepted) for adapter minecraft-method/v1. await methods.run(alias,params) composes only declared dependency versions; all share this program's budgets and body lease. Source is loaded directly from the selected blobs, without copying it through model context. Procedure terminal events carry an execution UUID and persistent receipt for explicit goal review/adoption by the owning Persona; completion alone is not proof of improvement. {library:{op:\"list\"}} lists your scoped editable methods; read uses id and optional revision. After a validated syntax run, save uses id, code, description, conditions, parent (null for new; current revision for edits), validationRunId. Returns a pinned procedure reference; execution is explicit. Earlier revisions remain runnable for rollback. Library saves never edit engine files or claim verified improvement.",
+      "description": "Run an agent-authored JavaScript async function body with params and a restricted mc SDK. Write new feedback-controlled actions when persistent inputs, calculations or conditional sequencing are useful; this is not limited to existing named scripts. {api:\"authoring\"} gives the short write/validate/save/execute/review/reuse path. {library:{op:\"list\",query:\"purpose\"}} searches only this scoped game-method library; a host procedure_find may use a different library. Nearby blocks: {find:{names:[\"water\"],maxDistance:8,count:4},waitMs:1000} runs a bounded read recipe without scan loops. name is optional for code; omitted names use its stable source hash. Explicit names are1–80 characters. mc.state() returns {sampledAt,connectionGeneration,snapshot,flight,queue,combatActive,combat,method}. Read position, dimension, health, food, inventory and equipment under snapshot, which can be null. snapshot.entities is a bounded array of {entityId?,name,kind,distance,direction,dy,visible}; snapshot.entitiesOmitted reports truncation. snapshot.blocksScanned is false here; empty nearbyBlocks/terrain do not establish water depth or traversability. Missing fields are unknown observations. await mc.do(steps) submits one ordered group to the normal executor and waits for its actual terminal result: accepted, taskId, kind, done, receipt, steps and fresh state. A sent server command still needs observed effects; done is the executor result, not proof of an external quest. await mc.flightPlan(args) uses the same read-only geometry/budget contract as mymc_flight_plan. Use JavaScript conditions, calculations and bounded loops to adapt to feedback. Prepare a timed route before casting; combine already-known cast/movement/blink steps with needs in one mc.do to avoid model delays. bot and Vec3 expose a bounded asynchronous transport for Mineflayer public primitives; use {api:\"index\"} then {api:\"blockAt\"}, {api:\"activateItem\"}, etc. for native signatures and differences. Native calls preserve the current hand and do not navigate or select tools. bot.blockAt returns Block|null with getProperties() for your own JavaScript result checks. The first native body call queues a body lease held until program end; after it, mc.do is unavailable in that program. Read calls do not acquire the body. No imports, process, filesystem, network or protected raw bot access. Calls must be awaited serially. Limits: 12000 source chars, 32 SDK calls, 16 action groups, default 60000ms including queue waits, maximum 120000ms. Only one program runs at a time. New admitted body work, stop, death, disconnect, World stop or timeout revoke it and its own pending task. Returns a run id immediately; {runId} reads result and call summaries, {runId,call} expands one complete SDK call; {} lists the last eight run summaries, {stop:true} cancels the current run. {validate:true,name,code} checks syntax without running any action. Program completion does not certify a learned method. Expand an SDK call to inspect its actual fields before interpreting results; compare the returned observations with the method objective before saving verified claims. Alternatively use {procedure:{handle,revision},params,validate?} to resolve and run a pinned agent-mc.procedure/v1 dependency graph (legacy cortico.procedure/v1 is also accepted) for adapter minecraft-method/v1. await methods.run(alias,params) composes only declared dependency versions; all share this program's budgets and body lease. Source is loaded directly from the selected blobs, without copying it through model context. Procedure terminal events carry an execution UUID and persistent receipt for explicit goal review/adoption by the owning Persona; completion alone is not proof of improvement. {library:{op:\"list\"}} lists your scoped editable methods; read uses id and optional revision. After a validated syntax run, save uses id, code, description, conditions, parent (null for new; current revision for edits), validationRunId. dependencies maps aliases to exact saved references for methods.run; existing parents retain old child versions. evidence reads persisted actual executionId/call; review links an explicit outcome/assessment/context to that version and receipt; adopt selects an assessed version for later retrieval, without changing a running program. Returns a pinned procedure reference; execution is explicit. Earlier revisions and negative assessments remain readable for revision/rollback. Library saves never edit engine files or claim verified improvement.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -3126,7 +3126,10 @@
                 "enum": [
                   "list",
                   "read",
-                  "save"
+                  "save",
+                  "evidence",
+                  "review",
+                  "adopt"
                 ]
               },
               "id": {
@@ -3172,6 +3175,85 @@
                 "type": "integer",
                 "minimum": 1,
                 "maximum": 20
+              },
+              "dependencies": {
+                "type": "object",
+                "maxProperties": 7,
+                "additionalProperties": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "handle": {
+                      "type": "string"
+                    },
+                    "revision": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "handle",
+                    "revision"
+                  ]
+                },
+                "description": "Alias to an exact version returned by this scoped library; methods.run(alias,params) composes it."
+              },
+              "executionId": {
+                "type": "string"
+              },
+              "reviewId": {
+                "type": "string"
+              },
+              "selectionId": {
+                "type": "string"
+              },
+              "call": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 32
+              },
+              "outcome": {
+                "type": "string",
+                "enum": [
+                  "achieved",
+                  "not-achieved",
+                  "unknown"
+                ]
+              },
+              "assessment": {
+                "type": "string",
+                "maxLength": 1600
+              },
+              "context": {
+                "type": "string",
+                "maxLength": 1600
+              },
+              "measurements": {
+                "type": "object",
+                "maxProperties": 12,
+                "additionalProperties": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "counterexamples": {
+                "type": "array",
+                "maxItems": 8,
+                "items": {
+                  "type": "string",
+                  "maxLength": 400
+                }
+              },
+              "expectedAdopted": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "maxLength": 800
               }
             },
             "required": [

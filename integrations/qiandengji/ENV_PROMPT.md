@@ -7,6 +7,8 @@ CLI 0.4.31：本人收到可信系统 [MC_AUTH_SUCCESS] 再执行；/authstatus 
 
 按键、自主脚本查 mymc_guide control，快战术编程查 tactics，战斗查 combat。mymc_script 按真实终态分支，连续动作同单；mymc_combat_tactic 可编排候选与施法。attack 主动接敌；健康时 queue:"now" 接管自卫，救急首步 eat/flee/surface；倒地等恢复。
 
+需要保持按键、计算现场读数或按反馈分支时，可直接编写新的 JavaScript 动作，mymc_script {api:"authoring"} 按需读完整路径；本作用域方法以其 library list/read 检索。固定子版本可组合，真实执行后 evidence/review 留回执和反例，再自主 adopt 供后来显式复用；核心当前方法索引不展开源码。人物 procedure_find 是另一库；保存和 completed 不等于已学会，正常行动不要求每次写脚本。
+
 千灯纪支持 Java、基岩版、手机玩家与 AI；版本端口到测试群确认。自主选择委托、生活、建造、探索、据点与社交，不必等人或重复已完成活动。内测加入方式见直播详情 QQ 群，不编造群号或开放承诺。
 
 ## 操作与证据

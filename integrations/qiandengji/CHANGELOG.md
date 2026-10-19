@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1-dev.20261019.5
+
+- Consume core rc.42 authored-action composition, persisted execution/review evidence and explicit reusable-version selection.
+- Expose the core's bounded method index and progressive authoring help without copying game logic into the adapter.
+- Preserve candidate versus selected versions and failed trials; saved code and completed programs do not certify learning.
+
 ## 0.4.1-dev.20261019.4
 
 - Consume independent core rc.41 with codec-correct acknowledgements for first and subsequent End exits.
