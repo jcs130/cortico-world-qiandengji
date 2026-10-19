@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.1-rc.4
+
+- Consume core rc.49 with shared wake classification, compact facts, event condensation and movement/observation repetition diagnostics.
+- Keep exact MCP tool validation and on-demand full schemas when its compact catalogue is explicitly enabled.
+- Protect player/private chat, unknown chat, task and goal evidence from built-in tutorial text filters.
+- Retain the unlimited-by-default viewer audience fix and the same locked viewer/audio inputs from rc.3.
+- These SDK helpers require explicit host adoption; this dependency update does not silently change wake policy, model settings or journal retention.
+- This candidate is prepared locally, not published or loaded into a running host.
+
 ## 0.4.1-rc.3
 
 - Add an operator quick-start panel: server address and account, save/start/stop and actual viewer links, through Cortico WorldContext only.

@@ -1,14 +1,15 @@
 {
-  "version": "0.5.7-rc.47",
-  "file": "agent-mc-world-0.5.7-rc.47-279d6f53.tgz",
-  "sha256": "279d6f53578e29e600b1a50baf4d508b1ca29d9760af51426ac237e99a18110c",
+  "version": "0.5.7-rc.49",
+  "file": "agent-mc-world-0.5.7-rc.49-5bab11d3.tgz",
+  "sha256": "5bab11d3388ff48266b9666fae38f67eac648bf29b69dafd84b290d188ba2713",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "38d82dca138a04b50eebaf02cdcb8ce80af9188e",
-  "channel": "public-release-candidate",
-  "sourceCommitStatus": "committed locally; publication and deployment pending",
+  "sourceCommit": "f7895dd72b3ffa36889547b5f158961590275455",
+  "upstreamBase": "e9a44307cd6432a8325adb4d9ab8d1b71ede997e",
+  "channel": "unpublished-source-candidate",
+  "sourceCommitStatus": "committed source; publication and live loading tracked separately",
   "viewerIncluded": true,
-  "completeAudio": false,
+  "completeAudio": true,
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
     "commit": "310faa2bf22e41b95287ecf088ed20f069703ea8",
@@ -24,11 +25,14 @@
       "java-1.20.6-sounds",
       "original-bgm"
     ],
-    "completeAudio": false,
+    "completeAudio": true,
     "publicOriginalBgmTracks": 8,
     "included": true,
-    "audioDistribution": "Mojang content-addressed first setup",
-    "fullCatalog": true
+    "audio": {
+      "mode": "explicit-first-setup",
+      "files": 7388,
+      "uniqueFiles": 3691
+    }
   },
   "completeAudioAfterSetup": true
 }

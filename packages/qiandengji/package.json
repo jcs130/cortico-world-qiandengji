@@ -1,6 +1,6 @@
 {
   "name": "agent-mc-qiandengji",
-  "version": "0.5.0-rc.3",
+  "version": "0.5.0-rc.4",
   "type": "module",
   "description": "Explicit Qiandengji server protocols and reference pack for the independent Agent Minecraft client",
   "license": "MIT",
@@ -12,7 +12,7 @@
     "./manifest": "./dist/data-packs/qiandengji/manifest.js"
   },
   "dependencies": {
-    "agent-mc-world": "^0.5.7-rc.47",
+    "agent-mc-world": "^0.5.7-rc.49",
     "vec3": "0.2.0"
   },
   "engines": {
