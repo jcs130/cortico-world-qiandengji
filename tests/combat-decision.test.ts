@@ -208,8 +208,8 @@ describe('independent asynchronous combat choices', () => {
     expect(r.reports.at(-1)?.data.outcome).toBe('moved'); expect(r.sent).toHaveLength(0);
   });
 
-  it('preserves keep and falls back on low probability using selected-option probability', async () => {
-    vi.useFakeTimers(); const r = rig(); r.loop.tick(); r.resolve(response('keep'));
+  it('preserves keep and an explicitly configured selected-option probability floor', async () => {
+    vi.useFakeTimers(); const r = rig(); r.cfg.minConfidence = .75; r.loop.tick(); r.resolve(response('keep'));
     await vi.advanceTimersByTimeAsync(1);
     expect(r.reports.at(-1)?.data.outcome).toBe('keep'); expect(r.fallbacks).toBe(0);
     await vi.advanceTimersByTimeAsync(r.cfg.minIntervalMs); r.loop.tick(); r.resolve(response('option_0', .6));

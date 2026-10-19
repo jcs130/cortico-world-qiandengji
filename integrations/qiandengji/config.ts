@@ -31,7 +31,7 @@ export type MymcConfigSection = MinecraftConfigSection & {
     enabled: boolean; endpoint?: string; mode: 'shadow' | 'act';
     connection?: 'auto' | 'host' | 'endpoint'; decisionProvider?: string;
     model?: string; apiKeyEnv?: string;
-    timeoutMs?: number; minIntervalMs?: number; minConfidence?: number; maxAgeMs?: number;
+    timeoutMs?: number; minIntervalMs?: number; minConfidence?: number; minMargin?: number; maxAgeMs?: number;
   } };
   combatOptions: CombatExecutionPolicy;
   preserveLoginName?: boolean;
@@ -144,6 +144,10 @@ export const MYMC_CONFIG_GROUP: ConfigGroup = {
     'worlds.mymc.hostDecisions.combat.timeoutMs': { type: 'number', minimum: 50, maximum: 60000, title: '快决策等待上限（毫秒）', 'x-hot': false,
       description: '云端 API 按实际延迟配置；等待期间原控制继续。过期建议丢弃。' },
     'worlds.mymc.hostDecisions.combat.maxAgeMs': { type: 'number', minimum: 50, maximum: 60000, title: '战术现场有效期（毫秒）', 'x-hot': false },
+    'worlds.mymc.hostDecisions.combat.minConfidence': { type: 'number', minimum: 0, maximum: 1, title: '候选排名分数下限', 'x-hot': false,
+      description: '默认 0，主要比较领先幅度。排名分数不是获胜概率；显式设置的分数下限仍额外生效。' },
+    'worlds.mymc.hostDecisions.combat.minMargin': { type: 'number', minimum: 0, maximum: 1, title: '候选排名领先幅度', 'x-hot': false,
+      description: '默认 0.1，第一名须领先第二名至少此值；平局始终不采用。执行仍由核心核验目标、控制权及现场条件。' },
     'worlds.mymc.username': {
       ...connectionGroup.schema.properties['worlds.mymc.username'],
       type: 'string', title: 'Agent 登录名', 'x-hot': false,

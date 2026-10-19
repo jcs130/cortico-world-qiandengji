@@ -1,8 +1,15 @@
 # Changelog
 
+## 0.4.1-dev.20261019.7
+
+- Consume shared core rc.45 ranked-choice validation and candidate-specific combat intents through the existing host decision port.
+- Recheck relevant actor changes while tolerating unrelated bystander visibility; retain ownership, identity, target and geometry validation.
+- Distinguish abstention, kept control and accepted dispatch in receipts; dispatch alone does not certify game progress.
+- Restore the existing single delayed fresh-sample retry for cold-start scheduling timeouts in authored combat programs, without raising budgets.
+
 ## 0.4.1-dev.20261019.6
 
-- Consume core rc.43 inventory organization through the shared action, help and script contracts.
+- Consume core rc.44 inventory organization through the shared action, help and script contracts.
 - Merge/sort carried or open storage and apply explicit surplus retention rules; do not install an automatic discard policy.
 - Preserve server-confirmed slots, exact custom item components and unresolved cursors on interruption.
 
