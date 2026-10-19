@@ -5,12 +5,13 @@
 
 ## 开始玩：安装一次，以后一键启动
 
-1. 在 **Cortico → 扩展** 安装 `cortico-world-qiandengji`，按宿主提示重启以加载新扩展。
+1. 在 **Cortico → 扩展** 安装 `cortico-world-qiandengji@next`（当前公测 0.4.1-rc.3），按宿主提示重启以加载新扩展。
 2. 打开 **World → 联机版我的世界 → 开始游戏**，填写 **服务器地址** 和 **账号 / 游戏名**。
 3. 点击 **保存并启动**。连接成功后点 **3D观战** 或 **第三人称** 打开网页。
 
 下次打开这页直接点击“保存并启动”。无需克隆仓库、修改 JSON、安装 Python 或为 World 再配一套 LLM。
 主模型沿用宿主现有配置，快决策使用宿主保存的连接；默认不启用额外推理、绘图服务或服务器传送。
+公测需要 Cortico 0.2.2 或更新的 0.2.x 版本。World 默认 `latest` 仍为 0.1.2；首次下载超时可参照[公测安装说明](https://github.com/jcs130/cortico-world-qiandengji/blob/main/docs/release-quick-start.md#首次安装遇到下载超时)。
 
 ### 服务器地址怎么填
 

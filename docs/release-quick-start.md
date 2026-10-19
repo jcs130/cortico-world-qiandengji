@@ -2,9 +2,34 @@
 
 ## 用户入口
 
-安装 `cortico-world-qiandengji` → 按宿主提示加载扩展 → World「联机版我的世界」→「开始游戏」→ 地址、账号 →「保存并启动」→ 网页观战。
+在 Cortico 的扩展安装框输入 `cortico-world-qiandengji@next` → 按宿主提示加载扩展 → World「联机版我的世界」→「开始游戏」→ 地址、账号 →「保存并启动」→ 网页观战。
+本次公测要求 Cortico `>=0.2.2 <0.3.0` / World API 6，已用官方 0.2.3 验收。
 模型复用宿主；普通服默认 `serverPack:none`、协议 `auto`，不需要独立客户端、Python 或额外快模型。
 首次完整音频准备有进度、校验和缓存；网络失败可续传。高级配置仍可用。
+
+## 2026-10-19 已发布的公测版本
+
+| 包 | `next` 版本 |
+| --- | --- |
+| [agent-mc-world](https://www.npmjs.com/package/agent-mc-world/v/0.5.7-rc.47) | 0.5.7-rc.47 |
+| [agent-mc-qiandengji](https://www.npmjs.com/package/agent-mc-qiandengji/v/0.5.0-rc.3) | 0.5.0-rc.3 |
+| [cortico-world-qiandengji](https://www.npmjs.com/package/cortico-world-qiandengji/v/0.4.1-rc.3) | 0.4.1-rc.3 |
+
+三个包的实际 npm 下载均已与批准的归档校验一致，独立空消费者按公开版本安装后通过官方 API 6、自描述、SDK 与真实 MCP 调用检查。
+World 的 `latest` 保持 0.1.2；安装这次公测请明确填写 `@next` 或 `@0.4.1-rc.3`。两个首次公开的依赖包在 registry 同时出现了 `next` 和 `latest`；本次没有另行执行 dist-tag 变更。
+发布与现役加载分别记录，这次 npm 发布未重载正在运行的可米。
+
+### 首次安装遇到下载超时
+
+核心归档约 59 MB，本机从 npm 完整下载实测约 70 秒。pnpm 11.5.0 默认的整次请求上限为 60 秒，本次独立安装因此超时；仅将安装请求上限改为 180 秒后，约 71 秒安装完成。
+若扩展安装出现同样的 `The operation was aborted due to timeout`，在启动 Cortico 的同一用户下执行一次，然后回扩展页重试：
+
+```text
+pnpm config set --global fetchTimeout 180000
+```
+
+这个设置影响该用户的 pnpm 安装请求等待时间。本次验收只通过命令参数调整独立测试，没有修改现役或全局配置。
+新版本 pnpm 已将该设置改为无进度超时，具体语义参见 [pnpm 请求设置](https://pnpm.io/settings/network#fetchtimeout)。
 
 ## 维护者准备候选
 
@@ -27,7 +52,7 @@
 
 ## 经确认后发布
 
-npm 上核心与服务器包目前尚无公开版本；不能只发布 World 而留下缺失依赖。
+核心、服务器包与 World 均已有上述公开公测版本；后续更新仍需保持依赖齐全。
 维护者使用自己的 npm 发布身份，依次在 `dist/release` 的 `publish-plan.json` 中取得确切文件名：
 
 ```text
@@ -36,8 +61,9 @@ npm publish <服务器包.tgz> --access public --tag next
 npm publish <World.tgz> --access public --tag next
 ```
 
-预发布先给 `next`，按确切版本做一次全新安装。验收后再决定正式版本和 `latest`，不要把私有 API 5 包发布到 npm。
-不要在发布脚本里保存 token、OTP、游戏账号或部署配置。当前步骤没有执行 npm 发布、变更 dist-tag 或通知市场。
+预发布先给 `next`，三个版本都能下载后按确切版本做一次全新安装。验收后再决定正式版本和 `latest`，不要把私有 API 5 包发布到 npm。
+发布命令成功返回与实际可安装之间可能有 [npm 发布扫描](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/) 等待；核对真实版本、标签和归档校验值后再确认交付，不重复上传同一版本。
+不要在发布脚本里保存 token、OTP、游戏账号或部署配置。`release:pack` 不执行 npm 发布、变更 dist-tag 或通知市场。
 
 ## Cortico 市场
 
@@ -47,5 +73,5 @@ npm publish <World.tgz> --access public --tag next
 
 ## 尚不能由离线检查证明的事
 
-首发 npm 下载、外网首次资源下载、不同家庭网络中的微软登录、市场正式安装及长期游戏表现需要发行候选环境验收。
+本次已验证 npm 实际下载、独立安装、外网完整音频准备与缓存复用。不同家庭网络中的微软登录、市场正式安装及长期游戏表现仍需要对应环境验收。
 模拟 HTTP、回环游戏服务器、按钮测试和官方 dry mount 不能替代这些事实。发布准备也不授权中断现役可米。
