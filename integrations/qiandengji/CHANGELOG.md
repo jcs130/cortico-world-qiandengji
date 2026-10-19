@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1-dev.20261019.6
+
+- Consume core rc.43 inventory organization through the shared action, help and script contracts.
+- Merge/sort carried or open storage and apply explicit surplus retention rules; do not install an automatic discard policy.
+- Preserve server-confirmed slots, exact custom item components and unresolved cursors on interruption.
+
 ## 0.4.1-dev.20261019.5
 
 - Consume core rc.42 authored-action composition, persisted execution/review evidence and explicit reusable-version selection.
