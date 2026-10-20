@@ -19,6 +19,8 @@
 核心不依赖这些宿主或资料包。通用可视化仍由 `jcs130/mc-visual-console` 维护。
 Cortico 内置示例世界保持独立，不在这里修改。
 
+拍照、镜头和可选体素场景由 Minecraft 核心提供。图片、视频和歌曲制作统一由独立的 [AIGC 创作室](https://github.com/jcs130/cortico-world-aigc) 负责，双方不互相依赖或调用私有方法。Persona 从共享记忆选择人物参考，宿主传递实际素材句柄；生成完成后再交演出或聊天 World 展示。普通截图不需要配置生成模型，旧照片与历史任务仍可查询。
+
 ### 可选真实 Java 客户端身体
 
 `worlds.mymc.provider: "java-client"` 使用核心的真实客户端桥；原主会话、人格和模型不变，也不会启动 Mineflayer 或额外模型循环。配置 `javaClient` 的实际 UUID、服务器、私有连接文件、账本目录、控制器 ID 和租期。SDK 的 `MymcAgentRuntime` 与 Cortico World 使用同一身体。只有明确启用 `javaHostControl.enabled` 才由宿主接管并续租；控制丢失后停下，不能自动重新夺取控制权。

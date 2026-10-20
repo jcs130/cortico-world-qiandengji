@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1-rc.5
+
+- Consume core rc.53: retain ordinary captures, camera/game evidence and optional voxel exports; move image/video/music creation to the independent AIGC World.
+- Preserve original photo archives and return explicit migration receipts for legacy create/enhance requests; no implicit cross-World call or image-provider scan.
+- Keep Persona-owned appearance references outside the game adapter and exchange media through host-resolved blob handles.
+- Build and validate against Cortico 0.2.4 / API 6, with the private API 5 wrapper checked separately.
+- This source candidate is not published or loaded into the running host.
+
 ## 0.4.1-rc.4
 
 - Consume core rc.49 with shared wake classification, compact facts, event condensation and movement/observation repetition diagnostics.
