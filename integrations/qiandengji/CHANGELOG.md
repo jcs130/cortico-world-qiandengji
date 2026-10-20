@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1-rc.4-flux3.1
+
+- Consume the core's explicitly configured FLUX 3 drawing and optional voxel-photo tools through the existing host-neutral interface.
+- Preserve ordinary screenshots, original scene evidence, character references and separate generation receipts; AI enhancement never activates for every photo.
+- Use the shared lean still-camera page for HUD-free capture, retaining normal HUD capture when requested.
+- Keep server photo commands unchanged; no server image-generation service, hidden model loop or public model endpoint is added.
+- Local source candidate; publication and live loading are recorded separately.
+
 ## 0.4.1-rc.4
 
 - Consume core rc.49 with shared wake classification, compact facts, event condensation and movement/observation repetition diagnostics.

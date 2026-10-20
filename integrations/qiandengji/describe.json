@@ -769,10 +769,6 @@
                 },
                 "target": {
                   "type": "string",
-                  "enum": [
-                    "inventory",
-                    "open"
-                  ],
                   "description": "用于 find(当前连接的方块或实体英文 id，方块可用 log 等名称匹配；不支持 hostile/tree 类别，# 名单只用于 until；未命中不能证明区域安全) / use(要右键的活物名称，不是方块或背包物品；与 at 二选一。点击世界里的方块只给 at，不填 target) / ride(骑上哪种(实体英文 id:pig/boat/horse…);已骑着时可省) / lead(拴哪种(实体英文 id);已经牵着时可省) / attack / toss(可见玩家的完整名字；与at互斥) / organize(默认 inventory；open 整理当前真实储物窗口)"
                 },
                 "direction": {
@@ -2598,7 +2594,7 @@
     },
     {
       "name": "mymc_photo",
-      "description": "Photography and art. capabilities describes explicitly configured image generation. capture saves an ordinary web screenshot paired with fresh game data; no image model is needed. read/list retrieve archived originals and results. The host interprets the screenshot and game data and supplies the final prompt. enhance requires a captured source_id; its scene is image 1, followed by character reference_handles. create makes an explicitly imagined scene. Generation is optional and may cost money. It returns a job id, not a finished image or completed goal. Consume minecraft.photo events or use status/read. cancel aborts local HTTP waiting; remote billing/computation may continue. No provider: enhancement returns the original with an explicit fallback; creation is unavailable. Never automatically retry an uncertain generation; inspect its archived status. No hidden model or vision loop.",
+      "description": "Photography and art. capabilities describes explicitly configured image generation. capture saves an ordinary web screenshot paired with fresh game data; no image model is needed. read/list retrieve archived originals and results. The host interprets the screenshot and game data and supplies the final prompt. Optional capture scene:voxel retains bounded block states and a rendered proxy; ordinary capture never opts in automatically. Read scene to retrieve raw evidence. enhance scene_input:voxel explicitly selects that proxy as image 1; otherwise the original screenshot is image 1. Character reference_handles follow. create makes an explicitly imagined scene. Generation is optional and may cost money. It returns a job id, not a finished image or completed goal. Consume minecraft.photo events or use status/read. cancel aborts local HTTP waiting; remote billing/computation may continue. No provider: enhancement returns the original with an explicit fallback; creation is unavailable. Never automatically retry an uncertain generation; inspect its archived status. No hidden model or vision loop.",
       "parameters": {
         "type": "object",
         "additionalProperties": false,
@@ -2612,6 +2608,7 @@
               "create",
               "status",
               "read",
+              "scene",
               "list",
               "cancel"
             ]
@@ -2654,6 +2651,32 @@
             "type": "number",
             "minimum": 30,
             "maximum": 140
+          },
+          "scene": {
+            "type": "string",
+            "enum": [
+              "voxel"
+            ],
+            "description": "Explicit optional bounded voxel evidence; requires a configured renderer."
+          },
+          "scene_input": {
+            "type": "string",
+            "enum": [
+              "screenshot",
+              "voxel"
+            ],
+            "description": "Enhancement only; default screenshot. Voxel requires a source captured with scene:voxel."
+          },
+          "camera_offset": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "number",
+              "minimum": -24,
+              "maximum": 24
+            },
+            "description": "Optional virtual voxel camera offset from observed feet. Does not move the player or affect ordinary screenshots."
           },
           "request_id": {
             "type": "string",
