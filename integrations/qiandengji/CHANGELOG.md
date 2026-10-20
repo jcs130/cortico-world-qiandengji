@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1-rc.6
+
+- Publish complete public declarations for the API 6 World, neutral server configuration, host decisions and server manifest.
+- Check the live World definition against the official Cortico type; core runtime and original archives are unchanged.
+
 ## 0.4.1-rc.5
 
 - Consume core rc.53: retain ordinary captures, camera/game evidence and optional voxel exports; move image/video/music creation to the independent AIGC World.

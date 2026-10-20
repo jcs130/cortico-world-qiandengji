@@ -1,13 +1,22 @@
 {
   "name": "cortico-world-qiandengji",
-  "version": "0.4.1-rc.5",
+  "version": "0.4.1-rc.6",
   "type": "module",
   "description": "通用 Minecraft Agent World，内置现代 Web 可视化，可选千灯纪服务器资料包。",
   "main": "./dist/world/index.js",
   "exports": {
-    ".": "./dist/world/index.js",
-    "./host-decisions": "./dist/host-decisions.js",
-    "./packs/qiandengji": "./dist/pack.js"
+    ".": {
+      "types": "./dist/world/index.d.ts",
+      "default": "./dist/world/index.js"
+    },
+    "./host-decisions": {
+      "types": "./dist/host-decisions.d.ts",
+      "default": "./dist/host-decisions.js"
+    },
+    "./packs/qiandengji": {
+      "types": "./dist/pack.d.ts",
+      "default": "./dist/pack.js"
+    }
   },
   "cortico": {
     "kind": "world",
@@ -47,7 +56,7 @@
   },
   "dependencies": {
     "agent-mc-world": "^0.5.7-rc.53",
-    "agent-mc-qiandengji": "^0.5.0-rc.5",
+    "agent-mc-qiandengji": "^0.5.0-rc.6",
     "vec3": "0.2.0"
   },
   "peerDependencies": {
@@ -68,5 +77,6 @@
   "scripts": {
     "build": "node ../../scripts/build-extensions.mjs",
     "prepack": "node dist/verify.mjs"
-  }
+  },
+  "types": "./dist/world/index.d.ts"
 }

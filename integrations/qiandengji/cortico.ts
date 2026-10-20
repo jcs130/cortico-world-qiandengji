@@ -1,4 +1,4 @@
-import type { WorldDefinition } from '../../adapters/cortico/types.ts';
+import type { CorticoConfig, MymcWorldDefinition } from './public-contract.js';
 import { WORLD_DEFAULTS, type MymcConfigSection } from './config.ts';
 import { assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS } from 'agent-mc-world/extension';
 import { GenericMymcWorld } from './generic-world.ts';
@@ -10,7 +10,6 @@ import type { World } from 'agent-mc-world/contracts';
 import { activityConsoleUrl, connectCorticoActivity, createCorticoActivityMapper } from './cortico-activity.ts';
 import { createActivityOutputTap } from './cortico-activity-tap.ts';
 import { withQuickStart } from './cortico-quick-start.ts';
-type CorticoConfig = MymcConfigSection & { viewerActivity?: { enabled?: boolean; consoleUrl?: string } };
 
 /** API 6 names the browser contribution webUi. Keep the API 5 method for
  * explicitly built local compatibility packages, with one implementation. */
@@ -66,7 +65,7 @@ function withWebUi<T extends World>(world: T, cfg?: CorticoConfig): T {
 }
 
 /** Cortico assembly adapter for the shared game implementation. */
-export const MYMC: WorldDefinition<CorticoConfig> & { exclusiveResource: string } = {
+export const MYMC: MymcWorldDefinition = {
   id: 'mymc',
   label: '联机版我的世界',
   exclusiveResource: 'minecraft-client',

@@ -4,6 +4,7 @@ import { cp, mkdir, readFile, readdir, writeFile, rm, mkdtemp } from 'node:fs/pr
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { tmpdir } from 'node:os';
+import ts from 'typescript';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const walk = async dir => (await Promise.all((await readdir(dir, { withFileTypes: true })).map(e =>
@@ -47,7 +48,7 @@ for (const folder of ['adapters/cortico', 'integrations/qiandengji']) {
   await writeFile(join(base, 'dist/verify.mjs'), `import {readFile,access} from 'node:fs/promises';
 const root=new URL('../',import.meta.url),p=JSON.parse(await readFile(new URL('package.json',root),'utf8'));
 if(p.type!=='module'||p.cortico?.kind!=='world'||![5,6].includes(p.cortico.api)||!p.keywords?.includes('cortico-world'))throw Error('Invalid Cortico World manifest');
-for(const file of [p.main,p.cortico.webUiClient??p.cortico.consoleClient,p.cortico.webUiStyle??p.cortico.consoleStyle,'LICENSE','README.md',...(p.cortico.api===6?[p.cortico.describe]:[])])await access(new URL(file,root));
+for(const file of [p.main,p.cortico.webUiClient??p.cortico.consoleClient,p.cortico.webUiStyle??p.cortico.consoleStyle,'LICENSE','README.md',...(p.cortico.api===6?[p.cortico.describe,p.types,...Object.values(p.exports).flatMap(value=>typeof value==='object'&&value.types?[value.types]:[])]:[])])await access(new URL(file,root));
 console.log('Cortico World package files verified');
 `);
   if (folder === 'adapters/cortico') {
@@ -97,3 +98,24 @@ try {
   await rm(temporary, { recursive: true, force: true });
 }
 console.log('Built neutral server pack, API 6 public World and private compatibility adapter; no host framework enters the server pack.');
+
+// Emit the neutral server contract from its real source graph, without the host adapter.
+const configFile = ts.readConfigFile(join(root, 'tsconfig.json'), ts.sys.readFile);
+const parsed = ts.parseJsonConfigFileContent(configFile.config, ts.sys, root);
+const declarationDir = join(pack, 'dist/types');
+const program = ts.createProgram({ rootNames: [join(sourceBase, 'neutral.ts'), join(sourceBase, 'host/index.ts'),
+  join(sourceBase, 'data-packs/qiandengji/manifest.ts')], options: { ...parsed.options, noEmit: false,
+    declaration: true, emitDeclarationOnly: true, rootDir: root, outDir: declarationDir } });
+const diagnostics = ts.getPreEmitDiagnostics(program);
+if (diagnostics.length) throw new Error(ts.formatDiagnosticsWithColorAndContext(diagnostics, {
+  getCurrentDirectory: () => root, getCanonicalFileName: name => name, getNewLine: () => '\n' }));
+if (program.emit().emitSkipped) throw new Error('Neutral declaration emit was skipped');
+for (const file of await walk(declarationDir)) {
+  const text = await readFile(file, 'utf8');
+  if (/from\s+['"]cortico\//.test(text)) throw new Error('Host import in neutral declaration: ' + file);
+}
+const declaration = (await readFile(join(sourceBase, 'public-contract.d.ts'), 'utf8'))
+  .replace("from './config.ts'", "from 'agent-mc-qiandengji'");
+await writeFile(join(sourceBase, 'dist/world/index.d.ts'), declaration);
+await writeFile(join(sourceBase, 'dist/host-decisions.d.ts'), 'export * from "agent-mc-qiandengji/host-decisions";\n');
+await writeFile(join(sourceBase, 'dist/pack.d.ts'), 'export * from "agent-mc-qiandengji/manifest";\n');

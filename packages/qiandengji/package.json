@@ -1,15 +1,24 @@
 {
   "name": "agent-mc-qiandengji",
-  "version": "0.5.0-rc.5",
+  "version": "0.5.0-rc.6",
   "type": "module",
   "description": "Explicit Qiandengji server protocols and reference pack for the independent Agent Minecraft client",
   "license": "MIT",
   "main": "./dist/neutral.js",
   "exports": {
-    ".": "./dist/neutral.js",
+    ".": {
+      "types": "./dist/types/integrations/qiandengji/neutral.d.ts",
+      "default": "./dist/neutral.js"
+    },
     "./presentation": "./dist/presentation.mjs",
-    "./host-decisions": "./dist/host/index.js",
-    "./manifest": "./dist/data-packs/qiandengji/manifest.js"
+    "./host-decisions": {
+      "types": "./dist/types/integrations/qiandengji/host/index.d.ts",
+      "default": "./dist/host/index.js"
+    },
+    "./manifest": {
+      "types": "./dist/types/integrations/qiandengji/data-packs/qiandengji/manifest.d.ts",
+      "default": "./dist/data-packs/qiandengji/manifest.js"
+    }
   },
   "dependencies": {
     "agent-mc-world": "^0.5.7-rc.53",
@@ -27,5 +36,6 @@
     "type": "git",
     "url": "git+https://github.com/jcs130/cortico-world-qiandengji.git",
     "directory": "packages/qiandengji"
-  }
+  },
+  "types": "./dist/types/integrations/qiandengji/neutral.d.ts"
 }
