@@ -119,3 +119,5 @@ const declaration = (await readFile(join(sourceBase, 'public-contract.d.ts'), 'u
 await writeFile(join(sourceBase, 'dist/world/index.d.ts'), declaration);
 await writeFile(join(sourceBase, 'dist/host-decisions.d.ts'), 'export * from "agent-mc-qiandengji/host-decisions";\n');
 await writeFile(join(sourceBase, 'dist/pack.d.ts'), 'export * from "agent-mc-qiandengji/manifest";\n');
+
+await cp(join(sourceBase, 'presentation.d.mts'), join(pack, 'dist/presentation.d.mts'));

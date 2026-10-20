@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1-rc.7
+
+- Add the passive presentation export declaration using the independent core public types.
+- Cover every World and neutral package export in the official-host consumer check.
+
 ## 0.4.1-rc.6
 
 - Publish complete public declarations for the API 6 World, neutral server configuration, host decisions and server manifest.
