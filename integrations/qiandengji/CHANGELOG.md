@@ -1,3 +1,9 @@
+# integrations/qiandengji：薄适配与资料包变更
+
+## 0.4.1-rc.8
+
+- Pin the independent Minecraft core rc.54, including public capture/archive helpers; no AIGC or performance code copied into the World.
+
 # Changelog
 
 ## 0.4.1-rc.7
