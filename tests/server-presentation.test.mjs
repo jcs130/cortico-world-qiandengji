@@ -61,6 +61,24 @@ test('ordinary vanilla connections never gain fabricated extension UI', () => {
   const {observer,bot}=setup(); bot.emit('message',{toString:()=>'<Player> MC_STATUS {}'},'system',null);
   assert.equal(observer.snapshot(),null); assert.equal(observer.capabilities().active,false); observer.close();
 });
+
+test('an observed backpack profile enables only its resource pack without a live skill or vitals reading',()=>{
+  const {bot,observer}=setup();observer.close();
+  const own=createPresentationObserver(bot,{now:()=>100_000});
+  const hash='8dcc6eb40f3bada41e4339888d6d207437598bdbd175c2e731191d5a9a42d3c8';
+  const item=(texture=hash)=>({name:'player_head',count:1,components:[{type:'profile',data:{name:'',properties:[{name:'textures',
+    value:Buffer.from(JSON.stringify({textures:{SKIN:{url:'https://textures.minecraft.net/texture/'+texture}}})).toString('base64')}]}}],removedComponents:[]});
+  bot.inventory={slots:[item()]};
+  const state=own.snapshot();assert.equal(state?.serverItemPackId,'qiandengji-items-1.21.1');
+  assert.equal(state.playerUuid,uuid);assert.equal(state.self,undefined);assert.equal(state.skills,undefined);
+  assert.equal(own.capabilities().skills,false);assert.equal(own.capabilities().mana,false);assert.equal(own.refresh(),false);
+  for(const bad of [item('0'.repeat(64)),{...item(),name:'stone'},
+    {...item(),removedComponents:[{type:'profile'}]}, {...item(),components:[{type:'profile',data:{properties:[{name:'textures',value:'bad base64'}]}}]}]){
+    bot.inventory.slots=[bad];assert.equal(own.snapshot(),null,'no name/id-only approximation or stale icon');
+  }
+  bot.inventory.slots=[item()];bot._client.state='login';assert.equal(own.snapshot(),null);
+  bot._client.state='play';bot.emit('end');assert.equal(own.snapshot(),null);own.close();
+});
 test('connection negotiation never sends play packets before login',()=>{
   const bot=new EventEmitter();bot.version='1.21.1';bot._client=new EventEmitter();bot._client.state='login';let writes=0;
   bot._client.registerChannel=()=>{writes++;};const observer=createPresentationObserver(bot,{autoDetect:false});
