@@ -20,7 +20,7 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json"
   },
   "dependencies": {
-    "agent-mc-world": "file:vendor/agent-mc-world-0.5.7-rc.59-8137976d.tgz",
+    "agent-mc-world": "file:vendor/agent-mc-world-0.5.7-rc.60-550a3528.tgz",
     "vec3": "0.2.0"
   },
   "devDependencies": {

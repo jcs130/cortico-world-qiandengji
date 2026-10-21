@@ -2,9 +2,9 @@
   "schema": "mc-core-consumer-update/v1",
   "date": "2026-10-21",
   "core": {
-    "version": "0.5.7-rc.59",
-    "commit": "389d9e2da6ae27509ec00780c215107f92bb992f",
-    "sha256": "8137976db1c72309706b3c527e785c6b6b22e69fed6239fd9572fd27358dd9e5"
+    "version": "0.5.7-rc.60",
+    "commit": "7fdd91747eff0fd6f2cbd42485bc08c5fece4634",
+    "sha256": "550a35285d000db99f12d31bb99539af392872aeaba1dbd3a9ac84406c8c2860"
   },
   "world": "0.4.1-rc.9",
   "serverPack": "0.5.0-rc.9",
@@ -27,7 +27,7 @@
       "build": true
     },
     "isolatedConsumer": {
-      "actualResolvedCore": "0.5.7-rc.59",
+      "actualResolvedCore": "0.5.7-rc.60",
       "allFourConsumerEntriesChecked": true,
       "api6": true,
       "privateApi5": true,
