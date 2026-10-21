@@ -3,25 +3,27 @@
 ## 用户入口
 
 在 Cortico 的扩展安装框输入 `cortico-world-qiandengji@next` → 按宿主提示加载扩展 → World「联机版我的世界」→「开始游戏」→ 地址、账号 →「保存并启动」→ 网页观战。
-本次公测要求 Cortico `>=0.2.2 <0.3.0` / World API 6，已用官方 0.2.3 验收。
+本次公测要求 Cortico `>=0.2.2 <0.3.0` / World API 6，已用官方 0.2.4 验收。
 模型复用宿主；普通服默认 `serverPack:none`、协议 `auto`，不需要独立客户端、Python 或额外快模型。
 首次完整音频准备有进度、校验和缓存；网络失败可续传。高级配置仍可用。
 
-## 2026-10-19 已发布的公测版本
+## 2026-10-21 已发布的公测版本
 
 | 包 | `next` 版本 |
 | --- | --- |
-| [agent-mc-world](https://www.npmjs.com/package/agent-mc-world/v/0.5.7-rc.47) | 0.5.7-rc.47 |
-| [agent-mc-qiandengji](https://www.npmjs.com/package/agent-mc-qiandengji/v/0.5.0-rc.3) | 0.5.0-rc.3 |
-| [cortico-world-qiandengji](https://www.npmjs.com/package/cortico-world-qiandengji/v/0.4.1-rc.3) | 0.4.1-rc.3 |
+| [agent-mc-world](https://www.npmjs.com/package/agent-mc-world/v/0.5.7-rc.63) | 0.5.7-rc.63 |
+| [agent-mc-qiandengji](https://www.npmjs.com/package/agent-mc-qiandengji/v/0.5.0-rc.10) | 0.5.0-rc.10 |
+| [cortico-world-qiandengji](https://www.npmjs.com/package/cortico-world-qiandengji/v/0.4.1-rc.10) | 0.4.1-rc.10 |
 
 三个包的实际 npm 下载均已与批准的归档校验一致，独立空消费者按公开版本安装后通过官方 API 6、自描述、SDK 与真实 MCP 调用检查。
-World 的 `latest` 保持 0.1.2；安装这次公测请明确填写 `@next` 或 `@0.4.1-rc.3`。两个首次公开的依赖包在 registry 同时出现了 `next` 和 `latest`；本次没有另行执行 dist-tag 变更。
+World 的 `latest` 保持 0.1.2，核心和服务器包的 `latest` 分别保持 0.5.7-rc.47、0.5.0-rc.3；安装这次公测请明确填写 `@next` 或 `@0.4.1-rc.10`。
 发布与现役加载分别记录，这次 npm 发布未重载正在运行的可米。
+
+核心提供 10 个可读源码的工作例程，以及隔离练习、回执评价和采用的公开契约。模型和宿主自主选择是否使用；例程可调用、测试通过或练习结束均不能单独证明游戏目标完成或自主学习收益。当前仍按公测收集长时间游戏表现。
 
 ### 首次安装遇到下载超时
 
-核心归档约 59 MB，本机从 npm 完整下载实测约 70 秒。pnpm 11.5.0 默认的整次请求上限为 60 秒，本次独立安装因此超时；仅将安装请求上限改为 180 秒后，约 71 秒安装完成。
+核心归档约 59 MB，2026-10-19 的本机完整下载实测约 70 秒。pnpm 11.5.0 默认的整次请求上限为 60 秒，当次独立安装因此超时；仅将安装请求上限改为 180 秒后，约 71 秒安装完成。不同网络和缓存条件下耗时会变化。
 若扩展安装出现同样的 `The operation was aborted due to timeout`，在启动 Cortico 的同一用户下执行一次，然后回扩展页重试：
 
 ```text
@@ -37,14 +39,14 @@ pnpm config set --global fetchTimeout 180000
 
 | 顺序 | 包 | 本候选 | 来源 |
 | --- | --- | --- | --- |
-| 1 | agent-mc-world | 0.5.7-rc.47 | 核心 main c53f76cc 后的共享地址解析与资源准备 |
-| 2 | agent-mc-qiandengji | 0.5.0-rc.3 | 中立服务器包 |
-| 3 | cortico-world-qiandengji | 0.4.1-rc.3 | API 6 World 与快捷启动 |
+| 1 | agent-mc-world | 0.5.7-rc.63 | 核心 main 79aba267 |
+| 2 | agent-mc-qiandengji | 0.5.0-rc.10 | 中立服务器包，源码 f6c04c58 |
+| 3 | cortico-world-qiandengji | 0.4.1-rc.10 | API 6 World 与快捷启动，源码 f6c04c58 |
 
 1. 核对远程 main、npm 当前版本与依赖，先在核心执行完整测试、类型和 `npm run build:release`，验证 `npm pack` 真实产物。
 2. 将该确切核心 tarball 及 SHA-256 放入本仓库的 `vendor/core-source.json`，同步开发锁文件；不要复制另一份核心源码。
 3. `npm run test:release`、`npm run typecheck`、`npm run build`。
-4. 使用官方 Cortico 0.2.3 执行 `pnpm describe:extension <本仓库/integrations/qiandengji>` 和 `pnpm check:extension <同目录>`。
+4. 使用官方 Cortico 0.2.4 执行 `pnpm describe:extension <本仓库/integrations/qiandengji>` 和 `pnpm check:extension <同目录>`。
 5. `npm run release:pack`：核对核心归档 SHA、打包两个消费端，输出 `dist/release` 的安装包、哈希和发布计划；不上传。
 6. 在独立空消费者安装三份确切包，校验 SDK/MCP、官方 API 6 和私有 API 5；以虚拟服务器验证连接和默认配置，完成浏览器按钮与授权流程验收。
 

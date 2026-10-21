@@ -3,6 +3,8 @@
 **普通用户入口**：安装扩展后，打开 World「联机版我的世界」的「开始游戏」，填写服务器地址和账号，点击「保存并启动」，再打开网页观战。
 模型沿用宿主配置。首次完整音频准备会显示进度并缓存。[简明说明](integrations/qiandengji/README.md) · [发布步骤](docs/release-quick-start.md)。
 
+当前公测安装 `cortico-world-qiandengji@next`（0.4.1-rc.10），使用核心 0.5.7-rc.63 和服务器包 0.5.0-rc.10；已按官方 Cortico 0.2.4 / API 6 验收。
+
 **首要项目是通用核心包 `agent-mc-world`**，唯一源码位于 [minecraft-ai-friend/packages/agent-mc-world](https://github.com/jcs130/minecraft-ai-friend/tree/main/packages/agent-mc-world)。本仓库是核心的消费端，维护 Cortico API 6 薄 World 适配器和可选千灯纪服务器扩展；宿主兼容版本以公开子包的 `peerDependencies` 为准。
 
 通用感知、动作、导航、背包与合成、脚本与技能库、游戏记忆、学习评估和快决策状态/候选契约，先在核心实现并公开导出，供不同大模型和宿主通过 SDK/MCP/公开接口复用。本仓库负责接口映射、配置和生命周期，以及显式选择的服务器协议；不单独维护可米专用的通用游戏能力。
