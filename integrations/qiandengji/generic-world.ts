@@ -21,7 +21,7 @@ export class GenericMymcWorld extends MinecraftClientWorld {
   override readonly id = 'mymc';
   constructor(private readonly adapterOptions: MinecraftWorldOptions & { cfg: MymcConfigSection }) {
     super({ ...adapterOptions, cfg: new Proxy(adapterOptions.cfg, {
-      get: (target, key, receiver) => key === 'hostDecisions' ? undefined : Reflect.get(target, key, receiver),
+      get: (target, key, receiver) => key === 'hostDecisions' || key === 'harness2' ? undefined : Reflect.get(target, key, receiver),
     }) });
     this.learning = new WorldOperationLearning(adapterOptions.dataDir, () => this.requestFacts());
   }

@@ -1,4 +1,5 @@
 import type { ToolDef } from 'agent-mc-world/contracts';
+import {HARNESS2_PRACTICE_TOOL} from 'agent-mc-world/learning';
 
 /** Event types emitted by the owned Minecraft producers, translated by this
  * adapter. Tool definitions below come from the actual implementations. */
@@ -19,6 +20,7 @@ const events: Readonly<Record<string, string>> = {
   lifecycle: '引擎启动、中断或恢复的生命周期通知。',
   memory: '带来源和适用条件的游戏历史记忆，不代表当前现场。',
   method: '方法运行、源码版本与执行终态证据。',
+  practice: 'Harness² 隔离方法练习终态；包含试跑和复盘证据，不代表线上采用。',
   photo: '摄影或图像处理的异步结果及失败状态。',
   reflex: '已有反射控制的实际触发和执行证据。',
   skill: '显式服务器资料包收到的技能或魔力回执。',
@@ -39,6 +41,8 @@ export function describeMymcImplementations(worlds: readonly { tools(): ToolDef[
     if (!tools.has(tool.name)) tools.set(tool.name, { name: tool.name, description: tool.description,
       parameters: structuredClone(tool.parameters), tags: [...(tool.tags ?? [])] });
   }
+  const practice={...HARNESS2_PRACTICE_TOOL,name:'mymc_practice',description:HARNESS2_PRACTICE_TOOL.description.replaceAll('mc_script','mymc_script')};
+  tools.set(practice.name,practice);
   return { tools: [...tools.values()].sort((a, b) => a.name.localeCompare(b.name)),
     events: [
       ...Object.entries(events).map(([suffix, description]) => ({ type: `mymc.${suffix}`, description })),

@@ -10,6 +10,7 @@ import type { World } from 'agent-mc-world/contracts';
 import { activityConsoleUrl, connectCorticoActivity, createCorticoActivityMapper } from './cortico-activity.ts';
 import { createActivityOutputTap } from './cortico-activity-tap.ts';
 import { withQuickStart } from './cortico-quick-start.ts';
+import { withCorticoPractice, PRACTICE_DEFAULTS } from './cortico-practice.ts';
 
 /** API 6 names the browser contribution webUi. Keep the API 5 method for
  * explicitly built local compatibility packages, with one implementation. */
@@ -69,7 +70,7 @@ export const MYMC: MymcWorldDefinition = {
   id: 'mymc',
   label: '联机版我的世界',
   exclusiveResource: 'minecraft-client',
-  defaults: () => ({ ...structuredClone(WORLD_DEFAULTS), viewerActivity: { enabled: true, consoleUrl: '' } }),
+  defaults: () => ({ ...structuredClone(WORLD_DEFAULTS), viewerActivity: { enabled: true, consoleUrl: '' }, harness2:structuredClone(PRACTICE_DEFAULTS) }),
   preflight: ctx => {
     if (ctx.cfg.viewerActivity?.consoleUrl) activityConsoleUrl(ctx.cfg.viewerActivity.consoleUrl);
     if (ctx.cfg.provider === 'java-client') { selectedServerPack(ctx.cfg); assertMinecraftReady(ctx.cfg); return; }
@@ -86,7 +87,7 @@ export const MYMC: MymcWorldDefinition = {
     // Resolve package defaults and prepared paths at runtime, never pin an installed package/cache path into user config.
     const cfg = new Proxy(ctx.cfg, { get: (target, key, receiver) => key === 'viewerAssetsDir'
       ? preparedViewer ?? templateDir() : Reflect.get(target, key, receiver) });
-    const setup = <T extends World>(world: T) => withQuickStart(world, ctx, candidate => MYMC.preflight?.({ ...ctx, cfg: candidate }),
+    const setup = <T extends World>(world: T) => withQuickStart(withCorticoPractice(world,()=>ctx.cfg.harness2,ctx.dataDir), ctx, candidate => MYMC.preflight?.({ ...ctx, cfg: candidate }),
       { templateDir, setDirectory: value => { preparedViewer = value; } });
     if (ctx.cfg.provider === 'java-client') return setup(withWebUi(new JavaMymcWorld({ ...ctx, cfg })));
     const World = selectedServerPack(ctx.cfg) === 'qiandengji' ? MymcWorld : GenericMymcWorld;

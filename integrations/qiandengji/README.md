@@ -3,6 +3,12 @@
 让 Cortico Agent 连接 Minecraft Java 服务器，自主观察、移动、合成、整理背包和编写可复用动作，并在浏览器观看实际游戏画面。
 包名为 `cortico-world-qiandengji`；普通 Minecraft 可直接使用，千灯纪资料包按需开启。
 
+## 可选方法练习
+
+Harness² 通过宿主的后台任务认知编辑指定的方法版本。启用后，Agent 可用 `mymc_practice` 发起、查询或取消隔离练习；`help` 展开实际练习能力，`result` 展开候选源码和原父版本。原版和候选都有位置及执行终态对照，经验经现有 `mymc_memory` 保存。候选仍须在源方法库校验、保存，并在合适的自然任务中执行、复盘后显式采用。
+
+此功能需要按[核心接入说明](https://github.com/jcs130/minecraft-ai-friend/blob/main/packages/agent-mc-world/docs/harness2.md)准备固定版本的 Linux Python worker，Windows 可用 WSL。宿主须提供仅含游戏材料、完整 JSON 输出及取消支持的 `minecraft-method` 认知通道；不兼容时返回失败，不补造候选。默认关闭。内置练习只有平地碰撞物理，不验证潜水、战斗或在线玩法收益。
+
 ## 开始玩：安装一次，以后一键启动
 
 1. 在 **Cortico → 扩展** 安装 `cortico-world-qiandengji@next`（当前公测 0.4.1-rc.3），按宿主提示重启以加载新扩展。

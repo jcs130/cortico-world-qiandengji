@@ -1,0 +1,27 @@
+{
+  "schema": "agent-mc.harness2-consumer-evidence/v1",
+  "core": {"version":"0.5.7-rc.63","source":"79aba267055d4a8ab41d00232b6c907df8a64913"},
+  "world": {"version":"0.4.1-rc.10","api":6,"defaultPracticeEnabled":false},
+  "verification": {
+    "coreTests":{"passed":1854,"failed":0,"skipped":0,"includesPinnedUpstream":true},
+    "workerMetadataTests":{"passed":4},
+    "worldTests":{"passed":252,"failed":0},
+    "releaseBuild":true,"publicTypesNodeNext":true,"publicTypesBundler":true,
+    "independentSdkAndMcp":true,"api6DryMountAndDescription":true,"privateApi5DryMount":true
+  },
+  "controlledModelTrial": {
+    "class":"Operator-authored read-only baseline with host-supplied LAN model candidates, pinned Harness2 and isolated collision physics",
+    "modelCalls":4,"physicalTrials":6,"heldKeysAfterCleanup":0,
+    "measuredGoalAchieved":false,"eligible":false,"adopted":false,
+    "negativeLessonStored":true,"lessonRetrieved":true,
+    "inputTokens":43027,"outputTokens":19200,"cachedInputTokens":8192,"reasoningTokens":16452,
+    "productionBodyCalls":0,"productionMemoryWrites":0
+  },
+  "boundaries":[
+    "The host owns model routes, task selection and adoption. No provider credentials enter the core or worker.",
+    "The fixture checks flat collision movement, not water, combat, live scene cloning or gameplay improvement.",
+    "The failed candidate was retained as evidence and not adopted. This controlled trial is not autonomous live learning.",
+    "Source, packages, production loading and actual gameplay effects are recorded separately."
+  ],
+  "published":false,"productionLoaded":false
+}

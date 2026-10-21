@@ -2802,6 +2802,66 @@
       ]
     },
     {
+      "name": "mymc_practice",
+      "tags": [
+        "read",
+        "write"
+      ],
+      "description": "Improve an explicitly selected saved Minecraft method through Harness² in a separate practice environment. help describes capabilities; start returns acceptance immediately, status/result read original measured trials, cancel stops that job. result expands candidate source only on demand. Existing game memory stores evidence-linked lessons. Practice eligibility never installs a method: validate/save a candidate in the source library, execute it in a suitable real task, review actual terminal/net change, then explicitly adopt using mymc_script library. No production body control or weight training.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "help",
+              "start",
+              "status",
+              "result",
+              "cancel"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "methodId": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "revision": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "task": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 6000
+          },
+          "params": {
+            "type": "object",
+            "maxProperties": 32
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "parallel",
+              "sequential"
+            ]
+          },
+          "k": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4
+          }
+        },
+        "required": [
+          "op"
+        ]
+      }
+    },
+    {
       "name": "mymc_queue",
       "description": "Read the Minecraft work queue right now: the task being executed and which step it is on, the tasks waiting behind it, and how the most recent finished task ended. Read-only and instant — it changes nothing. Ask this instead of re-submitting a task to check progress. Default output includes a compact historical terminal summary; taskId reads that task’s full original receipt (latest 64 tasks in this World), or detail:\"full\" expands the latest receipt. Task terminal events arrive automatically; queued work continues without polling or another model turn. Once per turn: asking again in the same turn returns a one-line pointer to the answer above.",
       "parameters": {
@@ -3916,6 +3976,10 @@
     {
       "type": "mymc.method",
       "description": "方法运行、源码版本与执行终态证据。"
+    },
+    {
+      "type": "mymc.practice",
+      "description": "Harness² 隔离方法练习终态；包含试跑和复盘证据，不代表线上采用。"
     },
     {
       "type": "mymc.photo",

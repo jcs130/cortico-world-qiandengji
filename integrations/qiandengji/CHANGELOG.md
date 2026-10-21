@@ -1,5 +1,11 @@
 # integrations/qiandengji：薄适配与资料包变更
 
+## 0.4.1-rc.10
+
+- Consume core rc.63, including the upstream method terminal wake correction and explicit Harness² practice service.
+- Add background method practice through host-owned task cognition and shared source-version, physics, evidence and game-memory contracts.
+- Keep isolated eligibility separate from source library validation, real execution, review and adoption.
+
 ## 0.4.1-rc.9
 
 - Consume independent core rc.60 through the same public SDK/MCP and World contracts.

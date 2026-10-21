@@ -19,6 +19,8 @@ type RepeatSuccessFallback = {
 };
 
 export type MymcConfigSection = MinecraftConfigSection & {
+  harness2?:{enabled:boolean;modelId?:string;worker:import('agent-mc-world/decisions').Harness2Options['worker'];
+    budget:import('agent-mc-world/decisions').Harness2Job['budget']};
   toolParameterDescriptions?: 'inline' | 'on-demand';
   /** Omitted legacy configuration must be explicitly migrated before enabling server rules. */
   serverPack?: 'none' | 'qiandengji';
@@ -50,7 +52,7 @@ export function mymcLoginName(value: string, preserveLoginName = false): string 
 export function mymcEngineConfig(cfg: MymcConfigSection): MymcConfigSection {
   return new Proxy(cfg, {
     get(target, key, receiver) {
-      if (key === 'hostDecisions') return undefined;
+      if (key === 'hostDecisions' || key === 'harness2') return undefined;
       return key === 'username' ? mymcLoginName(target.username, target.preserveLoginName) : Reflect.get(target, key, receiver);
     },
   });
