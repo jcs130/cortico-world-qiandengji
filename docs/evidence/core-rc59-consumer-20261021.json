@@ -1,0 +1,56 @@
+{
+  "schema": "mc-core-consumer-update/v1",
+  "date": "2026-10-21",
+  "core": {
+    "version": "0.5.7-rc.59",
+    "commit": "389d9e2da6ae27509ec00780c215107f92bb992f",
+    "sha256": "8137976db1c72309706b3c527e785c6b6b22e69fed6239fd9572fd27358dd9e5"
+  },
+  "world": "0.4.1-rc.9",
+  "serverPack": "0.5.0-rc.9",
+  "preservedWorldSource": "b60de44738ed4fb9809b84420ca086c3c76e1881",
+  "verification": {
+    "core": {
+      "passed": 1847,
+      "failed": 0,
+      "skipped": 1,
+      "types": true,
+      "releaseBuild": true,
+      "packedGate": true,
+      "declarations": 327
+    },
+    "world": {
+      "passed": 249,
+      "failed": 0,
+      "skipped": 0,
+      "types": true,
+      "build": true
+    },
+    "isolatedConsumer": {
+      "actualResolvedCore": "0.5.7-rc.59",
+      "allFourConsumerEntriesChecked": true,
+      "api6": true,
+      "privateApi5": true,
+      "selfDescription": true,
+      "routines": 10,
+      "mcpFull": true,
+      "mcpCompact": true,
+      "mcpStdioTools": 36,
+      "nodeNextTypes": true,
+      "bundlerTypes": true
+    }
+  },
+  "scope": {
+    "sharedCoreCopiedIntoAdapter": false,
+    "hostEngineModified": false,
+    "modelRequests": 0,
+    "gameConnections": 0,
+    "published": false,
+    "loaded": false
+  },
+  "limits": [
+    "Built-in routines are reusable engine capabilities; availability is not autonomous learning or a verified gameplay improvement.",
+    "Native vehicle and underwater movement support is checked by each backend capability contract.",
+    "Production remains on its existing runtime until a separately authorized reload."
+  ]
+}

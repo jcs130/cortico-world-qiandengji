@@ -632,7 +632,7 @@
         "properties": {
           "steps": {
             "type": "array",
-            "description": "steps 必须是实际 JSON 数组 [{\"skill\":...},...]，不要 stringify 成字符串。一步一个对象,skill 写技能名。* = 该字段适用的形态必填;? = 可选或条件参数。\n复杂形态、执行条件和完整示例用 mymc_help {\"skill\":\"技能名\"} 查询。\ncontrol(keys*,durationMs?,mode?,yawDeg?,pitchDeg?)\nlook(at*)\ngoto(at*,dimension?,exact?,walkOnly?,dryRun?)\ntransit(at*)\ngoto_player(name*)\nfollow(name*)\nfind(target*,direction?,distance?,until?)\nflee(distance?)\nsurface()\nflight(at*,land?,dryRun?)\nland()\ncleanup(dryRun?)\ncollect(block*,count?,buried?,mature?,tool?)\nfish(at?)\ntunnel(at*,spiral?,dryRun?,tool?,until?)\nbuild(blueprint?,stopAfter?,rebindFrom?,confirm?,skipConflicts?,shape?,on?,anchors?,material*,temporary?,at?,fill?,dryRun?) — 材料放置：material+anchors（坐标数组）或 material+on（参照格/面）；单格可用 material+at，不能再给 anchors/on/shape。蓝图施工：blueprint+at，at 是蓝图原点。\nexcavate(shape*,anchors*,fill?,dryRun?,tool?)\nprobe(shape*,anchors*,fill?,slice?,where?) — 定位目标用 shape+anchors+where；空间切片用 shape:\"box\"+anchors+slice（x/y/z），不带 where，fill 省略或 solid。不要把两种观察混在同一步。\nobserve(mode*,sites?,bounds?,rays?)\nuse(item?,at?,target?,entityId?,index?,times?,open?,text?,back?,face?)\nride(target?,to?,off?)\nlead(target?,to?,tolerance?,tie?,keep?,off?)\ncraft(item?,grid?,count?)\nsmelt(input*,count?,fuel*,at?)\nbrew(input*,bottle*,count?,fuel*,at?)\nenchant(at*,item*,index?)\nanvil(op*,item*,with?,name?,pick?,withPick?,at?)\ngrindstone(item*,with?,pick?,withPick?,at?)\neat(item*)\nattack(target*,mode?)\nequip(item?,pick?,hand?)\npickup(item?)\ntoss(item*,count?,at?,pick?,target?)\nstow(item*,count?,pick?,at?,into?)\ncompact()\norganize(target?,includeHotbar?,sort?,dryRun?,rules?,at?,into?)\ntake(item?,count?,at?,from?,all?,pick?)\nserver_travel(command*,at*,within?,dimension?)\nchat(text*)\ngesture(name*,motion*)\n坐标写成 [x,y,z];at 是一个坐标,anchors 是一串坐标。\n每个分量是绝对数字,或 \"~\"/\"~-3\" 相对写法——原点是**这一步开始执行那一刻**我脚下那一格,\n所以 goto 之后接 \"~\" 指的是那个 goto 的落点。没有前后左右的写法。\n回执一律报解析后的绝对坐标。\n方块/物品/实体一律用英文 id(oak_log、cobblestone、skeleton);target 也收玩家名。\n类别名有两套:target/block/material 认 log、planks、ore、wool 这样的裸名(它们本身不是物品 id),把所有同类算进去;\nuntil 名单认带井号的 #ores/#logs/#leaves/#chests/#liquids/#beds。\n**写一个真实物品 id 就只认它自己**:obsidian 不会拿哭泣的黑曜石顶,torch 不是灵魂火把,\nchest 不是末影箱,dirt 不是土径 —— 要\"随便哪种木板\"就写裸类别名 planks。\ncount 一律 1-64;distance:flee 1-128,find 1-1024(不给 direction 时站着扫,最远 48)。\n\"needs\" 声明这一步依赖哪些更早的步(序号 1 起);\"needs\":[] = 独立步。缺省见字段说明。\n容器窗口在每单结束时关闭；from/into:\"open\" 的搬运和开窗步骤须在同一次 mymc_do.steps 中，不能跨单沿用窗口。\n每一步都会核验:判据由执行器按 (skill, 参数) 推,达成与落空都写进回执\n(「该步按『背包内原木 ≥5』核验:达成(实测 7)」)。",
+            "description": "steps 必须是实际 JSON 数组 [{\"skill\":...},...]，不要 stringify 成字符串。一步一个对象,skill 写技能名。* = 该字段适用的形态必填;? = 可选或条件参数。\n复杂形态、执行条件和完整示例用 mymc_help {\"skill\":\"技能名\"} 查询。\ncontrol(keys*,durationMs?,mode?,yawDeg?,pitchDeg?)\nlook(at*)\ngoto(at*,dimension?,exact?,walkOnly?,dryRun?)\ntransit(at*)\nswim(at*,dimension?,reserveOxygen?,maxDurationMs?,dryRun?)\ngoto_player(name*)\nfollow(name*)\nfind(target*,direction?,distance?,until?)\nflee(distance?)\nsurface()\nflight(at*,land?,dryRun?)\nland()\ncleanup(dryRun?)\ncollect(block*,count?,buried?,mature?,tool?)\nharvest(block*,at*,replant?,tool?)\nfish(at?)\ntunnel(at*,spiral?,dryRun?,tool?,until?)\nbuild(blueprint?,stopAfter?,rebindFrom?,confirm?,skipConflicts?,shape?,on?,anchors?,material*,temporary?,at?,fill?,dryRun?) — 材料放置：material+anchors（坐标数组）或 material+on（参照格/面）；单格可用 material+at，不能再给 anchors/on/shape。蓝图施工：blueprint+at，at 是蓝图原点。\nexcavate(shape*,anchors*,fill?,dryRun?,tool?)\nprobe(shape*,anchors*,fill?,slice?,where?) — 定位目标用 shape+anchors+where；空间切片用 shape:\"box\"+anchors+slice（x/y/z），不带 where，fill 省略或 solid。不要把两种观察混在同一步。\nobserve(mode*,sites?,bounds?,rays?)\nuse(item?,at?,target?,entityId?,index?,times?,open?,text?,back?,face?)\nride(target?,entityId?,to?,off?)\nlead(target?,to?,tolerance?,tie?,keep?,off?)\ncraft(item?,grid?,count?)\nsmelt(input*,count?,fuel*,at?)\nbrew(input*,bottle*,count?,fuel*,at?)\nenchant(at*,item*,index?)\nanvil(op*,item*,with?,name?,pick?,withPick?,at?)\ngrindstone(item*,with?,pick?,withPick?,at?)\neat(item*)\nattack(target*,mode?)\nequip(item?,pick?,hand?)\npickup(item?)\ntoss(item*,count?,at?,pick?,target?)\nstow(item*,count?,pick?,at?,into?)\ncompact()\norganize(target?,includeHotbar?,sort?,dryRun?,rules?,at?,into?)\ntake(item?,count?,at?,from?,all?,pick?)\nserver_travel(command*,at*,within?,dimension?)\nchat(text*)\ngesture(name*,motion*)\n坐标写成 [x,y,z];at 是一个坐标,anchors 是一串坐标。\n每个分量是绝对数字,或 \"~\"/\"~-3\" 相对写法——原点是**这一步开始执行那一刻**我脚下那一格,\n所以 goto 之后接 \"~\" 指的是那个 goto 的落点。没有前后左右的写法。\n回执一律报解析后的绝对坐标。\n方块/物品/实体一律用英文 id(oak_log、cobblestone、skeleton);target 也收玩家名。\n类别名有两套:target/block/material 认 log、planks、ore、wool 这样的裸名(它们本身不是物品 id),把所有同类算进去;\nuntil 名单认带井号的 #ores/#logs/#leaves/#chests/#liquids/#beds。\n**写一个真实物品 id 就只认它自己**:obsidian 不会拿哭泣的黑曜石顶,torch 不是灵魂火把,\nchest 不是末影箱,dirt 不是土径 —— 要\"随便哪种木板\"就写裸类别名 planks。\ncount 一律 1-64;distance:flee 1-128,find 1-1024(不给 direction 时站着扫,最远 48)。\n\"needs\" 声明这一步依赖哪些更早的步(序号 1 起);\"needs\":[] = 独立步。缺省见字段说明。\n容器窗口在每单结束时关闭；from/into:\"open\" 的搬运和开窗步骤须在同一次 mymc_do.steps 中，不能跨单沿用窗口。\n每一步都会核验:判据由执行器按 (skill, 参数) 推,达成与落空都写进回执\n(「该步按『背包内原木 ≥5』核验:达成(实测 7)」)。",
             "items": {
               "type": "object",
               "description": "build: 材料放置：material+anchors（坐标数组）或 material+on（参照格/面）；单格可用 material+at，不能再给 anchors/on/shape。蓝图施工：blueprint+at，at 是蓝图原点。\nprobe: 定位目标用 shape+anchors+where；空间切片用 shape:\"box\"+anchors+slice（x/y/z），不带 where，fill 省略或 solid。不要把两种观察混在同一步。",
@@ -644,6 +644,7 @@
                     "look",
                     "goto",
                     "transit",
+                    "swim",
                     "goto_player",
                     "follow",
                     "find",
@@ -653,6 +654,7 @@
                     "land",
                     "cleanup",
                     "collect",
+                    "harvest",
                     "fish",
                     "tunnel",
                     "build",
@@ -745,11 +747,11 @@
                   },
                   "minItems": 2,
                   "maxItems": 3,
-                  "description": "用于 look(要面向的目标格，支持相对坐标和已登记路标。) / goto(只写 [x,z] = 到附近可达落脚点(不强制爬屋顶);指定楼层请给 [x,y,z];给字符串 = mymc_map 路标名) / transit(当前维度里的一格传送门方块;给字符串 = 当前维度的 mymc_map 路标名) / flight / fish / tunnel(通道终点) / build(蓝图施工时是原点；无 blueprint 的单格材料放置可作 anchors:[at] 别名，不与 anchors/on/shape 同用) / use(世界里要点击的方块绝对坐标，点击已有方块不要求背包有同名物品；face 指它的表面；放置目标用 build.anchors；与 target 二选一) / smelt(指定用哪一座炉子) / brew(指定用哪一座酿造台) / enchant / anvil(指定用哪一座铁砧;不写用最近的) / grindstone(指定用哪一座砂轮;不写用最近的) / toss(朝那一格扔；不写优先选已测较开阔方向，没有已测空隙则按当前朝向丢弃并报告未知) / stow(只存进指定箱子;与 into:open 二选一) / organize(rules 的 stow 只存指定箱子；与 into 互斥) / take(点名哪一格容器) / server_travel"
+                  "description": "用于 look(要面向的目标格，支持相对坐标和已登记路标。) / goto(只写 [x,z] = 到附近可达落脚点(不强制爬屋顶);指定楼层请给 [x,y,z];给字符串 = mymc_map 路标名) / transit(当前维度里的一格传送门方块;给字符串 = 当前维度的 mymc_map 路标名) / swim / flight / harvest / fish / tunnel(通道终点) / build(蓝图施工时是原点；无 blueprint 的单格材料放置可作 anchors:[at] 别名，不与 anchors/on/shape 同用) / use(世界里要点击的方块绝对坐标，点击已有方块不要求背包有同名物品；face 指它的表面；放置目标用 build.anchors；与 target 二选一) / smelt(指定用哪一座炉子) / brew(指定用哪一座酿造台) / enchant / anvil(指定用哪一座铁砧;不写用最近的) / grindstone(指定用哪一座砂轮;不写用最近的) / toss(朝那一格扔；不写优先选已测较开阔方向，没有已测空隙则按当前朝向丢弃并报告未知) / stow(只存进指定箱子;与 into:open 二选一) / organize(rules 的 stow 只存指定箱子；与 into 互斥) / take(点名哪一格容器) / server_travel"
                 },
                 "dimension": {
                   "type": "string",
-                  "description": "用于 goto(可选的当前维度前置条件(overworld/the_nether/the_end)) / server_travel(可选的落点维度(overworld/the_nether/the_end)；与 goto 的当前维度前置条件不同)"
+                  "description": "用于 goto(可选的当前维度前置条件(overworld/the_nether/the_end)) / swim(当前维度前置条件，不符不移动) / server_travel(可选的落点维度(overworld/the_nether/the_end)；与 goto 的当前维度前置条件不同)"
                 },
                 "exact": {
                   "type": "boolean",
@@ -761,7 +763,19 @@
                 },
                 "dryRun": {
                   "type": "boolean",
-                  "description": "用于 goto / flight(只试算当前已加载路线；回报预计毫秒、速度来源和当前许可) / cleanup / tunnel / build / excavate / organize(只读计划，不点击、不存放或丢弃)"
+                  "description": "用于 goto / swim / flight(只试算当前已加载路线；回报预计毫秒、速度来源和当前许可) / cleanup / tunnel / build / excavate / organize(只读计划，不点击、不存放或丢弃)"
+                },
+                "reserveOxygen": {
+                  "type": "integer",
+                  "minimum": 6,
+                  "maximum": 16,
+                  "description": "用于 swim"
+                },
+                "maxDurationMs": {
+                  "type": "integer",
+                  "minimum": 1000,
+                  "maximum": 90000,
+                  "description": "用于 swim"
                 },
                 "name": {
                   "type": "string",
@@ -805,7 +819,7 @@
                 },
                 "block": {
                   "type": "string",
-                  "description": "用于 collect"
+                  "description": "用于 collect / harvest"
                 },
                 "count": {
                   "type": "integer",
@@ -823,7 +837,11 @@
                 },
                 "tool": {
                   "type": "string",
-                  "description": "用于 collect(只覆盖本步;不写时节约耐久) / tunnel(只覆盖本步;不写时节约耐久) / excavate(只覆盖本步;不写时节约耐久)"
+                  "description": "用于 collect(只覆盖本步;不写时节约耐久) / harvest / tunnel(只覆盖本步;不写时节约耐久) / excavate(只覆盖本步;不写时节约耐久)"
+                },
+                "replant": {
+                  "type": "boolean",
+                  "description": "用于 harvest"
                 },
                 "spiral": {
                   "type": "boolean",
@@ -1024,7 +1042,7 @@
                   "type": "integer",
                   "minimum": 0,
                   "maximum": 2147483647,
-                  "description": "用于 use(可选；本连接里观察到的实体 ID，与 target 一起给，精确点该实体，不退回最近者)"
+                  "description": "用于 use(可选；本连接里观察到的实体 ID，与 target 一起给，精确点该实体，不退回最近者) / ride(与target一起指定本连接实体ID；只骑这只，不退回同类最近者)"
                 },
                 "index": {
                   "type": "integer",
@@ -1675,7 +1693,7 @@
               "plan",
               "reason"
             ],
-            "description": "Host-authored revision of an existing goal; preserves identity and returns both original and replacement plans. New milestones require fresh evidence.",
+            "description": "Host-authored revision of an existing goal; preserves identity and returns both original and replacement plans and recorded counts. New milestones require fresh evidence. Numeric progress is a host report, not a live world reading or proof of completion.",
             "properties": {
               "slot": {
                 "type": "integer",
@@ -1921,6 +1939,36 @@
                   "required": [
                     "do"
                   ]
+                }
+              },
+              "progress": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "additionalProperties": false,
+                "required": [
+                  "current"
+                ],
+                "description": "显式修订登记计数，非实时观测或成果证明；请在 reason 引用实际依据。省略整个 progress 保留旧计数，null 清除；对象里的 total/unit 省略则保留，null 表示未知。不适用于蓝图目标。",
+                "properties": {
+                  "current": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "total": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "unit": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
                 }
               }
             }
@@ -2879,7 +2927,7 @@
         "properties": {
           "steps": {
             "type": "array",
-            "description": "steps 使用实际 JSON 数组，不要写成转义字符串。一步一个对象,按顺序读取真实现场并试算,不动世界。每步从当时真实位置开始，不推进假定位置或材料；needs 只判断前步试算结果，不表示前步已执行。收 goto / flight / cleanup / tunnel / build / excavate / probe / observe / organize 这几个技能,写法与参数跟 mymc_do 的 steps 完全一样完整示例和条件用 mymc_help 按技能查询;一律按试算跑,不用自己写 dryRun。",
+            "description": "steps 使用实际 JSON 数组，不要写成转义字符串。一步一个对象,按顺序读取真实现场并试算,不动世界。每步从当时真实位置开始，不推进假定位置或材料；needs 只判断前步试算结果，不表示前步已执行。收 goto / swim / flight / cleanup / tunnel / build / excavate / probe / observe / organize 这几个技能,写法与参数跟 mymc_do 的 steps 完全一样完整示例和条件用 mymc_help 按技能查询;一律按试算跑,不用自己写 dryRun。",
             "items": {
               "type": "object",
               "description": "build: 材料放置：material+anchors（坐标数组）或 material+on（参照格/面）；单格可用 material+at，不能再给 anchors/on/shape。蓝图施工：blueprint+at，at 是蓝图原点。\nprobe: 定位目标用 shape+anchors+where；空间切片用 shape:\"box\"+anchors+slice（x/y/z），不带 where，fill 省略或 solid。不要把两种观察混在同一步。",
@@ -2888,6 +2936,7 @@
                   "type": "string",
                   "enum": [
                     "goto",
+                    "swim",
                     "flight",
                     "cleanup",
                     "tunnel",
@@ -2911,11 +2960,11 @@
                   },
                   "minItems": 2,
                   "maxItems": 3,
-                  "description": "用于 goto(只写 [x,z] = 到附近可达落脚点(不强制爬屋顶);指定楼层请给 [x,y,z];给字符串 = mymc_map 路标名) / flight / tunnel(通道终点) / build(蓝图施工时是原点；无 blueprint 的单格材料放置可作 anchors:[at] 别名，不与 anchors/on/shape 同用) / organize(rules 的 stow 只存指定箱子；与 into 互斥)"
+                  "description": "用于 goto(只写 [x,z] = 到附近可达落脚点(不强制爬屋顶);指定楼层请给 [x,y,z];给字符串 = mymc_map 路标名) / swim / flight / tunnel(通道终点) / build(蓝图施工时是原点；无 blueprint 的单格材料放置可作 anchors:[at] 别名，不与 anchors/on/shape 同用) / organize(rules 的 stow 只存指定箱子；与 into 互斥)"
                 },
                 "dimension": {
                   "type": "string",
-                  "description": "用于 goto(可选的当前维度前置条件(overworld/the_nether/the_end))"
+                  "description": "用于 goto(可选的当前维度前置条件(overworld/the_nether/the_end)) / swim(当前维度前置条件，不符不移动)"
                 },
                 "exact": {
                   "type": "boolean",
@@ -2927,7 +2976,19 @@
                 },
                 "dryRun": {
                   "type": "boolean",
-                  "description": "用于 goto / flight(只试算当前已加载路线；回报预计毫秒、速度来源和当前许可) / cleanup / tunnel / build / excavate / organize(只读计划，不点击、不存放或丢弃)"
+                  "description": "用于 goto / swim / flight(只试算当前已加载路线；回报预计毫秒、速度来源和当前许可) / cleanup / tunnel / build / excavate / organize(只读计划，不点击、不存放或丢弃)"
+                },
+                "reserveOxygen": {
+                  "type": "integer",
+                  "minimum": 6,
+                  "maximum": 16,
+                  "description": "用于 swim"
+                },
+                "maxDurationMs": {
+                  "type": "integer",
+                  "minimum": 1000,
+                  "maximum": 90000,
+                  "description": "用于 swim"
                 },
                 "land": {
                   "type": "boolean",
@@ -3236,7 +3297,7 @@
     },
     {
       "name": "mymc_script",
-      "description": "Run an agent-authored JavaScript async function body with params and a restricted mc SDK. Write new feedback-controlled actions when persistent inputs, calculations or conditional sequencing are useful; this is not limited to existing named scripts. {api:\"authoring\"} gives the short write/validate/save/execute/review/reuse path. {library:{op:\"list\",query:\"purpose\"}} searches only this scoped game-method library; a host procedure_find may use a different library. Nearby blocks: {find:{names:[\"water\"],maxDistance:8,count:4},waitMs:1000} runs a bounded read recipe without scan loops. name is optional for code; omitted names use its stable source hash. Explicit names are1–80 characters. mc.state() returns {sampledAt,connectionGeneration,snapshot,flight,queue,combatActive,combat,method}. Read position, dimension, health, food, inventory and equipment under snapshot, which can be null. snapshot.entities is a bounded array of {entityId?,name,kind,distance,direction,dy,visible}; snapshot.entitiesOmitted reports truncation. snapshot.blocksScanned is false here; empty nearbyBlocks/terrain do not establish water depth or traversability. Missing fields are unknown observations. await mc.do(steps) submits one ordered group to the normal executor and waits for its actual terminal result: accepted, taskId, kind, done, receipt, steps and fresh state. A sent server command still needs observed effects; done is the executor result, not proof of an external quest. await mc.flightPlan(args) uses the same read-only geometry/budget contract as mymc_flight_plan. Use JavaScript conditions, calculations and bounded loops to adapt to feedback. Prepare a timed route before casting; combine already-known cast/movement/blink steps with needs in one mc.do to avoid model delays. bot and Vec3 expose a bounded asynchronous transport for Mineflayer public primitives; use {api:\"index\"} then {api:\"blockAt\"}, {api:\"activateItem\"}, etc. for native signatures and differences. Native calls preserve the current hand and do not navigate or select tools. bot.blockAt returns Block|null with getProperties() for your own JavaScript result checks. The first native body call queues a body lease held until program end; after it, mc.do is unavailable in that program. Read calls do not acquire the body. No imports, process, filesystem, network or protected raw bot access. Calls must be awaited serially. Limits: 12000 source chars, 32 SDK calls, 16 action groups, default 60000ms including queue waits, maximum 120000ms. Only one program runs at a time. New admitted body work, stop, death, disconnect, World stop or timeout revoke it and its own pending task. Returns a run id immediately; {runId} reads result and call summaries, {runId,call} expands one complete SDK call; {} lists the last eight run summaries, {stop:true} cancels the current run. {validate:true,name,code} checks syntax without running any action. Program completion does not certify a learned method. Expand an SDK call to inspect its actual fields before interpreting results; compare the returned observations with the method objective before saving verified claims. Alternatively use {procedure:{handle,revision},params,validate?} to resolve and run a pinned agent-mc.procedure/v1 dependency graph (legacy cortico.procedure/v1 is also accepted) for adapter minecraft-method/v1. await methods.run(alias,params) composes only declared dependency versions; all share this program's budgets and body lease. Source is loaded directly from the selected blobs, without copying it through model context. Procedure terminal events carry an execution UUID and persistent receipt for explicit goal review/adoption by the owning Persona; completion alone is not proof of improvement. {library:{op:\"list\"}} lists your scoped editable methods; read uses id and optional revision. After a validated syntax run, save uses id, code, description, conditions, parent (null for new; current revision for edits), validationRunId. dependencies maps aliases to exact saved references for methods.run; existing parents retain old child versions. evidence reads persisted actual executionId/call; review links an explicit outcome/assessment/context to that version and receipt; adopt selects an assessed version for later retrieval, without changing a running program. Returns a pinned procedure reference; execution is explicit. Earlier revisions and negative assessments remain readable for revision/rollback. Library saves never edit engine files or claim verified improvement.",
+      "description": "Run an agent-authored JavaScript async function body with params and a restricted mc SDK. Write new feedback-controlled actions when persistent inputs, calculations or conditional sequencing are useful; this is not limited to existing named scripts. {api:\"authoring\"} gives the short write/validate/save/execute/review/reuse path. {library:{op:\"list\",query:\"purpose\"}} searches only this scoped game-method library; a host procedure_find may use a different library. Nearby blocks: {find:{names:[\"water\"],maxDistance:8,count:4},waitMs:1000} runs a bounded read recipe without scan loops. name is optional for code; omitted names use its stable source hash. Explicit names are1–80 characters. mc.state() returns {sampledAt,connectionGeneration,snapshot,flight,queue,combatActive,combat,method}. Read position, dimension, health, food, inventory and equipment under snapshot, which can be null. snapshot.entities is a bounded array of {entityId?,name,kind,distance,direction,dy,visible}; snapshot.entitiesOmitted reports truncation. snapshot.blocksScanned is false here; empty nearbyBlocks/terrain do not establish water depth or traversability. Missing fields are unknown observations. await mc.do(steps) submits one ordered group to the normal executor and waits for its actual terminal result: accepted, taskId, kind, done, receipt, steps and fresh state. A sent server command still needs observed effects; done is the executor result, not proof of an external quest. await mc.flightPlan(args) uses the same read-only geometry/budget contract as mymc_flight_plan. Use JavaScript conditions, calculations and bounded loops to adapt to feedback. Prepare a timed route before casting; combine already-known cast/movement/blink steps with needs in one mc.do to avoid model delays. bot and Vec3 expose a bounded asynchronous transport for Mineflayer public primitives; use {api:\"index\"} then {api:\"blockAt\"}, {api:\"activateItem\"}, etc. for native signatures and differences. Native calls preserve the current hand and do not navigate or select tools. bot.blockAt returns Block|null with getProperties() for your own JavaScript result checks. The first native body call queues a body lease held until program end; after it, mc.do is unavailable in that program. Read calls do not acquire the body. No imports, process, filesystem, network or protected raw bot access. Calls must be awaited serially. Limits: 12000 source chars, 32 SDK calls, 16 action groups, default 60000ms including queue waits, maximum 120000ms. Only one program runs at a time. New admitted body work, stop, death, disconnect, World stop or timeout revoke it and its own pending task. Returns a run id immediately; {runId} reads result and call summaries, {runId,call} expands one complete SDK call; {} lists the last eight run summaries, {stop:true} cancels the current run. {validate:true,name,code} checks syntax without running any action. Program completion does not certify a learned method. Expand an SDK call to inspect its actual fields before interpreting results; compare the returned observations with the method objective before saving verified claims. Alternatively use {procedure:{handle,revision},params,validate?} to resolve and run a pinned agent-mc.procedure/v1 dependency graph (legacy cortico.procedure/v1 is also accepted) for adapter minecraft-method/v1. await methods.run(alias,params) composes only declared dependency versions; all share this program's budgets and body lease. Source is loaded directly from the selected blobs, without copying it through model context. Procedure terminal events carry an execution UUID and persistent receipt for explicit goal review/adoption by the owning Persona; completion alone is not proof of improvement. {library:{op:\"list\"}} lists your scoped editable methods; read uses id and optional revision. Reviewed built-in work scripts use {routine:{op:\"list\"}}, {routine:{op:\"read\",id:\"farm_harvest\"}} and {routine:{op:\"run\",id},params}. Read supplies the exact parameter schema/source/conditions; run uses the same queue, cancellation and runId receipts without copying code through the model. Built-in work result outcome/goalCompleted/remaining are observed task evidence; a completed JavaScript program can still report blocked or partial work. After a validated syntax run, save uses id, code, description, conditions, parent (null for new; current revision for edits), validationRunId. dependencies maps aliases to exact saved references for methods.run; existing parents retain old child versions. evidence reads persisted actual executionId/call; review links an explicit outcome/assessment/context to that version and receipt; adopt selects an assessed version for later retrieval, without changing a running program. Returns a pinned procedure reference; execution is explicit. Earlier revisions and negative assessments remain readable for revision/rollback. Library saves never edit engine files or claim verified improvement.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -3416,6 +3477,26 @@
               "names"
             ],
             "additionalProperties": false
+          },
+          "routine": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "list",
+                  "read",
+                  "run"
+                ]
+              },
+              "id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "op"
+            ]
           },
           "code": {
             "type": "string",

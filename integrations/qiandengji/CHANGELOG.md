@@ -1,5 +1,14 @@
 # integrations/qiandengji：薄适配与资料包变更
 
+## 0.4.1-rc.9
+
+- Consume independent core rc.59 through the same public SDK/MCP and World contracts.
+- Expose the shared ten-item work/mobility routine catalogue, bounded underwater routing and real vehicle/gliding input capabilities without copying them into this adapter.
+- Preserve recorded-goal revision evidence and native terrain readiness checks from upstream.
+- Keep complete API 6 declarations and validate the actual core resolved from each packed consumer.
+- This source candidate is not published or loaded; models, voices, character assets and game connections are unchanged.
+
+
 ## 0.4.1-rc.8
 
 - Pin the independent Minecraft core rc.54, including public capture/archive helpers; no AIGC or performance code copied into the World.
