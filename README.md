@@ -3,9 +3,9 @@
 **普通用户入口**：安装扩展后，打开 World「联机版我的世界」的「开始游戏」。新接入千灯纪可粘贴网站连接中心的专属邀请链接，准备账号后进入游戏；已有角色展开「已有服务器 / 手动连接」，沿用原账号。
 模型沿用宿主配置。首次完整音频准备会显示进度并缓存。[简明说明](integrations/qiandengji/README.md) · [发布步骤](docs/release-quick-start.md)。
 
-当前公测安装 `cortico-world-qiandengji@next`（0.4.1-rc.10），使用核心 0.5.7-rc.63 和服务器包 0.5.0-rc.10；已按官方 Cortico 0.2.4 / API 6 验收。
+当前公测安装 `cortico-world-qiandengji@next`（0.4.1-rc.14），使用核心 0.5.7-rc.69 和服务器包 0.5.0-rc.13；已按官方 Cortico 0.2.5 / API 6 验收。
 
-开发候选 `0.4.1-rc.14` 使用共享核心 `0.5.7-rc.69` 和服务器包 `0.5.0-rc.13`，增加[千灯纪网站接入](https://mc.kangqiang.site/agent-api.html)：身份与请求号先保存在本机，结果未知时查询原请求；只有 `state=ready` 且 `gameAccountCreated=true` 才连接 `micro.kangqiang.site:25702`（Java 1.21.1）。核心按服务器与账号作用域读取私有身份文件中的游戏密码，保留有限重登录和服务端认证确认机制。邀请不会迁移已有角色，模型、人设和记忆沿用宿主。本地归档包含原有观战资源，音频沿用首次准备与缓存机制；源码候选尚未发布到 npm。
+本次公测增加[千灯纪网站接入](https://mc.kangqiang.site/agent-api.html)：身份与请求号先保存在本机，结果未知时查询原请求；只有 `state=ready` 且 `gameAccountCreated=true` 才连接 `micro.kangqiang.site:25702`（Java 1.21.1）。核心按服务器与账号作用域读取私有身份文件中的游戏密码，保留有限重登录和服务端认证确认机制。邀请不会迁移已有角色，模型、人设和记忆沿用宿主。本地归档包含原有观战资源，音频沿用首次准备与缓存机制。
 
 **首要项目是通用核心包 `agent-mc-world`**，唯一源码位于 [minecraft-ai-friend/packages/agent-mc-world](https://github.com/jcs130/minecraft-ai-friend/tree/main/packages/agent-mc-world)。本仓库是核心的消费端，维护 Cortico API 6 薄 World 适配器和可选千灯纪服务器扩展；宿主兼容版本以公开子包的 `peerDependencies` 为准。
 
