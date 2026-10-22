@@ -1,5 +1,11 @@
 # integrations/qiandengji：薄适配与资料包变更
 
+## 0.4.1-rc.11
+
+- Consume shared core rc.66: all vanilla shulker boxes participate in container discovery, historical records, interaction and navigation protection.
+- Keep upstream compiled child processes independent of the development TypeScript loader and stop retries after an exact-cell placement denial.
+- Verify public API 6 consumers with Cortico 0.2.5 and retain the private API 5 compatibility check.
+
 ## 0.4.1-rc.10
 
 - Consume core rc.63, including the upstream method terminal wake correction and explicit Harness² practice service.
