@@ -6,6 +6,8 @@ interface SetupState {
   loginName: string; connection: { ready: boolean; phase: string } | null;
   assets?: { phase: string; completed: number; total: number } | null;
   alreadyConnected?: boolean;
+  portal?: { available: boolean; identitySaved?: boolean; username?: string | null; state: string;
+    gameAccountCreated?: boolean; checkedAt?: string | null; message: string } | null;
   lamps: { label: string; state: string; hint?: string }[]; links: { label: string; href: string }[];
 }
 
@@ -14,7 +16,7 @@ export const quickStartPanel: WebUiPanel = {
   mount(ctx) {
     const { ui } = ctx;
     const card = ui.sheet({ title: '开始游戏', en: 'quick start',
-      desc: '① 选择游戏类型　② 填写地址和账号　③ 进入游戏与网页观战。模型沿用 Cortico 的设置。' });
+      desc: '千灯纪邀请可在下方准备账号；已有服务器填写地址后进入。模型、人设和记忆沿用 Cortico。' });
     ctx.root.append(card.el);
     const address = ui.input({ placeholder: '例如 mc.example.com:25565' });
     const username = ui.input({ placeholder: '游戏名；正版模式填写账号标识' });
@@ -33,7 +35,28 @@ export const quickStartPanel: WebUiPanel = {
     const save = ui.button('保存配置'), start = ui.button('进入游戏', { variant: 'primary' });
     const stop = ui.button('断开游戏', { variant: 'danger' });
     actions.append(start, save, stop);
-    card.body.append(form, identity, more, actions, msg, status, links);
+    const portal = ui.h('details', 'mc-fold mc-portal'), portalSummary = ui.h('summary', '', '千灯纪网站邀请 · 准备账号并进入游戏');
+    const portalBody = ui.h('div', 'mc-foldbody'), portalLinks = ui.actions();
+    for (const [label, href] of [['打开网站连接中心', 'https://mc.kangqiang.site/#connections'], ['接入说明', 'https://mc.kangqiang.site/agent-api.html']]) {
+      const a = ui.h('a', 'btn', label); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; portalLinks.append(a);
+    }
+    const invite = ui.input({ type: 'password', placeholder: '粘贴 https://mc.kangqiang.site/join#invite=…' });
+    invite.autocomplete = 'off';
+    const portalName = ui.input({ placeholder: 'ag_角色名，总长不超过16位' });
+    const portalForm = ui.h('div', 'mc-quick-form');
+    const inviteField = ui.field('专属接入链接', invite);
+    portalForm.append(inviteField, ui.field('新角色名', portalName));
+    const portalActions = ui.actions(), prepare = ui.button('准备账号'), query = ui.button('查询结果'), enterPortal = ui.button('使用此身份进入游戏', { variant: 'primary' });
+    portalActions.append(prepare, query, enterPortal);
+    const portalStatus = ui.msgline(), importDetails = ui.h('details', 'mc-fold');
+    const identityFile = ui.input({ placeholder: '已有 identity.json 的本机绝对路径' }), importIdentity = ui.button('续用身份文件');
+    importDetails.append(ui.h('summary', '', '已有网站 API 身份'), identityFile, importIdentity);
+    portalBody.append(portalLinks, ui.h('p', 'pagedesc', '在网站连接中心点击“邀请自己的 Agent”，将专属链接粘贴到这里。已有游戏角色继续使用原账号连接，不用邀请重建。'),
+      portalForm, portalActions, portalStatus, importDetails);
+    portal.append(portalSummary, portalBody);
+    const manual = ui.h('details', 'mc-fold');
+    manual.append(ui.h('summary', '', '已有服务器 / 手动连接'), form, identity, more, actions);
+    card.body.append(portal, manual, msg, status, links);
     let current: SetupState | null = null, initialized = false, busy = false, reading = false;
     const serverAddress = (s: SetupState['settings']) => s.host ? `${s.host.includes(':') ? `[${s.host}]` : s.host}:${s.port}` : '';
     const sameSettings = () => !!current && address.value.trim() === serverAddress(current.settings)
@@ -49,6 +72,12 @@ export const quickStartPanel: WebUiPanel = {
       start.disabled = save.disabled = busy || !current?.available;
       stop.disabled = busy || !current?.enabled;
       if (current?.provider === 'java-client') start.disabled = true;
+      prepare.disabled = busy || !current?.portal?.available;
+      query.disabled = busy || !current?.portal?.identitySaved;
+      importIdentity.disabled = busy || !current?.portal?.available;
+      enterPortal.disabled = busy || !current?.available || current.provider === 'java-client'
+        || current.portal?.state !== 'ready' || current.portal.gameAccountCreated !== true;
+      invite.disabled = portalName.readOnly = current?.portal?.identitySaved === true;
     };
     const render = (state: SetupState) => {
       current = state;
@@ -58,10 +87,14 @@ export const quickStartPanel: WebUiPanel = {
         username.value = s.username; auth.value = s.auth; version.value = s.version; pack.value = s.serverPack; viewerPort.value = String(s.viewerPort);
         initialized = true;
         explainIdentity();
+        portal.open = !s.host; manual.open = !!s.host;
       }
       status.textContent = state.connection?.ready ? `已进入游戏 · ${state.loginName}`
         : state.mounted ? `World 已启动，等待进服与认证${state.lamps.length ? ` · ${state.lamps.map(l => l.hint || l.label).join('；')}` : ''}`
-          : state.enabled ? '正在启动；是否进入游戏以连接状态为准。' : '填写地址和账号后点击“进入游戏”。';
+          : state.enabled ? '正在启动；是否进入游戏以连接状态为准。'
+            : state.portal?.identitySaved ? (state.portal.state === 'ready' && state.portal.gameAccountCreated === true
+              ? '网站账号已就绪，点击“使用此身份进入游戏”。' : '网站账号准备中；按上方结果继续，尚未连接游戏。')
+              : '使用网站邀请接入，或展开“已有服务器 / 手动连接”。';
       if (!state.available) status.textContent = '宿主未提供快捷配置接口，请升级 Cortico 后使用。';
       if (state.assets && state.assets.phase !== 'ready') status.textContent = `准备 / 校验音画资源 ${state.assets.completed}/${state.assets.total}；完成后自动连接，复用已完成的缓存。`;
       if (state.provider === 'java-client') status.textContent += ' · 原生客户端请使用高级配置。';
@@ -75,6 +108,14 @@ export const quickStartPanel: WebUiPanel = {
       }
       locks();
       start.textContent = state.connection?.ready ? '进入已连接的游戏' : '进入游戏';
+      if (state.portal) {
+        portalStatus.textContent = `${state.portal.username ? state.portal.username + ' · ' : ''}${state.portal.message}`;
+        prepare.textContent = state.portal.identitySaved ? '继续准备原身份' : '准备账号';
+        inviteField.hidden = state.portal.identitySaved === true;
+        inviteField.style.display = state.portal.identitySaved ? 'none' : '';
+        portalStatus.className = state.portal.state === 'ready' ? 'msgline' : state.portal.state === 'unknown' ? 'msgline bad' : 'mc-portal-status';
+        if (state.portal.username) portalName.value = state.portal.username;
+      }
     };
     const refresh = async () => {
       if (reading || ctx.signal.aborted) return;
@@ -106,6 +147,27 @@ export const quickStartPanel: WebUiPanel = {
     };
     for (const [button, method] of [[save, 'save'], [start, 'start'], [stop, 'stop']] as const)
       button.addEventListener('click', () => { void act(method); }, { signal: ctx.signal });
+    const portalAct = async (method: 'portal-prepare' | 'portal-status' | 'portal-import' | 'portal-start') => {
+      if (busy || ctx.signal.aborted) return;
+      busy = true; locks();
+      try {
+        if (method === 'portal-start' && current?.mounted && !await ui.confirm({ title: '使用网站身份连接千灯纪？',
+          body: '将连接 micro.kangqiang.site:25702。当前身体任务会结束，会话与记忆保留。' })) return;
+        portalStatus.textContent = method === 'portal-start' ? '正在确认建号结果并连接…' : '正在核对网站接入状态…';
+        const result = await ctx.invoke<SetupState>(method, method === 'portal-prepare'
+          ? [{ inviteUrl: invite.value, username: portalName.value }]
+          : method === 'portal-import' ? [{ identityFile: identityFile.value }] : []);
+        if (ctx.signal.aborted) return;
+        if (method === 'portal-start') initialized = false;
+        render(result);
+        if (method === 'portal-start') msg.textContent = result.alreadyConnected ? '继续当前游戏。'
+          : '连接已启动；等待服务器认证成功并进入真实游戏世界。';
+        await ctx.refresh();
+      } catch (error) { if (!ctx.signal.aborted) { portalStatus.textContent = error instanceof Error ? error.message : '网站接入状态未验证'; portalStatus.className = 'msgline bad'; } }
+      finally { invite.value = ''; busy = false; locks(); }
+    };
+    for (const [button, method] of [[prepare, 'portal-prepare'], [query, 'portal-status'], [importIdentity, 'portal-import'], [enterPortal, 'portal-start']] as const)
+      button.addEventListener('click', () => { void portalAct(method); }, { signal: ctx.signal });
     pack.addEventListener('change', explainIdentity, { signal: ctx.signal });
     locks(); void refresh(); ctx.interval(() => { void refresh(); }, 2000);
   },

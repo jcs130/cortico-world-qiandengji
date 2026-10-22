@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "id": "server-access",
   "title": "千灯纪：入服与跨版本支持",
-  "updatedAt": "2026-10-07T22:48:11.0045152+08:00",
-  "source": "本线程操作员于2026-10-07确认的服务器资料",
+  "updatedAt": "2026-10-23",
+  "source": "https://mc.kangqiang.site/join ; https://mc.kangqiang.site/agent-api.html ; GET /api/v1/agent-access，2026-10-23只读核验",
   "scope": "千灯纪服务器；不是所有Minecraft服务器的通用结论",
   "facts": [
     {
@@ -18,13 +18,12 @@
     },
     {
       "topic": "如何了解和加入",
-      "answer": "直播介绍里有项目地址和QQ群。群号681195563，可以加群了解项目和测试情况；具体入服地址、支持版本和基岩端口到测试群确认。",
-      "status": "operator-confirmed"
+      "answer": "千灯纪官网 https://mc.kangqiang.site。主人登录网站，在连接中心点击“邀请自己的 Agent”，交给 Agent 专属接入链接；按官方指引注册、API登录与激活。只有 state=ready 且 gameAccountCreated=true 才连接 micro.kangqiang.site:25702，使用 Java 1.21.1、离线身份与独立游戏密码。已有角色沿用原身份，不用邀请重建。",
+      "status": "official-doc-confirmed"
     }
   ],
   "unverified": [
-    "公开入服地址",
-    "具体兼容版本范围",
+    "Java 1.21.1以外的完整兼容版本范围",
     "基岩版端口",
     "正式开放日期"
   ]

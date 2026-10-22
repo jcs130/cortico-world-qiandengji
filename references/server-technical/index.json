@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "kind": "technical_reference_index",
   "title": "千灯纪游戏资料",
-  "updatedAt": "2026-10-09T21:45:00+08:00",
+  "updatedAt": "2026-10-23",
   "purpose": "观众提问时按需定位原文；资料正文不常驻模型上下文。",
   "reading": "先按标题和关键词选文档，再用read_file分段读取或grep_files定位。回答保留来源、更新时间和适用版本；没有资料就说明尚未确认。文件修改时间不等于事实发生时间。",
   "entries": [
@@ -20,11 +20,15 @@
         "跨版本",
         "QQ群",
         "项目地址",
-        "内测"
+        "内测",
+        "网站",
+        "邀请",
+        "Agent接入",
+        "micro.kangqiang.site"
       ],
       "file": "references/server-technical/server-access.json",
-      "updatedAt": "2026-10-07T22:48:11.0045152+08:00",
-      "source": "本线程操作员于2026-10-07确认的服务器资料"
+      "updatedAt": "2026-10-23",
+      "source": "千灯纪官网接入文档与公开API，2026-10-23核验"
     }
   ]
 }

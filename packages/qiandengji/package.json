@@ -1,6 +1,6 @@
 {
   "name": "agent-mc-qiandengji",
-  "version": "0.5.0-rc.12",
+  "version": "0.5.0-rc.13",
   "type": "module",
   "description": "Explicit Qiandengji server protocols and reference pack for the independent Agent Minecraft client",
   "license": "MIT",
@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/types/integrations/qiandengji/neutral.d.ts",
       "default": "./dist/neutral.js"
+    },
+    "./portal": {
+      "types": "./dist/types/integrations/qiandengji/portal-access.d.ts",
+      "default": "./dist/portal-access.js"
     },
     "./presentation": {
       "types": "./dist/presentation.d.mts",
@@ -24,7 +28,7 @@
     }
   },
   "dependencies": {
-    "agent-mc-world": "^0.5.7-rc.68",
+    "agent-mc-world": "^0.5.7-rc.69",
     "vec3": "0.2.0"
   },
   "engines": {

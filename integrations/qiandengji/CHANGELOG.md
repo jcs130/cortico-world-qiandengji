@@ -1,5 +1,12 @@
 # integrations/qiandengji：薄适配与资料包变更
 
+## 0.4.1-rc.14
+
+- 开始页面接入千灯纪官网邀请：准备账号、查询建号结果、续用身份文件及明确开始连接。
+- 邀请流程复用官网 SHA-256 锁定的注册工具；先持久化身份和请求号，pending/unknown 查询原请求，连接前重新核验 ready 与 gameAccountCreated。
+- 游戏入口使用官网确认的 micro.kangqiang.site:25702 / Java 1.21.1；旧账号与已连接身体不会因网站接入准备而切换。
+- 中立服务器包公开网站接入客户端；核心 rc.69 支持直接读取私有 JSON 凭据字段，避免复制游戏密码。
+
 ## 0.4.1-rc.13
 
 - Consume shared core rc.68: a scoped login can renew on the existing connection after trusted authorization revocation.

@@ -5,8 +5,9 @@ import type { World, WorldHost } from 'agent-mc-world/contracts';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { portalApiFixture } from './fixtures/portal-api.ts';
 
-function fixture() {
+function fixture(dataDir = '') {
   const cfg = { ...MYMC.defaults(), viewerPort: 0 };
   let connection: any = null;
   const engine: World = { id: 'mymc', tools: () => [], envPromptVars: () => ({}), start: vi.fn(async () => {}), stop: vi.fn(async () => {}),
@@ -14,13 +15,31 @@ function fixture() {
       invoke: vi.fn(async (panel, method) => ({ panel, method })), connection }) };
   const persist = vi.fn((patch: Partial<typeof cfg>) => Object.assign(cfg, patch));
   const restart = vi.fn(async () => { if (cfg.enabled) await world.start({} as WorldHost); else await world.stop(); });
-  const ctx = { cfg, persist, restart, dataDir: '', timezone: 'UTC', botName: 'Fixture' };
+  const ctx = { cfg, persist, restart, dataDir, timezone: 'UTC', botName: 'Fixture' };
   const world = withQuickStart(engine, ctx, candidate => MYMC.preflight?.({ cfg: candidate }));
   const invoke = (method: string, form?: unknown) => world.console!().invoke!('quick-start', method, form === undefined ? [] : [form]);
   return { cfg, world, ctx, invoke, persist, restart, setConnection: (value: unknown) => { connection = value; } };
 }
 
 describe('operator quick setup through official WorldContext ports', () => {
+  it('prepares a website identity without touching a live connection, then adopts only a fresh ready account',async()=>{
+    const directory=await mkdtemp(join(tmpdir(),'world-portal-')),api=portalApiFixture();vi.stubGlobal('fetch',api.fetch);
+    try{
+      const f=fixture(directory),beforeMemory=structuredClone(f.cfg.memory),beforeModels=structuredClone(f.cfg.hostDecisions);
+      expect(await f.invoke('state')).toMatchObject({portal:{state:'missing',identitySaved:false}});expect(api.fetch).not.toHaveBeenCalled();
+      expect(await f.invoke('portal-prepare',{inviteUrl:'https://mc.kangqiang.site/join#invite=qdi_'+'i'.repeat(43),username:'ag_Fixture'})).toMatchObject({portal:{state:'pending'}});
+      expect(f.persist).not.toHaveBeenCalled();expect(f.restart).not.toHaveBeenCalled();
+      await expect(f.invoke('portal-start')).rejects.toThrow('GAME_ACCOUNT_NOT_READY');expect(f.restart).not.toHaveBeenCalled();
+      api.setState('ready');await f.invoke('portal-status');
+      expect(await f.invoke('portal-start')).toMatchObject({mounted:true,loginName:'ag_Fixture',portal:{state:'ready'},connection:null});
+      expect(f.cfg).toMatchObject({host:'micro.kangqiang.site',port:25702,username:'ag_Fixture',auth:'offline',version:'1.21.1',serverPack:'qiandengji',preserveLoginName:true,enabled:true});
+      expect(f.cfg.memory).toEqual(beforeMemory);expect(f.cfg.hostDecisions).toEqual(beforeModels);expect(f.restart).toHaveBeenCalledOnce();
+      expect(JSON.stringify(f.persist.mock.calls)).not.toMatch(/qdi_|qda_|gamePassword|clientSecret/);
+      f.setConnection({ready:true,phase:'online'});f.persist.mockClear();f.restart.mockClear();
+      expect(await f.invoke('portal-start')).toMatchObject({alreadyConnected:true});expect(f.restart).not.toHaveBeenCalled();
+      api.setState('unknown');await expect(f.invoke('portal-start')).rejects.toThrow('GAME_ACCOUNT_NOT_READY');expect(f.persist).not.toHaveBeenCalled();
+    }finally{vi.unstubAllGlobals();await rm(directory,{recursive:true,force:true});}
+  });
   it('shows a default unconnected panel without network, game or model work', async () => {
     const f = fixture();
     const state = await f.invoke('state');

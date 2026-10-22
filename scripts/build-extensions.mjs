@@ -21,6 +21,9 @@ for (const source of await walk(sourceBase)) {
   if(name.startsWith('data-packs/qiandengji/viewer-items/')&&/\.(?:png|json)$/.test(name)){
     const target=join(pack,'dist',name);await mkdir(dirname(target),{recursive:true});await cp(source,target);continue;
   }
+  if(name==='portal/source.json'){
+    const target=join(pack,'dist',name);await mkdir(dirname(target),{recursive:true});await cp(source,target);continue;
+  }
   if (!/\.(?:ts|mjs|js|md)$/.test(name) || /\.d\.ts$/.test(name)) continue;
   const target = join(pack, 'dist', name.replace(/\.ts$/, '.js'));
   await mkdir(dirname(target), { recursive: true });
@@ -67,7 +70,7 @@ console.log('Cortico World package files verified');
     const activityAdapter = (await transform(await readFile(join(base, file + '.ts'), 'utf8'),
       { loader: 'ts', format: 'esm', target: 'node22' })).code.replaceAll('./cortico-activity.ts', './cortico-activity.js')
       .replaceAll('from "./config.ts"', 'from "agent-mc-qiandengji"');
-    await writeFile(join(base, 'dist/world/' + file + '.js'), activityAdapter);
+    await writeFile(join(base, 'dist/world/' + file + '.js'), activityAdapter.replaceAll('from "./portal-access.ts"', 'from "agent-mc-qiandengji/portal"'));
   }
   await writeFile(join(base, 'dist/world/cortico.js'), adapter);
   await writeFile(join(base, 'dist/world/index.js'), 'export { MYMC, MYMC as default } from "./cortico.js";\n');

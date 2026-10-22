@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import type { MymcConfigSection } from './config.ts';
 import { mymcLoginName } from './config.ts';
 import type { WorldContext } from '../../adapters/cortico/types.ts';
+import { QiandengjiPortalAccess } from './portal-access.ts';
 
 /** Host setup only. No independent game loop, model configuration or credential copies. */
 export function withQuickStart<T extends World>(world: T, ctx: WorldContext<MymcConfigSection>,
@@ -13,6 +14,7 @@ export function withQuickStart<T extends World>(world: T, ctx: WorldContext<Mymc
   const start = world.start.bind(world), stop = world.stop.bind(world);
   let mounted = false, mutation: Promise<unknown> | null = null;
   let assets: ViewerAssetProgress | null = null, assetAbort: AbortController | null = null;
+  const portal = ctx.dataDir ? new QiandengjiPortalAccess({ directory: join(ctx.dataDir, 'website-access') }) : null;
   world.start = async host => {
     const templateDir = viewer?.templateDir() ?? ctx.cfg.viewerAssetsDir;
     if (ctx.cfg.provider !== 'java-client' && ctx.cfg.viewerPort > 0 && templateDir) {
@@ -30,13 +32,14 @@ export function withQuickStart<T extends World>(world: T, ctx: WorldContext<Mymc
     await start(host); mounted = true;
   };
   world.stop = async () => { mounted = false; assetAbort?.abort(); await stop(); };
-  const state = () => {
+  const state = async () => {
     const cfg = ctx.cfg, declaration = base?.();
     return { available: !!ctx.persist && !!ctx.restart, mounted, enabled: cfg.enabled, provider: cfg.provider, assets,
       settings: { host: cfg.host, port: cfg.port, username: cfg.username, auth: cfg.auth, version: cfg.version,
         serverPack: cfg.serverPack ?? 'none', viewerPort: cfg.viewerPort },
       loginName: cfg.serverPack === 'qiandengji' ? mymcLoginName(cfg.username, cfg.preserveLoginName) : cfg.username,
-      connection: declaration?.connection ?? null, lamps: declaration?.lamps ?? [], links: declaration?.links ?? [] };
+      connection: declaration?.connection ?? null, lamps: declaration?.lamps ?? [], links: declaration?.links ?? [],
+      portal: portal ? await portal.state().catch(() => ({ available: false, state: 'unknown', message: '网站身份文件未验证；原游戏连接保留。' })) : null };
   };
   const patchFrom = (value: unknown): Partial<MymcConfigSection> => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('请填写服务器地址和账号。');
@@ -73,25 +76,46 @@ export function withQuickStart<T extends World>(world: T, ctx: WorldContext<Mymc
       return parent.invoke(panel, method, args);
     }
     if (method === 'state') return state();
-    if (!['save', 'start', 'stop'].includes(method)) throw new Error('未知启动操作。');
-    if (!ctx.persist || !ctx.restart) throw new Error('当前宿主未提供配置保存与 World 启停接口，请升级 Cortico。');
+    if (!['save', 'start', 'stop', 'portal-prepare', 'portal-status', 'portal-import', 'portal-start'].includes(method)) throw new Error('未知启动操作。');
+    if (!method.startsWith('portal-') || method === 'portal-start') {
+      if (!ctx.persist || !ctx.restart) throw new Error('当前宿主未提供配置保存与 World 启停接口，请升级 Cortico。');
+    }
     if (mutation) throw new Error('正在处理连接，请稍候。');
-    // Validation precedes any disk write or interruption. Allowlist form fields only.
-    const patch = method === 'stop' ? {} : patchFrom(args[0]);
-    if (method === 'start' && ctx.cfg.provider === 'java-client') throw new Error('当前使用原生客户端，请在高级配置中连接；快捷启动用于 Mineflayer。');
+    if (method.startsWith('portal-') && !portal) throw new Error('宿主未提供私有数据目录，无法保存网站身份。');
+    if (method.startsWith('portal-') && method !== 'portal-start') {
+      const run = async () => {
+        const form = args[0] as Record<string, unknown> | undefined;
+        if (method === 'portal-prepare') await portal!.prepare({ inviteUrl: form?.inviteUrl, username: form?.username });
+        else if (method === 'portal-import') await portal!.importIdentity(form?.identityFile);
+        else await portal!.status();
+        return state();
+      };
+      mutation = run(); try { return await mutation; } finally { mutation = null; }
+    }
+    const execute = async () => {
+    // Validation precedes configuration changes or interruption. Allowlist form fields only.
+    const starting = method === 'start' || method === 'portal-start';
+    if (starting && ctx.cfg.provider === 'java-client') throw new Error('当前使用原生客户端，请在高级配置中连接；快捷启动用于 Mineflayer。');
+    let patch: Partial<MymcConfigSection>;
+    if (method === 'portal-start') {
+      const settings = await portal!.connectionSettings();
+      patch = { ...patchFrom({ address: `${settings.host}:${settings.port}`, username: settings.username,
+        version: settings.version, auth: settings.auth, serverPack: 'qiandengji' }),
+        preserveLoginName: true, loginConfigFile: settings.loginConfigFile };
+      validate({ ...ctx.cfg, ...patch });
+    } else patch = method === 'stop' ? {} : patchFrom(args[0]);
     // Opening an App that is already connected must not cancel its body task.
     // A failed/disconnected connection remains retryable through the same button.
-    if (method === 'start' && ctx.cfg.enabled && mounted && state().connection?.ready === true
+    if (starting && ctx.cfg.enabled && mounted && (await state()).connection?.ready === true
       && Object.entries(patch).every(([key, value]) => Object.is(ctx.cfg[key as keyof MymcConfigSection], value))) {
-      return { saved: true, requested: method, alreadyConnected: true, ...state() };
+      return { saved: true, requested: method, alreadyConnected: true, ...await state() };
     }
-    const perform = async () => {
       if (method === 'stop') assetAbort?.abort(new Error('启动已取消。'));
-      ctx.persist!({ ...patch, ...(method === 'save' ? {} : { enabled: method === 'start' }) });
+      ctx.persist!({ ...patch, ...(method === 'save' ? {} : { enabled: starting }) });
       if (method !== 'save') await ctx.restart!();
-      return { saved: true, requested: method, ...state() };
+      return { saved: true, requested: method, ...await state() };
     };
-    mutation = perform();
+    mutation = execute();
     try { return await mutation; }
     finally { mutation = null; }
   };

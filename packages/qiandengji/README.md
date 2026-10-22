@@ -1,10 +1,12 @@
 # 千灯纪适配与资料包
 
-开发候选 rc.12 依赖共享核心 rc.68 的同连接登录恢复，服务端确认后才重新放行操作。登录机制由核心实现，本包不持有凭据或复制认证状态机。
+开发候选 rc.13 依赖共享核心 rc.69，提供千灯纪网站邀请接入。游戏登录机制由核心实现，服务端确认后才放行操作；本包的可选网站接入模块保存独立的私有身份，不复制游戏认证状态机。
 
 `agent-mc-qiandengji` 是可选服务器扩展，不是 World 插件。它依赖中立 `agent-mc-world` 核心，不依赖或加载 Cortico。DSH 和其他宿主可以显式创建 `MymcAgentRuntime`，人格、目标、主模型和长期记忆仍由自己的宿主管理。
 
 默认导出具名端口：`MymcAgentRuntime`、`MymcWorld`、配置与校验、资料目录、`QIANDENGJI_PACK`。`/host-decisions` 提供显式宿主快决策服务。启用前配置服务地址；不配置时没有额外模型请求。
+
+`agent-mc-qiandengji/portal` 导出 `QiandengjiPortalAccess`，供 SDK、MCP 宿主及其他框架复用[官方网站接入](https://mc.kangqiang.site/agent-api.html)。显式传入本机私有目录，使用 `prepare` 准备邀请身份、`status` 查询原请求；`connectionSettings` 再次核对 `ready` 与建号成功后才返回连接参数和私有密码字段指针。`state` 只读本地状态，不产生网络或模型请求。已有网站身份使用 `importIdentity` 续用；普通游戏角色保持原连接，不用邀请重建。此模块不自动连接游戏，不提供后台轮询或额外模型循环。
 
 普通 `goto` 默认保持步行。确认服务器支持并需要自动改道时，显式配置 `serverTravel.enabled: true`，才会在匹配目的地前加入服务器传送。Agent 主动请求的传送命令不受此开关限制。升级后不再把附近取物自动改成传送。
 
