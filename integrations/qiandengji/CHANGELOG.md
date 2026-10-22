@@ -1,5 +1,11 @@
 # integrations/qiandengji：薄适配与资料包变更
 
+## 0.4.1-rc.13
+
+- Consume shared core rc.68: a scoped login can renew on the existing connection after trusted authorization revocation.
+- Require fresh server confirmation before game operations resume; stop duplicate submissions, immediate revoke/confirm loops, password rejection and two-factor challenges.
+- Keep the recovery in the shared SDK/MCP engine. Host session, goals and personal memory remain with the host.
+
 ## 0.4.1-rc.11
 
 - Consume shared core rc.67: all vanilla shulker boxes participate in container discovery, historical records, interaction and navigation protection.

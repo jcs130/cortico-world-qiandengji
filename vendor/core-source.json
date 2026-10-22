@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.67",
-  "file": "agent-mc-world-0.5.7-rc.67-0f3d868d.tgz",
-  "sha256": "0f3d868d456bece242b70be8dbbe42aa698bf0ed955e3ded8432c8d5e9d7f84d",
+  "version": "0.5.7-rc.68",
+  "file": "agent-mc-world-0.5.7-rc.68-6bdd0500.tgz",
+  "sha256": "6bdd0500b34016732714a326a0d6f92da478b4a3f9883e715199aa4e52b3b66f",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "9d9893ea9cb8aca185a04a0b6aa0983bd008b78f",
-  "upstreamBase": "d2bceaf7c1e7f3bbbc3a0be2ca429a30c4abc714",
+  "sourceCommit": "f82e7b158afbc4a7fc1c18a72cb9341040624775",
+  "upstreamBase": "308d3502",
   "channel": "unpublished-source-candidate",
   "viewerIncluded": true,
   "viewer": {

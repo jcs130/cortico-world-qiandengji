@@ -1,5 +1,7 @@
 # 千灯纪适配与资料包
 
+开发候选 rc.12 依赖共享核心 rc.68 的同连接登录恢复，服务端确认后才重新放行操作。登录机制由核心实现，本包不持有凭据或复制认证状态机。
+
 `agent-mc-qiandengji` 是可选服务器扩展，不是 World 插件。它依赖中立 `agent-mc-world` 核心，不依赖或加载 Cortico。DSH 和其他宿主可以显式创建 `MymcAgentRuntime`，人格、目标、主模型和长期记忆仍由自己的宿主管理。
 
 默认导出具名端口：`MymcAgentRuntime`、`MymcWorld`、配置与校验、资料目录、`QIANDENGJI_PACK`。`/host-decisions` 提供显式宿主快决策服务。启用前配置服务地址；不配置时没有额外模型请求。

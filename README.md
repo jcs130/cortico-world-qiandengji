@@ -5,6 +5,8 @@
 
 当前公测安装 `cortico-world-qiandengji@next`（0.4.1-rc.10），使用核心 0.5.7-rc.63 和服务器包 0.5.0-rc.10；已按官方 Cortico 0.2.4 / API 6 验收。
 
+开发候选 `0.4.1-rc.13` 使用共享核心 `0.5.7-rc.68`，在同一连接收到可信的登录失效回执后，使用已配置凭据有限重登录。提交密码后仍等待服务端确认；密码错误和两步验证不会反复尝试。本地归档包含原有观战资源，音频沿用首次准备与缓存机制；源码候选尚未发布到 npm。
+
 **首要项目是通用核心包 `agent-mc-world`**，唯一源码位于 [minecraft-ai-friend/packages/agent-mc-world](https://github.com/jcs130/minecraft-ai-friend/tree/main/packages/agent-mc-world)。本仓库是核心的消费端，维护 Cortico API 6 薄 World 适配器和可选千灯纪服务器扩展；宿主兼容版本以公开子包的 `peerDependencies` 为准。
 
 通用感知、动作、导航、背包与合成、脚本与技能库、游戏记忆、学习评估和快决策状态/候选契约，先在核心实现并公开导出，供不同大模型和宿主通过 SDK/MCP/公开接口复用。本仓库负责接口映射、配置和生命周期，以及显式选择的服务器协议；不单独维护可米专用的通用游戏能力。
