@@ -2,8 +2,9 @@
 
 ## 0.4.1-rc.11
 
-- Consume shared core rc.66: all vanilla shulker boxes participate in container discovery, historical records, interaction and navigation protection.
+- Consume shared core rc.67: all vanilla shulker boxes participate in container discovery, historical records, interaction and navigation protection.
 - Keep upstream compiled child processes independent of the development TypeScript loader and stop retries after an exact-cell placement denial.
+- Distinguish a satisfied travel destination from an actually dispatched server command.
 - Verify public API 6 consumers with Cortico 0.2.5 and retain the private API 5 compatibility check.
 
 ## 0.4.1-rc.10

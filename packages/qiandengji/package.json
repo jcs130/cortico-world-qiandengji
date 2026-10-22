@@ -24,7 +24,7 @@
     }
   },
   "dependencies": {
-    "agent-mc-world": "^0.5.7-rc.66",
+    "agent-mc-world": "^0.5.7-rc.67",
     "vec3": "0.2.0"
   },
   "engines": {
