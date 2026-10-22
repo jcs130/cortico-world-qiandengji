@@ -28,6 +28,12 @@
 
 # Changelog
 
+## 0.4.1-rc.12
+
+- Put ordinary Minecraft and the optional 千灯纪 RPG pack in the first connection step; keep protocol and viewer port optional.
+- Reopen an already connected, unchanged account without restarting the World or cancelling its current body task. Changed settings and disconnected sessions remain reconnectable.
+- Explain installation, independent World state, shared host models and on-demand game guides using the same API 6 extension contract.
+
 ## 0.4.1-rc.7
 
 - Add the passive presentation export declaration using the independent core public types.

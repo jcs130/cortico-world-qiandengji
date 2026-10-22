@@ -8,15 +8,16 @@ import { join } from 'node:path';
 
 function fixture() {
   const cfg = { ...MYMC.defaults(), viewerPort: 0 };
+  let connection: any = null;
   const engine: World = { id: 'mymc', tools: () => [], envPromptVars: () => ({}), start: vi.fn(async () => {}), stop: vi.fn(async () => {}),
     console: () => ({ panels: [{ id: 'connection', title: 'login' }],
-      invoke: vi.fn(async (panel, method) => ({ panel, method })), connection: null }) };
+      invoke: vi.fn(async (panel, method) => ({ panel, method })), connection }) };
   const persist = vi.fn((patch: Partial<typeof cfg>) => Object.assign(cfg, patch));
   const restart = vi.fn(async () => { if (cfg.enabled) await world.start({} as WorldHost); else await world.stop(); });
   const ctx = { cfg, persist, restart, dataDir: '', timezone: 'UTC', botName: 'Fixture' };
   const world = withQuickStart(engine, ctx, candidate => MYMC.preflight?.({ cfg: candidate }));
   const invoke = (method: string, form?: unknown) => world.console!().invoke!('quick-start', method, form === undefined ? [] : [form]);
-  return { cfg, world, ctx, invoke, persist, restart };
+  return { cfg, world, ctx, invoke, persist, restart, setConnection: (value: unknown) => { connection = value; } };
 }
 
 describe('operator quick setup through official WorldContext ports', () => {
@@ -44,6 +45,21 @@ describe('operator quick setup through official WorldContext ports', () => {
     expect(f.cfg.enabled).toBe(false); expect(f.restart).not.toHaveBeenCalled();
     await f.invoke('stop'); expect(f.cfg.host).toBe('2001:db8::1'); expect(f.cfg.port).toBe(25577);
     expect(f.restart).toHaveBeenCalledOnce(); expect(f.cfg.enabled).toBe(false);
+  });
+  it('reuses a connected saved identity without restarting or cancelling body work', async () => {
+    const f = fixture();
+    const form = { address: 'example.test:25577', username: 'Alice', auth: 'offline', version: 'auto', serverPack: 'none', viewerPort: 0 };
+    await f.invoke('start', form);
+    f.setConnection({ ready: true, phase: 'ready' });
+    f.persist.mockClear(); f.restart.mockClear();
+    const result = await f.invoke('start', form);
+    expect(result).toMatchObject({ alreadyConnected: true, mounted: true, connection: { ready: true } });
+    expect(f.persist).not.toHaveBeenCalled(); expect(f.restart).not.toHaveBeenCalled();
+    await f.invoke('start', { ...form, username: 'Bob' });
+    expect(f.cfg.username).toBe('Bob'); expect(f.restart).toHaveBeenCalledOnce();
+    f.setConnection({ ready: false, phase: 'disconnected' }); f.restart.mockClear();
+    await f.invoke('start', { ...form, username: 'Bob' });
+    expect(f.restart).toHaveBeenCalledOnce();
   });
   it('uses server prefixes only when the operator explicitly selects the server pack', async () => {
     const f = fixture();

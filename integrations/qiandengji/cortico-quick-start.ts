@@ -79,6 +79,12 @@ export function withQuickStart<T extends World>(world: T, ctx: WorldContext<Mymc
     // Validation precedes any disk write or interruption. Allowlist form fields only.
     const patch = method === 'stop' ? {} : patchFrom(args[0]);
     if (method === 'start' && ctx.cfg.provider === 'java-client') throw new Error('当前使用原生客户端，请在高级配置中连接；快捷启动用于 Mineflayer。');
+    // Opening an App that is already connected must not cancel its body task.
+    // A failed/disconnected connection remains retryable through the same button.
+    if (method === 'start' && ctx.cfg.enabled && mounted && state().connection?.ready === true
+      && Object.entries(patch).every(([key, value]) => Object.is(ctx.cfg[key as keyof MymcConfigSection], value))) {
+      return { saved: true, requested: method, alreadyConnected: true, ...state() };
+    }
     const perform = async () => {
       if (method === 'stop') assetAbort?.abort(new Error('启动已取消。'));
       ctx.persist!({ ...patch, ...(method === 'save' ? {} : { enabled: method === 'start' }) });
