@@ -1,3 +1,11 @@
+## 0.4.1-rc.19
+
+- Pin shared MC core rc.80: matched quality/SDK-work evaluation, Pareto recommendations and explicit optimization usage.
+- Practice compare/stage reuse the scoped original method library, validate exact source and preserve parent/selected versions. Unknown save results are reconciled rather than replayed.
+- Expose a bounded practice continuation index in request facts; isolated results remain separate from actual-world execution and adoption.
+- Optional reflection errors retain safe stage diagnostics and continue independent evaluation without replaying trials or inventing lessons.
+- Includes prior compatible combat choices, proactive engagement and optional journey detours.
+
 ## 0.4.1-rc.18
 
 - Pin shared MC core rc.79: one categorical fast request can select an explicit step-plus-ability combination, with fresh checks and separate component receipts.

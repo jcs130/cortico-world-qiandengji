@@ -1,6 +1,6 @@
 /** Cortico supplies cognition; shared core owns practice, evidence and game-memory semantics. */
 import {join} from 'node:path';
-import {HARNESS2_PRACTICE_TOOL,Harness2PracticeService,createPhysicsMethodPractice,createPracticeGameMemory,parseHarness2ModelReply} from 'agent-mc-world/learning';
+import {HARNESS2_PRACTICE_TOOL,Harness2PracticeService,createPhysicsMethodPractice,createPracticeGameMemory,createPracticeCandidateStager,parseHarness2ModelReply} from 'agent-mc-world/learning';
 import {harness2WorkerPath,type Harness2Options} from 'agent-mc-world/decisions';
 import type {ToolDef,World,WorldHost,WorldRequestFacts} from 'agent-mc-world/contracts';
 
@@ -21,7 +21,8 @@ const capability='Java 1.21.1 flat-ground collision physics; mc.state() gives sn
 export function withCorticoPractice<T extends World>(world:T,cfg:()=>CorticoPracticeConfig|undefined,dataDir:string):T {
   const tools=world.tools.bind(world),start=world.start.bind(world),stop=world.stop.bind(world),console=world.console?.bind(world);
   let service:Harness2PracticeService|null=null,host:WorldHost|null=null;
-  const facts=()=> (world as T & {requestFacts?():WorldRequestFacts|null}).requestFacts?.()??null;
+  const originalFacts=(world as T & {requestFacts?():WorldRequestFacts|null}).requestFacts?.bind(world);
+  const facts=()=>originalFacts?.()??null;
   const call=async(name:string,args:Record<string,unknown>,signal:AbortSignal)=>{
     signal.throwIfAborted();const tool=tools().find(t=>t.name===name);if(!tool||!host)throw Error('Minecraft tool/host unavailable');
     const result=await tool.handler(args,{role:'harness2-practice',log:host.log,signal});
@@ -44,19 +45,28 @@ export function withCorticoPractice<T extends World>(world:T,cfg:()=>CorticoPrac
       const practice=createPhysicsMethodPractice({directory:join(root,'methods'),seeds:[1,2],
         binding:{instanceId:'isolated-harness2-physics',realm:'isolated-harness2-physics',account:'practice',agent:'practice',isolated:true}});
       const memory=createPracticeGameMemory({call:(args,signal)=>call('mymc_memory',args,signal)});
+      const stageCandidate=createPracticeCandidateStager({scope:()=>facts()?.experience?.scope??null,call:async(args,signal)=>{
+        signal.throwIfAborted();const script=tools().find(t=>t.name==='mymc_script');if(!script||!host)throw Error('Minecraft script port unavailable');
+        const reply=await script.handler(args,{role:'harness2-practice',log:host.log,signal});return typeof reply==='string'?{text:reply}:reply;
+      }});
       service=new Harness2PracticeService({directory:join(root,'jobs'),worker:{...config.worker,script:config.worker.script||harness2WorkerPath()},
         model:{id:config.modelId||'cortico-minecraft-method/v1',generate:async(request,signal)=>{
           const reply=await cognition.request({brief:JSON.stringify(request),tools:[],hint:{context:'task',kind:'minecraft-method',rounds:1},signal});
           signal.throwIfAborted();if('error' in reply)throw Error(reply.error);return parseHarness2ModelReply(reply.text);
         }},practice:practice.executor,fixtures:practice.fixtures,capability,budget:config.budget,
         source:()=>{const scope=facts()?.experience?.scope;return scope?{scope,instanceId:`${scope.realm}/${scope.account}/${scope.agent}`}:null;},
-        readMethod:(id,revision,signal)=>call('mymc_script',{library:{op:'read',id,revision}},signal),...memory,
+        readMethod:(id,revision,signal)=>call('mymc_script',{library:{op:'read',id,revision}},signal),stageCandidate,...memory,
         settled:async event=>{await h.pushEvent({source:world.id,type:`${world.id}.practice`,ts:new Date().toISOString(),
           text:`Harness² ${event.id}: ${event.status}; eligible=${event.eligible??'unknown'}, adopted=false. 用 mymc_practice status/result 查看原始试跑与适用范围。`,
           meta:{...event,adopted:false}},{trigger:'piggyback'});}});
     }catch(error){await stop();host=null;throw error;}
   };
   world.stop=async()=>{try{await service?.close();}finally{service=null;host=null;await stop();}};
+  if(originalFacts)(world as T & {requestFacts():WorldRequestFacts|null}).requestFacts=()=>{
+    const base=facts();if(!base||!service||!cfg()?.enabled)return base;
+    const text='[Minecraft 方法改进索引] '+JSON.stringify(service.context()).replaceAll('mc_script','mymc_script').replaceAll('mc_practice','mymc_practice');
+    return {...base,text:base.text+'\n'+text,parts:[...(base.parts??[{key:'snapshot',text:base.text}]),{key:'practice',text}]};
+  };
   world.console=()=>{const base=console?.();return {...base,panels:[...(base?.panels??[]),
     {id:'practice',title:'Harness² 方法练习',description:'隔离试跑、对照及记忆投递；候选尚未在线采用。',getMethods:['state']}],
     config:[...(base?.config??[]),{id:'world:mymc:practice',owner:'world:mymc',schema:{type:'object',title:'Harness² 方法练习',properties:{

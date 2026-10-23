@@ -5712,7 +5712,7 @@
         "read",
         "write"
       ],
-      "description": "Improve an explicitly selected saved Minecraft method through Harness² in a separate practice environment. help describes capabilities; start returns acceptance immediately, status/result read original measured trials, cancel stops that job. result expands candidate source only on demand. Existing game memory stores evidence-linked lessons. Practice eligibility never installs a method: validate/save a candidate in the source library, execute it in a suitable real task, review actual terminal/net change, then explicitly adopt using mymc_script library. No production body control or weight training.",
+      "description": "Improve an explicitly selected saved Minecraft method through Harness² in a separate practice environment. help describes capabilities; start returns acceptance immediately, status/result read original measured trials, cancel stops that job. result expands candidate source only on demand. compare ranks matched completed jobs by quality and actual SDK work. stage validates and saves a measured candidate in the original method library without running or adopting it. Existing game memory stores evidence-linked lessons. Practice eligibility never installs a method: validate/save a candidate in the source library, execute it in a suitable real task, review actual terminal/net change, then explicitly adopt using mymc_script library. No production body control or weight training.",
       "parameters": {
         "type": "object",
         "additionalProperties": false,
@@ -5724,6 +5724,8 @@
               "start",
               "status",
               "result",
+              "compare",
+              "stage",
               "cancel"
             ]
           },
@@ -5759,6 +5761,23 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 4
+          },
+          "objective": {
+            "type": "string",
+            "enum": [
+              "success",
+              "balanced"
+            ]
+          },
+          "ids": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,63}$"
+            }
           }
         },
         "required": [

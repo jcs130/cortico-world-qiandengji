@@ -4,6 +4,9 @@ import {HARNESS2_PRACTICE_TOOL} from 'agent-mc-world/learning';
 import type {World,WorldHost} from 'agent-mc-world/contracts';
 import {nullLogger} from 'agent-mc-world/client';
 import {mymcEngineConfig,MYMC_DEFAULTS} from '../integrations/qiandengji/config.ts';
+import {mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 const host={log:nullLogger()} as WorldHost;
 function rig(){let started=0,stopped=0;
   const world:World={id:'mymc',tools:()=>[],envPromptVars:()=>({}),start:async()=>{started++;},stop:async()=>{stopped++;},console:()=>({panels:[]})};
@@ -11,6 +14,18 @@ function rig(){let started=0,stopped=0;
   return {world,counts:()=>({started,stopped})};
 }
 describe('Cortico isolated learning adapter',()=>{
+  it('delivers a bounded practice continuation index without source expansion or starting background work',async()=>{
+    const r=rig(),directory=mkdtempSync(join(tmpdir(),'mc-practice-facts-'));let calls=0;
+    Object.assign(r.world,{requestFacts:()=>({text:'current snapshot',snapshotTypes:[],parts:[{key:'life',text:'current snapshot'}],
+      experience:{scope:{realm:'fixture',account:'fixture',agent:'fixture'},observation:null}})});
+    const world=withCorticoPractice(r.world,()=>({...structuredClone(PRACTICE_DEFAULTS),enabled:true,worker:{command:process.execPath,workspace:directory}}),directory);
+    try{await world.start({...host,cognition:{request:async()=>{calls++;return {error:'should not run'};}}} as any);
+      const facts=(world as any).requestFacts(),part=facts.parts.find((p:any)=>p.key==='practice');
+      expect(part.text).toContain('mymc_practice');expect(part.text).toContain('stage');expect(part.text.length).toBeLessThan(900);
+      expect(facts.parts.find((p:any)=>p.key==='life').text).toBe('current snapshot');expect(calls).toBe(0);
+      expect(await world.console!().invoke!('practice','state',[])).toMatchObject({enabled:true,jobs:[]});
+    }finally{await world.stop();rmSync(directory,{recursive:true,force:true});}
+  });
   it('keeps host worker/model configuration out of the Mineflayer engine configuration',()=>{
     const config={...structuredClone(MYMC_DEFAULTS),harness2:{...structuredClone(PRACTICE_DEFAULTS),enabled:true,modelId:'fixture'}};
     expect(mymcEngineConfig(config).harness2).toBeUndefined();
