@@ -1,3 +1,9 @@
+## 0.4.1-rc.16
+
+- Pin Agent MC World rc.75 with bounded original failure details and the engine-free execution reading SDK. Existing World tools, server rules and model ownership stay with their current owners.
+- Terminal evidence retains task identity, recovery conditions, truncation and client-visible changes. No implicit action, model call or goal completion is added.
+- Keep generation-directory annotations in full help while omitting them from compact request declarations; validation fields and the original generation contract remain available.
+
 ## 0.4.1-rc.15
 
 - Pin Agent MC World rc.72 with the shared engine-free context reading SDK; preserve existing World tool, event and server contracts. The private Bot consumes the same packed core.
