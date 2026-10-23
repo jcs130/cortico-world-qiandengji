@@ -78,7 +78,7 @@ export function createCorticoActivityMapper(sink: ActivitySink, { now = () => ne
         const sampled = combatFrames.get(key);
         const frame = sampled && (data.connectionGeneration === undefined || sampled.battlefield.connectionGeneration === data.connectionGeneration) ? sampled : null;
         if (event === 'result') {
-          combatResults.set(key, { application: data.application, choice: data.choice, outcome: data.outcome });
+          combatResults.set(key, { application: data.application, choice: data.choice, outcome: data.outcome, selections:data.selections,candidates:data.candidates });
           if (combatResults.size > 64) combatResults.delete(combatResults.keys().next().value!);
         }
         const result = event === 'observation' ? { ...combatResults.get(key), ...data } : data;

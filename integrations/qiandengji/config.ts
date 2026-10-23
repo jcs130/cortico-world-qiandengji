@@ -33,6 +33,7 @@ export type MymcConfigSection = MinecraftConfigSection & {
     enabled: boolean; endpoint?: string; mode: 'shadow' | 'act';
     connection?: 'auto' | 'host' | 'endpoint'; decisionProvider?: string;
     model?: string; apiKeyEnv?: string;
+    selectionMode?: 'single'|'compatible';
     timeoutMs?: number; minIntervalMs?: number; minConfidence?: number; minMargin?: number; maxAgeMs?: number;
   } };
   combatOptions: CombatExecutionPolicy;
@@ -142,6 +143,8 @@ export const MYMC_CONFIG_GROUP: ConfigGroup = {
       description: '完整 HTTP(S) 地址；服务需支持 state/questions 与 answers/probabilities 协议，不能直接填普通聊天接口。不扫描其他端点。' },
     'worlds.mymc.hostDecisions.combat.mode': { type: 'string', enum: ['shadow', 'act'], title: '快战术模式', 'x-hot': false,
       description: 'shadow 仅观察建议；act 将选择提交核心再次校验。未配置或出错时原近战、自保与规则施法继续。' },
+    'worlds.mymc.hostDecisions.combat.selectionMode': {type:'string',enum:['single','compatible'],title:'战术动作组合','x-hot':false,
+      description:'compatible 将短步移动与就绪法术列为可组合选项，一次分类选择后逐项核验；撤离、换目标和方法脚本不混发。single 保留原单动作菜单。'},
     'worlds.mymc.hostDecisions.combat.model': { type: 'string', title: 'Jev / System One 模型名', 'x-hot': false,
       description: '按你的服务填写；留空使用该服务的默认模型。' },
     'worlds.mymc.hostDecisions.combat.apiKeyEnv': { type: 'string', title: '快决策密钥环境变量名', 'x-hot': false,

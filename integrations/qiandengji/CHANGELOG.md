@@ -1,3 +1,10 @@
+## 0.4.1-rc.18
+
+- Pin shared MC core rc.79: one categorical fast request can select an explicit step-plus-ability combination, with fresh checks and separate component receipts.
+- Observed journey discoveries wake the host with the original task/destination and optional safe-checkpoint detours. No forced stops, fixed village routine or hidden model loop.
+- Reuse existing perception and bounded recent notification indexes; current context retains a short attributed reading.
+- Decision details retain the original distribution, per-component application results and later observations.
+
 ## 0.4.1-rc.17
 
 - Pin shared MC core rc.78: proactive combat uses the actual pursuit pool before injury, pauses resumable work and restores its checkpoint; enemy watching is reserved for explicit authored programs.
