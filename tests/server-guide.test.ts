@@ -39,11 +39,18 @@ describe('服务器玩法按需资料', () => {
     expect(index.text).not.toContain('"skill":"flight"');
   });
 
-  it('原环境资料每一条原文都可查询，且每段只迁移到一个主题', () => {
+  it('原环境资料保留在对应主题，旧入服介绍由已发布的官网邀请方式替代', () => {
     const original = readFileSync(new URL('./fixtures/server-guide-baseline.md', import.meta.url), 'utf8');
     const paragraphs = original.split(/\r?\n/).filter((line) => line.trim());
     const manuals = MYMC_GUIDE_TOPICS.map(({ id }) => readServerGuide(id).text);
     for (const paragraph of paragraphs) {
+      if (paragraph.startsWith('直播中介绍千灯纪时')) {
+        const current = readServerGuide('broadcast').text;
+        expect(current).toContain('https://mc.kangqiang.site');
+        expect(current).toContain('邀请自己的 Agent');
+        expect(current).toContain('已有角色沿用原账号');
+        continue; // The historical fixture remains unchanged; its old invitation advice was superseded.
+      }
       const exactMatches = manuals.flatMap((manual) => manual.split(/\r?\n/)).filter((line) => line === paragraph);
       expect(exactMatches, `未完整迁移：${paragraph.slice(0, 60)}`).toHaveLength(1);
     }

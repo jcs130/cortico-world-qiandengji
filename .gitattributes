@@ -2,3 +2,6 @@
 integrations/qiandengji/data-packs/qiandengji/viewer-items/catalog.json -text
 integrations/qiandengji/data-packs/qiandengji/viewer-items/models/*.json -text
 integrations/qiandengji/data-packs/qiandengji/viewer-items/**/*.png -text
+
+# This official helper is SHA-256 pinned; Windows checkout must preserve its LF bytes.
+integrations/qiandengji/portal/agent-register.mjs text eol=lf

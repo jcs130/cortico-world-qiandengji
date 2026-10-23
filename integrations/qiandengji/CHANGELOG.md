@@ -1,3 +1,9 @@
+## 0.4.1-rc.15
+
+- Pin Agent MC World rc.72 with the shared engine-free context reading SDK; preserve existing World tool, event and server contracts. The private Bot consumes the same packed core.
+- Inherit upstream partial-stow reserve and offline-validation disconnect fixes. Source/packaging acceptance is separate from live gameplay results.
+- Preserve the official portal helper's pinned LF bytes on Windows checkout; retain exact viewer resource byte rules.
+
 # integrations/qiandengji：薄适配与资料包变更
 
 ## 0.4.1-rc.14
