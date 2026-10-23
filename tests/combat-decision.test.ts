@@ -273,11 +273,11 @@ describe('physically available combat candidates', () => {
     const choices = combatReactions(bot, f, cfg, control);
     expect(choices.filter(c => c.kind === 'step')).toHaveLength(2);
     expect(choices.some(c => c.kind === 'retreat')).toBe(true);
-    expect(choices.map(c => c.kind)).toEqual(['retreat', 'track', 'step', 'step']);
-    expect(combatReactions(bot, f, cfg, { ...control, sinceHitMs: 20 }).map(c => c.kind)).toEqual(['retreat', 'track']);
-    expect(combatReactions(bot, f, cfg, { ...control, canStep: false }).map(c => c.kind)).toEqual(['retreat', 'track']);
+    expect(choices.map(c => c.kind)).toEqual(['retreat', 'step', 'step']);
+    expect(combatReactions(bot, f, cfg, { ...control, sinceHitMs: 20 }).map(c => c.kind)).toEqual(['retreat']);
+    expect(combatReactions(bot, f, cfg, { ...control, canStep: false }).map(c => c.kind)).toEqual(['retreat']);
     bot.blockAt = () => null;
-    expect(combatReactions(bot, f, cfg, control).map(c => c.kind)).toEqual(['retreat', 'track']);
+    expect(combatReactions(bot, f, cfg, control).map(c => c.kind)).toEqual(['retreat']);
   });
 
   it('removes casts for unknown cost, missing abilities, occlusion and changed mana', () => {

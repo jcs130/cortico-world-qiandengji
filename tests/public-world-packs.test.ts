@@ -14,6 +14,8 @@ describe('one public World, explicitly selected server pack', () => {
       const value=keys.reduce((object:any,key)=>object?.[key],cfg);
       expect(value,path).not.toBeUndefined();
     }
+    expect(cfg.viewDistance).toBe(12); // Existing native 'far' default, now explicit for the host contract.
+    expect(mymcEngineConfig({...cfg,viewDistance:16}).viewDistance).toBe(16);
     expect(cfg.hostDecisions?.combat?.enabled).toBe(false);
     expect(cfg.hostDecisions?.combat?.connection).toBe('auto');
     expect(cfg.hostDecisions?.combat?.decisionProvider).toBe('');

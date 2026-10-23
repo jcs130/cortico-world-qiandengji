@@ -71,6 +71,9 @@ const baseRepeatSuccessFallback = (MINECRAFT_DEFAULTS as {
 
 export const MYMC_DEFAULTS: MymcConfigSection = {
   ...structuredClone(MINECRAFT_DEFAULTS),
+  // Cortico requires every visible setting to have a concrete default.
+  // Mineflayer's existing omitted value is 'far' = 12 chunks; keep that behavior.
+  viewDistance: 12,
   toolParameterDescriptions: 'inline',
   hostDecisions: { choice: { decisionProvider: '' }, combat: {
     ...COMBAT_DECISION_DEFAULTS, connection: 'auto', decisionProvider: '', model: '', apiKeyEnv: '',

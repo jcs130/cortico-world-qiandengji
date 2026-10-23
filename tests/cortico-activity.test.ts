@@ -2,6 +2,25 @@ import { describe, it, expect } from 'vitest';
 import { activityConsoleUrl, createCorticoActivityMapper, connectCorticoActivity } from '../integrations/qiandengji/cortico-activity.ts';
 import { createActivityOutputTap } from '../integrations/qiandengji/cortico-activity-tap.ts';
 describe('optional Cortico activity adapter', () => {
+  it('joins a combat proposal and rejection by decision identity and displays the sampled hostile without claiming execution', () => {
+    const rows:any[]=[],mapper=createCorticoActivityMapper(row=>rows.push(row));
+    const scope={decisionId:'decision-a:9',id:9,connectionGeneration:1};
+    mapper.frame({t:'runlog',entry:{run:'r1',seq:10,ts:'2026-10-23T11:00:00Z',event:'host.combat.requested',data:{...scope,
+      frame:{battlefield:{sampledAtMs:1000,connectionGeneration:1,action:{fighting:true,targetEntityId:7},actors:[{entityId:7,type:'phantom',relation:'hostile'}]},candidates:[{kind:'track',targetId:7}]}}}});
+    mapper.frame({t:'runlog',entry:{run:'r1',seq:11,ts:'2026-10-23T11:00:01Z',event:'host.combat.result',data:{...scope,
+      choice:'option_1',candidate:{kind:'track',targetId:7},outcome:'scene-changed',application:{attempted:false,dispatched:false,keptCurrent:false,reason:'scene-changed'}}}});
+    expect(rows[0].id).toBe(rows[1].id);expect(rows[0].status).toBe('started');expect(rows[1].status).toBe('failed');
+    expect(rows[1].text).toContain('未执行：场景变化');expect(rows[1].text).toContain('停火盯防');expect(rows[1].text).toContain('敌对');
+    expect(rows[1].result.display).toMatchObject({goalCompleted:false,effectVerified:false,target:{entityId:7,type:'phantom',relation:'hostile'}});
+    mapper.frame({t:'runlog',entry:{run:'r2',seq:1,ts:'2026-10-23T11:00:02Z',event:'host.combat.result',data:{...scope,
+      choice:'option_1',candidate:{kind:'track',targetId:7},outcome:'sent',application:{dispatched:true}}}});
+    expect(rows[2].id).not.toBe(rows[1].id);expect(rows[2].status).toBe('accepted');
+    expect(rows[2].result.display.target.relation).toBeNull();expect(rows[2].result.display.effectVerified).toBe(false);
+    mapper.frame({t:'runlog',entry:{run:'r2',seq:2,ts:'2026-10-23T11:00:03Z',event:'host.combat.observation',data:{...scope,
+      candidate:{kind:'track',targetId:7},observation:{verified:true,displacement:0}}}});
+    expect(rows[3].id).toBe(rows[2].id);expect(rows[3].result.application.dispatched).toBe(true);
+    expect(rows[3].result.display).toMatchObject({phase:'observed',effectVerified:false,goalCompleted:false});
+  });
   it('accepts only an explicitly configured loopback origin and remains off when empty', () => {
     expect(activityConsoleUrl('')).toBeNull(); expect(activityConsoleUrl('http://127.0.0.1:7789')).toBe('http://127.0.0.1:7789');
     for (const url of ['http://example.org', 'http://user:password@127.0.0.1:7789', 'file:///tmp', 'http://127.0.0.1:7789/api/status']) expect(() => activityConsoleUrl(url)).toThrow();

@@ -1,3 +1,11 @@
+## 0.4.1-rc.17
+
+- Pin shared MC core rc.78: proactive combat uses the actual pursuit pool before injury, pauses resumable work and restores its checkpoint; enemy watching is reserved for explicit authored programs.
+- Namespaced entity rules match native vanilla IDs; default choices retain ongoing attacks and expose available spells.
+- Decision activity joins request/result identity and uses the public core display contract to distinguish candidates, refusal, keep and accepted dispatch; target relations remain attributed to request samples.
+- Includes upstream bounded voxel continuation, paged observations and trustworthy MCP receipts. No model ownership or credential changes.
+- Declare the newly visible view-distance default as Mineflayer's existing 12 chunks so API 5/6 configuration validation remains complete.
+
 ## 0.4.1-rc.16
 
 - Pin Agent MC World rc.75 with bounded original failure details and the engine-free execution reading SDK. Existing World tools, server rules and model ownership stay with their current owners.

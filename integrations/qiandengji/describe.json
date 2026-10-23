@@ -348,7 +348,7 @@
     },
     {
       "name": "mymc_combat_tactic",
-      "description": "Read or update combat spell rules and an agent-authored fast tactic program. {} reads it; omitted fields keep their current values; {enabled:false} clears it. A spell list of server-listed combat spell IDs sets priority order while fighting; healAtOrBelow is the optional ability provider healing threshold. Without a provider it never sends a command. Nonempty rules replace the unconditional spell priority: ordered observed conditions are rechecked each combat tick and the first ready match wins; no match means no automatic offensive cast. rules:[] restores spells/default priority. The host selects candidates from {battlefield:true}; submit {choice:{candidate,tacticRevision,connectionGeneration}} for fresh validation. No inference runs in this extension. program:{name,code,params?} installs your JavaScript synchronous function body with frame and params; return {candidates,instructions}. frame.actionPool contains currently executable casts, engagements and collision-checked directions; you may select, reorder or relabel them, or construct step destinations 0.5 to 1.6 blocks away. Read actors from frame.battlefield.actors (relation, health, distance, lineOfSight); candidate kinds are cast, engage, step, retreat, track and method. Track maintains a bounded distance lease without attacking, including before combat starts. There is no frame.snapshot.enemies or melee candidate. The program constructs choices from fresh battlefield facts independently of the main model; the fast model chooses and the combat controller executes. routines:[{id,intent,procedure,params?,durationMs?}] registers exact saved mymc_script library references in the fast menu; routines:[] removes them. Read and validate/save a method first. Registration checks its immutable version and does not execute it or claim it effective. A method option starts that existing script only when the body is free; its original run ID, SDK trace and terminal remain readable with mymc_script. An installed program may filter/reorder method options from actionPool; its returned priority order is preserved. Direct steps last at most 700ms and share the combat body lease; survival, task ownership and collisions remain checked. Use program:null to remove it. No imports, files, network or raw bot; 50ms worker execution budget, separate 500ms response deadline. A scheduling timeout (including cold startup) allows only one retry on a new sample at least one second later; otherwise revise the program. Built-in choices remain a fallback; budgets are not raised. {decisions:true} lists recent submitted choices; {decision:id} reads the receipt. Sending an action does not prove a successful encounter. Keep source and previous versions in your own methods library; compare combat reports before calling a revision an improvement. The World checks observed spell availability, mana, targets and announced cooldowns; server replies still decide success. Settings and the last five observed combat receipts persist per world across restarts. {} also reads current capability constraints and recent receipt IDs; {report:id} expands one receipt. Receipts are observations for reviewing and revising a tactic, not learned conclusions.",
+      "description": "Read or update combat spell rules and an agent-authored fast tactic program. {} reads it; omitted fields keep their current values; {enabled:false} clears it. A spell list of server-listed combat spell IDs sets priority order while fighting; healAtOrBelow is the optional ability provider healing threshold. Without a provider it never sends a command. Nonempty rules replace the unconditional spell priority: ordered observed conditions are rechecked each combat tick and the first ready match wins; no match means no automatic offensive cast. rules:[] restores spells/default priority. The host selects candidates from {battlefield:true}; submit {choice:{candidate,tacticRevision,connectionGeneration}} for fresh validation. No inference runs in this extension. program:{name,code,params?} installs your JavaScript synchronous function body with frame and params; return {candidates,instructions}. frame.actionPool contains currently executable casts, engagements and collision-checked directions; you may select, reorder or relabel them, or construct step destinations 0.5 to 1.6 blocks away. Read actors from frame.battlefield.actors (relation, health, distance, lineOfSight); candidate kinds are cast, engage, step, retreat, track and method. Default choices support proactive engage or retreat before injury; resumable body work pauses and resumes. Track is only an explicit authored action-pool primitive: it watches without attacking and stops current attacks. Follow tasks remain explicit body tasks. There is no frame.snapshot.enemies or melee candidate. The program constructs choices from fresh battlefield facts independently of the main model; the fast model chooses and the combat controller executes. routines:[{id,intent,procedure,params?,durationMs?}] registers exact saved mymc_script library references in the fast menu; routines:[] removes them. Read and validate/save a method first. Registration checks its immutable version and does not execute it or claim it effective. A method option starts that existing script only when the body is free; its original run ID, SDK trace and terminal remain readable with mymc_script. An installed program may filter/reorder method options from actionPool; its returned priority order is preserved. Direct steps last at most 700ms and share the combat body lease; survival, task ownership and collisions remain checked. Use program:null to remove it. No imports, files, network or raw bot; 50ms worker execution budget, separate 500ms response deadline. A scheduling timeout (including cold startup) allows only one retry on a new sample at least one second later; otherwise revise the program. Built-in choices remain a fallback; budgets are not raised. {decisions:true} lists recent submitted choices; {decision:id} reads the receipt. Sending an action does not prove a successful encounter. Keep source and previous versions in your own methods library; compare combat reports before calling a revision an improvement. The World checks observed spell availability, mana, targets and announced cooldowns; server replies still decide success. Settings and the last five observed combat receipts persist per world across restarts. {} also reads current capability constraints and recent receipt IDs; {report:id} expands one receipt. Receipts are observations for reviewing and revising a tactic, not learned conclusions.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -443,7 +443,7 @@
                         "type": "string",
                         "pattern": "^[a-z][a-z0-9_:-]{0,63}$"
                       },
-                      "description": "Optional exact entity types to count; omitted counts all observed hostiles."
+                      "description": "Optional exact entity type IDs to count; bare IDs use the minecraft namespace (zombie = minecraft:zombie). Other namespaces remain distinct. Omitted counts all observed hostiles."
                     },
                     "hostilesAtLeast": {
                       "type": "integer",
@@ -632,7 +632,7 @@
         "properties": {
           "steps": {
             "type": "array",
-            "description": "steps 必须是实际 JSON 数组 [{\"skill\":...},...]，不要 stringify 成字符串。一步一个对象,skill 写技能名。* = 该字段适用的形态必填;? = 可选或条件参数。\n复杂形态、执行条件和完整示例用 mymc_help {\"skill\":\"技能名\"} 查询。\ncontrol(keys*,durationMs?,mode?,yawDeg?,pitchDeg?)\nlook(at*)\ngoto(at*,dimension?,exact?,walkOnly?,dryRun?)\ntransit(at*)\nswim(at*,dimension?,reserveOxygen?,maxDurationMs?,dryRun?)\ngoto_player(name*)\nfollow(name*)\nfind(target*,direction?,distance?,until?)\nflee(distance?)\nsurface()\nflight(at*,land?,dryRun?)\nland()\ncleanup(dryRun?)\ncollect(block*,count?,buried?,mature?,tool?)\nharvest(block*,at*,replant?,tool?)\nfish(at?)\ntunnel(at*,spiral?,dryRun?,tool?,until?)\nbuild(blueprint?,stopAfter?,rebindFrom?,confirm?,skipConflicts?,shape?,on?,anchors?,material*,temporary?,at?,fill?,dryRun?) — 材料放置：material+anchors（坐标数组）或 material+on（参照格/面）；单格可用 material+at，不能再给 anchors/on/shape。蓝图施工：blueprint+at，at 是蓝图原点。\nexcavate(shape*,anchors*,fill?,dryRun?,tool?)\nprobe(shape*,anchors*,fill?,slice?,where?) — 定位目标用 shape+anchors+where；空间切片用 shape:\"box\"+anchors+slice（x/y/z），不带 where，fill 省略或 solid。不要把两种观察混在同一步。\nobserve(mode*,sites?,bounds?,rays?)\nuse(item?,at?,target?,entityId?,index?,times?,open?,text?,back?,face?)\nride(target?,entityId?,to?,off?)\nlead(target?,to?,tolerance?,tie?,keep?,off?)\ncraft(item?,grid?,count?)\nsmelt(input*,count?,fuel*,at?)\nbrew(input*,bottle*,count?,fuel*,at?)\nenchant(at*,item*,index?)\nanvil(op*,item*,with?,name?,pick?,withPick?,at?)\ngrindstone(item*,with?,pick?,withPick?,at?)\neat(item*)\nattack(target*,mode?)\nequip(item?,pick?,hand?)\npickup(item?)\ntoss(item*,count?,at?,pick?,target?)\nstow(item*,count?,pick?,at?,into?)\ncompact()\norganize(target?,includeHotbar?,sort?,dryRun?,rules?,at?,into?)\ntake(item?,count?,at?,from?,all?,pick?)\nserver_travel(command*,at*,within?,dimension?) — 核验已知传送落点；已在范围内时命令未发送。查询、加入、启动等非传送命令用 chat.text，不用当前位置充当落点。\nchat(text*)\ngesture(name*,motion*)\n坐标写成 [x,y,z];at 是一个坐标,anchors 是一串坐标。\n每个分量是绝对数字,或 \"~\"/\"~-3\" 相对写法——原点是**这一步开始执行那一刻**我脚下那一格,\n所以 goto 之后接 \"~\" 指的是那个 goto 的落点。没有前后左右的写法。\n回执一律报解析后的绝对坐标。\n方块/物品/实体一律用英文 id(oak_log、cobblestone、skeleton);target 也收玩家名。\n类别名有两套:target/block/material 认 log、planks、ore、wool 这样的裸名(它们本身不是物品 id),把所有同类算进去;\nuntil 名单认带井号的 #ores/#logs/#leaves/#chests/#liquids/#beds。\n**写一个真实物品 id 就只认它自己**:obsidian 不会拿哭泣的黑曜石顶,torch 不是灵魂火把,\nchest 不是末影箱,dirt 不是土径 —— 要\"随便哪种木板\"就写裸类别名 planks。\ncount 一律 1-64;distance:flee 1-128,find 1-1024(不给 direction 时站着扫,最远 48)。\n\"needs\" 声明这一步依赖哪些更早的步(序号 1 起);\"needs\":[] = 独立步。缺省见字段说明。\n容器窗口在每单结束时关闭；from/into:\"open\" 的搬运和开窗步骤须在同一次 mymc_do.steps 中，不能跨单沿用窗口。\n每一步都会核验:判据由执行器按 (skill, 参数) 推,达成与落空都写进回执\n(「该步按『背包内原木 ≥5』核验:达成(实测 7)」)。",
+            "description": "steps 必须是实际 JSON 数组 [{\"skill\":...},...]，不要 stringify 成字符串。一步一个对象,skill 写技能名。* = 该字段适用的形态必填;? = 可选或条件参数。\n复杂形态、执行条件和完整示例用 mymc_help {\"skill\":\"技能名\"} 查询。\ncontrol(keys*,durationMs?,mode?,yawDeg?,pitchDeg?)\nlook(at*)\ngoto(at*,dimension?,exact?,walkOnly?,dryRun?)\ntransit(at*)\nswim(at*,dimension?,reserveOxygen?,maxDurationMs?,dryRun?)\ngoto_player(name*)\nfollow(name*)\nfind(target*,direction?,distance?,until?)\nflee(distance?)\nsurface()\nflight(at*,land?,dryRun?)\nland()\ncleanup(dryRun?)\ncollect(block*,count?,buried?,mature?,tool?)\nharvest(block*,at*,replant?,tool?)\nfish(at?)\ntunnel(at*,spiral?,dryRun?,tool?,until?)\nbuild(blueprint?,stopAfter?,rebindFrom?,confirm?,skipConflicts?,shape?,on?,anchors?,material*,temporary?,at?,fill?,dryRun?) — 材料放置：material+anchors（坐标数组）或 material+on（参照格/面）；单格可用 material+at，不能再给 anchors/on/shape。蓝图施工：blueprint+at，at 是蓝图原点。\nexcavate(shape*,anchors*,fill?,dryRun?,tool?)\nprobe(shape*,anchors*,fill?,slice?,where?) — 定位目标用 shape+anchors+where；空间切片用 shape:\"box\"+anchors+slice（x/y/z），不带 where，fill 省略或 solid。不要把两种观察混在同一步。\nobserve(mode*,sites?,bounds?,cursor?,format?,rays?)\nuse(item?,at?,target?,entityId?,index?,times?,open?,text?,back?,face?)\nride(target?,entityId?,to?,off?)\nlead(target?,to?,tolerance?,tie?,keep?,off?)\ncraft(item?,grid?,count?)\nsmelt(input*,count?,fuel*,at?)\nbrew(input*,bottle*,count?,fuel*,at?)\nenchant(at*,item*,index?)\nanvil(op*,item*,with?,name?,pick?,withPick?,at?)\ngrindstone(item*,with?,pick?,withPick?,at?)\neat(item*)\nattack(target*,mode?)\nequip(item?,pick?,hand?)\npickup(item?)\ntoss(item*,count?,at?,pick?,target?)\nstow(item*,count?,pick?,at?,into?)\ncompact()\norganize(target?,includeHotbar?,sort?,dryRun?,rules?,at?,into?)\ntake(item?,count?,at?,from?,all?,pick?)\nserver_travel(command*,at*,within?,dimension?) — 核验已知传送落点；已在范围内时命令未发送。查询、加入、启动等非传送命令用 chat.text，不用当前位置充当落点。\nchat(text*)\ngesture(name*,motion*)\n坐标写成 [x,y,z];at 是一个坐标,anchors 是一串坐标。\n每个分量是绝对数字,或 \"~\"/\"~-3\" 相对写法——原点是**这一步开始执行那一刻**我脚下那一格,\n所以 goto 之后接 \"~\" 指的是那个 goto 的落点。没有前后左右的写法。\n回执一律报解析后的绝对坐标。\n方块/物品/实体一律用英文 id(oak_log、cobblestone、skeleton);target 也收玩家名。\n类别名有两套:target/block/material 认 log、planks、ore、wool 这样的裸名(它们本身不是物品 id),把所有同类算进去;\nuntil 名单认带井号的 #ores/#logs/#leaves/#chests/#liquids/#beds。\n**写一个真实物品 id 就只认它自己**:obsidian 不会拿哭泣的黑曜石顶,torch 不是灵魂火把,\nchest 不是末影箱,dirt 不是土径 —— 要\"随便哪种木板\"就写裸类别名 planks。\ncount 一律 1-64;distance:flee 1-128,find 1-1024(不给 direction 时站着扫,最远 48)。\n\"needs\" 声明这一步依赖哪些更早的步(序号 1 起);\"needs\":[] = 独立步。缺省见字段说明。\n容器窗口在每单结束时关闭；from/into:\"open\" 的搬运和开窗步骤须在同一次 mymc_do.steps 中，不能跨单沿用窗口。\n每一步都会核验:判据由执行器按 (skill, 参数) 推,达成与落空都写进回执\n(「该步按『背包内原木 ≥5』核验:达成(实测 7)」)。",
             "items": {
               "type": "object",
               "description": "build: 材料放置：material+anchors（坐标数组）或 material+on（参照格/面）；单格可用 material+at，不能再给 anchors/on/shape。蓝图施工：blueprint+at，at 是蓝图原点。\nprobe: 定位目标用 shape+anchors+where；空间切片用 shape:\"box\"+anchors+slice（x/y/z），不带 where，fill 省略或 solid。不要把两种观察混在同一步。\nserver_travel: 核验已知传送落点；已在范围内时命令未发送。查询、加入、启动等非传送命令用 chat.text，不用当前位置充当落点。",
@@ -982,6 +982,7 @@
                   "type": "array",
                   "minItems": 1,
                   "maxItems": 4,
+                  "uniqueItems": true,
                   "items": {
                     "type": "array",
                     "minItems": 3,
@@ -992,7 +993,7 @@
                       "maximum": 30000000
                     }
                   },
-                  "description": "用于 observe(sites：绝对格 [x,y,z] 列表，短报占用/支撑高度/邻接面/0.6×1.8方块净空；非可达或放置许可)"
+                  "description": "用于 observe(sites only: 1..4 absolute integer block cells [x,y,z], no default. body.clear tests 0.6×1.8 clearance, not permission or reachability.)"
                 },
                 "bounds": {
                   "type": "array",
@@ -1003,7 +1004,30 @@
                     "minimum": -16,
                     "maximum": 16
                   },
-                  "description": "用于 observe(voxels 相对脚下格 [xmin,ymin,zmin,xmax,ymax,zmax]，含端点；三轴长度相乘≤512)"
+                  "default": [
+                    -1,
+                    -1,
+                    -1,
+                    1,
+                    2,
+                    1
+                  ],
+                  "description": "用于 observe(voxels: bounds=[xmin,ymin,zmin,xmax,ymax,zmax], inclusive integer block offsets ±16 from floor(feet) at the first read; default=[-1,-1,-1,1,2,1]. mymc_observe defaults to dense, queued observe defaults to visible surfaces. Dense reads return at most 512 cells as a contiguous rectangular prefix in y,z,x order (x fastest); oversize returns real partial data. Visible mode returns at most 512 non-air surfaces, checking at most 2048 nearby original-anchor cells. Text budget 24000 UTF-16 characters; verbose geometry reduces coverage. cursor replaces bounds and pins coordinates, connection, dimension and respawn scope; invalid scope is rejected, never reanchored. Each page has its own observed_at; not a snapshot. returned_regions/count, requested_bounds/count, remaining_count (outside this response), remaining_after_page, query_anchor, coordinate_system=absolute_block, next_cursor/next_safe_read describe coverage. Continuation is caller-selected, never automatic. Hidden/unloaded/omitted cells stay unknown, never air or safe. Vision through glass is separate from collision; sites body.clear tests clearance, not permission.)"
+                },
+                "cursor": {
+                  "type": "string",
+                  "maxLength": 1024,
+                  "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]{43}$",
+                  "description": "用于 observe(Exact next_cursor from the prior page; mutually exclusive with bounds; absolute, dimension pinned. No automatic continuation.)"
+                },
+                "format": {
+                  "type": "string",
+                  "enum": [
+                    "visible",
+                    "dense"
+                  ],
+                  "default": "visible",
+                  "description": "用于 observe(voxels only: dense (mymc_observe default) or visible surfaces (queued observe default); continuation retains its format.)"
                 },
                 "rays": {
                   "type": "array",
@@ -1032,7 +1056,7 @@
                       }
                     ]
                   },
-                  "description": "用于 observe(rays 的 [相对pitch角±90,相对yaw角±180,距离>0且≤64] 列表；相对执行时身体朝向，yaw=0 沿当前朝向)"
+                  "description": "用于 observe(rays only: [relative pitch degrees,relative yaw degrees,range blocks]; default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it.)"
                 },
                 "item": {
                   "type": "string",
@@ -2651,28 +2675,16 @@
                         "const": "observe"
                       },
                       "mode": {
+                        "const": "voxels"
+                      },
+                      "format": {
                         "type": "string",
                         "enum": [
-                          "sites",
-                          "voxels",
-                          "rays"
-                        ]
-                      },
-                      "sites": {
-                        "type": "array",
-                        "minItems": 1,
-                        "maxItems": 4,
-                        "items": {
-                          "type": "array",
-                          "minItems": 3,
-                          "maxItems": 3,
-                          "items": {
-                            "type": "integer",
-                            "minimum": -30000000,
-                            "maximum": 30000000
-                          }
-                        },
-                        "description": "sites：绝对格 [x,y,z] 列表，短报占用/支撑高度/邻接面/0.6×1.8方块净空；非可达或放置许可"
+                          "visible",
+                          "dense"
+                        ],
+                        "default": "visible",
+                        "description": "voxels only: dense (mymc_observe default) or visible surfaces (queued observe default); continuation retains its format."
                       },
                       "bounds": {
                         "type": "array",
@@ -2683,7 +2695,121 @@
                           "minimum": -16,
                           "maximum": 16
                         },
-                        "description": "voxels 相对脚下格 [xmin,ymin,zmin,xmax,ymax,zmax]，含端点；三轴长度相乘≤512"
+                        "default": [
+                          -1,
+                          -1,
+                          -1,
+                          1,
+                          2,
+                          1
+                        ],
+                        "description": "voxels: bounds=[xmin,ymin,zmin,xmax,ymax,zmax], inclusive integer block offsets ±16 from floor(feet) at the first read; default=[-1,-1,-1,1,2,1]. mymc_observe defaults to dense, queued observe defaults to visible surfaces. Dense reads return at most 512 cells as a contiguous rectangular prefix in y,z,x order (x fastest); oversize returns real partial data. Visible mode returns at most 512 non-air surfaces, checking at most 2048 nearby original-anchor cells. Text budget 24000 UTF-16 characters; verbose geometry reduces coverage. cursor replaces bounds and pins coordinates, connection, dimension and respawn scope; invalid scope is rejected, never reanchored. Each page has its own observed_at; not a snapshot. returned_regions/count, requested_bounds/count, remaining_count (outside this response), remaining_after_page, query_anchor, coordinate_system=absolute_block, next_cursor/next_safe_read describe coverage. Continuation is caller-selected, never automatic. Hidden/unloaded/omitted cells stay unknown, never air or safe. Vision through glass is separate from collision; sites body.clear tests clearance, not permission."
+                      },
+                      "needs": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    },
+                    "required": [
+                      "skill",
+                      "mode"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "skill": {
+                        "type": "string",
+                        "const": "observe"
+                      },
+                      "mode": {
+                        "const": "voxels"
+                      },
+                      "format": {
+                        "type": "string",
+                        "enum": [
+                          "visible",
+                          "dense"
+                        ],
+                        "default": "visible",
+                        "description": "voxels only: dense (mymc_observe default) or visible surfaces (queued observe default); continuation retains its format."
+                      },
+                      "cursor": {
+                        "type": "string",
+                        "maxLength": 1024,
+                        "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]{43}$",
+                        "description": "Exact next_cursor from the prior page; mutually exclusive with bounds; absolute, dimension pinned. No automatic continuation."
+                      },
+                      "needs": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    },
+                    "required": [
+                      "skill",
+                      "mode",
+                      "cursor"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "skill": {
+                        "type": "string",
+                        "const": "observe"
+                      },
+                      "mode": {
+                        "const": "sites"
+                      },
+                      "sites": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "uniqueItems": true,
+                        "items": {
+                          "type": "array",
+                          "minItems": 3,
+                          "maxItems": 3,
+                          "items": {
+                            "type": "integer",
+                            "minimum": -30000000,
+                            "maximum": 30000000
+                          }
+                        },
+                        "description": "sites only: 1..4 absolute integer block cells [x,y,z], no default. body.clear tests 0.6×1.8 clearance, not permission or reachability."
+                      },
+                      "needs": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    },
+                    "required": [
+                      "skill",
+                      "mode",
+                      "sites"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "skill": {
+                        "type": "string",
+                        "const": "observe"
+                      },
+                      "mode": {
+                        "const": "rays"
                       },
                       "rays": {
                         "type": "array",
@@ -2712,7 +2838,7 @@
                             }
                           ]
                         },
-                        "description": "rays 的 [相对pitch角±90,相对yaw角±180,距离>0且≤64] 列表；相对执行时身体朝向，yaw=0 沿当前朝向"
+                        "description": "rays only: [relative pitch degrees,relative yaw degrees,range blocks]; default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it."
                       },
                       "needs": {
                         "type": "array",
@@ -2723,7 +2849,8 @@
                       }
                     },
                     "required": [
-                      "skill"
+                      "skill",
+                      "mode"
                     ],
                     "additionalProperties": false
                   }
@@ -3853,6 +3980,24 @@
             "description": "这一单跟队列的关系。不写 = replace:撤掉排着的那些,接在正在做的那件后面(回执点名撤了谁);append:排到队尾,排着的都保留;now:中断正在做的那件、插到队头立刻开做,排着的保留(低血战斗可让位给首步 eat/flee/surface;已在执行的逃命、进食或环境自保不抢);afterCheckpoint:当前任务到安全检查点后先做这一单,再续做原任务;容器存取、交易等完整操作段结束前等待,不抢救命动作"
           }
         },
+        "examples": [
+          {
+            "steps": [
+              {
+                "skill": "observe",
+                "mode": "voxels",
+                "bounds": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
         "required": [
           "steps"
         ]
@@ -5171,6 +5316,198 @@
       ]
     },
     {
+      "name": "mymc_observe",
+      "description": "Immediate read only: dense voxels max 512 cells, oversize returns partial; optional visible format max 512 surfaces/2048 checks; cursor pins absolute coordinates. Never replaces the action queue. mode is required: voxels/sites/rays. voxels: bounds=[xmin,ymin,zmin,xmax,ymax,zmax], inclusive integer block offsets ±16 from floor(feet) at the first read; default=[-1,-1,-1,1,2,1]. mymc_observe defaults to dense, queued observe defaults to visible surfaces. Dense reads return at most 512 cells as a contiguous rectangular prefix in y,z,x order (x fastest); oversize returns real partial data. Visible mode returns at most 512 non-air surfaces, checking at most 2048 nearby original-anchor cells. Text budget 24000 UTF-16 characters; verbose geometry reduces coverage. cursor replaces bounds and pins coordinates, connection, dimension and respawn scope; invalid scope is rejected, never reanchored. Each page has its own observed_at; not a snapshot. returned_regions/count, requested_bounds/count, remaining_count (outside this response), remaining_after_page, query_anchor, coordinate_system=absolute_block, next_cursor/next_safe_read describe coverage. Continuation is caller-selected, never automatic. Hidden/unloaded/omitted cells stay unknown, never air or safe. Vision through glass is separate from collision; sites body.clear tests clearance, not permission. Structured result is in data (also JSON text); read failure is blocked, invalid parameters are invalid_arguments. No movement or world mutation.",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "mode"
+        ],
+        "additionalProperties": false,
+        "examples": [
+          {
+            "mode": "voxels",
+            "bounds": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        ],
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "mode"
+              ],
+              "properties": {
+                "mode": {
+                  "const": "sites"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "sites"
+              ],
+              "properties": {
+                "bounds": false,
+                "rays": false,
+                "cursor": false,
+                "format": false
+              }
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "mode"
+              ],
+              "properties": {
+                "mode": {
+                  "const": "rays"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "bounds": false,
+                "sites": false,
+                "cursor": false,
+                "format": false
+              }
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "mode"
+              ],
+              "properties": {
+                "mode": {
+                  "const": "voxels"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "rays": false,
+                "sites": false
+              }
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "cursor"
+              ]
+            },
+            "then": {
+              "properties": {
+                "bounds": false
+              }
+            }
+          }
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "voxels",
+              "sites",
+              "rays"
+            ]
+          },
+          "bounds": {
+            "type": "array",
+            "minItems": 6,
+            "maxItems": 6,
+            "items": {
+              "type": "integer",
+              "minimum": -16,
+              "maximum": 16
+            },
+            "default": [
+              -1,
+              -1,
+              -1,
+              1,
+              2,
+              1
+            ],
+            "description": "voxels: bounds=[xmin,ymin,zmin,xmax,ymax,zmax], inclusive integer block offsets ±16 from floor(feet) at the first read; default=[-1,-1,-1,1,2,1]. mymc_observe defaults to dense, queued observe defaults to visible surfaces. Dense reads return at most 512 cells as a contiguous rectangular prefix in y,z,x order (x fastest); oversize returns real partial data. Visible mode returns at most 512 non-air surfaces, checking at most 2048 nearby original-anchor cells. Text budget 24000 UTF-16 characters; verbose geometry reduces coverage. cursor replaces bounds and pins coordinates, connection, dimension and respawn scope; invalid scope is rejected, never reanchored. Each page has its own observed_at; not a snapshot. returned_regions/count, requested_bounds/count, remaining_count (outside this response), remaining_after_page, query_anchor, coordinate_system=absolute_block, next_cursor/next_safe_read describe coverage. Continuation is caller-selected, never automatic. Hidden/unloaded/omitted cells stay unknown, never air or safe. Vision through glass is separate from collision; sites body.clear tests clearance, not permission."
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "visible",
+              "dense"
+            ],
+            "default": "dense",
+            "description": "voxels only: dense (mymc_observe default) or visible surfaces (queued observe default); continuation retains its format."
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 1024,
+            "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]{43}$",
+            "description": "Exact next_cursor from the prior page; mutually exclusive with bounds; absolute, dimension pinned. No automatic continuation."
+          },
+          "sites": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
+            "uniqueItems": true,
+            "items": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "integer",
+                "minimum": -30000000,
+                "maximum": 30000000
+              }
+            },
+            "description": "sites only: 1..4 absolute integer block cells [x,y,z], no default. body.clear tests 0.6×1.8 clearance, not permission or reachability."
+          },
+          "rays": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 64,
+            "items": {
+              "$schema": "http://json-schema.org/draft-07/schema#",
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": [
+                {
+                  "type": "number",
+                  "minimum": -90,
+                  "maximum": 90
+                },
+                {
+                  "type": "number",
+                  "minimum": -180,
+                  "maximum": 180
+                },
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 64
+                }
+              ]
+            },
+            "description": "rays only: [relative pitch degrees,relative yaw degrees,range blocks]; default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it."
+          }
+        }
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
       "name": "mymc_operations",
       "description": "Discover exact real-client operations. Uninstalled Minescript/Baritone are unavailable.",
       "parameters": {
@@ -5549,7 +5886,7 @@
     },
     {
       "name": "mymc_scout",
-      "description": "Queue read-only observations in steps:[{skill,...}]. For probe, shape is required: line/rect/triangle/arc/box, together with that shape’s coordinates; use mymc_help skill:probe for its exact signature. For a simple nearby scene use mymc_visual or observe. Also supports observe (compact site geometry, voxels or collision rays), plus goto/flight/build/excavate/tunnel (always dry-run). Each trial uses the actual current position and world, without projecting an earlier trial destination or materials. needs gates on prior trial outcomes only, not hypothetical execution. Flight checks one segment before permission is granted; use mymc_flight_plan for a projected multi-leg flight. Same queue and task events; does not change the world.",
+      "description": "Queue read-only observations in steps:[{skill,...}]. Use mymc_observe for immediate data without queue admission. Queued observe preserves full step observation data. voxels: bounds=[xmin,ymin,zmin,xmax,ymax,zmax], inclusive integer block offsets ±16 from floor(feet) at the first read; default=[-1,-1,-1,1,2,1]. mymc_observe defaults to dense, queued observe defaults to visible surfaces. Dense reads return at most 512 cells as a contiguous rectangular prefix in y,z,x order (x fastest); oversize returns real partial data. Visible mode returns at most 512 non-air surfaces, checking at most 2048 nearby original-anchor cells. Text budget 24000 UTF-16 characters; verbose geometry reduces coverage. cursor replaces bounds and pins coordinates, connection, dimension and respawn scope; invalid scope is rejected, never reanchored. Each page has its own observed_at; not a snapshot. returned_regions/count, requested_bounds/count, remaining_count (outside this response), remaining_after_page, query_anchor, coordinate_system=absolute_block, next_cursor/next_safe_read describe coverage. Continuation is caller-selected, never automatic. Hidden/unloaded/omitted cells stay unknown, never air or safe. Vision through glass is separate from collision; sites body.clear tests clearance, not permission. For probe, shape is required: line/rect/triangle/arc/box, together with that shape’s coordinates; use mymc_help skill:probe for its exact signature. For a simple nearby scene use mymc_visual or observe. Also supports observe (compact site geometry, voxels or collision rays), plus goto/flight/build/excavate/tunnel (always dry-run). Each trial uses the actual current position and world, without projecting an earlier trial destination or materials. needs gates on prior trial outcomes only, not hypothetical execution. Flight checks one segment before permission is granted; use mymc_flight_plan for a projected multi-leg flight. Same queue and task events; does not change the world.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -5782,6 +6119,7 @@
                   "type": "array",
                   "minItems": 1,
                   "maxItems": 4,
+                  "uniqueItems": true,
                   "items": {
                     "type": "array",
                     "minItems": 3,
@@ -5792,7 +6130,7 @@
                       "maximum": 30000000
                     }
                   },
-                  "description": "用于 observe(sites：绝对格 [x,y,z] 列表，短报占用/支撑高度/邻接面/0.6×1.8方块净空；非可达或放置许可)"
+                  "description": "用于 observe(sites only: 1..4 absolute integer block cells [x,y,z], no default. body.clear tests 0.6×1.8 clearance, not permission or reachability.)"
                 },
                 "bounds": {
                   "type": "array",
@@ -5803,7 +6141,30 @@
                     "minimum": -16,
                     "maximum": 16
                   },
-                  "description": "用于 observe(voxels 相对脚下格 [xmin,ymin,zmin,xmax,ymax,zmax]，含端点；三轴长度相乘≤512)"
+                  "default": [
+                    -1,
+                    -1,
+                    -1,
+                    1,
+                    2,
+                    1
+                  ],
+                  "description": "用于 observe(voxels: bounds=[xmin,ymin,zmin,xmax,ymax,zmax], inclusive integer block offsets ±16 from floor(feet) at the first read; default=[-1,-1,-1,1,2,1]. mymc_observe defaults to dense, queued observe defaults to visible surfaces. Dense reads return at most 512 cells as a contiguous rectangular prefix in y,z,x order (x fastest); oversize returns real partial data. Visible mode returns at most 512 non-air surfaces, checking at most 2048 nearby original-anchor cells. Text budget 24000 UTF-16 characters; verbose geometry reduces coverage. cursor replaces bounds and pins coordinates, connection, dimension and respawn scope; invalid scope is rejected, never reanchored. Each page has its own observed_at; not a snapshot. returned_regions/count, requested_bounds/count, remaining_count (outside this response), remaining_after_page, query_anchor, coordinate_system=absolute_block, next_cursor/next_safe_read describe coverage. Continuation is caller-selected, never automatic. Hidden/unloaded/omitted cells stay unknown, never air or safe. Vision through glass is separate from collision; sites body.clear tests clearance, not permission.)"
+                },
+                "cursor": {
+                  "type": "string",
+                  "maxLength": 1024,
+                  "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]{43}$",
+                  "description": "用于 observe(Exact next_cursor from the prior page; mutually exclusive with bounds; absolute, dimension pinned. No automatic continuation.)"
+                },
+                "format": {
+                  "type": "string",
+                  "enum": [
+                    "visible",
+                    "dense"
+                  ],
+                  "default": "visible",
+                  "description": "用于 observe(voxels only: dense (mymc_observe default) or visible surfaces (queued observe default); continuation retains its format.)"
                 },
                 "rays": {
                   "type": "array",
@@ -5832,7 +6193,7 @@
                       }
                     ]
                   },
-                  "description": "用于 observe(rays 的 [相对pitch角±90,相对yaw角±180,距离>0且≤64] 列表；相对执行时身体朝向，yaw=0 沿当前朝向)"
+                  "description": "用于 observe(rays only: [relative pitch degrees,relative yaw degrees,range blocks]; default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it.)"
                 },
                 "target": {
                   "type": "string",
@@ -6835,28 +7196,16 @@
                         "const": "observe"
                       },
                       "mode": {
+                        "const": "voxels"
+                      },
+                      "format": {
                         "type": "string",
                         "enum": [
-                          "sites",
-                          "voxels",
-                          "rays"
-                        ]
-                      },
-                      "sites": {
-                        "type": "array",
-                        "minItems": 1,
-                        "maxItems": 4,
-                        "items": {
-                          "type": "array",
-                          "minItems": 3,
-                          "maxItems": 3,
-                          "items": {
-                            "type": "integer",
-                            "minimum": -30000000,
-                            "maximum": 30000000
-                          }
-                        },
-                        "description": "sites：绝对格 [x,y,z] 列表，短报占用/支撑高度/邻接面/0.6×1.8方块净空；非可达或放置许可"
+                          "visible",
+                          "dense"
+                        ],
+                        "default": "visible",
+                        "description": "voxels only: dense (mymc_observe default) or visible surfaces (queued observe default); continuation retains its format."
                       },
                       "bounds": {
                         "type": "array",
@@ -6867,7 +7216,121 @@
                           "minimum": -16,
                           "maximum": 16
                         },
-                        "description": "voxels 相对脚下格 [xmin,ymin,zmin,xmax,ymax,zmax]，含端点；三轴长度相乘≤512"
+                        "default": [
+                          -1,
+                          -1,
+                          -1,
+                          1,
+                          2,
+                          1
+                        ],
+                        "description": "voxels: bounds=[xmin,ymin,zmin,xmax,ymax,zmax], inclusive integer block offsets ±16 from floor(feet) at the first read; default=[-1,-1,-1,1,2,1]. mymc_observe defaults to dense, queued observe defaults to visible surfaces. Dense reads return at most 512 cells as a contiguous rectangular prefix in y,z,x order (x fastest); oversize returns real partial data. Visible mode returns at most 512 non-air surfaces, checking at most 2048 nearby original-anchor cells. Text budget 24000 UTF-16 characters; verbose geometry reduces coverage. cursor replaces bounds and pins coordinates, connection, dimension and respawn scope; invalid scope is rejected, never reanchored. Each page has its own observed_at; not a snapshot. returned_regions/count, requested_bounds/count, remaining_count (outside this response), remaining_after_page, query_anchor, coordinate_system=absolute_block, next_cursor/next_safe_read describe coverage. Continuation is caller-selected, never automatic. Hidden/unloaded/omitted cells stay unknown, never air or safe. Vision through glass is separate from collision; sites body.clear tests clearance, not permission."
+                      },
+                      "needs": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    },
+                    "required": [
+                      "skill",
+                      "mode"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "skill": {
+                        "type": "string",
+                        "const": "observe"
+                      },
+                      "mode": {
+                        "const": "voxels"
+                      },
+                      "format": {
+                        "type": "string",
+                        "enum": [
+                          "visible",
+                          "dense"
+                        ],
+                        "default": "visible",
+                        "description": "voxels only: dense (mymc_observe default) or visible surfaces (queued observe default); continuation retains its format."
+                      },
+                      "cursor": {
+                        "type": "string",
+                        "maxLength": 1024,
+                        "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]{43}$",
+                        "description": "Exact next_cursor from the prior page; mutually exclusive with bounds; absolute, dimension pinned. No automatic continuation."
+                      },
+                      "needs": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    },
+                    "required": [
+                      "skill",
+                      "mode",
+                      "cursor"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "skill": {
+                        "type": "string",
+                        "const": "observe"
+                      },
+                      "mode": {
+                        "const": "sites"
+                      },
+                      "sites": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "uniqueItems": true,
+                        "items": {
+                          "type": "array",
+                          "minItems": 3,
+                          "maxItems": 3,
+                          "items": {
+                            "type": "integer",
+                            "minimum": -30000000,
+                            "maximum": 30000000
+                          }
+                        },
+                        "description": "sites only: 1..4 absolute integer block cells [x,y,z], no default. body.clear tests 0.6×1.8 clearance, not permission or reachability."
+                      },
+                      "needs": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    },
+                    "required": [
+                      "skill",
+                      "mode",
+                      "sites"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "skill": {
+                        "type": "string",
+                        "const": "observe"
+                      },
+                      "mode": {
+                        "const": "rays"
                       },
                       "rays": {
                         "type": "array",
@@ -6896,7 +7359,7 @@
                             }
                           ]
                         },
-                        "description": "rays 的 [相对pitch角±90,相对yaw角±180,距离>0且≤64] 列表；相对执行时身体朝向，yaw=0 沿当前朝向"
+                        "description": "rays only: [relative pitch degrees,relative yaw degrees,range blocks]; default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it."
                       },
                       "needs": {
                         "type": "array",
@@ -6907,7 +7370,8 @@
                       }
                     },
                     "required": [
-                      "skill"
+                      "skill",
+                      "mode"
                     ],
                     "additionalProperties": false
                   }
@@ -7024,6 +7488,24 @@
             "description": "这一单跟队列的关系。不写 = replace:撤掉排着的那些,接在正在做的那件后面(回执点名撤了谁);append:排到队尾,排着的都保留;now:中断正在做的那件、插到队头立刻开做,排着的保留(低血战斗可让位给首步 eat/flee/surface;已在执行的逃命、进食或环境自保不抢);afterCheckpoint:当前任务到安全检查点后先做这一单,再续做原任务;容器存取、交易等完整操作段结束前等待,不抢救命动作"
           }
         },
+        "examples": [
+          {
+            "steps": [
+              {
+                "skill": "observe",
+                "mode": "voxels",
+                "bounds": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
         "required": [
           "steps"
         ]

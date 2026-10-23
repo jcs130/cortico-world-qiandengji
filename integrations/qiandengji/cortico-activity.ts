@@ -1,4 +1,5 @@
 /** Optional Cortico read-only observation adapter. No game/model dispatch or framework changes. */
+import { describeCombatDecision, type CombatDecisionFrame } from 'agent-mc-world/decisions';
 type RecordValue = Record<string, any>;
 export type ActivitySink = (value: RecordValue) => void;
 const object = (value: unknown): RecordValue => value && typeof value === 'object' && !Array.isArray(value) ? value as RecordValue : {};
@@ -13,7 +14,7 @@ export function activityConsoleUrl(value: string): string | null {
   return url.origin;
 }
 export function createCorticoActivityMapper(sink: ActivitySink, { now = () => new Date().toISOString() } = {}) {
-  const calls = new Map<string, RecordValue>(), decisions = new Map<string, RecordValue>(); let run: string | undefined;
+  const calls = new Map<string, RecordValue>(), decisions = new Map<string, RecordValue>(), combatFrames = new Map<string, CombatDecisionFrame>(), combatResults = new Map<string, RecordValue>(); let run: string | undefined;
   const publish = (value: RecordValue) => { try { sink({ at: now(), run, source: 'system2', ...value }); } catch { /* Presentation never interrupts the host. */ } };
   function record(value: unknown) {
     const rec = object(value), item = object(rec.item), context = object(rec.context);
@@ -68,8 +69,26 @@ export function createCorticoActivityMapper(sink: ActivitySink, { now = () => ne
             meters: attempt.meters || { input: attempt.inputTokens ?? null, output: attempt.outputTokens ?? null, cachedInput: attempt.cachedInputTokens ?? null, reasoning: attempt.reasoningTokens ?? null },
             reasoning: attempt.requestedReasoning || (data.kind === 'started' ? { thinking: data.thinking ?? null, effort: data.effort ?? null } : previous?.result?.reasoning) } };
         if (data.id) { decisions.set(data.id, record); if (decisions.size > 160) decisions.delete(decisions.keys().next().value!); } publish(record);
-      } else if (/^host\.combat\./.test(entry.event || '')) publish({ id: `combat:${entry.run || ''}:${entry.seq}`, at: entry.ts,
-        source: 'system1', kind: 'decision', title: entry.msg || entry.event, status: /failed|reject/.test(entry.event) ? 'failed' : /accept|execute/.test(entry.event) ? 'accepted' : 'unknown', result: data });
+      } else if (/^host\.combat\./.test(entry.event || '')) {
+        const event = entry.event.slice('host.combat.'.length), key = `${entry.run || ''}:${data.decisionId || data.id || entry.seq}`;
+        if (event === 'requested' && object(data.frame).battlefield) {
+          combatFrames.set(key, structuredClone(data.frame));
+          if (combatFrames.size > 64) combatFrames.delete(combatFrames.keys().next().value!);
+        }
+        const sampled = combatFrames.get(key);
+        const frame = sampled && (data.connectionGeneration === undefined || sampled.battlefield.connectionGeneration === data.connectionGeneration) ? sampled : null;
+        if (event === 'result') {
+          combatResults.set(key, { application: data.application, choice: data.choice, outcome: data.outcome });
+          if (combatResults.size > 64) combatResults.delete(combatResults.keys().next().value!);
+        }
+        const result = event === 'observation' ? { ...combatResults.get(key), ...data } : data;
+        const view = describeCombatDecision(event, result, frame);
+        publish({ id: `combat:${key}`, at: entry.ts, source: 'system1', kind: 'decision',
+          title: `战斗快决策 · ${view.label}`, text: view.text,
+          status: view.phase === 'requested' ? 'started' : view.phase === 'dispatched' ? 'accepted'
+            : ['kept','observed'].includes(view.phase) ? 'completed' : ['not-applied','error'].includes(view.phase) ? 'failed' : 'unknown',
+          ...(event === 'requested' ? { arguments: data.frame } : {}), result: { ...result, display: view } });
+      }
     }
   }
   return { frame, record };
