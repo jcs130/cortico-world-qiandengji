@@ -1,3 +1,9 @@
+## 0.4.1-rc.20
+
+- Pin shared MC core rc.81: preserve received item instance names in player gestures and detached script equipment snapshots; unknown names remain unknown.
+- Site observations distinguish occluded/unloaded targets from air, retain current self-contact separately and cache unknown geometry reads within the call.
+- Public observations entry and native staircase/slab descent, optical glass and physical collision acceptance. No server rules or model configuration changes.
+
 ## 0.4.1-rc.19
 
 - Pin shared MC core rc.80: matched quality/SDK-work evaluation, Pareto recommendations and explicit optimization usage.
