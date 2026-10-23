@@ -1,3 +1,8 @@
+## 0.4.1-rc.21
+
+- Pin shared core rc.82: reconcile an already received complete server correction when a click does not match prediction, fail that operation without replay and restore later inventory access. Missing/partial and unsent receipts remain fenced.
+- Native Mineflayer 1.20.6/1.21.1 denial regression and detached packed runtime validation.
+
 ## 0.4.1-rc.20
 
 - Pin shared MC core rc.81: preserve received item instance names in player gestures and detached script equipment snapshots; unknown names remain unknown.
