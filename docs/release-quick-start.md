@@ -82,8 +82,8 @@ pnpm config set --global fetchTimeout 180000
 | 顺序 | 包 | 本候选 | 来源 |
 | --- | --- | --- | --- |
 | 1 | agent-mc-world | 0.5.7-rc.84 | 通用 World 隔离与公共端口；合入 AuthMe 登录修复 |
-| 2 | agent-mc-qiandengji | 0.5.0-rc.21 | 消费上述核心的中立服务器包 |
-| 3 | cortico-world-qiandengji | 0.4.1-rc.22 | 当前公共 API 6 与审核复制迁移 |
+| 2 | agent-mc-qiandengji | 0.5.0-rc.22 | 待发布候选：通过 peer 复用宿主核心 |
+| 3 | cortico-world-qiandengji | 0.4.1-rc.23 | 待发布候选：消费上述服务器包 |
 
 1. 核对远程 main、npm 当前版本与依赖，先在核心执行完整测试、类型和 `npm run build:release`，验证 `npm pack` 真实产物。
 2. 将该确切核心 tarball 及 SHA-256 放入本仓库的 `vendor/core-source.json`，同步开发锁文件；不要复制另一份核心源码。
