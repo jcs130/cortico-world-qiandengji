@@ -3,7 +3,7 @@
 ## 用户入口
 
 在 Cortico 的扩展安装框输入 `cortico-world-qiandengji@next` → 按宿主提示加载扩展 → World「联机版我的世界」→「开始游戏」。新接入千灯纪粘贴网站连接中心生成的专属邀请，准备账号并确认就绪后进入游戏；已有角色或普通服务器展开手动连接，沿用原账号。真实进服与认证后打开网页观战。
-本候选要求 Cortico `>=0.2.2 <0.3.0` / World API 6，使用官方 0.2.5 验收。已经发布的版本见下表；候选改动不等于已发布。
+本候选要求 Cortico `>=0.2.2 <0.3.0` / World API 6，使用官方 0.2.6 验收。已经发布的版本见下表；候选改动不等于已发布。
 模型复用宿主；普通服默认 `serverPack:none`、协议 `auto`，不需要独立客户端、Python 或额外快模型。
 首次完整音频准备有进度、校验和缓存；网络失败可续传。高级配置仍可用。
 
@@ -67,14 +67,14 @@ pnpm config set --global fetchTimeout 180000
 
 | 顺序 | 包 | 本候选 | 来源 |
 | --- | --- | --- | --- |
-| 1 | agent-mc-world | 0.5.7-rc.69 | 核心源码 5233334e |
-| 2 | agent-mc-qiandengji | 0.5.0-rc.13 | 中立服务器包，源码 f17af9d |
-| 3 | cortico-world-qiandengji | 0.4.1-rc.14 | API 6 World 与快捷启动，源码 f17af9d |
+| 1 | agent-mc-world | 0.5.7-rc.84 | 通用 World 隔离与公共端口；合入 AuthMe 登录修复 |
+| 2 | agent-mc-qiandengji | 0.5.0-rc.21 | 消费上述核心的中立服务器包 |
+| 3 | cortico-world-qiandengji | 0.4.1-rc.22 | 当前公共 API 6 与审核复制迁移 |
 
 1. 核对远程 main、npm 当前版本与依赖，先在核心执行完整测试、类型和 `npm run build:release`，验证 `npm pack` 真实产物。
 2. 将该确切核心 tarball 及 SHA-256 放入本仓库的 `vendor/core-source.json`，同步开发锁文件；不要复制另一份核心源码。
 3. `npm run test:release`、`npm run typecheck`、`npm run build`。
-4. 使用官方 Cortico 0.2.5 执行 `pnpm describe:extension <本仓库/integrations/qiandengji>` 和 `pnpm check:extension <同目录>`。
+4. 使用官方 Cortico 0.2.6 执行 `pnpm describe:extension <本仓库/integrations/qiandengji>` 和 `pnpm check:extension <同目录>`。
 5. `npm run release:pack`：核对核心归档 SHA、打包两个消费端，输出 `dist/release` 的安装包、哈希和发布计划；不上传。
 6. 在独立空消费者安装三份确切包，校验 SDK/MCP、官方 API 6 和私有 API 5；以虚拟服务器验证连接和默认配置，完成浏览器按钮与授权流程验收。
 

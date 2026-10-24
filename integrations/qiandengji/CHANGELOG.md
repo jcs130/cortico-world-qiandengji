@@ -1,5 +1,6 @@
 ## 0.4.1-rc.22
 
+- Pin shared core rc.84, including upstream AuthMe login-receipt compatibility and phase-specific timeout diagnostics.
 - Use the current public Cortico World API 6, public cognition fields and explicit optional decision-service configuration. No private provider registry or debug WebSocket dependency.
 - Isolate data under the World namespace; offer reviewed, hash-verified copy-only migration and retain originals. Hold gameplay while legacy adoption is pending.
 - Normalize event ownership, pending views, returned event envelopes and UI storage keys without rewriting player text, dimensions or evidence identities.
