@@ -332,7 +332,7 @@ describe('Mymc World contract', () => {
       type: 'minecraft.task', senderKey: 'minecraft.chat', text: 'mc_do 已完成',
     });
     expect(outer.stored[0]).toMatchObject({
-      source: 'mymc', type: 'mymc.task', senderKey: 'mymc.chat', text: 'mymc_do 已完成',
+      source: 'mymc', type: 'mymc.task', senderKey: 'mymc.chat', text: 'mc_do 已完成',
     });
     const drained = await bridge.drainPendingEvents((event) => event.source === 'minecraft');
     expect(drained[0]).toMatchObject({ source: 'minecraft', type: 'minecraft.task' });
@@ -342,7 +342,7 @@ describe('Mymc World contract', () => {
     });
     expect(outer.deferred[0].type).toBe('mymc.world.snapshot');
     expect(outer.deferred[0].senderKey).toBe('mymc');
-    expect(await outer.deferred[0].render()).toBe('mymc_queue:空');
+    expect(await outer.deferred[0].render()).toBe('mc_queue:空');
     expect((bridge as unknown as {cognition?:unknown}).cognition).toBeUndefined();
     expect(outer.cognitionRequests).toHaveLength(0);
     outer.disableCognition();

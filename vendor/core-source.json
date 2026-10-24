@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.82",
-  "file": "agent-mc-world-0.5.7-rc.82-40082b7b.tgz",
-  "sha256": "40082b7b588f82d878877fe765880ed032c4da37211cb80fdabdae8a8875afce",
+  "version": "0.5.7-rc.83",
+  "file": "agent-mc-world-0.5.7-rc.83-1f9b99c6.tgz",
+  "sha256": "1f9b99c60dea9dcb56d5e0eae1cad6a61f7ccdf61e856c946a05c141e993b2fb",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "362e4b6a5b4667fa5b1ce4a0e92174d8530dd3a2",
-  "upstreamBase": "e0093a1955e266afe441c93effa3677e94f2bd54",
+  "sourceCommit": "c0a302fec2a405935618f3e653d2e17d0d8b3d5f",
+  "upstreamBase": "d4c62b77b54c67730b6c64ce71dbe57ada21a86d",
   "channel": "unpublished-source-candidate",
-  "sourceStatus": "committed-verified-package",
+  "sourceStatus": "verified-local-commit",
   "viewerIncluded": true,
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
@@ -34,5 +34,6 @@
     }
   },
   "completeAudio": false,
-  "completeAudioAfterSetup": true
+  "completeAudioAfterSetup": true,
+  "sourceBase": "d4c62b77b54c67730b6c64ce71dbe57ada21a86d"
 }

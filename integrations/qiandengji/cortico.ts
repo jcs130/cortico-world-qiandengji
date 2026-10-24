@@ -1,16 +1,18 @@
 import type { CorticoConfig, MymcWorldDefinition } from './public-contract.js';
 import { WORLD_DEFAULTS, type MymcConfigSection } from './config.ts';
-import { assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS } from 'agent-mc-world/extension';
+import { assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS,extendWorldHost,mapWorldOutcomeNamespace } from 'agent-mc-world/extension';
 import { GenericMymcWorld } from './generic-world.ts';
 import { validateHostCombat } from './host/combat-driver.ts';
 import { assertMymcReady } from './guard.ts';
 import { MymcWorld } from './world.ts';
 import { JavaMymcWorld } from './java-world.ts';
 import type { World } from 'agent-mc-world/contracts';
-import { activityConsoleUrl, connectCorticoActivity, createCorticoActivityMapper } from './cortico-activity.ts';
+import { createCorticoActivityMapper,createCorticoActivityLogger } from './cortico-activity.ts';
 import { createActivityOutputTap } from './cortico-activity-tap.ts';
 import { withQuickStart } from './cortico-quick-start.ts';
 import { withCorticoPractice, PRACTICE_DEFAULTS } from './cortico-practice.ts';
+import {corticoWorldStorage,withCorticoStorage} from './cortico-storage.ts';
+import {withCorticoDecisionService,publicHostDecisions,validateDecisionService,DECISION_SERVICE_DEFAULTS} from './cortico-decisions.ts';
 
 /** API 6 names the browser contribution webUi. Keep the API 5 method for
  * explicitly built local compatibility packages, with one implementation. */
@@ -19,7 +21,6 @@ function withWebUi<T extends World>(world: T, cfg?: CorticoConfig): T {
   const publisher = rawPublisher ? (value: unknown) => { try { rawPublisher(value); } catch { /* Observation cannot break play. */ } } : null;
   if (publisher) {
     const originalConsole = world.console?.bind(world), start = world.start.bind(world), stop = world.stop.bind(world);
-    let activity: ReturnType<typeof connectCorticoActivity> | null = null;
     let tap: ReturnType<typeof createActivityOutputTap> | null = null;
     const originalTap = (world as any).outputTap?.bind(world), originalPhase = (world as any).onRunPhase?.bind(world);
     const phaseMapper = createCorticoActivityMapper(publisher);
@@ -37,28 +38,28 @@ function withWebUi<T extends World>(world: T, cfg?: CorticoConfig): T {
       schema: { type: 'object' as const, title: '观战思考与工具记录', properties: {
         'worlds.mymc.viewerActivity.enabled': { type: 'boolean' as const, title: '显示实际思考与调用', 'x-hot': false,
           description: '只读使用宿主 outputTap 与 onRunPhase，不调用模型，不改变输出取消与身体任务。' },
-        'worlds.mymc.viewerActivity.consoleUrl': { type: 'string' as const, title: '本机宿主控制台地址', 'x-hot': false,
-          description: '可选，只读连接现有调试流。留空关闭；填写明确的本机 HTTP 地址，不扫描端口、不调用模型。需重载 World。' },
       } },
     }] }; };
-    world.start = async host => { await start({ ...host, pushEvent: async (event, options) => {
+    world.start = async host => { await start(extendWorldHost(host,{
+      log:cfg?.viewerActivity?.enabled===false?host.log:createCorticoActivityLogger(host.log,publisher),
+      pushEvent: async (event, options) => {
       const envelope = await host.pushEvent(event, options);
       if (cfg?.viewerActivity?.enabled !== false) phaseMapper.frame({ t: 'event', envelope }); return envelope;
-    } }); const url = cfg?.viewerActivity?.enabled === false ? '' : cfg?.viewerActivity?.consoleUrl?.trim();
-      if (url) try { activity = connectCorticoActivity(url, publisher); } catch { host.log.warn('观战思考记录未连接：请检查本机控制台地址；游戏继续运行。'); } };
-    world.stop = async () => { activity?.dispose(); activity = null; tap?.dispose(); tap = null; await stop(); };
+    } })); };
+    world.stop = async () => { tap?.dispose(); tap = null; await stop(); };
   }
   const contribution = world.console?.bind(world);
   if (contribution) Object.defineProperty(world, 'webUi', { value: contribution, configurable: true });
   const tools = world.tools.bind(world);
   world.tools = () => tools().map(tool => ({ ...tool, tags: tool.tags ?? [],
-    handler: !publisher ? tool.handler : async (args, context) => {
-      if (cfg?.viewerActivity?.enabled === false) return tool.handler(args, context);
+    handler: async (args, context) => {
+      const execute=async()=>mapWorldOutcomeNamespace(await tool.handler(args,context),'minecraft','mymc');
+      if (!publisher||cfg?.viewerActivity?.enabled === false) return execute();
       const id = context.callId || `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const source = context.role === 'main' ? 'system2' : context.role === 'host-decision' ? 'system1' : 'unknown';
       const mapper = createCorticoActivityMapper(row => publisher({ ...row, source, round: context.round }));
       mapper.record({ item: { type: 'function_call', call_id: id, name: tool.name, arguments: args } });
-      try { const result = await tool.handler(args, context); mapper.record({ item: { type: 'function_call_output', call_id: id, output: result, status: 'completed' } }); return result; }
+      try { const result = await execute(); mapper.record({ item: { type: 'function_call_output', call_id: id, output: result, status: 'completed' } }); return result; }
       catch (error) { mapper.record({ item: { type: 'function_call_output', call_id: id, output: { text: error instanceof Error ? error.message : '工具执行异常', failed: true }, status: 'failed' } }); throw error; }
     },
   }));
@@ -70,29 +71,34 @@ export const MYMC: MymcWorldDefinition = {
   id: 'mymc',
   label: '联机版我的世界',
   exclusiveResource: 'minecraft-client',
-  defaults: () => ({ ...structuredClone(WORLD_DEFAULTS), viewerActivity: { enabled: true, consoleUrl: '' }, harness2:structuredClone(PRACTICE_DEFAULTS) }),
+  defaults: () => ({ ...structuredClone(WORLD_DEFAULTS), viewerActivity: { enabled: true },
+    decisionService:structuredClone(DECISION_SERVICE_DEFAULTS),harness2:structuredClone(PRACTICE_DEFAULTS) }),
   preflight: ctx => {
-    if (ctx.cfg.viewerActivity?.consoleUrl) activityConsoleUrl(ctx.cfg.viewerActivity.consoleUrl);
+    validateDecisionService(ctx.cfg);
     if (ctx.cfg.provider === 'java-client') { selectedServerPack(ctx.cfg); assertMinecraftReady(ctx.cfg); return; }
     const pack = selectedServerPack(ctx.cfg);
-    if (pack === 'qiandengji') { assertMymcReady(ctx.cfg, ctx.botDir); validateHostCombat(ctx.cfg); }
+    if (pack === 'qiandengji') { assertMymcReady(ctx.cfg, ctx.botDir); validateHostCombat({...ctx.cfg,hostDecisions:publicHostDecisions(ctx.cfg)}); }
     else {
-      validateHostCombat(ctx.cfg);
+      validateHostCombat({...ctx.cfg,hostDecisions:publicHostDecisions(ctx.cfg)});
       assertMinecraftReady(ctx.cfg);
     }
   },
   create: ctx => {
+    const storage=corticoWorldStorage(ctx.dataDir);
+    const scopedContext={...ctx,dataDir:storage.directory};
     let preparedViewer: string | null = null;
     const templateDir = () => ctx.cfg.viewerAssetsDir.trim() || MINECRAFT_CLIENT_DEFAULTS.viewerAssetsDir;
     // Resolve package defaults and prepared paths at runtime, never pin an installed package/cache path into user config.
     const cfg = new Proxy(ctx.cfg, { get: (target, key, receiver) => key === 'viewerAssetsDir'
-      ? preparedViewer ?? templateDir() : Reflect.get(target, key, receiver) });
-    const setup = <T extends World>(world: T) => withQuickStart(withCorticoPractice(world,()=>ctx.cfg.harness2,ctx.dataDir), ctx, candidate => MYMC.preflight?.({ ...ctx, cfg: candidate }),
-      { templateDir, setDirectory: value => { preparedViewer = value; } });
-    if (ctx.cfg.provider === 'java-client') return setup(withWebUi(new JavaMymcWorld({ ...ctx, cfg })));
+      ? preparedViewer ?? templateDir() : key==='hostDecisions'?publicHostDecisions(ctx.cfg):Reflect.get(target, key, receiver) });
+    const setup = <T extends World>(world: T) => withCorticoStorage(withQuickStart(
+      withCorticoDecisionService(withCorticoPractice(world,()=>ctx.cfg.harness2,storage.directory),()=>ctx.cfg,name=>ctx.secret(name)),
+      scopedContext, candidate => MYMC.preflight?.({ ...ctx, cfg: candidate }),
+      { templateDir, setDirectory: value => { preparedViewer = value; } }),storage,()=>ctx.restart());
+    if (ctx.cfg.provider === 'java-client') return setup(withWebUi(new JavaMymcWorld({ ...scopedContext, cfg }),ctx.cfg));
     const World = selectedServerPack(ctx.cfg) === 'qiandengji' ? MymcWorld : GenericMymcWorld;
     return setup(withWebUi(new World({ cfg, botDir: ctx.botDir,
-      timezone: ctx.timezone, botName: ctx.botName, dataDir: ctx.dataDir }), ctx.cfg));
+      timezone: ctx.timezone, botName: ctx.botName, dataDir: storage.directory }), ctx.cfg));
   },
 };
 

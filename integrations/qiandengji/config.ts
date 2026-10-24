@@ -19,6 +19,7 @@ type RepeatSuccessFallback = {
 };
 
 export type MymcConfigSection = MinecraftConfigSection & {
+  decisionService?: {enabled:boolean;endpoint:string;model:string;apiKeyEnv:string;timeoutMs:number};
   harness2?:{enabled:boolean;modelId?:string;worker:import('agent-mc-world/decisions').Harness2Options['worker'];
     budget:import('agent-mc-world/decisions').Harness2Job['budget']};
   toolParameterDescriptions?: 'inline' | 'on-demand';
@@ -53,7 +54,7 @@ export function mymcLoginName(value: string, preserveLoginName = false): string 
 export function mymcEngineConfig(cfg: MymcConfigSection): MymcConfigSection {
   return new Proxy(cfg, {
     get(target, key, receiver) {
-      if (key === 'hostDecisions' || key === 'harness2') return undefined;
+      if (key === 'hostDecisions' || key === 'harness2' || key === 'decisionService') return undefined;
       return key === 'username' ? mymcLoginName(target.username, target.preserveLoginName) : Reflect.get(target, key, receiver);
     },
   });
@@ -131,24 +132,12 @@ export const MYMC_CONFIG_GROUP: ConfigGroup = {
     'worlds.mymc.serverPack': SERVER_PACK_PROPERTY,
     'worlds.mymc.serverTravel.enabled': { type: 'boolean', title: '自动使用服务器传送', 'x-hot': true,
       description: '仅千灯纪资料包。开启后可在指定目的地前插入服务器传送命令；需确认当前服务器支持。默认关闭，goto 保持步行。显式传送命令不受此项影响。' },
-    'worlds.mymc.hostDecisions.choice.decisionProvider': { type: 'string', title: 'MC候选选择连接', 'x-options': 'decision-providers', 'x-hot': false,
-      description: '留空继承宿主快决策；只在用户选择时覆盖，复用保存的连接。' },
     'worlds.mymc.hostDecisions.combat.enabled': { type: 'boolean', title: '宿主快速战术选择', 'x-hot': false,
-      description: '仅千灯纪资料包使用。由宿主适配器按明确配置调用选择服务，游戏核心不调用模型。默认关闭。' },
-    'worlds.mymc.hostDecisions.combat.connection': { type: 'string', enum: ['auto', 'host', 'endpoint'], title: '快决策连接来源', 'x-hot': false,
-      description: 'auto 默认继承宿主，已有服务地址保留兼容；host 使用宿主已保存连接；endpoint 使用独立完整地址。' },
-    'worlds.mymc.hostDecisions.combat.decisionProvider': { type: 'string', title: 'MC 专用快决策连接', 'x-options': 'decision-providers', 'x-hot': false,
-      description: '留空继承宿主默认快决策。选择后仅覆盖此 World，复用宿主保存的地址、密钥与模型。' },
-    'worlds.mymc.hostDecisions.combat.endpoint': { type: 'string', title: '快速选择服务地址', 'x-hot': false,
-      description: '完整 HTTP(S) 地址；服务需支持 state/questions 与 answers/probabilities 协议，不能直接填普通聊天接口。不扫描其他端点。' },
+      description: '使用本 World 明确配置的快决策服务。未启用时仍由主 Agent 与原身体控制器游玩。默认关闭。' },
     'worlds.mymc.hostDecisions.combat.mode': { type: 'string', enum: ['shadow', 'act'], title: '快战术模式', 'x-hot': false,
       description: 'shadow 仅观察建议；act 将选择提交核心再次校验。未配置或出错时原近战、自保与规则施法继续。' },
     'worlds.mymc.hostDecisions.combat.selectionMode': {type:'string',enum:['single','compatible'],title:'战术动作组合','x-hot':false,
       description:'compatible 将短步移动与就绪法术列为可组合选项，一次分类选择后逐项核验；撤离、换目标和方法脚本不混发。single 保留原单动作菜单。'},
-    'worlds.mymc.hostDecisions.combat.model': { type: 'string', title: 'Jev / System One 模型名', 'x-hot': false,
-      description: '按你的服务填写；留空使用该服务的默认模型。' },
-    'worlds.mymc.hostDecisions.combat.apiKeyEnv': { type: 'string', title: '快决策密钥环境变量名', 'x-hot': false,
-      description: '只填变量名，例如 JEV_API_KEY；密钥在启动环境中设置，不填写到提示词或资料包。' },
     'worlds.mymc.hostDecisions.combat.timeoutMs': { type: 'number', minimum: 50, maximum: 60000, title: '快决策等待上限（毫秒）', 'x-hot': false,
       description: '云端 API 按实际延迟配置；等待期间原控制继续。过期建议丢弃。' },
     'worlds.mymc.hostDecisions.combat.maxAgeMs': { type: 'number', minimum: 50, maximum: 60000, title: '战术现场有效期（毫秒）', 'x-hot': false },

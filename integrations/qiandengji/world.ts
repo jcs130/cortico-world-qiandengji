@@ -14,7 +14,7 @@ import type {
   WorldRequestFacts,
 } from 'agent-mc-world/contracts';
 import { MINECRAFT_PANEL_DECLS, MINECRAFT_TOOL_DECLS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
-import { MinecraftWorldProxy, WorldOperationLearning } from 'agent-mc-world/extension';
+import { MinecraftWorldProxy, WorldOperationLearning, mapWorldEventNamespace } from 'agent-mc-world/extension';
 import { extendMinecraftOptions, readMinecraftOptions, renderMinecraftOptionIndex } from 'agent-mc-world/extension';
 import { renderTemplate } from 'agent-mc-world/extension';
 import {
@@ -117,31 +117,15 @@ export const MYMC_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [...MINE
 }];
 
 function toMymcEvent<T extends { source: string; type: string; text: string; senderKey?: string }>(event: T): T {
-  return {
-    ...event,
-    source: event.source === 'minecraft' ? 'mymc' : event.source,
-    type: event.type.replace(/^minecraft\./, 'mymc.'),
-    text: toMymcText(event.text),
-    ...(event.senderKey !== undefined
-      ? { senderKey: event.senderKey.replace(/^minecraft(?=\.|$)/, 'mymc') }
-      : {}),
-  };
+  return mapWorldEventNamespace(event,'minecraft','mymc');
 }
 
 function toMinecraftEvent<T extends { source: string; type: string; text: string; senderKey?: string }>(event: T): T {
-  return {
-    ...event,
-    source: event.source === 'mymc' ? 'minecraft' : event.source,
-    type: event.type.replace(/^mymc\./, 'minecraft.'),
-    ...(event.senderKey !== undefined
-      ? { senderKey: event.senderKey.replace(/^mymc(?=\.|$)/, 'minecraft') }
-      : {}),
-  };
+  return mapWorldEventNamespace(event,'mymc','minecraft');
 }
 
 function mapRendered(rendered: DeferredRendered | null): DeferredRendered | null {
-  if (typeof rendered === 'string') return toMymcText(rendered);
-  return rendered ? { ...rendered, text: toMymcText(rendered.text) } : null;
+  return rendered;
 }
 
 /** 千灯纪服务端已实测可用的快捷抵达点。添加新地点只需扩这张表。 */

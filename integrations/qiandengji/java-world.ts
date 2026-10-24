@@ -3,7 +3,7 @@ import { JavaClientWorld, JAVA_CLIENT_ENVIRONMENT, type MinecraftClientConfig } 
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import type { World, WorldHost, ToolDef, WorldConsoleDecl, WorldRequestFacts } from 'agent-mc-world/contracts';
-import { createMinecraftChoiceTool, WorldOperationLearning, withToolHelp } from 'agent-mc-world/extension';
+import { createMinecraftChoiceTool, WorldOperationLearning, withToolHelp, mapWorldEventNamespace, namespaceWorldHost, namespaceWorldStorage } from 'agent-mc-world/extension';
 import { SkillCatalog } from './skill-catalog.ts';
 import { MessageInbox, MESSAGE_PARAMETERS } from './message-inbox.ts';
 import { GuildProgress } from './guild-progress.ts';
@@ -69,16 +69,18 @@ export class JavaMymcWorld implements World {
     return withToolHelp(this.learning.tools(tools.map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description) }))), 'mymc_tool_help', { parameterDescriptions: this.opts.cfg.toolParameterDescriptions });
   }
   console(): WorldConsoleDecl {
-    return { ...this.body.console(), label: '联机版我的世界 · 真实客户端', promptDocs: [{ key: 'worlds.mymc.envPrompt', title: '真实客户端操作', description: '原生操作与兼容指令边界。', role: 'envPrompt', path: fileURLToPath(new URL('./ENV_PROMPT_JAVA.md', import.meta.url)) }] };
+    const base:WorldConsoleDecl=this.body.console();
+    return { ...base,storage:namespaceWorldStorage(base.storage,'minecraft',this.id), label: '联机版我的世界 · 真实客户端', promptDocs: [{ key: 'worlds.mymc.envPrompt', title: '真实客户端操作', description: '原生操作与兼容指令边界。', role: 'envPrompt', path: fileURLToPath(new URL('./ENV_PROMPT_JAVA.md', import.meta.url)) }] };
   }
   async start(host: WorldHost) {
     if (this.host) throw new Error('Native World already attached');
     host = this.learning.start(host);
     this.host = host; const epoch = ++this.epoch;
     try {
-      await this.body.start({ ...host, pushEvent: async (event, options) => {
-        const mapped = { ...event, source: this.id,
-          type: event.type === 'minecraft.chat' ? 'mymc.chat' : event.type };
+      const named=namespaceWorldHost(host,'minecraft',this.id);
+      await this.body.start(new Proxy(named,{get:(target,key)=>{if(key!=='pushEvent')return Reflect.get(target,key,target);
+        return async (event:Parameters<WorldHost['pushEvent']>[0], options?:Parameters<WorldHost['pushEvent']>[1]) => {
+        const mapped = mapWorldEventNamespace(event,'minecraft','mymc');
         if (['minecraft.client.message', 'minecraft.chat'].includes(event.type) && this.opts.cfg.serverPack === 'qiandengji' && !event.meta?.overlay) {
           // Store a normalized observation, but deliver the original native event exactly once.
           // MessageInbox intentionally accepts only mymc.chat, not execution or HUD events.
@@ -106,8 +108,8 @@ export class JavaMymcWorld implements World {
               ...(sender ? { senderKey: sender } : {}) }, options?.deliver !== false);
           } catch (error) { host.log.warn('Native message index write failed; original event still delivered', { error: String(error) }); }
         }
-        return host.pushEvent(mapped, options);
-      } });
+        return mapWorldEventNamespace(await host.pushEvent(mapped, options),'mymc','minecraft');
+      };}}));
       if (this.opts.cfg.javaHostControl?.enabled) {
         const control = this.body.tools().find(tool => tool.name === 'mc_control')!;
         const ctx = { role: 'host-controller', log: host.log };
@@ -118,7 +120,7 @@ export class JavaMymcWorld implements World {
           this.renewing = true;
           void control.handler({ action: 'renew' }, ctx).then(async result => {
             if (this.epoch !== epoch || !this.host) return;
-            if (typeof result !== 'string' && result.failed) { await this.stop(); await host.pushEvent({ type: 'minecraft.client.control_lost', source: this.id, ts: new Date().toISOString(), text: 'Native lease renewal failed. Body stopped; explicit operator reattachment required.' }, { trigger: 'interrupt' }); }
+            if (typeof result !== 'string' && result.failed) { await this.stop(); await host.pushEvent({ type: 'mymc.client.control_lost', source: this.id, ts: new Date().toISOString(), text: 'Native lease renewal failed. Body stopped; explicit operator reattachment required.' }, { trigger: 'interrupt' }); }
           }).catch(error => host.log.error('Native lease renewal failed', { error: String(error) })).finally(() => { this.renewing = false; });
         }, Math.max(250, Math.floor(this.opts.cfg.javaClient!.leaseMs / 3)));
         this.timer.unref();

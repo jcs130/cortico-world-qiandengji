@@ -1,3 +1,10 @@
+## 0.4.1-rc.22
+
+- Use the current public Cortico World API 6, public cognition fields and explicit optional decision-service configuration. No private provider registry or debug WebSocket dependency.
+- Isolate data under the World namespace; offer reviewed, hash-verified copy-only migration and retain originals. Hold gameplay while legacy adoption is pending.
+- Normalize event ownership, pending views, returned event envelopes and UI storage keys without rewriting player text, dimensions or evidence identities.
+- Preserve dynamic host capabilities across observation wrappers. Local practice cancellation discards late replies without claiming remote cancellation.
+
 ## 0.4.1-rc.21
 
 - Pin shared core rc.82: reconcile an already received complete server correction when a click does not match prediction, fail that operation without replay and restore later inventory access. Missing/partial and unsent receipts remain fenced.

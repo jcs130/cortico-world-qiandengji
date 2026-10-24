@@ -1,7 +1,14 @@
-import { describe, it, expect } from 'vitest';
-import { activityConsoleUrl, createCorticoActivityMapper, connectCorticoActivity } from '../integrations/qiandengji/cortico-activity.ts';
+import { describe, it, expect,vi } from 'vitest';
+import { createCorticoActivityMapper,createCorticoActivityLogger } from '../integrations/qiandengji/cortico-activity.ts';
+import {nullLogger} from 'agent-mc-world/client';
 import { createActivityOutputTap } from '../integrations/qiandengji/cortico-activity-tap.ts';
 describe('optional Cortico activity adapter', () => {
+  it('retains real combat telemetry through the public logger without a debug connection',()=>{
+    const rows:any[]=[],emit=vi.fn(),log=createCorticoActivityLogger({...nullLogger(),emit},row=>rows.push(row));
+    log.emit('info','host combat result',{event:'host.combat.result',data:{id:3,decisionId:'fixture:3',outcome:'uncertain',choice:'keep'}});
+    expect(emit).toHaveBeenCalledOnce();expect(rows).toHaveLength(1);expect(rows[0]).toMatchObject({source:'system1',kind:'decision',status:'unknown'});
+    expect(rows[0].result.outcome).toBe('uncertain'); // No fabricated application receipt.
+  });
   it('joins a combat proposal and rejection by decision identity and displays the sampled hostile without claiming execution', () => {
     const rows:any[]=[],mapper=createCorticoActivityMapper(row=>rows.push(row));
     const scope={decisionId:'decision-a:9',id:9,connectionGeneration:1};
@@ -20,10 +27,6 @@ describe('optional Cortico activity adapter', () => {
       candidate:{kind:'track',targetId:7},observation:{verified:true,displacement:0}}}});
     expect(rows[3].id).toBe(rows[2].id);expect(rows[3].result.application.dispatched).toBe(true);
     expect(rows[3].result.display).toMatchObject({phase:'observed',effectVerified:false,goalCompleted:false});
-  });
-  it('accepts only an explicitly configured loopback origin and remains off when empty', () => {
-    expect(activityConsoleUrl('')).toBeNull(); expect(activityConsoleUrl('http://127.0.0.1:7789')).toBe('http://127.0.0.1:7789');
-    for (const url of ['http://example.org', 'http://user:password@127.0.0.1:7789', 'file:///tmp', 'http://127.0.0.1:7789/api/status']) expect(() => activityConsoleUrl(url)).toThrow();
   });
   it('maps actual reasoning and call/results, excludes user prompts and separates admission from body completion', () => {
     const rows: any[] = [], mapper = createCorticoActivityMapper(row => rows.push(row));
@@ -44,17 +47,6 @@ describe('optional Cortico activity adapter', () => {
     mapper.frame({ t: 'runlog', entry: { run: 'r1', seq: 1, ts: '2026-10-17T17:00:00Z', event: 'provider-decision', sess: 'decision:persona', data: { attempt: { outcome: 'completed', elapsedMs: 20, origin: { model: 'Decision' }, meters: { input: 100 } } } } });
     mapper.frame({ t: 'runlog', entry: { run: 'r1', seq: 2, ts: '2026-10-17T17:00:01Z', event: 'provider-decision', data: { attempt: { outcome: 'completed' } } } });
     expect(rows[0].source).toBe('system1'); expect(rows[0].text).toBeUndefined(); expect(rows[1].source).toBe('unknown');
-  });
-  it('reconnects observation only and disposes without leaving timers', () => {
-    const sockets: any[] = [], timers = new Map<any, () => void>(), rows: any[] = [];
-    class Socket extends EventTarget { close() { this.dispatchEvent(new Event('close')); } }
-    const connection = connectCorticoActivity('http://127.0.0.1:7789', row => rows.push(row), {
-      createSocket: url => { expect(url).toBe('ws://127.0.0.1:7789/ws/debug'); const socket = new Socket(); sockets.push(socket); return socket as any; },
-      setTimer: ((fn: () => void) => { const id = { unref() {} }; timers.set(id, fn); return id; }) as any,
-      clearTimer: ((id: any) => timers.delete(id)) as any,
-    });
-    sockets[0].dispatchEvent(new Event('open')); sockets[0].close(); expect(timers.size).toBe(1);
-    connection.dispose(); expect(timers.size).toBe(0); expect(sockets).toHaveLength(1);
   });
   it('joins the real started/finished classifier metadata by request identity', () => {
     const rows: any[] = [], mapper = createCorticoActivityMapper(row => rows.push(row));

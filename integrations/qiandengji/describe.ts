@@ -25,6 +25,7 @@ const events: Readonly<Record<string, string>> = {
   reflex: '已有反射控制的实际触发和执行证据。',
   skill: '显式服务器资料包收到的技能或魔力回执。',
   sleep: '实际游戏睡眠状态事件。',
+  'storage.migration':'旧游戏数据等待操作员审核迁移；不表示连接或动作完成。',
   tactic: '战术程序的执行或终态回执。',
   task: '任务执行终态；须进一步核对世界净变化。',
   'task.progress': '当前身体任务的中间进度和路线反馈。',
@@ -46,9 +47,5 @@ export function describeMymcImplementations(worlds: readonly { tools(): ToolDef[
   return { tools: [...tools.values()].sort((a, b) => a.name.localeCompare(b.name)),
     events: [
       ...Object.entries(events).map(([suffix, description]) => ({ type: `mymc.${suffix}`, description })),
-      // Native producers retain their existing event identities except chat.
-      // Declare those actual names rather than pretending the adapter renamed them.
-      ...['client.action', 'client.disconnected', 'client.message', 'client.message_gap', 'client.control_lost', 'memory']
-        .map(suffix => ({ type: `minecraft.${suffix}`, description: events[suffix] })),
     ] };
 }

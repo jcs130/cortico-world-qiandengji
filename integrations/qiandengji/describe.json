@@ -8176,6 +8176,10 @@
       "description": "实际游戏睡眠状态事件。"
     },
     {
+      "type": "mymc.storage.migration",
+      "description": "旧游戏数据等待操作员审核迁移；不表示连接或动作完成。"
+    },
+    {
       "type": "mymc.tactic",
       "description": "战术程序的执行或终态回执。"
     },
@@ -8206,30 +8210,6 @@
     {
       "type": "mymc.world.snapshot",
       "description": "带采样时间的世界状态快照。"
-    },
-    {
-      "type": "minecraft.client.action",
-      "description": "原生客户端动作回执；受理和完成分开记录。"
-    },
-    {
-      "type": "minecraft.client.disconnected",
-      "description": "原生客户端连接中断及其原因。"
-    },
-    {
-      "type": "minecraft.client.message",
-      "description": "原生客户端实际收到的系统或界面消息。"
-    },
-    {
-      "type": "minecraft.client.message_gap",
-      "description": "原生客户端消息序列缺口，不能当成完整历史。"
-    },
-    {
-      "type": "minecraft.client.control_lost",
-      "description": "原生客户端控制租约丢失，动作需要重新核验。"
-    },
-    {
-      "type": "minecraft.memory",
-      "description": "带来源和适用条件的游戏历史记忆，不代表当前现场。"
     }
   ],
   "prompts": [

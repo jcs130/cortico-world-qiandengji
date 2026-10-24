@@ -4,12 +4,12 @@ packages:
 # Private candidate archives are verified locally and have no registry release timestamp.
 minimumReleaseAgeExclude:
   - agent-mc-world
-  - cortico@0.2.5
+  - cortico@0.2.6
 
 allowBuilds:
   canvas: false
   esbuild: true
 
 overrides:
-  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.82-40082b7b.tgz
+  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.83-1f9b99c6.tgz
   vec3: 0.2.0

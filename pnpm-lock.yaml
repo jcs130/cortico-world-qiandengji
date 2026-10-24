@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.82-40082b7b.tgz
+  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.83-1f9b99c6.tgz
   vec3: 0.2.0
 
 importers:
@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       agent-mc-world:
-        specifier: file:vendor/agent-mc-world-0.5.7-rc.82-40082b7b.tgz
-        version: file:vendor/agent-mc-world-0.5.7-rc.82-40082b7b.tgz
+        specifier: file:vendor/agent-mc-world-0.5.7-rc.83-1f9b99c6.tgz
+        version: file:vendor/agent-mc-world-0.5.7-rc.83-1f9b99c6.tgz
       vec3:
         specifier: 0.2.0
         version: 0.2.0
@@ -26,8 +26,8 @@ importers:
         specifier: ^22.10.0
         version: 22.20.4
       cortico:
-        specifier: 0.2.5
-        version: 0.2.5
+        specifier: 0.2.6
+        version: 0.2.6
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
@@ -644,9 +644,9 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.82-40082b7b.tgz:
-    resolution: {integrity: sha512-T66ZSi+a0WnIINdDfCSOzffrviOtCIz1wk1LDYRC78wPv/RainSH2ktz4rHe8g6zL/WcDUGOxOjyf4dOfph15Q==, tarball: file:vendor/agent-mc-world-0.5.7-rc.82-40082b7b.tgz}
-    version: 0.5.7-rc.82
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.83-1f9b99c6.tgz:
+    resolution: {integrity: sha512-jmIFeYgVF3zcs76Tj7+1t2huFMXWU5OAW+xde7j5/QDYGiF+rGaQ+MMlDKuaTTrhiIW1AimzkBEsdU2wW1/iwQ==, tarball: file:vendor/agent-mc-world-0.5.7-rc.83-1f9b99c6.tgz}
+    version: 0.5.7-rc.83
     engines: {node: '>=22'}
     hasBin: true
 
@@ -814,8 +814,8 @@ packages:
     resolution: {integrity: sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw==}
     engines: {node: '>= 0.10'}
 
-  cortico@0.2.5:
-    resolution: {integrity: sha512-3fw+U4q0037hckEbLA/oSBMCek+GNOTMZiKWoSLxC43TLKD8hOIrrbokEJmI1jnPkT7VjJGoerT75Y9Viab3Mw==}
+  cortico@0.2.6:
+    resolution: {integrity: sha512-0/tYp6DfZEGWeg4nfKPKBwKVzeB9P0/jqxEHQgYIPJQ9CpW8BPDtpoGjM6w1IvgIMqmz57o9aWOJ9ViNnEKpNg==}
     engines: {node: '>=22'}
 
   cross-spawn@7.0.6:
@@ -2195,7 +2195,7 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.82-40082b7b.tgz:
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.83-1f9b99c6.tgz:
     dependencies:
       '@mcap/core': 2.3.0
       '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.5)
@@ -2387,7 +2387,7 @@ snapshots:
       object-assign: 4.1.1
       vary: 1.1.2
 
-  cortico@0.2.5:
+  cortico@0.2.6:
     dependencies:
       '@types/express': 4.17.25
       '@types/react': 19.3.0

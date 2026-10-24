@@ -1,18 +1,23 @@
 /** Optional Cortico read-only observation adapter. No game/model dispatch or framework changes. */
 import { describeCombatDecision, type CombatDecisionFrame } from 'agent-mc-world/decisions';
+import type {Logger} from 'agent-mc-world/contracts';
 type RecordValue = Record<string, any>;
 export type ActivitySink = (value: RecordValue) => void;
+/** Observe only log records produced by this World's public logger port; no host log subscription. */
+export function createCorticoActivityLogger(log:Logger,sink:ActivitySink):Logger {
+  const mapper=createCorticoActivityMapper(sink);
+  return new Proxy(log,{get(target,key){
+    if(key==='emit')return (...args:Parameters<Logger['emit']>)=>{
+      log.emit(...args);const options=args[2];
+      if(options?.event?.startsWith('host.combat.'))mapper.frame({t:'runlog',entry:{ts:options.ts??new Date().toISOString(),event:options.event,data:options.data}});
+    };
+    const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;
+  }});
+}
 const object = (value: unknown): RecordValue => value && typeof value === 'object' && !Array.isArray(value) ? value as RecordValue : {};
 const text = (parts: unknown) => typeof parts === 'string' ? parts : Array.isArray(parts)
   ? parts.filter(part => part && typeof part.text === 'string').map(part => part.text).join('\n') : '';
 const parsed = (value: unknown) => { if (typeof value !== 'string') return value; try { return JSON.parse(value); } catch { return value; } };
-export function activityConsoleUrl(value: string): string | null {
-  if (!value.trim()) return null;
-  const url = new URL(value);
-  if (!['http:', 'https:'].includes(url.protocol) || !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)
-    || url.username || url.password || (url.pathname !== '/' && url.pathname !== '') || url.search || url.hash) throw new Error('Activity console URL must be an explicit loopback HTTP origin without credentials.');
-  return url.origin;
-}
 export function createCorticoActivityMapper(sink: ActivitySink, { now = () => new Date().toISOString() } = {}) {
   const calls = new Map<string, RecordValue>(), decisions = new Map<string, RecordValue>(), combatFrames = new Map<string, CombatDecisionFrame>(), combatResults = new Map<string, RecordValue>(); let run: string | undefined;
   const publish = (value: RecordValue) => { try { sink({ at: now(), run, source: 'system2', ...value }); } catch { /* Presentation never interrupts the host. */ } };
@@ -92,30 +97,4 @@ export function createCorticoActivityMapper(sink: ActivitySink, { now = () => ne
     }
   }
   return { frame, record };
-}
-export function connectCorticoActivity(origin: string, sink: ActivitySink, options: {
-  createSocket?: (url: string) => WebSocket; now?: () => string; setTimer?: typeof setTimeout; clearTimer?: typeof clearTimeout;
-} = {}) {
-  const endpoint = activityConsoleUrl(origin); if (!endpoint) return { dispose() {} };
-  const now = options.now || (() => new Date().toISOString()), mapper = createCorticoActivityMapper(sink, { now });
-  const create = options.createSocket || (url => new WebSocket(url)), setTimer = options.setTimer || setTimeout, clearTimer = options.clearTimer || clearTimeout;
-  let stopped = false, socket: WebSocket | null = null, timer: ReturnType<typeof setTimeout> | null = null, delay = 1000;
-  const report = (status: string, title: string) => sink({ id: 'activity-connection', at: now(), source: 'unknown', kind: 'phase', status, title });
-  function open() {
-    if (stopped) return;
-    try { socket = create(endpoint!.replace(/^http/, 'ws') + '/ws/debug'); } catch { reconnect(); return; }
-    socket.addEventListener('open', () => { if (stopped) return; delay = 1000; report('running', '思考记录已连接'); });
-    socket.addEventListener('message', event => {
-      if (stopped || typeof event.data !== 'string') return;
-      if (event.data.length > 4 * 1024 * 1024) { socket?.close(1009, 'activity frame too large'); return; }
-      try { mapper.frame(JSON.parse(event.data)); } catch { /* Malformed observation has no game effect. */ }
-    });
-    socket.addEventListener('error', () => { report('failed', '思考记录连接不可用，游戏不受影响'); });
-    socket.addEventListener('close', reconnect, { once: true });
-  }
-  function reconnect() {
-    if (stopped || timer) return; report('unknown', '思考记录断开，等待重连');
-    timer = setTimer(() => { timer = null; open(); }, delay); timer.unref?.(); delay = Math.min(30000, delay * 2);
-  }
-  open(); return { dispose() { if (stopped) return; stopped = true; if (timer) clearTimer(timer); timer = null; socket?.close(); socket = null; } };
 }

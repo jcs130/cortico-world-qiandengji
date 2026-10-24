@@ -1,6 +1,6 @@
 import { HostCombatDriver, validateHostCombat, type HostCombatConfig } from 'agent-mc-world/decisions';
 import { fileURLToPath } from 'node:url';
-import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, mapToolRecovery, type MinecraftWorldOptions } from 'agent-mc-world/extension';
+import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, mapToolRecovery, namespaceWorldHost, namespaceWorldStorage, type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import type { WorldHost } from 'agent-mc-world/contracts';
 import { mymcGroup, SERVER_PACK_PROPERTY, MYMC_CONFIG_GROUP, type MymcConfigSection } from './config.ts';
 
@@ -21,7 +21,7 @@ export class GenericMymcWorld extends MinecraftClientWorld {
   override readonly id = 'mymc';
   constructor(private readonly adapterOptions: MinecraftWorldOptions & { cfg: MymcConfigSection }) {
     super({ ...adapterOptions, cfg: new Proxy(adapterOptions.cfg, {
-      get: (target, key, receiver) => key === 'hostDecisions' || key === 'harness2' ? undefined : Reflect.get(target, key, receiver),
+      get: (target, key, receiver) => key === 'hostDecisions' || key === 'harness2' || key === 'decisionService' ? undefined : Reflect.get(target, key, receiver),
     }) });
     this.learning = new WorldOperationLearning(adapterOptions.dataDir, () => this.requestFacts());
   }
@@ -43,7 +43,7 @@ export class GenericMymcWorld extends MinecraftClientWorld {
   }
   override console() {
     const base = super.console();
-    return { ...base, label: '联机版我的世界',
+    return { ...base, label: '联机版我的世界',storage:namespaceWorldStorage(base.storage,'minecraft',this.id),
       promptDocs: base.promptDocs?.map(doc => ({ ...doc, key: 'worlds.mymc.envPrompt',
         path: fileURLToPath(new URL('./GENERIC_ENV_PROMPT.md', import.meta.url)) })),
       config: base.config?.map((group, index) => {
@@ -60,9 +60,9 @@ export class GenericMymcWorld extends MinecraftClientWorld {
   }
   override async start(host: WorldHost) {
     validateHostCombat(this.adapterOptions.cfg);
-    const observedHost = this.learning.start(host);
+    const observedHost = this.learning.start(namespaceWorldHost(host,'minecraft',this.id));
     try {
-      await super.start({ ...observedHost, pushEvent: (event, options) => observedHost.pushEvent({ ...event, source: this.id }, options) });
+      await super.start(observedHost);
       if (this.adapterOptions.cfg.hostDecisions?.combat?.enabled) {
         const tool = this.learning.tools(super.tools(), 'system1').find(t => t.name === 'mc_combat_tactic');
         if (!tool) throw new Error('Minecraft core tactic port unavailable');

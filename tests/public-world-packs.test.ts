@@ -5,10 +5,11 @@ import { GenericMymcWorld } from '../integrations/qiandengji/generic-world.ts';
 import { MymcWorld } from '../integrations/qiandengji/world.ts';
 import { readServerGuide, MYMC_GUIDE_TOPICS } from '../integrations/qiandengji/server-guide.ts';
 import { QIANDENGJI_PACK } from '../integrations/qiandengji/data-packs/qiandengji/manifest.ts';
+import {corticoContext} from './cortico-context.ts';
 
 describe('one public World, explicitly selected server pack', () => {
   it('supplies every declared console configuration from the owning defaults without enabling host inference',()=>{
-    const cfg=MYMC.defaults(),world=MYMC.create({cfg} as never);
+    const cfg=MYMC.defaults(),world=MYMC.create(corticoContext(cfg));
     for(const group of world.console?.().config??[])for(const path of Object.keys(group.schema.properties)){
       const keys=path.replace(/^worlds\.mymc\./,'').split('.');
       const value=keys.reduce((object:any,key)=>object?.[key],cfg);
@@ -28,7 +29,7 @@ describe('one public World, explicitly selected server pack', () => {
       expect(cfg.serverPack).toBe('none');
       expect(cfg.escapeCommand).toBe('');
       MYMC.preflight?.({ cfg } as never);
-      const world = MYMC.create({ cfg } as never);
+      const world = MYMC.create(corticoContext(cfg));
       expect(world).toBeInstanceOf(GenericMymcWorld);
       const tools = world.tools().map(t => t.name);
       expect(tools).toContain('mymc_do');
@@ -38,7 +39,7 @@ describe('one public World, explicitly selected server pack', () => {
       expect(tools).not.toContain('mymc_guide');
       expect(JSON.stringify(await world.envPromptVars())).not.toContain('/mycli');
       expect(world.console?.().config?.flatMap(g => Object.keys(g.schema.properties))).toContain('worlds.mymc.serverPack');
-      expect(world.console?.().config?.flatMap(g => Object.keys(g.schema.properties))).toContain('worlds.mymc.hostDecisions.choice.decisionProvider');
+      expect(world.console?.().config?.flatMap(g => Object.keys(g.schema.properties))).toContain('worlds.mymc.decisionService.endpoint');
       expect(world.console?.().config?.flatMap(g => Object.keys(g.schema.properties))).toContain('worlds.mymc.hostDecisions.combat.enabled');
       await world.stop();
       expect(fetch).not.toHaveBeenCalled();
@@ -46,7 +47,7 @@ describe('one public World, explicitly selected server pack', () => {
   });
   it('bundles source manuals and only activates the server implementation by explicit selection', () => {
     const cfg = { ...MYMC.defaults(), serverPack: 'qiandengji' as const, host: 'example.test', username: 'Alice' };
-    const world = MYMC.create({ cfg } as never);
+    const world = MYMC.create(corticoContext(cfg));
     expect(world).toBeInstanceOf(MymcWorld);
     expect(world.tools().map(t => t.name)).toEqual(expect.arrayContaining(['mymc_cast', 'mymc_combat_tactic', 'mymc_guide']));
     expect(MYMC_GUIDE_TOPICS.map(t => t.id)).toContain('stories');

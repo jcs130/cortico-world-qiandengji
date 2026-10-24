@@ -80,7 +80,7 @@ it('keeps guild state absent with the server pack disabled even if matching hist
   let bridge:any;
   const body={tools:()=>[],start:async(host:any)=>{bridge=host},stop:async()=>{},requestFacts:()=>({text:'live',parts:[{key:'body',text:'live'}]})};
   const world=new JavaMymcWorld({cfg,dataDir:dir},body as any);
-  await world.start({log:nullLogger(),pushEvent:vi.fn()} as any);
+  await world.start({log:nullLogger(),pushEvent:vi.fn(async event=>event)} as any);
   try{
     await bridge.pushEvent({type:'minecraft.client.message',source:'minecraft',ts:'2026-01-01T12:01:00Z',text:'正在进行：田地循环 · 3/3 交付 [0/1]',meta:{kind:'system'}});
     expect(world.requestFacts()!.parts!.some(p=>p.key==='guildState')).toBe(false);
@@ -134,7 +134,7 @@ it('indexes native messages without replaying them, retains sender/time and expo
     const all: any = await tool.handler({ status: 'all' }, {} as any);
     expect(all.text).toContain('匹配 1 条');
     expect(pushEvent).toHaveBeenCalledTimes(3);
-    expect(pushEvent.mock.calls[0][0]).toEqual({ ...incoming, source: 'mymc' });
+    expect(pushEvent.mock.calls[0][0]).toEqual({ ...incoming, source: 'mymc',type:'mymc.client.message' });
   } finally { await world.stop(); }
 });
 
@@ -168,7 +168,7 @@ it('delivers canonical player identity and explicit server arrivals once for hos
     expect(pushEvent).toHaveBeenCalledTimes(4);
     expect(pushEvent.mock.calls[0][0]).toMatchObject({...base,source:'mymc',type:'mymc.enter',senderKey:'Alex',meta:{uname:'Alex',nearby:false}});
     expect(pushEvent.mock.calls[1][0]).toMatchObject({type:'mymc.chat',senderKey:'Sam',text:base.text});
-    expect(pushEvent.mock.calls[2][0]).toMatchObject({type:'minecraft.client.message'});
+    expect(pushEvent.mock.calls[2][0]).toMatchObject({type:'mymc.client.message'});
     expect(pushEvent.mock.calls[2][0].senderKey).toBeUndefined();
     expect(pushEvent.mock.calls[3][0]).toMatchObject({type:'mymc.chat',senderKey:'Alex',text:'<Alex> hello',ts:base.ts});
   }finally{await world.stop();}
