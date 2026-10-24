@@ -19,7 +19,9 @@ if (core.name !== 'agent-mc-world' || core.version !== source.version) throw new
 const serverDir = join(root, 'packages/qiandengji'), worldDir = join(root, 'integrations/qiandengji');
 const server = await json(join(serverDir, 'package.json')), world = await json(join(worldDir, 'package.json'));
 for (const pkg of [server, world]) {
-  if (pkg.private || pkg.dependencies?.['agent-mc-world'] !== '^' + core.version) throw new Error('Consumer core dependency differs: ' + pkg.name);
+  const coreRange = pkg === server ? pkg.peerDependencies?.['agent-mc-world'] : pkg.dependencies?.['agent-mc-world'];
+  if (pkg.private || coreRange !== '^' + core.version || pkg === server && pkg.dependencies?.['agent-mc-world'])
+    throw new Error('Consumer core dependency differs: ' + pkg.name);
   if (Object.keys(pkg.dependencies ?? {}).some(name => /^(?:cortico-world-|cortico$)/.test(name))) throw new Error('Unexpected host/World runtime dependency');
 }
 if (world.dependencies?.['agent-mc-qiandengji'] !== '^' + server.version || world.cortico?.api !== 6

@@ -1,3 +1,8 @@
+## 0.4.1-rc.23
+
+- Consume server pack rc.22, which requires the host's shared Agent MC World core through a peer dependency instead of independently resolving another engine version.
+- Keep the rc.84 core and existing API 6 runtime behavior. This packaging update does not reload a deployed World.
+
 ## 0.4.1-rc.22
 
 - Pin shared core rc.84, including upstream AuthMe login-receipt compatibility and phase-specific timeout diagnostics.
