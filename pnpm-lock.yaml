@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.84-d979eada.tgz
+  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.85-82deecfe.tgz
   vec3: 0.2.0
 
 importers:
@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       agent-mc-world:
-        specifier: file:vendor/agent-mc-world-0.5.7-rc.84-d979eada.tgz
-        version: file:vendor/agent-mc-world-0.5.7-rc.84-d979eada.tgz
+        specifier: file:vendor/agent-mc-world-0.5.7-rc.85-82deecfe.tgz
+        version: file:vendor/agent-mc-world-0.5.7-rc.85-82deecfe.tgz
       vec3:
         specifier: 0.2.0
         version: 0.2.0
@@ -644,9 +644,9 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.84-d979eada.tgz:
-    resolution: {integrity: sha512-ly4N7cc37CO6pPO6CBhcI02p9s2B00LH7VkToebe9MLJKqGwRhv5tG6Qmfs034kmFAAZzrpiY6AjSAUJu4OA0w==, tarball: file:vendor/agent-mc-world-0.5.7-rc.84-d979eada.tgz}
-    version: 0.5.7-rc.84
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.85-82deecfe.tgz:
+    resolution: {integrity: sha512-ubzh3r3FHA98fiAFSHyO9KutWGjnCk1ukyD7XKs8I6D4PUi5bDy1aG7t5K7jYIvGs3jpvwWOVrYTTnfUWd2blw==, tarball: file:vendor/agent-mc-world-0.5.7-rc.85-82deecfe.tgz}
+    version: 0.5.7-rc.85
     engines: {node: '>=22'}
     hasBin: true
 
@@ -1661,6 +1661,7 @@ packages:
 
   uuid@8.3.0:
     resolution: {integrity: sha512-fX6Z5o4m6XsXBdli9g7DtWgAx+osMsRRZFKma1mIUsLCz6vRvv+pz5VNbyu9UEDzpMWulZfvpgb/cmDXVulYFQ==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   vary@1.1.2:
@@ -2195,7 +2196,7 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.84-d979eada.tgz:
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.85-82deecfe.tgz:
     dependencies:
       '@mcap/core': 2.3.0
       '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.5)

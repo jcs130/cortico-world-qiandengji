@@ -5,6 +5,7 @@ import type { World, WorldHost } from 'agent-mc-world/contracts';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
 import { portalApiFixture } from './fixtures/portal-api.ts';
 
 function fixture(dataDir = '') {
@@ -119,7 +120,14 @@ describe('operator quick setup through official WorldContext ports', () => {
   });
   it('preserves the existing panel data plane', async () => {
     const f = fixture();
+    await f.invoke('start', { address: 'example.test', username: 'Alice' });
     expect(await f.world.console!().invoke!('connection', 'state', [])).toEqual({ panel: 'connection', method: 'state' });
+  });
+  it('returns an unverified preparation state without invoking an absent engine', async () => {
+    const f = fixture();
+    expect(await f.world.console!().invoke!('connection', 'state', [])).toMatchObject({
+      preparation: { phase: 'stopped' }, server: { actualVersion: null }, connection: null, accounts: {}, clients: {},
+    });
   });
   it('uses prepared resources without saving package/cache paths into operator configuration', async () => {
     const root = await mkdtemp(join(tmpdir(), 'world-viewer-config-'));
@@ -138,5 +146,90 @@ describe('operator quick setup through official WorldContext ports', () => {
       expect(f.cfg.viewerAssetsDir).toBe(''); expect(f.persist).not.toHaveBeenCalled();
       await instance.stop();
     } finally { await rm(root, { recursive: true, force: true }); }
+  });
+});
+
+async function assetFixture(start?: () => Promise<void>) {
+  const root = await mkdtemp(join(tmpdir(), 'world-audio-lifecycle-')), template = join(root, 'template');
+  await mkdir(template);
+  const bytes = Buffer.from('OggS delayed audio fixture');
+  const hash = (algorithm: string) => createHash(algorithm).update(bytes).digest('hex');
+  await writeFile(join(template, 'audio-downloads.json'), JSON.stringify({ schema: 'agent-mc-viewer-audio/v1',
+    viewerArchiveSha256: 'a'.repeat(64), files: [{ file: 'public/sounds/test.ogg', sha1: hash('sha1'), sha256: hash('sha256'), bytes: bytes.length }] }));
+  await writeFile(join(template, 'index.html'), 'ready before audio');
+  const cfg = { ...MYMC.defaults(), enabled: true, viewerPort: 7793 };
+  const started = vi.fn(start ?? (async () => {})), stopped = vi.fn(async () => {}), setDirectory = vi.fn();
+  const engine: World = { id: 'mymc', tools: () => [], envPromptVars: () => ({}), start: started, stop: stopped,
+    console: () => ({ connection: { ready: true, phase: 'online' }, invoke: async () => ({ actualEngine: true }) }) };
+  const world = withQuickStart(engine, { cfg, dataDir: join(root, 'data'), timezone: 'UTC', botName: 'Fixture' }, () => {},
+    { templateDir: () => template, setDirectory });
+  const invoke = (method = 'state') => world.console!().invoke!('quick-start', method, []);
+  return { root, template, bytes, cfg, world, started, stopped, setDirectory, invoke,
+    async close() { await world.stop(); vi.unstubAllGlobals(); await rm(root, { recursive: true, force: true }); } };
+}
+
+describe('game startup with independently owned audio preparation', () => {
+  it('starts the body and serves base files before a slow audio request finishes', async () => {
+    const f = await assetFixture(); let release!: () => void;
+    const downloading = new Promise<void>(resolve => { release = resolve; });
+    const transport = vi.fn(async () => { await downloading; return new Response(f.bytes); }); vi.stubGlobal('fetch', transport);
+    try {
+      await f.world.start({} as WorldHost);
+      expect(f.started).toHaveBeenCalledOnce(); expect(f.setDirectory).toHaveBeenCalledOnce();
+      expect(await readFile(join(f.setDirectory.mock.calls[0][0], 'index.html'), 'utf8')).toBe('ready before audio');
+      expect(await f.invoke()).toMatchObject({ mounted: true, assets: { phase: 'downloading', completed: 0 }, assetPreparing: true });
+      await f.invoke('retry-assets'); expect(transport).toHaveBeenCalledOnce();
+      release();
+      await vi.waitFor(async () => expect(await f.invoke()).toMatchObject({ mounted: true, assets: { phase: 'ready', completed: 1 }, assetPreparing: false }));
+      expect(f.started).toHaveBeenCalledOnce();
+    } finally { release(); await f.close(); }
+  });
+  it('reports a timeout and retries audio without restarting an already mounted game', async () => {
+    const f = await assetFixture();
+    const transport = vi.fn().mockRejectedValueOnce(new DOMException('simulated timeout', 'TimeoutError'))
+      .mockResolvedValueOnce(new Response(f.bytes)); vi.stubGlobal('fetch', transport);
+    try {
+      await f.world.start({} as WorldHost);
+      await vi.waitFor(async () => expect(await f.invoke()).toMatchObject({ mounted: true, assetError: 'simulated timeout', assetPreparing: false }));
+      await f.invoke('retry-assets');
+      await vi.waitFor(async () => expect(await f.invoke()).toMatchObject({ mounted: true, assetError: null, assets: { phase: 'ready' } }));
+      expect(transport).toHaveBeenCalledTimes(2); expect(f.started).toHaveBeenCalledOnce(); expect(f.stopped).not.toHaveBeenCalled();
+    } finally { await f.close(); }
+  });
+  it('aborts and settles in-flight audio when the World stops', async () => {
+    const f = await assetFixture(); let signal!: AbortSignal;
+    vi.stubGlobal('fetch', vi.fn(async (_url, options) => {
+      signal = options.signal;
+      return new Promise<Response>((_resolve, reject) => signal.addEventListener('abort', () => reject(signal.reason), { once: true }));
+    }));
+    try {
+      await f.world.start({} as WorldHost); await vi.waitFor(() => expect(signal).toBeDefined());
+      await f.world.stop();
+      expect(signal.aborted).toBe(true);
+      expect(await f.invoke()).toMatchObject({ mounted: false, phase: 'stopped', assets: null, assetError: null, assetPreparing: false });
+    } finally { await f.close(); }
+  });
+  it('does not start an engine when the base catalog is invalid', async () => {
+    const f = await assetFixture(), transport = vi.fn(); vi.stubGlobal('fetch', transport);
+    try {
+      await writeFile(join(f.template, 'audio-downloads.json'), JSON.stringify({ schema: 'invalid' }));
+      await expect(f.world.start({} as WorldHost)).rejects.toThrow('catalog');
+      expect(f.started).not.toHaveBeenCalled(); expect(transport).not.toHaveBeenCalled();
+      expect(await f.world.console!().invoke!('connection', 'state', [])).toMatchObject({ preparation: { phase: 'failed' }, connection: null });
+    } finally { await f.close(); }
+  });
+  it('does not resurrect a body whose asynchronous startup was stopped', async () => {
+    let release!: () => void;
+    const starting = new Promise<void>(resolve => { release = resolve; }), f = await assetFixture(() => starting);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(f.bytes)));
+    const outcome = f.world.start({} as WorldHost).then(() => 'mounted', error => error.message);
+    try {
+      await vi.waitFor(() => expect(f.started).toHaveBeenCalledOnce());
+      expect(await f.world.console!().invoke!('connection', 'state', [])).toMatchObject({ preparation: { phase: 'starting' }, connection: null });
+      await f.world.stop(); release();
+      expect(await outcome).toBe('启动已取消。');
+      expect(await f.invoke()).toMatchObject({ mounted: false, phase: 'stopped', startupError: null, assets: null });
+      expect(f.stopped).toHaveBeenCalled();
+    } finally { release(); await outcome; await f.close(); }
   });
 });

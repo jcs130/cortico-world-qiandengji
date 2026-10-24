@@ -1,3 +1,10 @@
+## 0.4.1-rc.24
+
+- Consume shared core rc.85: a verified base-viewer handoff lets the body start while full audio preparation continues; reviewed ledger copies use bounded parallel I/O without removing integrity checks.
+- Own, cancel and settle background audio preparation; show incomplete/error state and allow audio-only retry without reconnecting or replaying game work.
+- Return unverified preparation state before the engine is mounted instead of calling the absent child process.
+- This is an unpublished source candidate; production loading and final rendered/audio behavior require separate validation.
+
 ## 0.4.1-rc.23
 
 - Consume server pack rc.22, which requires the host's shared Agent MC World core through a peer dependency instead of independently resolving another engine version.

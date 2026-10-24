@@ -1,10 +1,11 @@
 import type { WebUiPanel } from 'cortico/web/shared/client-panel.ts';
 
 interface SetupState {
-  available: boolean; mounted: boolean; enabled: boolean; provider: string;
+  available: boolean; mounted: boolean; enabled: boolean; provider: string; startupError?: string | null;
   settings: { host: string; port: number; username: string; auth: string; version: string; serverPack: string; viewerPort: number };
   loginName: string; connection: { ready: boolean; phase: string } | null;
   assets?: { phase: string; completed: number; total: number } | null;
+  assetError?: string | null; assetPreparing?: boolean;
   alreadyConnected?: boolean;
   portal?: { available: boolean; identitySaved?: boolean; username?: string | null; state: string;
     gameAccountCreated?: boolean; checkedAt?: string | null; message: string } | null;
@@ -33,8 +34,8 @@ export const quickStartPanel: WebUiPanel = {
     more.append(summary, advanced, ui.h('p', 'pagedesc', '原生客户端、服务器密码登录、记忆服务和快决策在本页高级配置中按需设置。'));
     const msg = ui.msgline(), status = ui.msgline(), links = ui.actions(), actions = ui.actions();
     const save = ui.button('保存配置'), start = ui.button('进入游戏', { variant: 'primary' });
-    const stop = ui.button('断开游戏', { variant: 'danger' });
-    actions.append(start, save, stop);
+    const stop = ui.button('断开游戏', { variant: 'danger' }), retryAssets = ui.button('重试音频资源');
+    actions.append(start, save, stop, retryAssets);
     const portal = ui.h('details', 'mc-fold mc-portal'), portalSummary = ui.h('summary', '', '千灯纪网站邀请 · 准备账号并进入游戏');
     const portalBody = ui.h('div', 'mc-foldbody'), portalLinks = ui.actions();
     for (const [label, href] of [['打开网站连接中心', 'https://mc.kangqiang.site/#connections'], ['接入说明', 'https://mc.kangqiang.site/agent-api.html']]) {
@@ -71,6 +72,8 @@ export const quickStartPanel: WebUiPanel = {
     const locks = () => {
       start.disabled = save.disabled = busy || !current?.available;
       stop.disabled = busy || !current?.enabled;
+      retryAssets.hidden = !current?.assetError;
+      retryAssets.disabled = busy || !current?.mounted || current?.assetPreparing === true;
       if (current?.provider === 'java-client') start.disabled = true;
       prepare.disabled = busy || !current?.portal?.available;
       query.disabled = busy || !current?.portal?.identitySaved;
@@ -96,7 +99,11 @@ export const quickStartPanel: WebUiPanel = {
               ? '网站账号已就绪，点击“使用此身份进入游戏”。' : '网站账号准备中；按上方结果继续，尚未连接游戏。')
               : '使用网站邀请接入，或展开“已有服务器 / 手动连接”。';
       if (!state.available) status.textContent = '宿主未提供快捷配置接口，请升级 Cortico 后使用。';
-      if (state.assets && state.assets.phase !== 'ready') status.textContent = `准备 / 校验音画资源 ${state.assets.completed}/${state.assets.total}；完成后自动连接，复用已完成的缓存。`;
+      if (state.startupError) status.textContent = `World 启动失败：${state.startupError}`;
+      if (state.enabled && state.assets && state.assets.phase !== 'ready') status.textContent += state.assets.phase === 'copying'
+        ? ' · 正在准备基础画面资源。'
+        : ` · 音频后台准备 ${state.assets.completed}/${state.assets.total}，尚未全部就绪。`;
+      if (state.assetError) status.textContent += ` · 音频资源未完整准备：${state.assetError}；可重试，当前游戏连接保留。`;
       if (state.provider === 'java-client') status.textContent += ' · 原生客户端请使用高级配置。';
       links.replaceChildren();
       for (const link of state.links.filter(link => /观战|第三人称|第一人称|基础画面/.test(link.label))) {
@@ -147,6 +154,15 @@ export const quickStartPanel: WebUiPanel = {
     };
     for (const [button, method] of [[save, 'save'], [start, 'start'], [stop, 'stop']] as const)
       button.addEventListener('click', () => { void act(method); }, { signal: ctx.signal });
+    retryAssets.addEventListener('click', () => {
+      if (busy || ctx.signal.aborted) return;
+      busy = true; locks();
+      void ctx.invoke<SetupState>('retry-assets').then(result => {
+        if (!ctx.signal.aborted) render(result);
+      }, error => {
+        if (!ctx.signal.aborted) msg.textContent = error instanceof Error ? error.message : '资源重试失败。';
+      }).finally(() => { busy = false; locks(); });
+    }, { signal: ctx.signal });
     const portalAct = async (method: 'portal-prepare' | 'portal-status' | 'portal-import' | 'portal-start') => {
       if (busy || ctx.signal.aborted) return;
       busy = true; locks();

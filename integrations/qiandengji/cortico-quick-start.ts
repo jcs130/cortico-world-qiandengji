@@ -13,28 +13,79 @@ export function withQuickStart<T extends World>(world: T, ctx: WorldContext<Mymc
   const base = world.console?.bind(world);
   const start = world.start.bind(world), stop = world.stop.bind(world);
   let mounted = false, mutation: Promise<unknown> | null = null;
-  let assets: ViewerAssetProgress | null = null, assetAbort: AbortController | null = null;
+  let assets: ViewerAssetProgress | null = null, assetError: string | null = null, startupError: string | null = null;
+  let phase: 'stopped' | 'preparing-assets' | 'starting' | 'running' | 'failed' = 'stopped', revision = 0;
+  let assetTemplate: string | null = null;
+  let assetJob: { controller: AbortController; work: Promise<void> } | null = null;
   const portal = ctx.dataDir ? new QiandengjiPortalAccess({ directory: join(ctx.dataDir, 'website-access') }) : null;
-  world.start = async host => {
-    const templateDir = viewer?.templateDir() ?? ctx.cfg.viewerAssetsDir;
-    if (ctx.cfg.provider !== 'java-client' && ctx.cfg.viewerPort > 0 && templateDir) {
-      assetAbort = new AbortController();
-      try {
-        const prepared = await prepareMinecraftViewerAssets({ templateDir,
-          cacheDir: join(ctx.dataDir, 'minecraft-viewer'), signal: assetAbort.signal, onProgress: value => {
-            assets = value; if (!ctx.cfg.enabled) assetAbort?.abort(new Error('启动已取消。'));
-          } });
-        if (prepared.directory !== templateDir && !viewer) throw new Error('宿主未提供运行时资源目录接口。');
-        viewer?.setDirectory(prepared.directory);
-      } finally { assetAbort = null; }
-    }
-    if (!ctx.cfg.enabled) throw new Error('启动已取消。');
-    await start(host); mounted = true;
+  const cancelAssets = async () => {
+    const job = assetJob;
+    if (job) { job.controller.abort(new Error('资源准备已取消。')); await job.work; }
   };
-  world.stop = async () => { mounted = false; assetAbort?.abort(); await stop(); };
+  const beginAssets = (templateDir: string): Promise<void> => {
+    let resolveBase!: () => void, rejectBase!: (error: unknown) => void;
+    const baseReady = new Promise<void>((resolve, reject) => { resolveBase = resolve; rejectBase = reject; });
+    const job = { controller: new AbortController(), work: Promise.resolve() };
+    assetJob = job; assets = null; assetError = null;
+    job.work = prepareMinecraftViewerAssets({ templateDir,
+      cacheDir: join(ctx.dataDir, 'minecraft-viewer'), signal: job.controller.signal,
+      onBaseReady: base => {
+        job.controller.signal.throwIfAborted();
+        if (assetJob !== job) throw new Error('资源准备已被替换。');
+        if (base.directory !== templateDir && !viewer) throw new Error('宿主未提供运行时资源目录接口。');
+        viewer?.setDirectory(base.directory);
+        resolveBase();
+      },
+      onProgress: value => {
+        if (assetJob !== job || job.controller.signal.aborted) return;
+        if (!ctx.cfg.enabled) { job.controller.abort(new Error('启动已取消。')); return; }
+        assets = value;
+      },
+    }).then(result => {
+      if (assetJob === job && !job.controller.signal.aborted)
+        assets = { phase: 'ready', completed: result.total, total: result.total, downloaded: result.downloaded, bytes: assets?.bytes ?? 0 };
+    }, error => {
+      rejectBase(error);
+      if (assetJob === job && !job.controller.signal.aborted)
+        assetError = error instanceof Error ? error.message : '音频资源准备失败，请重试。';
+    }).finally(() => { if (assetJob === job) assetJob = null; });
+    return baseReady;
+  };
+  world.start = async host => {
+    const current = ++revision;
+    mounted = false; phase = 'preparing-assets'; startupError = null;
+    await cancelAssets();
+    try {
+      if (current !== revision || !ctx.cfg.enabled) throw new Error('启动已取消。');
+      assets = null; assetError = null;
+      const templateDir = viewer?.templateDir() ?? ctx.cfg.viewerAssetsDir;
+      assetTemplate = ctx.cfg.provider !== 'java-client' && ctx.cfg.viewerPort > 0 && templateDir ? templateDir : null;
+      if (assetTemplate) await beginAssets(assetTemplate);
+      if (current !== revision || !ctx.cfg.enabled) throw new Error('启动已取消。');
+      phase = 'starting';
+      await start(host);
+      if (current !== revision || !ctx.cfg.enabled) { await stop(); throw new Error('启动已取消。'); }
+      mounted = true; phase = 'running';
+    } catch (error) {
+      if (current === revision) {
+        phase = 'failed'; startupError = error instanceof Error ? error.message : 'World 启动失败。';
+        await cancelAssets();
+      }
+      throw error;
+    }
+  };
+  world.stop = async () => {
+    const current = ++revision; mounted = false; phase = 'stopped'; startupError = null;
+    const settling = cancelAssets();
+    try { await stop(); } finally {
+      await settling;
+      if (current === revision) { assets = null; assetError = null; assetTemplate = null; }
+    }
+  };
   const state = async () => {
     const cfg = ctx.cfg, declaration = base?.();
-    return { available: !!ctx.persist && !!ctx.restart, mounted, enabled: cfg.enabled, provider: cfg.provider, assets,
+    return { available: !!ctx.persist && !!ctx.restart, mounted, enabled: cfg.enabled, provider: cfg.provider,
+      phase, startupError, assets, assetError, assetPreparing: !!assetJob,
       settings: { host: cfg.host, port: cfg.port, username: cfg.username, auth: cfg.auth, version: cfg.version,
         serverPack: cfg.serverPack ?? 'none', viewerPort: cfg.viewerPort },
       loginName: cfg.serverPack === 'qiandengji' ? mymcLoginName(cfg.username, cfg.preserveLoginName) : cfg.username,
@@ -71,12 +122,24 @@ export function withQuickStart<T extends World>(world: T, ctx: WorldContext<Mymc
   };
   const invoke = async (panel: string, method: string, args: unknown[]) => {
     if (panel !== 'quick-start') {
+      if (panel === 'connection' && method === 'state' && !mounted) return {
+        preparation: { phase, detail: startupError, assets, assetError },
+        server: { host: ctx.cfg.host, port: ctx.cfg.port, requestedVersion: ctx.cfg.version, actualVersion: null },
+        connection: null, accounts: {}, clients: {},
+      };
       const parent = base?.();
       if (!parent?.invoke) throw new Error('World 面板暂不可用。');
       return parent.invoke(panel, method, args);
     }
     if (method === 'state') return state();
-    if (!['save', 'start', 'stop', 'portal-prepare', 'portal-status', 'portal-import', 'portal-start'].includes(method)) throw new Error('未知启动操作。');
+    if (!['save', 'start', 'stop', 'retry-assets', 'portal-prepare', 'portal-status', 'portal-import', 'portal-start'].includes(method)) throw new Error('未知启动操作。');
+    if (method === 'retry-assets') {
+      if (mutation) throw new Error('正在处理连接，请稍候。');
+      if (!mounted || !ctx.cfg.enabled || !assetTemplate) throw new Error('请先启动启用了网页观战的游戏。');
+      if (assetJob || (assets?.phase === 'ready' && !assetError)) return state();
+      mutation = beginAssets(assetTemplate);
+      try { await mutation; return await state(); } finally { mutation = null; }
+    }
     if (!method.startsWith('portal-') || method === 'portal-start') {
       if (!ctx.persist || !ctx.restart) throw new Error('当前宿主未提供配置保存与 World 启停接口，请升级 Cortico。');
     }
@@ -110,7 +173,7 @@ export function withQuickStart<T extends World>(world: T, ctx: WorldContext<Mymc
       && Object.entries(patch).every(([key, value]) => Object.is(ctx.cfg[key as keyof MymcConfigSection], value))) {
       return { saved: true, requested: method, alreadyConnected: true, ...await state() };
     }
-      if (method === 'stop') assetAbort?.abort(new Error('启动已取消。'));
+      if (method === 'stop') assetJob?.controller.abort(new Error('启动已取消。'));
       ctx.persist!({ ...patch, ...(method === 'save' ? {} : { enabled: starting }) });
       if (method !== 'save') await ctx.restart!();
       return { saved: true, requested: method, ...await state() };

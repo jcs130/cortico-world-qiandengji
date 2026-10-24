@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import { MC as worldDefinition } from '../src/adapters/minecraft.ts';
 import { MINECRAFT_CLIENT_DEFAULTS, assertMinecraftReady } from 'agent-mc-world/client';
@@ -8,6 +9,17 @@ import { MYMC_DEFAULTS, mymcEngineConfig } from '../src/config.ts';
 import { assertMymcReady } from '../src/guard.ts';
 
 describe('installable World', () => {
+  it('consumes the declared pinned core rather than a stale workspace override', () => {
+    const root = fileURLToPath(new URL('../', import.meta.url));
+    const source = JSON.parse(readFileSync(join(root, 'vendor/core-source.json'), 'utf8'));
+    const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+    expect(manifest.dependencies['agent-mc-world']).toBe(`file:vendor/${source.file}`);
+    const override = readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8').split(/\r?\n/)
+      .find(line => /^  agent-mc-world:/.test(line))?.trim();
+    expect(override).toBe(`agent-mc-world: file:vendor/${source.file}`);
+    const require = createRequire(import.meta.url);
+    expect(require('agent-mc-world/package.json').version).toBe(source.version);
+  });
   it('constructs without connecting and observes the configured server and port', async () => {
     const cfg = { ...structuredClone(MINECRAFT_CLIENT_DEFAULTS), host: 'example.test', port: 25577, username: 'visitor' };
     assertMinecraftReady(cfg);

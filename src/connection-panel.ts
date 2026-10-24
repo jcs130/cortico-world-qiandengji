@@ -14,9 +14,14 @@ export const connectionPanel: WebUiPanel = {
         const state = await ctx.invoke<{ server: { host: string; port: number; actualVersion: string | null; requestedVersion: string };
           connection?: { protocolState: string; spawnReceived: boolean; ready: boolean;
             serverLogin: { stage: string; reason: string | null } };
-          accounts: Record<string, PublicAccountState>; clients: Record<string, { phase: string; detail: string | null }> }>('state');
+          accounts: Record<string, PublicAccountState>; clients: Record<string, { phase: string; detail: string | null }>;
+          preparation?: { phase: string; detail: string | null; assets: { phase: string; completed: number; total: number } | null; assetError: string | null } }>('state');
         if (ctx.signal.aborted) return;
         sheet.body.replaceChildren(ctx.ui.h('p', '', `${state.server.host}:${state.server.port} · Java ${state.server.actualVersion ?? '尚未协商'} · 配置 ${state.server.requestedVersion}`));
+        if (state.preparation) {
+          const p = state.preparation, labels: Record<string, string> = { 'preparing-assets': '正在准备基础画面', starting: '引擎正在启动', stopped: 'World 尚未启动', failed: 'World 启动失败' };
+          sheet.body.append(ctx.ui.h('p', '', `${labels[p.phase] ?? p.phase}；游戏连接未验证${p.detail ? ` · ${p.detail}` : ''}`));
+        }
         if (state.connection) {
           const c = state.connection;
           const labels: Record<string, string> = { disabled: '未配置密码登录', armed: '等待登录提示', submitted: '密码已提交，等待确认',
@@ -25,6 +30,7 @@ export const connectionPanel: WebUiPanel = {
         }
         for (const [lane, title] of [['agent', 'Agent'], ['observer', '观察者'], ['player', '玩家']]) {
           const auth = state.accounts[lane], row = ctx.ui.h('section', '');
+          if (!auth) continue;
           row.append(ctx.ui.h('h3', '', `${title} · ${auth.mode === 'microsoft' ? '微软正版' : '离线'} · ${auth.profile?.name ?? auth.phase}`));
           if (auth.challenge) {
             row.append(ctx.ui.h('p', '', `微软登录码：${auth.challenge.userCode}`));
