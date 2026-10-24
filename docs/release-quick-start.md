@@ -23,6 +23,20 @@
 
 千灯纪继续消费共享 MC 核心；此接入页不再实现一份导航、背包或游戏 AI。默认不另开模型调用、自动启用试验功能或注册远程账号。
 
+## 2026-10-24 已发布的公共 API 6 公测
+
+| 包 | `next` 版本 |
+| --- | --- |
+| [agent-mc-world](https://www.npmjs.com/package/agent-mc-world/v/0.5.7-rc.84) | 0.5.7-rc.84 |
+| [agent-mc-qiandengji](https://www.npmjs.com/package/agent-mc-qiandengji/v/0.5.0-rc.21) | 0.5.0-rc.21 |
+| [cortico-world-qiandengji](https://www.npmjs.com/package/cortico-world-qiandengji/v/0.4.1-rc.22) | 0.4.1-rc.22 |
+
+三份公开归档均实际下载并核对 SHA256 和 npm integrity，与已测试候选一致；无本地文件依赖或 override 的独立消费者安装后，通过官方 API 6、自描述、公共声明、SDK 及真实 MCP 协议检查。发布前核心 2046 项、World 276 项测试通过，另有 1 项可选跳过。`latest` 保留原版本。
+
+此版隔离 World 数据和事件归属，使用公共宿主接口；可选快决策明确配置服务地址及密钥变量。核心合入 AuthMe 登录提示/回执兼容与分阶段超时诊断。旧游戏数据需在“旧数据迁移”面板审核复制，原文件保留，详情见[API 6 接入说明](cortico-api6.md)。
+
+用户在知悉标准宿主真实游戏验收尚未完成后明确授权发布 `next`。本次没有重载现役或执行游戏动作；安装检查不代表真实游戏效果和长期收益已验证。私有 API 5 兼容包没有上传 npm。
+
 ## 2026-10-23 已发布的公测版本
 
 | 包 | `next` 版本 |
