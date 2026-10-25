@@ -1,3 +1,9 @@
+## 0.4.1-rc.27
+
+- Consume the rc.90 core candidate combining current task-progress facts and PR #10 control-pattern statistics.
+- Preserve unknown motion for swimming, flying, directional movement and view changes; no movement or goal policy is added by this adapter.
+- This is a local loading candidate; package publication and natural game effects remain separate.
+
 ## 0.4.1-rc.26
 
 - Consume shared core rc.89 and its self-contained current task progress facts; original history and terminal receipts remain independently retrievable.

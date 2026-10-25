@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.89",
-  "file": "agent-mc-world-0.5.7-rc.89-3decd1d3.tgz",
-  "sha256": "3decd1d30d96ec66dd06b913ca07438e2bfcb6b3d64fae01c43c635ad83759a3",
+  "version": "0.5.7-rc.90",
+  "file": "agent-mc-world-0.5.7-rc.90-11cb0e42.tgz",
+  "sha256": "11cb0e42be66929d2c4e3f204faa21f35fb755bab5cadb3b63a6355052f66370",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "3af6b224041c29ef03908ce2d0e51baed0a08631",
+  "sourceCommit": "86d23738cbeb568f216c1ba0419c86403f5efdd0",
   "parent": "0f137d4ef695c1822cda11f8cd0a9296b13b724b",
   "channel": "local-candidate",
-  "sourceStatus": "full-tests-build-types-and-isolated-sdk-mcp-api6-api5-verified",
+  "sourceStatus": "Full core and adapter tests, types/build/declarations and isolated SDK/MCP/API 5/6/public consumer gates passed",
   "viewerIncluded": true,
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
@@ -118,5 +118,7 @@
   },
   "completeAudio": false,
   "completeAudioAfterSetup": true,
-  "published": false
+  "published": false,
+  "reviewedPr10": "b514b5bbeddb5bd5a5c028810084f93aab65c4b1",
+  "reviewedPr10Merge": "26e7d3d57af269c7e3e0b106036639fe21a063cf"
 }
