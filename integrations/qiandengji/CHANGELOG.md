@@ -1,3 +1,7 @@
+## 0.4.1-rc.28
+
+- Consume core rc.91 message batch reads, precise selector correction and scoped query-result revisions. No duplicated inbox implementation or autonomous retry loop.
+
 ## 0.4.1-rc.27
 
 - Consume the rc.90 core candidate combining current task-progress facts and PR #10 control-pattern statistics.

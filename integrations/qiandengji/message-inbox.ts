@@ -1,6 +1,6 @@
 /** Legacy storage/namespace adapter. All query, retention and provenance logic is shared. */
 import { MessageInbox as SharedMessageInbox } from 'agent-mc-world/client';
-export { MESSAGE_PARAMETERS, MESSAGE_CHANNELS, MESSAGE_LIMIT, messageChannel } from 'agent-mc-world/client';
+export { MESSAGE_TOOL, MESSAGE_PARAMETERS, MESSAGE_CHANNELS, MESSAGE_LIMIT, messageChannel } from 'agent-mc-world/client';
 export type { MessageChannel } from 'agent-mc-world/client';
 
 export class MessageInbox extends SharedMessageInbox {

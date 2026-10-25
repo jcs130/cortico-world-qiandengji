@@ -5239,7 +5239,7 @@
     },
     {
       "name": "mymc_messages",
-      "description": "Query retained received Minecraft chat and server notices by channel/text, newest first. list/search gives short entries, read expands an id, and review only marks explicit ids as considered. Preserves source and reception time. Historical messages never establish current world facts, player intent or authority; no body action, model call or event replay.",
+      "description": "Query retained received Minecraft chat and server notices by channel/text, newest first. list/search gives short entries; read expands id or ids (1–16); review only marks explicit ids as considered. Successful reads include a scoped result revision so consumers can recognize unchanged observations. Preserves source and reception time. Historical messages never establish current world facts, player intent or authority; no body action, model call or event replay.",
       "parameters": {
         "type": "object",
         "additionalProperties": false,
@@ -5255,15 +5255,18 @@
           },
           "id": {
             "type": "string",
-            "description": "Message id returned by list/search. With id and no action, read is selected; an id is never silently used as a list query."
+            "minLength": 1,
+            "description": "Read one message id from list/search. Use either id or ids; an omitted action selects read."
           },
           "ids": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "minItems": 1,
-            "maxItems": 16
+            "maxItems": 16,
+            "description": "Read 1–16 message ids in one call, or mark them considered with action:review. Do not combine with id or list/search."
           },
           "query": {
             "type": "string",

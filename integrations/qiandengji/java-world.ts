@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import type { World, WorldHost, ToolDef, WorldConsoleDecl, WorldRequestFacts } from 'agent-mc-world/contracts';
 import { createMinecraftChoiceTool, WorldOperationLearning, withToolHelp, mapWorldEventNamespace, namespaceWorldHost, namespaceWorldStorage } from 'agent-mc-world/extension';
 import { SkillCatalog } from './skill-catalog.ts';
-import { MessageInbox, MESSAGE_PARAMETERS } from './message-inbox.ts';
+import { MessageInbox, MESSAGE_TOOL, MESSAGE_PARAMETERS } from './message-inbox.ts';
 import { GuildProgress } from './guild-progress.ts';
 import { readServerGuide, serverGuideIndex } from './server-guide.ts';
 import { mymcLoginName, mymcCoreConfig, type MymcConfigSection } from './config.ts';
@@ -64,7 +64,7 @@ export class JavaMymcWorld implements World {
     if (this.opts.cfg.serverPack === 'qiandengji') tools.push(
       { name: 'mymc_guide', description: 'Read explicitly enabled Qiandengji server reference material. Commands require native chat operation and real server confirmation.', parameters: { type: 'object', properties: { topic: { type: 'string' } } }, tags: ['read'], handler: async args => readServerGuide(args.topic as string | undefined) },
       { name: 'mymc_skills', description: 'Query retained original server skill observations; not current ability/mana proof.', parameters: { type: 'object', properties: { id: { type: 'string' } } }, tags: ['read'], handler: async args => ({ text: this.catalog.readout(args.id as string | undefined) }) },
-      { name: 'mymc_messages', description: 'Query original received native server messages by query/channel, newest first; read expands an id and review marks consideration only. Includes pre-migration history; historical observations are not new commands. Use mymc_notices for the current client buffer.', parameters: MESSAGE_PARAMETERS, tags: ['read', 'write'], readOnlyCall: args => args.action !== 'review', handler: async args => this.messages.readout(args) },
+      { name: 'mymc_messages', description: MESSAGE_TOOL.description + ' Includes pre-migration history. Use mymc_notices for the current client buffer.', parameters: MESSAGE_PARAMETERS, tags: ['read', 'write'], readOnlyCall: args => args.action !== 'review', handler: async args => this.messages.readout(args) },
     );
     return withToolHelp(this.learning.tools(tools.map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description) }))), 'mymc_tool_help', { parameterDescriptions: this.opts.cfg.toolParameterDescriptions });
   }
