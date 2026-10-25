@@ -3,7 +3,7 @@
 ## 用户入口
 
 在 Cortico 的扩展安装框输入 `cortico-world-qiandengji@next` → 按宿主提示加载扩展 → World「联机版我的世界」→「开始游戏」。新接入千灯纪粘贴网站连接中心生成的专属邀请，准备账号并确认就绪后进入游戏；已有角色或普通服务器展开手动连接，沿用原账号。真实进服与认证后打开网页观战。
-本候选要求 Cortico `>=0.2.2 <0.3.0` / World API 6，使用官方 0.2.6 验收。已经发布的版本见下表；候选改动不等于已发布。
+当前公测要求 Cortico `>=0.2.2 <0.3.0` / World API 6，使用官方 0.2.7 验收。已经发布的版本见下表；候选改动不等于已发布。
 模型复用宿主；普通服默认 `serverPack:none`、协议 `auto`，不需要独立客户端、Python 或额外快模型。
 首次完整音频准备有进度、校验和缓存；网络失败可续传。高级配置仍可用。
 
@@ -22,6 +22,22 @@
 | 记忆与媒体 | 宿主管人格和个人记忆；游戏经验由核心提供。跨 World 使用宿主存储的媒体句柄，并保留来源，不能把另一世界的道具或经历当成自己的当前状态 |
 
 千灯纪继续消费共享 MC 核心；此接入页不再实现一份导航、背包或游戏 AI。默认不另开模型调用、自动启用试验功能或注册远程账号。
+
+## 2026-10-25 当前公共 API 6 公测
+
+| 包 | `next` 版本 | 本批状态 |
+| --- | --- | --- |
+| [agent-mc-world](https://www.npmjs.com/package/agent-mc-world/v/0.5.7-rc.86) | 0.5.7-rc.86 | 复用已公开归档，未重复上传 |
+| [agent-mc-qiandengji](https://www.npmjs.com/package/agent-mc-qiandengji/v/0.5.0-rc.24) | 0.5.0-rc.24 | 本批发布 |
+| [cortico-world-qiandengji](https://www.npmjs.com/package/cortico-world-qiandengji/v/0.4.1-rc.25) | 0.4.1-rc.25 | 本批发布 |
+
+三个 npm 归档均实际下载并与测试候选核对 SHA256 和 npm integrity。全新消费者仅直接依赖公开 World，以版本号从官方 registry 安装，实际解析核心 rc.86 与服务器包 rc.24，共享同一核心实例；没有本地源码链接或 override。官方 Cortico 0.2.7 先生成自描述再检查扩展通过，自描述哈希保持不变；严格声明、SDK、离线笔记及真实内存/stdio MCP 协议通过。核心、框架、World 与可视化候选回归共 8,821 项通过、42 项可选跳过。
+
+本版采用核心基础画面就绪通知、后台音频准备及取消机制；空白可选记忆身份在适配边界保留旧作用域，皮肤开关默认值保持核心原行为。核心的本地笔记是可选公开能力；宿主仍决定是否检索和采用。归档中的可视化固定于其来源版本，未包含之后的原生/Paper 运动帧与地形差量改动。
+
+现役已加载 World rc.25 / 核心 rc.86，保留原 Persona 和私有框架；官方 0.2.7 的完整实例迁移尚有私有接口兼容工作。重载验收时原主循环暂停、Minecraft 停用，未进行真实游戏操作或长期表现比较。公测发布不表示这些效果已验证。私有 API 5 包没有发布，`latest` 保持原版本。
+
+市场检查通过，保留官方索引对标签的覆盖提示；本批没有向维护者提交标签或认证申请。
 
 ## 2026-10-24 已发布的公共 API 6 公测
 
@@ -83,16 +99,16 @@ pnpm config set --global fetchTimeout 180000
 
 | 顺序 | 包 | 本候选 | 来源 |
 | --- | --- | --- | --- |
-| 1 | agent-mc-world | 0.5.7-rc.84 | 通用 World 隔离与公共端口；合入 AuthMe 登录修复 |
-| 2 | agent-mc-qiandengji | 0.5.0-rc.22 | 后续版本：通过 peer 复用宿主核心 |
-| 3 | cortico-world-qiandengji | 0.4.1-rc.23 | 后续版本：消费上述服务器包 |
+| 1 | agent-mc-world | 0.5.7-rc.86 | 复用已公开的通用核心归档 |
+| 2 | agent-mc-qiandengji | 0.5.0-rc.24 | 通过 peer 复用宿主核心，公开中立配置入口 |
+| 3 | cortico-world-qiandengji | 0.4.1-rc.25 | 官方 0.2.7 / API 6 验证，采用上述核心与服务器包 |
 
 表中为当前源码版本；发行状态按上方发布记录及 npm 标签核对，不能只看源码版本号。本批发布与后续更新分别记录。
 
 1. 核对远程 main、npm 当前版本与依赖，先在核心执行完整测试、类型和 `npm run build:release`，验证 `npm pack` 真实产物。
 2. 将该确切核心 tarball 及 SHA-256 放入本仓库的 `vendor/core-source.json`，同步开发锁文件；不要复制另一份核心源码。
 3. `npm run test:release`、`npm run typecheck`、`npm run build`。
-4. 使用官方 Cortico 0.2.6 执行 `pnpm describe:extension <本仓库/integrations/qiandengji>` 和 `pnpm check:extension <同目录>`。
+4. 使用官方 Cortico 0.2.7 执行 `pnpm describe:extension <本仓库/integrations/qiandengji>` 和 `pnpm check:extension <同目录>`。
 5. `npm run release:pack`：核对核心归档 SHA、打包两个消费端，输出 `dist/release` 的安装包、哈希和发布计划；不上传。
 6. 在独立空消费者安装三份确切包，校验 SDK/MCP、官方 API 6 和私有 API 5；以虚拟服务器验证连接和默认配置，完成浏览器按钮与授权流程验收。
 
