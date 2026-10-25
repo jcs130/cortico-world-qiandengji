@@ -3,11 +3,12 @@ import { readFileSync } from 'node:fs';
 import { QIANDENGJI_PACK } from './data-packs/qiandengji/manifest.ts';
 
 export const MYMC_GUIDE_TOPICS = [
-  { id: 'cli', title: 'Agent CLI 0.4.31', description: '认证、能力、状态、分页与未知结果' },
+  { id: 'cli', title: 'Agent CLI', description: '认证、能力、状态、分页与未知结果' },
   { id: 'world', title: '世界与自主探索', description: '世界设定、独自生活与活动选择' },
   { id: 'stories', title: '千灯纪故事线', description: '游戏内发现与选目标' },
   { id: 'onboarding', title: '基础入口', description: '进度与道具' },
   { id: 'skill-paths', title: '技能基础', description: '点数与说明' },
+  { id: 'features', title: '拍照、写书与职业', description: '照片、游记、飞行、闪现、职业与洗点的当前入口' },
   { id: 'protection', title: '保护与权限', description: '村庄保护、采集拒绝与操作边界' },
   { id: 'travel', title: '传送与抵达', description: '归乡、村庄路标、实际高度与脱困' },
   { id: 'guild', title: '公会委托与共享', description: '看板、接单交付、公共箱与分享装备' },

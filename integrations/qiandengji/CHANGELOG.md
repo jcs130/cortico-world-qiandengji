@@ -250,3 +250,7 @@
 - Default block protection checks run after an operation fails; explicit preflight remains configurable.
 - Include the latest generic viewer, held-map preview, complete Java sounds and original music assets.
 - Use Cortico API 6 WebUI names and export tool/event self-description for offline inspection.
+## 0.4.1-rc.31
+
+- Add a small, on-demand discovery guide for client/server photos, books, flight, blink, learning, professions and respec. Keep game eligibility and terminal evidence separate from historical documentation.
+- Consume server pack rc.30 with the same core rc.93. Avoid binding the discovery heading to an obsolete CLI version. This documentation candidate does not change a character build or claim that every skill was executed live.

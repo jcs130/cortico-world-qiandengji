@@ -3,6 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from '../src/server-guide.ts';
 
 describe('服务器玩法按需资料', () => {
+  it('discovers special features without treating a historical guide as current eligibility or spending character points',()=>{
+    expect(serverGuideIndex()).toContain('features：拍照、写书与职业');
+    const text=readServerGuide('features').text;
+    for(const entry of ['mymc_photo','/mycli photo --help','/mycli life --help','/mycli archive --help',
+      '/mycli skills info flight','/mycli skills info blink','/mycli profession status','mymc_flight_plan'])expect(text).toContain(entry);
+    expect(text).toContain('本角色的已学技能清单');
+    expect(text).not.toContain('respec confirm');
+    expect(readServerGuide('index').text).not.toContain('/mycli photo menu');
+  });
   it('uses failure-directed protection diagnosis rather than a query before each action', () => {
     const protection = readServerGuide('protection').text;
     expect(protection).toContain('默认不逐格查询保护');

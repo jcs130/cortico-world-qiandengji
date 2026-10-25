@@ -34,7 +34,7 @@ interface DirectoryObservation {
   updatedAt: string;
 }
 
-export const SKILL_ENTRY = '千灯纪 Agent CLI 0.4.31：/mycli capabilities 发现能力，/mycli capabilities info <ID> 查参数与结果查询，/mycli skills status 查本人资格、魔力和冷却。完整认证及分页契约用 mymc_guide cli；mymc_skills 保存旧 MC_SPELL 观察，不证明本连接的当前可用能力。';
+export const SKILL_ENTRY = '千灯纪 Agent CLI：/mycli capabilities 发现能力，/mycli capabilities info <ID> 查参数与结果查询，/mycli skills status 查本人资格、魔力和冷却。拍照、写书与职业入口用 mymc_guide features，认证及分页契约用 mymc_guide cli；mymc_skills 保存带观测时间的 MC_SPELL 历史，不证明本连接的当前可用能力。';
 
 function directoryHeader(value: unknown): { page: number; pages: number; total: number } | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
