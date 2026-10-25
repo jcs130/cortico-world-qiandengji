@@ -1,3 +1,8 @@
+## 0.4.1-rc.29
+
+- Consume core rc.92 verified opening-spell choices and server-message provenance. Keep gameplay implementation in the public core.
+- This is a loading candidate; game participation, damage, escape and speech effects require fresh live validation.
+
 ## 0.4.1-rc.28
 
 - Consume core rc.91 message batch reads, precise selector correction and scoped query-result revisions. No duplicated inbox implementation or autonomous retry loop.
