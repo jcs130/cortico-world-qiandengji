@@ -8,7 +8,7 @@ import { SkillCatalog } from './skill-catalog.ts';
 import { MessageInbox, MESSAGE_PARAMETERS } from './message-inbox.ts';
 import { GuildProgress } from './guild-progress.ts';
 import { readServerGuide, serverGuideIndex } from './server-guide.ts';
-import { mymcLoginName, type MymcConfigSection } from './config.ts';
+import { mymcLoginName, mymcCoreConfig, type MymcConfigSection } from './config.ts';
 
 const names = (text: string) => text.replace(/\bmc_([a-z][a-z0-9_]*)\b/g, 'mymc_$1');
 /** Host assembly for the public native body. No second brain, Mineflayer or automatic reconnect. */
@@ -25,7 +25,7 @@ export class JavaMymcWorld implements World {
   private epoch = 0;
   private helpText(text: string) { const mapped = names(text); return this.opts.cfg.javaHostControl?.enabled ? mapped.replace('Claim mymc_control explicitly, then renew the lease before expiry.', 'The host has explicitly claimed this body and maintains its lease. Use mymc_stop to stop work; do not claim it again.') : mapped; }
   constructor(private readonly opts: { cfg: MymcConfigSection; dataDir: string; botDir?: string; timezone?: string; botName?: string }, body?: JavaClientWorld) {
-    this.body = body ?? new JavaClientWorld(opts.cfg as MinecraftClientConfig, undefined, {
+    this.body = body ?? new JavaClientWorld(mymcCoreConfig(opts.cfg) as MinecraftClientConfig, undefined, {
       dataDir: opts.dataDir, agentName: opts.botName ?? '',
       accountName: mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName),
       // The explicit server pack already owns one legacy-named shared book.

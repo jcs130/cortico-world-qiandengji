@@ -50,9 +50,20 @@ export function mymcLoginName(value: string, preserveLoginName = false): string 
   return /^ag_/i.test(name) ? `ag_${name.slice(3)}` : `ag_${name}`;
 }
 
-/** Read the shared config live; normalize only the remote Agent identity. */
-export function mymcEngineConfig(cfg: MymcConfigSection): MymcConfigSection {
+/** Cortico renders an empty optional string; the core requires an omitted ID
+ * to retain the legacy notebook scope. Keep this host representation live. */
+export function mymcCoreConfig(cfg: MymcConfigSection): MymcConfigSection {
   return new Proxy(cfg, {
+    get(target, key, receiver) {
+      const value = Reflect.get(target, key, receiver);
+      return key === 'memoryAgentId' && typeof value === 'string' && !value.trim() ? undefined : value;
+    },
+  });
+}
+
+/** Read the shared config live; normalize the remote Agent identity. */
+export function mymcEngineConfig(cfg: MymcConfigSection): MymcConfigSection {
+  return new Proxy(mymcCoreConfig(cfg), {
     get(target, key, receiver) {
       if (key === 'hostDecisions' || key === 'harness2' || key === 'decisionService') return undefined;
       return key === 'username' ? mymcLoginName(target.username, target.preserveLoginName) : Reflect.get(target, key, receiver);
@@ -119,6 +130,9 @@ export const SERVER_PACK_PROPERTY = {
 /** Public World defaults: no server identity, commands, channels or performance endpoints. */
 export const WORLD_DEFAULTS: MymcConfigSection = {
   ...structuredClone(MYMC_DEFAULTS), ...structuredClone(MINECRAFT_CLIENT_DEFAULTS),
+  // Concrete WebUI defaults; the empty identity is omitted at the core boundary.
+  // The core only disables a stored skin for false, so true retains its auto behavior.
+  memoryAgentId: '', localSkinEnabled: true,
   combatOptions: structuredClone(COMBAT_EXECUTION_DEFAULTS),
   serverPack: 'none', viewerPort: 7793, viewerAssetsDir: '',
   visual: { ...MINECRAFT_CLIENT_DEFAULTS.visual, mode: 'auto' },

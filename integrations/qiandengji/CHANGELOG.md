@@ -1,3 +1,11 @@
+## 0.4.1-rc.25
+
+- Consume the verified public core rc.86 archive and align development checks with official Cortico 0.2.7 / World API 6.
+- Retain base-viewer readiness, cancellable background audio preparation and reviewed storage migration from rc.24.
+- Preserve legacy notebook scope unless a stable owner ID is explicitly configured. Mineral queries and external memory services remain opt-in.
+- Adapt optional core settings to Cortico's concrete WebUI defaults: an empty notebook ID retains the old scope, and the default skin toggle retains automatic stored-skin behavior.
+- This source candidate has not been published or loaded into a production deployment.
+
 ## 0.4.1-rc.24
 
 - Consume shared core rc.85: a verified base-viewer handoff lets the body start while full audio preparation continues; reviewed ledger copies use bounded parallel I/O without removing integrity checks.

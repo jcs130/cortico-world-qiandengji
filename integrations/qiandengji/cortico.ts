@@ -1,5 +1,5 @@
 import type { CorticoConfig, MymcWorldDefinition } from './public-contract.js';
-import { WORLD_DEFAULTS, type MymcConfigSection } from './config.ts';
+import { WORLD_DEFAULTS, mymcCoreConfig, type MymcConfigSection } from './config.ts';
 import { assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS,extendWorldHost,mapWorldOutcomeNamespace } from 'agent-mc-world/extension';
 import { GenericMymcWorld } from './generic-world.ts';
 import { validateHostCombat } from './host/combat-driver.ts';
@@ -75,12 +75,13 @@ export const MYMC: MymcWorldDefinition = {
     decisionService:structuredClone(DECISION_SERVICE_DEFAULTS),harness2:structuredClone(PRACTICE_DEFAULTS) }),
   preflight: ctx => {
     validateDecisionService(ctx.cfg);
-    if (ctx.cfg.provider === 'java-client') { selectedServerPack(ctx.cfg); assertMinecraftReady(ctx.cfg); return; }
+    const coreCfg = mymcCoreConfig(ctx.cfg);
+    if (ctx.cfg.provider === 'java-client') { selectedServerPack(ctx.cfg); assertMinecraftReady(coreCfg); return; }
     const pack = selectedServerPack(ctx.cfg);
     if (pack === 'qiandengji') { assertMymcReady(ctx.cfg, ctx.botDir); validateHostCombat({...ctx.cfg,hostDecisions:publicHostDecisions(ctx.cfg)}); }
     else {
       validateHostCombat({...ctx.cfg,hostDecisions:publicHostDecisions(ctx.cfg)});
-      assertMinecraftReady(ctx.cfg);
+      assertMinecraftReady(coreCfg);
     }
   },
   create: ctx => {

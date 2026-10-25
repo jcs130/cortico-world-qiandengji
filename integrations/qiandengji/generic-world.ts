@@ -2,7 +2,7 @@ import { HostCombatDriver, validateHostCombat, type HostCombatConfig } from 'age
 import { fileURLToPath } from 'node:url';
 import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, mapToolRecovery, namespaceWorldHost, namespaceWorldStorage, type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import type { WorldHost } from 'agent-mc-world/contracts';
-import { mymcGroup, SERVER_PACK_PROPERTY, MYMC_CONFIG_GROUP, type MymcConfigSection } from './config.ts';
+import { mymcGroup, mymcCoreConfig, SERVER_PACK_PROPERTY, MYMC_CONFIG_GROUP, type MymcConfigSection } from './config.ts';
 
 const adapterText = (value: string) => value.replace(/\bmc_([a-z][a-z0-9_]*)\b/g, 'mymc_$1');
 // Naming belongs to this thin mount. Schema constants and examples remain data.
@@ -20,7 +20,7 @@ export class GenericMymcWorld extends MinecraftClientWorld {
   private readonly learning: WorldOperationLearning;
   override readonly id = 'mymc';
   constructor(private readonly adapterOptions: MinecraftWorldOptions & { cfg: MymcConfigSection }) {
-    super({ ...adapterOptions, cfg: new Proxy(adapterOptions.cfg, {
+    super({ ...adapterOptions, cfg: new Proxy(mymcCoreConfig(adapterOptions.cfg), {
       get: (target, key, receiver) => key === 'hostDecisions' || key === 'harness2' || key === 'decisionService' ? undefined : Reflect.get(target, key, receiver),
     }) });
     this.learning = new WorldOperationLearning(adapterOptions.dataDir, () => this.requestFacts());

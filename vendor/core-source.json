@@ -1,39 +1,44 @@
 {
-  "version": "0.5.7-rc.85",
-  "file": "agent-mc-world-0.5.7-rc.85-82deecfe.tgz",
-  "sha256": "82deecfeee37d260800fea418b5d779b06c4510bc43a78b4006754dea66db966",
+  "version": "0.5.7-rc.86",
+  "file": "agent-mc-world-0.5.7-rc.86-35068424.tgz",
+  "sha256": "350684246704cac0eed997bd1f801b924bb18fb462e51f52eaf0926cef3fa9f0",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "92460b4e2a14811b62bb3c05587bebaadb0380b1",
-  "upstreamBase": "9e36cfa5",
-  "channel": "local-candidate",
-  "sourceStatus": "committed-source-and-isolated-packed-sdk-mcp-verified; not-published",
+  "sourceCommit": "dd7915b88213d239a295f60cb680e4a6d5c89d39",
+  "channel": "npm-next",
+  "sourceStatus": "public-npm-archive-integrity-verified",
+  "registryUrl": "https://registry.npmjs.org/agent-mc-world/-/agent-mc-world-0.5.7-rc.86.tgz",
+  "registryIntegrity": "sha512-+bWa0OZExY3o+zRQT+xRVdNYBp/Qfi+tAO1lBiLmvTwK/ymFU9D91PQBmcuFC9unuMfAAm6cWvpG3k6aDYnxDw==",
   "viewerIncluded": true,
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
-    "commit": "1c404fbfa60a8c5ac2097eb371e15aa7b1d77c26",
+    "commit": "4da993d1d96e79c7ba195ef38d49976250a621aa",
     "assetPack": "java-1.21.1",
     "additionalPacks": [
-      "java-1.20.6"
+      "java-1.20.6",
+      "java-1.21.11"
     ],
     "preset": null,
-    "artifact": "vendor/mc-visual-console-java-1.21.1-1c404fbf-experiments.tgz",
-    "sha256": "06b82c75cadd012c3682051f303b94414bae6a6549c41970e3fd3d85515b8b6e",
+    "artifact": "vendor/mc-visual-console-java-1.21.1-4da993d1-audio.tgz",
+    "sha256": "a53a6cb443096ee113c964d44b4427e4a629acdf08584956004a147b0dc59b69",
     "soundPacks": [
       "java-1.21.1-sounds",
       "java-1.20.6-sounds",
       "original-bgm"
     ],
-    "completeAudio": true,
+    "completeAudio": false,
     "publicOriginalBgmTracks": 8,
-    "included": true,
-    "audio": {
-      "mode": "explicit-first-setup",
-      "files": 7388,
-      "uniqueFiles": 3691
+    "audioCoverage": {
+      "1.21.1": "exact-version-separate-download",
+      "1.20.6": "exact-version-separate-download",
+      "1.21.11": "disabled-no-original-audio-pack"
+    },
+    "deferredAudioInput": {
+      "package": "agent-mc-world@0.5.7-rc.85",
+      "sha256": "8bb01430f2f8e9a8259df5f3105449bfdcc3b0c77a7fd8a46c33a72fa52b3936",
+      "filesCheckedAgainstCurrentSharedAssetPacks": 28
     }
   },
   "completeAudio": false,
-  "completeAudioAfterSetup": true,
-  "sourceBase": "9e36cfa5"
+  "completeAudioAfterSetup": true
 }
