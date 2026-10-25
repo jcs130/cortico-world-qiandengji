@@ -87,6 +87,8 @@ export const MYMC_DEFAULTS: MymcConfigSection = {
   // Cortico requires every visible setting to have a concrete default.
   // Mineflayer's existing omitted value is 'far' = 12 chunks; keep that behavior.
   viewDistance: 12,
+  // Clearing this optional local reference path keeps external knowledge disabled.
+  knowledge: { minedojo: { indexFile: '', retrieval: 'hybrid' } },
   toolParameterDescriptions: 'inline',
   hostDecisions: { choice: { decisionProvider: '' }, combat: {
     ...COMBAT_DECISION_DEFAULTS, connection: 'auto', decisionProvider: '', model: '', apiKeyEnv: '',

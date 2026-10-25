@@ -1,3 +1,9 @@
+## 0.4.1-rc.26
+
+- Consume shared core rc.89 and its self-contained current task progress facts; original history and terminal receipts remain independently retrievable.
+- Provide concrete defaults for the optional local MineDojo index and retrieval mode, and regenerate the tool self-description from the actual current core contracts.
+- This local candidate is not published or loaded; provider token, cache and latency effects require a separately authorized live trial.
+
 ## 0.4.1-rc.25
 
 - Consume the verified public core rc.86 archive and align development checks with official Cortico 0.2.7 / World API 6.

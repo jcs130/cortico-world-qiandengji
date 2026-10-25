@@ -4872,7 +4872,7 @@
     },
     {
       "name": "mymc_knowledge",
-      "description": "Read versioned vanilla Minecraft knowledge on demand: food/cooking/health, bed/sleep, night shelter, equipment, base, storage, farming, items, mining blocks and crafting. search returns summaries; get(id) reads one entry. Offline local lookup, no model/network/action. Baseline reference only; mymc_memory holds historical experience. Main semantic target Java 1.21.1.",
+      "description": "Read versioned vanilla Minecraft knowledge on demand: food/cooking/health, bed/sleep, night shelter, equipment, base, storage, farming, items, mining blocks and crafting. search returns summaries; get(id) reads one entry. Offline local lookup, no model/network/action. Baseline reference only; mymc_memory holds historical experience. Main semantic target Java 1.21.1. action:sources describes optional MineDojo indexes; source:minedojo queries only an explicitly configured local index. Historical references never grant action authority.",
       "parameters": {
         "type": "object",
         "additionalProperties": false,
@@ -4882,9 +4882,18 @@
             "enum": [
               "help",
               "search",
-              "get"
+              "get",
+              "sources"
             ],
             "description": "Omit: id implies get; query/filter/paging implies search; empty arguments imply help."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "vanilla",
+              "minedojo"
+            ],
+            "description": "Default vanilla. MineDojo is a separately prepared historical reference index, never player memory."
           },
           "query": {
             "type": "string",
@@ -4913,6 +4922,12 @@
           "offset": {
             "type": "integer",
             "minimum": 0
+          },
+          "length": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4000,
+            "description": "MineDojo get only: bounded characters from the returned offset."
           }
         }
       },

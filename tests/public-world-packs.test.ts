@@ -19,6 +19,11 @@ describe('one public World, explicitly selected server pack', () => {
     expect(unset).toEqual([]);
     expect(cfg.memoryAgentId).toBe('');
     expect(cfg.localSkinEnabled).toBe(true);
+    expect(cfg.knowledge?.minedojo).toEqual({indexFile:'',retrieval:'hybrid'});
+    const configured=structuredClone(cfg);
+    configured.knowledge!.minedojo!.indexFile='D:/fixture/wiki.sqlite';
+    configured.knowledge!.minedojo!.retrieval='lexical';
+    expect(mymcEngineConfig(configured).knowledge?.minedojo).toEqual({indexFile:'D:/fixture/wiki.sqlite',retrieval:'lexical'});
     expect(cfg.viewDistance).toBe(12); // Existing native 'far' default, now explicit for the host contract.
     expect(mymcEngineConfig({...cfg,viewDistance:16}).viewDistance).toBe(16);
     expect(cfg.hostDecisions?.combat?.enabled).toBe(false);
