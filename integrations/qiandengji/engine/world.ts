@@ -1,7 +1,7 @@
 import { portableStorageMisuseNote } from './portable-storage.ts';
 import type { SkillCall } from 'agent-mc-world/extension';
 import {chatInputError, ObservedCommandCatalog} from 'agent-mc-world/extension';
-import { observedCommandUsage } from './command-usage.ts';
+import { observedCommandRoot, observedCommandUsage } from './command-usage.ts';
 import { QIANDENGJI_SERVER_QUERIES } from './server-query.ts';
 import { type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import { join } from 'node:path';
@@ -77,7 +77,7 @@ protected castSpell(args: Record<string, unknown>): string | ToolOutcome {
       const example = JSON.stringify({ steps: [{ skill: 'chat', text: route.suggestedCommand }] });
       return { text: this.toolLog('mc_cast', args,
         `[mc_cast 未发送] 本工具固定使用 /mycli cast；服务端已给出 ${route.id} 的另一条命令用法：${route.usage}（观测 ${new Date(route.observedAt).toISOString()}）。`
-        + ` 若仍要执行该操作，用 mc_do ${example}；先核对服务端前提。这里只纠正命令入口，未代替执行，也未确认目标或资格。`), failed: true };
+        + ` 若仍要执行该操作，用 mc_do ${example}；先核对服务端前提。这里只纠正命令入口，未代替执行，也未确认子命令、参数、目标或资格。`), failed: true };
     }
     const blocked = this.combatSpells.manualCastBlock(spell);
     if (blocked) {
@@ -164,7 +164,7 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     return false;
   }
   protected override extensionServerFeedback(text: string): void {
-    const usage = observedCommandUsage(text);
+    const usage = observedCommandUsage(text) ?? observedCommandRoot(text, this.bridge?.bot?.username);
     if (usage) this.observedCommands.note(usage);
   }
   protected override extensionImportantMessage(text: string) { return /可用咏唱|可学习|魔力|命格|探矿|selfheal|healing restores|full health/i.test(text); }

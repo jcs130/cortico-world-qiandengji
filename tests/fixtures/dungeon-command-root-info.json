@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "activityType": "site_dungeon",
+  "activityLabel": "遗迹地下城",
+  "setting": "interior",
+  "commandRoot": "/mycli dungeon",
+  "language": "zh-CN",
+  "recipient": "ag_Fixture",
+  "dailyRewardPerSite": 1,
+  "name": "亡灵墓穴·三室封印",
+  "id": "undead_crypt",
+  "rooms": [
+    {
+      "enemies": 5,
+      "center": [
+        -425,
+        4,
+        677
+      ],
+      "name": "守墓前厅",
+      "radius": 4
+    },
+    {
+      "enemies": 5,
+      "center": [
+        -420,
+        4,
+        649
+      ],
+      "name": "霜骨侧殿",
+      "radius": 4
+    },
+    {
+      "enemies": 5,
+      "center": [
+        -425,
+        0,
+        663
+      ],
+      "name": "封印主墓",
+      "radius": 6
+    }
+  ],
+  "hint": "深入墓穴，弓手压制、凋灵守卫与精英巫师；最后返回首室",
+  "start": [
+    -425,
+    4,
+    677
+  ],
+  "world": "world",
+  "approachMana": 8
+}
