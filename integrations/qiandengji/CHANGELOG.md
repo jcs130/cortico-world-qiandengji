@@ -1,3 +1,8 @@
+## 0.4.1-rc.42
+
+- Consume core rc.106: propagate failed pathfinder door interactions to the original task and release queued recovery without repeating every workstation or falsely blacklisting destinations.
+- Retain the prior projectile/shield and combat/context fixes. No host or model configuration changes. Candidate validation is separate from live adoption.
+
 ## 0.4.1-rc.41
 
 - Consume core rc.105 and shared viewer 127eb187: transmit short-lived observed projectiles before removal, render original projectile assets, and display active shield use for the actual hand.
