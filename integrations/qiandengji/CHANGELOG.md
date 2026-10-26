@@ -1,3 +1,7 @@
+## 0.4.1-rc.32
+
+- Consume core rc.94: identical attributed memory retries reuse their persisted ID and do not refresh timestamps or duplicate remote writes. No server-specific deduplication is added to this adapter.
+
 ## 0.4.1-rc.30
 
 - Consume core rc.93 verified opening-spell choices and server-message provenance. Keep gameplay implementation in the public core.
