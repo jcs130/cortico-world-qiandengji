@@ -1,3 +1,8 @@
+## 0.4.1-rc.37
+
+- Consume shared core rc.101 with explicit operation-experience field types and limits, plus actionable validation errors. Invalid reflection submissions do not save partial memories; evidence requirements remain unchanged and content is not automatically rewritten.
+- Retain rc.36 goal recovery, combat equipment safeguards and shared viewer updates. The neutral server package remains rc.33; no server rules or live configuration change.
+
 ## 0.4.1-rc.36
 
 - Consume shared core rc.100 goal-intention recovery and confirmed main-hand equipment handling. Goals survive a restart with the same scoped data directory; historical intent is kept distinct from freshly verified progress and no action is replayed automatically.
