@@ -1,3 +1,8 @@
+## 0.4.1-rc.43
+
+- Consume core rc.107: equip stored items through a free hotbar slot before moving an unrelated selected item. Server confirmation precedes selection; rejected or cancelled exchanges do not retry.
+- Preserve full-hotbar behavior and existing context, navigation and rendering fixes. Loading and live gameplay acceptance remain separate.
+
 ## 0.4.1-rc.42
 
 - Consume core rc.106: propagate failed pathfinder door interactions to the original task and release queued recovery without repeating every workstation or falsely blacklisting destinations.
