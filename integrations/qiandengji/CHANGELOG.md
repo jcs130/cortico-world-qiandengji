@@ -1,3 +1,9 @@
+## 0.4.1-rc.41
+
+- Consume core rc.105 and shared viewer 127eb187: transmit short-lived observed projectiles before removal, render original projectile assets, and display active shield use for the actual hand.
+- Retain rc.104 combat/control and paginated experience fixes. No host, private character asset, gameplay policy or model configuration changes.
+- Local candidate only; offline protocol and rendering checks do not establish live blocking success.
+
 ## 0.4.1-rc.40
 
 - Consume Agent MC World rc.104: confirm the server inventory state before drawing a bow, bound equipment waits, and keep cancellation effective after late acknowledgements.
