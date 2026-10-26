@@ -1,3 +1,11 @@
+## 0.4.1-rc.40
+
+- Consume Agent MC World rc.104: confirm the server inventory state before drawing a bow, bound equipment waits, and keep cancellation effective after late acknowledgements.
+- Propagate failed ranged execution into a weapon fallback or retreat. Cornered combat no longer treats a failed weapon equip or a usable bow as permission to hit with food.
+- Apply the existing stuck cooldown to proactive engagement candidates as well as execution, while keeping injury-triggered self-defence available.
+- Read paginated experience summaries without opening all 1,024 recent records; explicit detail reads retain original evidence, and pagination arguments are no longer silently ignored.
+- Local candidate only; tests and packaging do not establish live combat improvement.
+
 ## 0.4.1-rc.39
 
 - Consume core rc.103: preserve native death episode outcomes, recheck weapon/ammunition before fast engagement, and expose equipment discovery through the shared SDK/MCP contract.
