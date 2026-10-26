@@ -1,6 +1,6 @@
 {
   "name": "agent-mc-qiandengji",
-  "version": "0.5.0-rc.33",
+  "version": "0.5.0-rc.34",
   "type": "module",
   "description": "Explicit Qiandengji server protocols and reference pack for the independent Agent Minecraft client",
   "license": "MIT",

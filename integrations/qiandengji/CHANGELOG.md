@@ -1,3 +1,11 @@
+## 0.4.1-rc.38
+
+- Consume shared core rc.102: keep valid nearby bow targets distinct from preferred combat range, and return bounded query repair information with a direct read-only action-help reference.
+- Separate critical low-oxygen/drowning rescue from ordinary passive floating; the independent emergency switch defaults on without changing an existing passive-floating preference. Surface an explicit melee/bow loadout mismatch as factual admission information without changing the requested action.
+- Consume server rc.34: learn a dungeon command root only from trusted matching INFO/STATE feedback; reject misplaced cast calls with an unsent normal-command candidate. The root does not confirm subcommands, arguments or permission.
+- Include the shared viewer's corrected special-block materials and held-item animation. Explicit external viewer directories still require their own asset update.
+- Preserve scoped goals and memory from rc.37. No automatic command execution, publication or live reload is performed by this build.
+
 ## 0.4.1-rc.37
 
 - Consume shared core rc.101 with explicit operation-experience field types and limits, plus actionable validation errors. Invalid reflection submissions do not save partial memories; evidence requirements remain unchanged and content is not automatically rewritten.
