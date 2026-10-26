@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url)), output = join(root, 'dist/release');
 const npmCli = process.env.npm_execpath;
 if (!npmCli) throw new Error('Run npm run release:pack so the current npm CLI is explicit.');
+execFileSync(process.execPath, [npmCli, 'run', 'test', '--', 'tests/world-description.test.ts', 'tests/webui-panels.test.ts'], { cwd: root, stdio: 'inherit' });
 const json = async file => JSON.parse(await readFile(file, 'utf8'));
 const digest = async file => createHash('sha256').update(await readFile(file)).digest('hex');
 const source = await json(join(root, 'vendor/core-source.json'));
@@ -52,6 +53,7 @@ for (const dir of [serverDir, worldDir]) {
 await writeFile(join(output, 'publish-plan.json'), JSON.stringify({ schema: 'agent-mc-release/v1', preparedAt: new Date().toISOString(),
   status: 'prepared-not-published', packages, source,
   requiredBeforePublish: ['Full core/consumer tests and types', 'Official API 6 and private API 5 isolated package checks',
+    'Run npm run verify:webui in the independently installed World package',
     'Fresh install and operator UI acceptance', 'Human approval of exact candidates'],
   publicationOrder: packages.map(pkg => ({ package: pkg.name, command: `npm publish ${pkg.file} --access public --tag next` })),
   marketSync: { repository: 'Pal-AI-Lab/cortico-extensions', title: '[sync] cortico-world-qiandengji', submitted: false },

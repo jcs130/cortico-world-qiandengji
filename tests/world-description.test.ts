@@ -4,8 +4,16 @@ import { MYMC } from '../integrations/qiandengji/cortico.ts';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {corticoContext} from './cortico-context.ts';
+import browserBundle from '../src/console-client.ts';
 
 describe('current Cortico World release contract', () => {
+  it.each(['none', 'qiandengji'])('implements every declared browser panel for %s', serverPack => {
+    for (const provider of ['mineflayer', 'java-client']) {
+      const world = MYMC.create(corticoContext({ ...MYMC.defaults(), provider, serverPack } as never));
+      for (const panel of world.webUi!().panels ?? []) if (!(panel as any).builtin && !(panel as any).form)
+        expect(typeof browserBundle.panels[panel.id]?.mount, `missing ${provider}/${serverPack}/${panel.id}`).toBe('function');
+    }
+  });
   it('exposes one browser implementation through the API 6 name and preserves API 5 local compatibility', () => {
     const world = MYMC.create(corticoContext(MYMC.defaults())) as any;
     // Declarations contain freshly allocated handler functions on each read.

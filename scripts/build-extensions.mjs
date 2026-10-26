@@ -61,6 +61,7 @@ console.log('Cortico World package files verified');
     await cp(join(base, 'ENV_PROMPT.md'), join(base, 'dist/ENV_PROMPT.md'));
     continue;
   }
+  await cp(join(root, 'scripts/verify-installed-webui.mjs'), join(base, 'dist/verify-webui.mjs'));
   await mkdir(join(base, 'dist/world'), { recursive: true });
   let adapter = (await transform(await readFile(join(base, 'cortico.ts'), 'utf8'),
     { loader: 'ts', format: 'esm', target: 'node22' })).code;

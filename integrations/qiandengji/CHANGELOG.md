@@ -1,3 +1,9 @@
+## 0.4.1-rc.33
+
+- Include the missing Harness² practice browser panel. Read-only status, isolated comparisons, unknown usage and failures now have explicit views; opening the page starts no model or game action.
+- Check every declared panel for both backends and server-pack settings before packaging. Ship `verify:webui` for independent installed-package verification.
+- Cancel page polling on navigation, avoid overlapping reads, and allow refresh after a failed read.
+
 ## 0.4.1-rc.32
 
 - Consume core rc.94: identical attributed memory retries reuse their persisted ID and do not refresh timestamps or duplicate remote writes. No server-specific deduplication is added to this adapter.

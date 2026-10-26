@@ -24,14 +24,15 @@
     "vec3": "0.2.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
-    "esbuild": "^0.28.2",
-    "socket.io-client": "4.8.3",
-    "typescript": "^5.7.2",
-    "vitest": "^2.1.8",
     "@modelcontextprotocol/sdk": "1.32.1",
+    "@types/node": "^22.10.0",
+    "cortico": "0.2.7",
+    "esbuild": "^0.28.2",
+    "jsdom": "30.0.1",
     "minecraft-data": "3.112.0",
     "mineflayer": "4.37.1",
-    "cortico": "0.2.7"
+    "socket.io-client": "4.8.3",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
   }
 }
