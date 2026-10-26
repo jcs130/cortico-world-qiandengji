@@ -1,3 +1,10 @@
+## 0.4.1-rc.34
+
+- Consume shared core rc.98, including explicit goal field validation and authoritative command recovery hooks; preserve normal task terminal and death evidence.
+- Learn command usage only from attributed server feedback. When a known non-spell command is mistakenly sent through cast, return an unsent correction with the observed usage and a normal chat action; unknown or confirmed spell routes remain available.
+- Keep corrections connection-scoped and time-bounded, with no automatic command execution or hard-coded activity choice. Regenerate the API 6 declaration and API 5 compatibility adapter from the pinned core archive.
+- Candidate only: publication, deployment and natural game effects require separate verification.
+
 ## 0.4.1-rc.33
 
 - Include the missing Harness² practice browser panel. Read-only status, isolated comparisons, unknown usage and failures now have explicit views; opening the page starts no model or game action.

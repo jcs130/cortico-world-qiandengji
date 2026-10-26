@@ -1,6 +1,7 @@
 import { portableStorageMisuseNote } from './portable-storage.ts';
 import type { SkillCall } from 'agent-mc-world/extension';
-import {chatInputError} from 'agent-mc-world/extension';
+import {chatInputError, ObservedCommandCatalog} from 'agent-mc-world/extension';
+import { observedCommandUsage } from './command-usage.ts';
 import { type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import { join } from 'node:path';
 import type { MinecraftBot as Bot } from 'agent-mc-world/extension';
@@ -23,6 +24,7 @@ export const SERVER_TOOLS: ReadonlyArray<Omit<ToolDef,'handler'>> = [{
       + 'the server message and observed effects determine whether the spell worked. '
       + 'For planned timed movement, prepare the route first and queue the cast chat command with dependent flight steps in one mc_do group; do not start the timer while earlier queued work is still running. '
       + 'Pass server-required arguments as separate tokens, such as arguments:["bread"] for a creation spell. '
+      + 'This always sends /mycli cast <spell>; other server command namespaces must use mc_do chat with the exact observed usage. '
       + 'Use /mycli goddess skills or /mycli spells to discover available spell IDs.',
     parameters: {
       type: 'object',
@@ -44,6 +46,7 @@ export class QiandengjiEngine extends TacticalMinecraftWorld {
 protected selfHealAvailable = false;
 protected readonly combatSpells: CombatSpells;
 protected arenaFloor: { floor: number; total: number } | null = null;
+protected readonly observedCommands = new ObservedCommandCatalog();
   constructor(options: MinecraftWorldOptions) { const tactics = new CombatSpells(new CombatTacticBook(options.dataDir ? join(options.dataDir,'minecraft-combat-tactics.json') : null)); super(options, tactics); this.combatSpells = tactics; }
   protected override battlefieldChannel() { return BATTLEFIELD_CHANNEL; }
   protected override combatHealingUrgent(bot: Bot) { return this.selfHealAvailable && this.combatSpells.wantsHeal(bot.health ?? 0); }
@@ -66,6 +69,14 @@ protected castSpell(args: Record<string, unknown>): string | ToolOutcome {
     if (inputError) return { text: this.toolLog('mc_cast', args, `[mc_cast 失败] ${inputError}`), failed: true };
     const bot = this.bridge?.bot;
     if (!bot) return { text: this.toolLog('mc_cast', args, '[mc_cast 失败] 还没连上服务器'), failed: true };
+    const route = this.combatSpells.hasAbility(spell) ? null
+      : this.observedCommands.misplacedPrefix(command, '/mycli cast');
+    if (route) {
+      const example = JSON.stringify({ steps: [{ skill: 'chat', text: route.suggestedCommand }] });
+      return { text: this.toolLog('mc_cast', args,
+        `[mc_cast 未发送] 本工具固定使用 /mycli cast；服务端已给出 ${route.id} 的另一条命令用法：${route.usage}（观测 ${new Date(route.observedAt).toISOString()}）。`
+        + ` 若仍要执行该操作，用 mc_do ${example}；先核对服务端前提。这里只纠正命令入口，未代替执行，也未确认目标或资格。`), failed: true };
+    }
     const blocked = this.combatSpells.manualCastBlock(spell);
     if (blocked) {
       return { text: this.toolLog('mc_cast', args, `[mc_cast 暂缓] ${blocked}；该技能以新的服务端状态为准，其他技能和动作仍可选择`),
@@ -150,6 +161,10 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     if (/第\s*(\d+)\s*\/\s*\1\s*层已通关/.test(text)) this.arenaFloor=null;
     return false;
   }
+  protected override extensionServerFeedback(text: string): void {
+    const usage = observedCommandUsage(text);
+    if (usage) this.observedCommands.note(usage);
+  }
   protected override extensionImportantMessage(text: string) { return /可用咏唱|可学习|魔力|命格|探矿|selfheal|healing restores|full health/i.test(text); }
   protected override extensionSpawn(bot: Bot) {
     super.extensionSpawn(bot); this.selfHealAvailable=false; this.arenaFloor=null;
@@ -159,6 +174,7 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
   }
   protected override extensionRespawn() { const mana=this.bridge?.agentManaState; if(mana!==undefined)this.combatSpells.noteMana(mana?.current??null); }
   protected override attachExtension(bot: Bot) {
+    this.observedCommands.clear();
     watchAgentFriendFlight(bot);
     bot.on('physicsTick',()=>{if(!this.shuttingDown)this.tryAutoCombatSpell(bot);});
     bot.on('death',()=>{this.arenaFloor=null;this.combatSpells.noteMana(null);});

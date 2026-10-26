@@ -232,7 +232,7 @@
     },
     {
       "name": "mymc_cast",
-      "description": "Cast one server-listed /mycli spell immediately, even during combat or retreat. This does not enter the task queue or take movement control. The reply only confirms sending; the server message and observed effects determine whether the spell worked. For planned timed movement, prepare the route first and queue the cast chat command with dependent flight steps in one mymc_do group; do not start the timer while earlier queued work is still running. Pass server-required arguments as separate tokens, such as arguments:[\"bread\"] for a creation spell. Use /mycli goddess skills or /mycli spells to discover available spell IDs.",
+      "description": "Cast one server-listed /mycli spell immediately, even during combat or retreat. This does not enter the task queue or take movement control. The reply only confirms sending; the server message and observed effects determine whether the spell worked. For planned timed movement, prepare the route first and queue the cast chat command with dependent flight steps in one mymc_do group; do not start the timer while earlier queued work is still running. Pass server-required arguments as separate tokens, such as arguments:[\"bread\"] for a creation spell. This always sends /mycli cast <spell>; other server command namespaces must use mymc_do chat with the exact observed usage. Use /mycli goddess skills or /mycli spells to discover available spell IDs.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -4141,7 +4141,7 @@
                 "type": "array",
                 "minItems": 1,
                 "maxItems": 12,
-                "description": "按执行顺序列里程碑。每步恰好给 verify 或 judgment；verify 数组按 AND 求值。只在读数能直接证明本步成果时用 verify；信息理解、对话和服务端命令回执用 judgment 登记实际依据。",
+                "description": "按执行顺序列里程碑。每步恰好给 verify 或 judgment；verify 数组按 AND 求值。只在读数能直接证明本步成果时用 verify；信息理解、对话和服务端命令回执用 judgment 登记实际依据。登记只维护计划，不启动或暂停身体任务；参数错误时保持原成果语义，不换成无关条件凑通过。",
                 "items": {
                   "type": "object",
                   "properties": {
@@ -4183,7 +4183,7 @@
                         },
                         "item": {
                           "type": "string",
-                          "description": "inventory/item 的精确物品 id。"
+                          "description": "inventory 查当前背包；item 查区域内当前掉落物。精确物品 id；两者都不能证明曾经领取奖励。"
                         },
                         "type": {
                           "type": "string",
@@ -4236,7 +4236,8 @@
                             "food",
                             "oxygen",
                             "burning"
-                          ]
+                          ],
+                          "description": "status 只支持这四项；装备、任务或副本状态不在此字段中。"
                         },
                         "equals": {
                           "type": [
@@ -4280,7 +4281,7 @@
                           },
                           "item": {
                             "type": "string",
-                            "description": "inventory/item 的精确物品 id。"
+                            "description": "inventory 查当前背包；item 查区域内当前掉落物。精确物品 id；两者都不能证明曾经领取奖励。"
                           },
                           "type": {
                             "type": "string",
@@ -4333,7 +4334,8 @@
                               "food",
                               "oxygen",
                               "burning"
-                            ]
+                            ],
+                            "description": "status 只支持这四项；装备、任务或副本状态不在此字段中。"
                           },
                           "equals": {
                             "type": [
@@ -4431,7 +4433,7 @@
                 "type": "array",
                 "minItems": 1,
                 "maxItems": 12,
-                "description": "按执行顺序列里程碑。每步恰好给 verify 或 judgment；verify 数组按 AND 求值。只在读数能直接证明本步成果时用 verify；信息理解、对话和服务端命令回执用 judgment 登记实际依据。",
+                "description": "按执行顺序列里程碑。每步恰好给 verify 或 judgment；verify 数组按 AND 求值。只在读数能直接证明本步成果时用 verify；信息理解、对话和服务端命令回执用 judgment 登记实际依据。登记只维护计划，不启动或暂停身体任务；参数错误时保持原成果语义，不换成无关条件凑通过。",
                 "items": {
                   "type": "object",
                   "properties": {
@@ -4473,7 +4475,7 @@
                         },
                         "item": {
                           "type": "string",
-                          "description": "inventory/item 的精确物品 id。"
+                          "description": "inventory 查当前背包；item 查区域内当前掉落物。精确物品 id；两者都不能证明曾经领取奖励。"
                         },
                         "type": {
                           "type": "string",
@@ -4526,7 +4528,8 @@
                             "food",
                             "oxygen",
                             "burning"
-                          ]
+                          ],
+                          "description": "status 只支持这四项；装备、任务或副本状态不在此字段中。"
                         },
                         "equals": {
                           "type": [
@@ -4570,7 +4573,7 @@
                           },
                           "item": {
                             "type": "string",
-                            "description": "inventory/item 的精确物品 id。"
+                            "description": "inventory 查当前背包；item 查区域内当前掉落物。精确物品 id；两者都不能证明曾经领取奖励。"
                           },
                           "type": {
                             "type": "string",
@@ -4623,7 +4626,8 @@
                               "food",
                               "oxygen",
                               "burning"
-                            ]
+                            ],
+                            "description": "status 只支持这四项；装备、任务或副本状态不在此字段中。"
                           },
                           "equals": {
                             "type": [

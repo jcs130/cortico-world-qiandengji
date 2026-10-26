@@ -1,6 +1,6 @@
 {
   "name": "cortico-world-qiandengji",
-  "version": "0.4.1-rc.33",
+  "version": "0.4.1-rc.34",
   "type": "module",
   "description": "通用 Minecraft Agent World，内置现代 Web 可视化，可选千灯纪服务器资料包。",
   "main": "./dist/world/index.js",
@@ -55,8 +55,8 @@
     "node": ">=22"
   },
   "dependencies": {
-    "agent-mc-world": "^0.5.7-rc.94",
-    "agent-mc-qiandengji": "^0.5.0-rc.31",
+    "agent-mc-world": "^0.5.7-rc.98",
+    "agent-mc-qiandengji": "^0.5.0-rc.32",
     "vec3": "0.2.0"
   },
   "peerDependencies": {
