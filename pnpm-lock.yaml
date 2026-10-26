@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.99-f192a9ca.tgz
+  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.100-cc3eb290.tgz
   vec3: 0.2.0
 
 importers:
@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       agent-mc-world:
-        specifier: file:vendor/agent-mc-world-0.5.7-rc.99-f192a9ca.tgz
-        version: file:vendor/agent-mc-world-0.5.7-rc.99-f192a9ca.tgz
+        specifier: file:vendor/agent-mc-world-0.5.7-rc.100-cc3eb290.tgz
+        version: file:vendor/agent-mc-world-0.5.7-rc.100-cc3eb290.tgz
       vec3:
         specifier: 0.2.0
         version: 0.2.0
@@ -40,6 +40,9 @@ importers:
       mineflayer:
         specifier: 4.37.1
         version: 4.37.1
+      semver:
+        specifier: 7.7.4
+        version: 7.7.4
       socket.io-client:
         specifier: 4.8.3
         version: 4.8.3
@@ -704,9 +707,9 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.99-f192a9ca.tgz:
-    resolution: {integrity: sha512-zc/3fe/tA2nEA1lyXceG4JVqCcCyipGYDgA4SJssrK/mgYVpIVIrFhu1oO5+K8FILIVWdEiKpgLLf8ryx6bATg==, tarball: file:vendor/agent-mc-world-0.5.7-rc.99-f192a9ca.tgz}
-    version: 0.5.7-rc.99
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.100-cc3eb290.tgz:
+    resolution: {integrity: sha512-sW+OSazZ25tZPyTJCWq4jaipDadh/3FdlBq3MGfJPlYiNKki5u40ycCLRjsWQscjmF67MOJTPCvk1ZudcPBjGg==, tarball: file:vendor/agent-mc-world-0.5.7-rc.100-cc3eb290.tgz}
+    version: 0.5.7-rc.100
     engines: {node: '>=22'}
     hasBin: true
 
@@ -1552,8 +1555,8 @@ packages:
   scheduler@0.28.0:
     resolution: {integrity: sha512-juorfCmIkIw8tT+p5BXSm6PJjQF/ycEYmKyzURCIt/RaZIhL+PulbQ9Yu2z1HdOJDdqDTlxA1+xKBmHXJsczAw==}
 
-  semver@7.8.5:
-    resolution: {integrity: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==}
+  semver@7.7.4:
+    resolution: {integrity: sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -1795,6 +1798,7 @@ packages:
 
   uuid@8.3.0:
     resolution: {integrity: sha512-fX6Z5o4m6XsXBdli9g7DtWgAx+osMsRRZFKma1mIUsLCz6vRvv+pz5VNbyu9UEDzpMWulZfvpgb/cmDXVulYFQ==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   vary@1.1.2:
@@ -2401,7 +2405,7 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.99-f192a9ca.tgz:
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.100-cc3eb290.tgz:
     dependencies:
       '@mcap/core': 2.3.0
       '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.5)
@@ -3041,7 +3045,7 @@ snapshots:
       lodash.isstring: 4.0.1
       lodash.once: 4.1.1
       ms: 2.1.3
-      semver: 7.8.5
+      semver: 7.7.4
 
   jwa@2.0.1:
     dependencies:
@@ -3516,7 +3520,7 @@ snapshots:
 
   scheduler@0.28.0: {}
 
-  semver@7.8.5: {}
+  semver@7.7.4: {}
 
   send@0.19.2:
     dependencies:

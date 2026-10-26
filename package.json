@@ -20,7 +20,7 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json"
   },
   "dependencies": {
-    "agent-mc-world": "file:vendor/agent-mc-world-0.5.7-rc.99-f192a9ca.tgz",
+    "agent-mc-world": "file:vendor/agent-mc-world-0.5.7-rc.100-cc3eb290.tgz",
     "vec3": "0.2.0"
   },
   "devDependencies": {
@@ -33,6 +33,7 @@
     "mineflayer": "4.37.1",
     "socket.io-client": "4.8.3",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "semver": "7.7.4"
   }
 }

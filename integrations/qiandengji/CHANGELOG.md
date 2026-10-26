@@ -1,3 +1,10 @@
+## 0.4.1-rc.36
+
+- Consume shared core rc.100 goal-intention recovery and confirmed main-hand equipment handling. Goals survive a restart with the same scoped data directory; historical intent is kept distinct from freshly verified progress and no action is replayed automatically.
+- Consume the shared viewer's bow orientation, projectile rendering and compact skill bar together with immediate projectile updates from the shared core. Explicit external viewer asset directories still require their own asset update.
+- Keep the unchanged neutral server package on its compatible core peer range. The World pins the tested candidate without duplicating generic game logic.
+- Candidate only: no npm publication or live reload is performed by the build.
+
 ## 0.4.1-rc.35
 
 - Consume shared core rc.99 independent query dispatch and actual-send reply timing. Declared personal and dungeon state queries no longer need to wait behind body movement.
