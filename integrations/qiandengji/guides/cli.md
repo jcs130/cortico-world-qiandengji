@@ -26,6 +26,25 @@
 
 ## 状态与分页
 
+### 不占身体队列的即时查询
+
+Mineflayer 使用 `mymc_query {}` 查看本服务器包明确声明的只读查询。需要最新状态时，可用
+`mymc_query {"query":"status","arguments":[]}`，或
+`mymc_query {"query":"dungeon.status","arguments":["undead_crypt"]}` / `dungeon.info`。
+此处 `undead_crypt` 只是副本 ID 示例，实际使用当次服务端给出的 ID。
+查询直接走独立通道，不会取消、替换或排到行走、战斗、存取任务之后；不要为查询状态提交 `mymc_do chat`。
+一次仅有一个查询在途；按回执里的 `requestId` 读取原请求结果，不因等待或超时自动重发。
+
+目前只声明 `/mycli status`、`/mycli dungeon status <ID>` 和 `/mycli dungeon info <ID>`。
+ID 是服务端给出的 1–64 位小写字母开头、后续字母/数字/下划线/连字符的标识，不是名字、坐标或任意命令。
+`status full`、开始/加入/传送/领奖、未知命令和带 `status` 字样的其他命令不属于本通道。
+帮助与更多入口仍按下方目录发现，不会隐式执行服务端返回的 `nextCommand`。
+
+结果只匹配本连接发出后的可信服务端回执，并核对本人名称或 recipient 与副本 ID；玩家转述和旧缓存不算答复。
+这些协议未回显请求 nonce，因此匹配范围只是当前连接、消息类型、本人及副本；超时或断线仍为未知。
+`dungeon.info` 是入口和规则说明，不证明当前局状态或冷却；`dungeon.status` 的 `lastOutcome` 也不能替代当前局。
+读到 `run`、完成记录或奖励字段时保留原值；缺少字段不猜测。SDK/MCP 使用同一核心 `mc_query` 接口。
+
 | 命令 | 用途或回执 |
 | --- | --- |
 | `/mycli status` | 只读当前状态，返回 `MC_STATUS` |

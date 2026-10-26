@@ -2,6 +2,7 @@ import { portableStorageMisuseNote } from './portable-storage.ts';
 import type { SkillCall } from 'agent-mc-world/extension';
 import {chatInputError, ObservedCommandCatalog} from 'agent-mc-world/extension';
 import { observedCommandUsage } from './command-usage.ts';
+import { QIANDENGJI_SERVER_QUERIES } from './server-query.ts';
 import { type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import { join } from 'node:path';
 import type { MinecraftBot as Bot } from 'agent-mc-world/extension';
@@ -49,6 +50,7 @@ protected arenaFloor: { floor: number; total: number } | null = null;
 protected readonly observedCommands = new ObservedCommandCatalog();
   constructor(options: MinecraftWorldOptions) { const tactics = new CombatSpells(new CombatTacticBook(options.dataDir ? join(options.dataDir,'minecraft-combat-tactics.json') : null)); super(options, tactics); this.combatSpells = tactics; }
   protected override battlefieldChannel() { return BATTLEFIELD_CHANNEL; }
+  protected override serverQueryDefinitions() { return QIANDENGJI_SERVER_QUERIES; }
   protected override combatHealingUrgent(bot: Bot) { return this.selfHealAvailable && this.combatSpells.wantsHeal(bot.health ?? 0); }
   protected override extensionTools(): ToolDef[] { return [...super.extensionTools(), {...SERVER_TOOLS[0], handler: async args => this.castSpell(args)}]; }
 protected castSpell(args: Record<string, unknown>): string | ToolOutcome {

@@ -1,3 +1,10 @@
+## 0.4.1-rc.35
+
+- Consume shared core rc.99 independent query dispatch and actual-send reply timing. Declared personal and dungeon state queries no longer need to wait behind body movement.
+- Match fresh attributed replies by exact recipient and subject; disclose missing request nonces, bounded reuse, timeout unknown and no automatic resend. Mutating commands retain their ordered task semantics.
+- Preserve current navigation, scoped game history and normal chat/voice scheduling; no role-specific behavior or hidden model loop.
+- Keep journey observations in fresh decision inputs; permit bounded ordinary movement while route advice is pending, with task, connection and safety changes still invalidating it. Document optional detours and safe resumption through the shared body queue.
+
 ## 0.4.1-rc.34
 
 - Consume shared core rc.98, including explicit goal field validation and authoritative command recovery hooks; preserve normal task terminal and death evidence.

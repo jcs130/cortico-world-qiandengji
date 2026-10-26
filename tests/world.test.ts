@@ -70,6 +70,30 @@ function fakeHost() {
 }
 
 describe('Mymc World contract', () => {
+  it('preserves typed route identity from its engine for the host-side mymc_choose tool',async()=>{
+    const fake=fakeEngine(),cfg=structuredClone(MYMC_DEFAULTS);
+    const route={generation:7,positionEpoch:3,speedBlocksPerSec:4,policy:{choiceMinBlocks:10,choiceMaxBlocks:20,dangerChoiceMaxBlocks:5},risks:[],
+      task:{id:44,stepIndex:0,stepCount:1,step:'goto',skill:'goto',resumable:true,destination:[128,64,0],dimension:'minecraft:overworld'},
+      waiting:[],hold:null,goalOwner:'task',fighting:false,environment:null,windowOpen:false,cursorOccupied:false,
+      footing:{kind:'support',block:'stone',grounded:true},entities:[],journeyId:null,journeyCues:[]};
+    const observed={text:'current route',snapshotTypes:['minecraft.world.snapshot'],parts:[{key:'journey',text:'current route'},{key:'place',text:'地面'}],
+      decision:{sampledAtMs:Date.now(),state:{connection:{ready:true},danger:{water:false},constraints:{grounded:true}}},
+      decisionStability:{sampledAtMs:Date.now(),identity:['realm','account'],dimension:'minecraft:overworld',position:[0,64,0],health:20,food:20,
+        guards:{body:[false,null],place:['stone'],clock:[false]},route}};
+    Object.assign(fake.engine,{requestFacts:()=>observed});
+    const world=new MymcWorld({cfg},fake.engine);
+    expect((world.requestFacts() as any).decisionStability).toEqual(observed.decisionStability);
+    const request=vi.fn(async()=>{observed.decisionStability.route.positionEpoch++;
+      return {answers:{action:{choice:'continue',confidence:.9,probabilities:{continue:.9,_inspect:.1}}}};});
+    await world.start(Object.assign(fakeHost().host,{decisions:{request}}));
+    try{
+      const result=await world.tools().find(t=>t.name==='mymc_choose')!.handler({category:'route',goal:'继续当前旅程',candidates:[
+        {id:'continue',label:'继续',evidence:'正在行走',ready:true},{id:'inspect',label:'观察',evidence:'未见风险',ready:true},
+      ]},{role:'test',log:{} as never});
+      expect(JSON.parse(typeof result==='string'?result:result.text).status).toBe('stale');
+      expect(request).toHaveBeenCalledTimes(1);
+    }finally{await world.stop();}
+  });
   it('keeps structured correction calls callable after mounting the core with the mymc namespace', async () => {
     const fake = fakeEngine();
     const tools = fake.engine.tools();

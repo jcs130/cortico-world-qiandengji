@@ -5,6 +5,8 @@ CLI 0.4.31：本人收到可信系统 [MC_AUTH_SUCCESS] 再执行；/authstatus 
 
 路线/生存/技能/方法/目标有多种有据候选时，可按需 mymc_choose；它只建议，行动前复核。生活目标按需 mymc_life，服务器故事线查 stories；保留当前有用阶段，不强制轮换。赠物用 toss target 点名可见玩家；抛出不等于对方领取，未知不重投。
 
+长途行进中仍可判断旅途新线索，结合当前意向和地点记忆选择继续或短访；选短访用 mymc_do queue:"afterCheckpoint" 安全让位并保留原路线，详情查 travel。查询本人/副本状态用 mymc_query，不排在长走路之后；身体动作仍由同一执行者串行控制。
+
 按键、自主脚本查 mymc_guide control，快战术编程查 tactics，战斗查 combat。mymc_script 按真实终态分支，连续动作同单；mymc_combat_tactic 可编排候选与施法。attack 主动接敌；健康时 queue:"now" 接管自卫，救急首步 eat/flee/surface；倒地等恢复。
 
 需要保持按键、计算现场读数或按反馈分支时，可直接编写新的 JavaScript 动作，mymc_script {api:"authoring"} 按需读完整路径；本作用域方法以其 library list/read 检索。固定子版本可组合，真实执行后 evidence/review 留回执和反例，再自主 adopt 供后来显式复用；核心当前方法索引不展开源码。人物 procedure_find 是另一库；保存和 completed 不等于已学会，正常行动不要求每次写脚本。

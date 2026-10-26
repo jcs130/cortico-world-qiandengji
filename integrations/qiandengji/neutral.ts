@@ -9,5 +9,6 @@ export { assertMymcReady } from './guard.ts';
 export { validateHostCombat } from './host/combat-driver.ts';
 export { QIANDENGJI_PACK } from './data-packs/qiandengji/manifest.ts';
 export { readServerGuide, serverGuideIndex } from './server-guide.ts';
+export { QIANDENGJI_SERVER_QUERIES } from './engine/server-query.ts';
 export { QiandengjiPortalAccess, QIANDENGJI_WEBSITE, QIANDENGJI_GAME } from './portal-access.ts';
 export type { QiandengjiAccessState } from './portal-access.ts';
