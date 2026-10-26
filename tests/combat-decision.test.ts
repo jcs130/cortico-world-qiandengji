@@ -229,6 +229,7 @@ describe('independent asynchronous combat choices', () => {
 
 function flatBot() {
   const bot = { entity: { id: 1, position: new Vec3(0, 64, 0), onGround: true }, health: 20,
+    inventory: { items: () => [{ name: 'iron_sword', count: 1, slot: 36 }] },
     entities: { 3: { name: 'skeleton', position: new Vec3(3, 64, 0), isValid: true } },
     blockAt: (p: Vec3) => ({ name: p.y < 64 ? 'stone' : 'air', boundingBox: p.y < 64 ? 'block' : 'empty',
       shapes: p.y < 64 ? [[0, 0, 0, 1, 1, 1]] : [], getProperties: () => ({}) }),
@@ -236,6 +237,14 @@ function flatBot() {
   return bot as unknown as Bot;
 }
 describe('physically available combat candidates', () => {
+  it('uses the shared core loadout gate before admitting a fast engagement', () => {
+    const bot = flatBot(), f = frame().battlefield, cfg = config();
+    f.action.fighting = false; cfg.allowEngage = true; cfg.engageScope = 'hostile';
+    bot.inventory.items = () => [];
+    expect(combatReactions(bot, f, cfg, control).some(c => c.kind === 'engage')).toBe(false);
+    f.action.fighting = true; cfg.allowMovement = true;
+    expect(combatReactions(bot, f, cfg, control).some(c => c.kind === 'retreat')).toBe(true);
+  });
   it('retains a server catalogued cost through partial HUD updates, but forgets it on removal or reconnect', () => {
     const spells=new CombatSpells(), bot=flatBot(), field=frame().battlefield;
     spells.setTactic({spells:null,healAtOrBelow:6,rules:[{id:'bolt',spell:'spark',intent:'Hit a visible enemy',when:{within:12}}]});

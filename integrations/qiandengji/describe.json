@@ -5545,7 +5545,7 @@
     },
     {
       "name": "mymc_options",
-      "description": "Discover a bounded shortlist by intended outcome: food, travel, water, inventory, explore or method. Empty arguments show an index and current clues. Returns purposes, observed evidence, missing prerequisites and focused read-tool arguments. Includes explicitly installed server observations where available. No model, scan, body task, cast or automatic choice; discovery does not certify readiness or success.",
+      "description": "Discover a bounded shortlist by intended outcome: food, equipment, travel, water, inventory, explore or method. Empty arguments show an index and current clues. Returns purposes, observed evidence, missing prerequisites and focused read-tool arguments. Includes explicitly installed server observations where available. No model, scan, body task, cast or automatic choice; discovery does not certify readiness or success.",
       "parameters": {
         "type": "object",
         "additionalProperties": false,
@@ -5555,6 +5555,7 @@
             "enum": [
               "index",
               "food",
+              "equipment",
               "travel",
               "water",
               "inventory",

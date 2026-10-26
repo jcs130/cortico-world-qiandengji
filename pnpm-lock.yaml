@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.102-d09a431e.tgz
+  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.103-c51ca749.tgz
   vec3: 0.2.0
 
 importers:
@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       agent-mc-world:
-        specifier: file:vendor/agent-mc-world-0.5.7-rc.102-d09a431e.tgz
-        version: file:vendor/agent-mc-world-0.5.7-rc.102-d09a431e.tgz
+        specifier: file:vendor/agent-mc-world-0.5.7-rc.103-c51ca749.tgz
+        version: file:vendor/agent-mc-world-0.5.7-rc.103-c51ca749.tgz
       vec3:
         specifier: 0.2.0
         version: 0.2.0
@@ -707,9 +707,9 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.102-d09a431e.tgz:
-    resolution: {integrity: sha512-sG6xA/SwLZkpb5fo6JaFsE3NEC4mRdYHyT54hxTDomsiPQSJksVH710DS808ls59DgQ16cTSzDnAhC7QoJL1Mg==, tarball: file:vendor/agent-mc-world-0.5.7-rc.102-d09a431e.tgz}
-    version: 0.5.7-rc.102
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.103-c51ca749.tgz:
+    resolution: {integrity: sha512-rEcRqFOu68J86o4u0UA+ROqS5ij1zoQYXu2JBowR9SgUBm7oC45hS3Q/R+RBeIGk+2E+TSy2FkYJhbKp00jwhQ==, tarball: file:vendor/agent-mc-world-0.5.7-rc.103-c51ca749.tgz}
+    version: 0.5.7-rc.103
     engines: {node: '>=22'}
     hasBin: true
 
@@ -1798,7 +1798,6 @@ packages:
 
   uuid@8.3.0:
     resolution: {integrity: sha512-fX6Z5o4m6XsXBdli9g7DtWgAx+osMsRRZFKma1mIUsLCz6vRvv+pz5VNbyu9UEDzpMWulZfvpgb/cmDXVulYFQ==}
-    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   vary@1.1.2:
@@ -2405,7 +2404,7 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.102-d09a431e.tgz:
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.103-c51ca749.tgz:
     dependencies:
       '@mcap/core': 2.3.0
       '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.5)

@@ -1,3 +1,8 @@
+## 0.4.1-rc.39
+
+- Consume core rc.103: preserve native death episode outcomes, recheck weapon/ammunition before fast engagement, and expose equipment discovery through the shared SDK/MCP contract.
+- No host model, private memory, speech service or server defaults are embedded in the core.
+
 ## 0.4.1-rc.38
 
 - Consume shared core rc.102: keep valid nearby bow targets distinct from preferred combat range, and return bounded query repair information with a direct read-only action-help reference.
