@@ -1,3 +1,8 @@
+## 0.4.1-rc.48
+
+- Consume core 0.5.7-rc.112: native PowerContext conditional replacement/recoverable forgetting, usable-loadout checks before automatic combat, and the Java 1.21.1 viewer material/confirmed-cast fixes.
+- Preserve explicit melee and emergency behavior, original notebook history and optional server-pack boundaries.
+
 ## 0.4.1-rc.47
 
 - Consume core rc.111: persistent follow now offers grounded checkpoints for explicitly queued work and auto-eating. Resume the original task after rechecking its named target, preserving combat and emergency control ownership.
