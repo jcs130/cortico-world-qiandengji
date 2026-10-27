@@ -1,3 +1,9 @@
+## 0.4.1-rc.52
+
+- Consume core 0.5.7-rc.116 and expose its generic request-effect classification and conservative rejected-speech omission helpers to hosts.
+- Retain native action receipts, explicit step dependencies and unchanged World parsing/queue contracts.
+- Includes prior water, food and native RPG discovery repairs. Source/package checks do not establish live behavior improvements.
+
 ## 0.4.1-rc.51
 
 - Consume core 0.5.7-rc.115: choose reachable shores in one path search, allow real detours and confirm dry landing.
