@@ -1,3 +1,9 @@
+## 0.4.1-rc.44
+
+- Consume core rc.108: nearby entity awareness no longer depends on camera facing; the default surrounding range is 32 blocks, with camera-only mode and a 1–64 block range available in configuration.
+- Preserve line-of-sight, unknown terrain and invisibility checks. Block discovery retains requested candidates up to 2,048 before visibility filtering.
+- Gameplay reach, body ownership and other Worlds remain unchanged. Offline tests do not establish live exploration or combat gains.
+
 ## 0.4.1-rc.43
 
 - Consume core rc.107: equip stored items through a free hotbar slot before moving an unrelated selected item. Server confirmation precedes selection; rejected or cancelled exchanges do not retry.
