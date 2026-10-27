@@ -1,3 +1,8 @@
+## 0.4.1-rc.46
+
+- Consume core rc.110: when a full hotbar has a named selected item, prefer exchanging an ordinary stack while preserving the selected shortcut. Both stacks and cursor remain server-confirmed; rejection and cancellation never trigger repeated slot attempts.
+- Keep the existing SDK/MCP equip contract and all model, goal, memory, viewer and voice settings. Candidate checks do not establish live combat improvement.
+
 ## 0.4.1-rc.45
 
 - Consume core rc.109: default 64-block surrounding entity awareness and separately labelled nearby occlusion (8 blocks, configurable). Snapshot, attention and battlefield use the same radius.
