@@ -9,6 +9,22 @@ interface CatalogFile {
   entries: Record<string, string>;
   spells?: Record<string, SpellRecord>;
   directory?: DirectoryObservation;
+  nativeSkills?: NativeSkills;
+}
+
+interface NativeSkills { observedAt: string; available: string[]; common: string[]; learnable: string[]; skillPoints: number }
+
+function readNativeSkills(value: unknown, at: string, saved = false): NativeSkills | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || !Number.isFinite(Date.parse(at))) return null;
+  const row = value as Record<string, unknown>;
+  const ids = (values: unknown): string[] | null => Array.isArray(values) && values.length <= 256
+    && values.every(id => typeof id === 'string' && /^[a-z][a-z0-9_:-]{0,63}$/i.test(id))
+    ? [...new Set(values as string[])] : null;
+  const available = ids(row.available), common = ids(row.common);
+  const learnable = ids(saved ? row.learnable : Array.isArray(row.learnable)
+    ? row.learnable.map(v => v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>).id : null) : null);
+  if (!available || !common || !learnable || !Number.isSafeInteger(row.skillPoints) || Number(row.skillPoints) < 0) return null;
+  return { observedAt: at, available, common, learnable, skillPoints: row.skillPoints as number };
 }
 
 interface SpellSummary {
@@ -75,6 +91,9 @@ export class SkillCatalog {
   private activePage: number | null = null;
   private refreshBaseline: string[] | null = null;
   private refreshChanged = false;
+  private readonly liveCommands = new Map<string, { command: string; receivedAt: number }>();
+  private nativeSkills: NativeSkills | null = null;
+  private nativeSkillsCurrent = false;
 
   constructor(server: string, dataDir?: string) {
     this.server = server;
@@ -87,6 +106,8 @@ export class SkillCatalog {
           for (const [heading, line] of Object.entries(saved.entries)) {
             if (LEGACY_HEADINGS.test(heading) && typeof line === 'string') this.entries.set(heading, line);
           }
+          // Persisted observations remain history until a new server reply.
+          if (saved.nativeSkills) this.nativeSkills = readNativeSkills(saved.nativeSkills, saved.nativeSkills.observedAt, true);
           for (const value of Object.values(saved.spells ?? {})) {
             const item = spellSummary(value?.item);
             if (item) this.spells.set(item.id, {
@@ -115,6 +136,20 @@ export class SkillCatalog {
   observe(text: string, at: string): string | null {
     const line = /^\[MC (?:系统|插件|登录消息)\] (.+)$/.exec(text)?.[1]?.trim();
     if (!line) return null;
+    const native = /^MC_RPG\s+(\{.*\})$/.exec(line);
+    if (native) {
+      try {
+        if (line.length > 65_536) return null;
+        const next = readNativeSkills(JSON.parse(native[1]), at);
+        if (!next) return null;
+        const changed = !this.nativeSkillsCurrent || JSON.stringify({ ...next, observedAt: '' })
+          !== JSON.stringify({ ...this.nativeSkills, observedAt: '' });
+        this.nativeSkills = next; this.nativeSkillsCurrent = true;
+        this.liveCommands.clear(); // The old MC_SPELL family cannot constrain this native backend.
+        this.save();
+        return changed ? '原生技能目录' : null;
+      } catch { return null; }
+    }
     const list = /^MC_SPELL_LIST\s+(\{.*\})$/.exec(line);
     if (list) {
       try {
@@ -148,6 +183,7 @@ export class SkillCatalog {
           && JSON.stringify(previous.detail) !== JSON.stringify(detail);
         this.spells.set(item.id, { item, observedAt: at,
           ...(detail ? { detail, detailAt: structured[1] === 'DETAIL' ? at : previous?.detailAt } : {}) });
+        this.liveCommands.set(item.id, { command: item.command, receivedAt: Date.now() });
         this.updatedAt = at;
         const atMs = Date.parse(at) || Date.now();
         this.firstObservationAtMs ??= atMs;
@@ -206,6 +242,8 @@ export class SkillCatalog {
   }
 
   compactIndex(): string {
+    if (this.nativeSkillsCurrent) return this.nativeIndex() + '\n' + SKILL_ENTRY;
+    if (this.nativeSkills) return '[原生技能待核验] 旧可用记录待核验；当前 /mycli skills status --json，历史按需用 mymc_skills 查询。';
     const groups = new Map<string, string[]>();
     for (const { item } of this.spells.values()) {
       const names = groups.get(item.category) ?? [];
@@ -224,7 +262,8 @@ export class SkillCatalog {
 
   /** When the shared situational index exists, keep the full name directory out of every request. */
   discoveryIndex(): string {
-    return `[历史技能入口] 缓存 ${this.spells.size} 项，最近目录观测 ${this.updatedAt || '未知'}。`
+    return (this.nativeSkills ? this.nativeIndex() + '\n' : '')
+      + `[历史技能入口] 缓存 ${this.spells.size} 项，最近目录观测 ${this.updatedAt || '未知'}。`
       + '当前相关用途见可选办法索引；mymc_options 按意图读取，mymc_skills {id} 读单项历史原文。'
       + '当前目录/参数查 /mycli capabilities info <ID>，资格/魔力/冷却查 /mycli skills status；只在需要核验时查询。';
   }
@@ -233,8 +272,27 @@ export class SkillCatalog {
     return this.spells.get(id.trim().toLowerCase())?.item.command ?? null;
   }
 
+  /** Only a recently received contract may reject a live call; disk history is advisory. */
+  currentCommandFor(id: string): string | null {
+    if (this.nativeSkillsCurrent) return null;
+    const live = this.liveCommands.get(id.trim().toLowerCase());
+    return live && Date.now() - live.receivedAt <= 300_000 ? live.command : null;
+  }
+
+  resetConnection(): void { this.liveCommands.clear(); this.nativeSkillsCurrent = false; }
+
+  private nativeIndex(): string {
+    const s = this.nativeSkills!;
+    const available = [...new Set([...s.common, ...s.available])];
+    return `[原生技能${this.nativeSkillsCurrent ? '现读' : '历史'}] 来源 MC_RPG，观测 ${s.observedAt}；`
+      + `${this.nativeSkillsCurrent ? '本次本人可用' : '旧可用记录待核验'}：${available.slice(0, 16).join('、') || '未列出'}${available.length > 16 ? `等${available.length}项` : ''}；`
+      + `可学 ${s.learnable.length} 项，学习点 ${s.skillPoints}。mymc_skills 可查完整索引；当前详情 /mycli skills info <ID>。旧 MC_SPELL 与女神提示不代表此后端当前资格。`;
+  }
+
   /** Historical effects make abilities discoverable by need; they never certify this account's eligibility. */
   discoveryOptions(): MinecraftOption[] {
+    const current = this.nativeSkillsCurrent && this.nativeSkills
+      ? new Set([...this.nativeSkills.common, ...this.nativeSkills.available]) : null;
     const patterns: Array<[MinecraftOptionIntent, RegExp]> = [
       ['food', /食物|口粮|饥饿|饱食|面包|\bbread\b|\bfood\b|\bhunger\b/iu],
       ['travel', /传送|飞行|闪现|赶路|移速|移动速度|\bteleport\b|\bflight\b|\bspeed\b/iu],
@@ -244,6 +302,7 @@ export class SkillCatalog {
     ];
     const result: MinecraftOption[] = [];
     for (const { item, detail, observedAt, detailAt } of this.spells.values()) {
+      if (current && !current.has(item.id)) continue;
       // Effects and requirements are server observations, not an inferred spell-ID mapping.
       const field = (key: string) => typeof detail?.[key] === 'string' ? String(detail[key]).slice(0, 280) : '';
       const effect = field('effect'), requires = field('requires');
@@ -265,18 +324,18 @@ export class SkillCatalog {
   }
 
   /** Only this spell's cast command supplies parameter constraints for mymc_cast. */
-  requiredArgumentCount(id: string): number | null {
+  requiredArgumentCount(id: string, currentOnly = false): number | null {
     const key = id.trim().toLowerCase();
-    const command = this.commandFor(key);
+    const command = currentOnly ? this.currentCommandFor(key) : this.commandFor(key);
     const prefix = `/mycli cast ${key}`;
     if (command !== prefix && !command?.startsWith(`${prefix} `)) return null;
     return [...command.matchAll(/(?:^|\s)<[^<>]+>(?=\s|$)/g)].length;
   }
 
   /** A finite limit requires an observed command with only single-value placeholders. */
-  maximumArgumentCount(id: string): number | null {
+  maximumArgumentCount(id: string, currentOnly = false): number | null {
     const key = id.trim().toLowerCase();
-    const command = this.spells.get(key)?.item.command;
+    const command = currentOnly ? this.currentCommandFor(key) : this.commandFor(key);
     const prefix = `/mycli cast ${key}`;
     if (command === prefix) return 0;
     if (!command?.startsWith(`${prefix} `)) return null;
@@ -293,6 +352,15 @@ export class SkillCatalog {
   }
 
   readout(id?: string): string {
+    if (this.nativeSkills) {
+      const s = this.nativeSkills;
+      const key = id?.trim().toLowerCase();
+      const indexed = key ? `\n${key}：${s.common.includes(key) || s.available.includes(key) ? '本次记录列为可用' : s.learnable.includes(key) ? '本次记录列为可学习，不等于已学会' : '本次清单未列出，须查当前详情'}。/mycli skills info ${key}`
+        : `\n通用：${s.common.join('、')}\n职业可用：${s.available.join('、')}\n可学习：${s.learnable.join('、')}`;
+      const historical = key ? this.spells.get(key) : undefined;
+      return this.nativeIndex() + indexed + (historical
+        ? `\n[旧 MC_SPELL 历史，仅供查询] 观测 ${historical.detailAt ?? historical.observedAt ?? this.updatedAt}\n${JSON.stringify(historical.detail ?? historical.item)}` : '');
+    }
     if (id) {
       const record = this.spells.get(id.trim().toLowerCase());
       if (!record) return `[千灯纪法术] 尚未缓存 ${id}。用 /mycli capabilities 查当前 ID，再用 /mycli capabilities info ${id} 查询；以服务端当次回执为准。`;
@@ -318,6 +386,7 @@ export class SkillCatalog {
         entries: Object.fromEntries(this.entries),
         spells: Object.fromEntries(this.spells),
         ...(this.directory ? { directory: this.directory } : {}),
+        ...(this.nativeSkills ? { nativeSkills: this.nativeSkills } : {}),
       } satisfies CatalogFile), 'utf8');
     } catch { /* The live observation remains available until this World stops. */ }
   }

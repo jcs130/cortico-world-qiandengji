@@ -228,6 +228,8 @@ function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgres
   };
   bridge.pushEvent = async (event, options) => {
     const mapped = toMymcEvent(event);
+    const connection = mapped.meta?.connection as { phase?: unknown; generation?: unknown } | undefined;
+    if (mapped.type === 'mymc.event' && connection?.phase === 'spawned' && Number.isSafeInteger(connection.generation)) catalog.resetConnection();
     const channel = mapped.type === 'mymc.chat' ? messageChannel(mapped.text) : null;
     if (channel) {
       try { messages.observe(mapped, options?.deliver !== false); }
@@ -360,6 +362,7 @@ export class MymcWorld implements World {
       description: toolDescription(tool.name, tool.description),
       parameters: toolParameters(tool.name, tool.parameters),
       handler: async (args, ctx) => {
+        const guidance: string[] = [];
         if (tool.name === 'mc_options') {
           ctx.signal?.throwIfAborted();
           try {
@@ -378,27 +381,24 @@ export class MymcWorld implements World {
         }
         if (tool.name === 'mc_cast' && typeof args.spell === 'string') {
           const id = args.spell.trim().toLowerCase();
-          const command = this.catalog.commandFor(id);
+          const command = this.catalog.currentCommandFor(id);
           const prefix = `/mycli cast ${id}`;
           if (command !== null && command !== prefix && !command.startsWith(`${prefix} `)) {
-            return { text: `[mymc_cast 未发送] 服务端为 ${id} 声明的命令是 ${command}，不属于本工具的 cast 用法。`
-              + `用 mymc_skills {"id":"${id}"} 核对说明，按实际参数填写该命令并通过 mymc_do 的 chat 步骤发送；生效以服务端回执为准。`, failed: true };
+            guidance.push(`[技能用法观察] 最近为 ${id} 记录的命令是 ${command}，与本次 cast 用法不同；可用 mymc_skills {"id":"${id}"} 核对当前说明。World 未改写或拦截本次请求，实际发送与结果见执行层回执。`);
           }
-          const required = this.catalog.requiredArgumentCount(args.spell);
+          const required = this.catalog.requiredArgumentCount(args.spell, true);
           const supplied = Array.isArray(args.arguments) ? args.arguments.length : 0;
           if (required !== null && supplied < required) {
-            return { text: `[mymc_cast 未发送] 服务端已观测的 ${args.spell} 用法需要至少 ${required} 个参数；`
-              + `用 mymc_skills {"id":"${args.spell}"} 或 /mycli spells explain ${args.spell} 核对完整说明，按实际值填写 arguments。`, failed: true };
+            guidance.push(`[技能用法观察] 最近的 ${args.spell} 用法需要至少 ${required} 个参数；用 mymc_skills {"id":"${args.spell}"} 或 /mycli skills info ${args.spell} 核对当前说明。World 未补参数或拦截，结果见执行层回执。`);
           }
-          const maximum = this.catalog.maximumArgumentCount(args.spell);
+          const maximum = this.catalog.maximumArgumentCount(args.spell, true);
           if (maximum !== null && supplied > maximum) {
-            return { text: `[mymc_cast 未发送] 服务端已观测的 ${args.spell} 用法最多接受 ${maximum} 个参数，本次给了 ${supplied} 个；`
-              + `用 mymc_skills {"id":"${args.spell}"} 或 /mycli spells explain ${args.spell} 核对完整说明；目录更新后按新用法调用。`, failed: true };
+            guidance.push(`[技能用法观察] 最近的 ${args.spell} 用法最多接受 ${maximum} 个参数，本次给了 ${supplied} 个；用 mymc_skills {"id":"${args.spell}"} 或 /mycli skills info ${args.spell} 核对当前说明。World 未删除参数或拦截，结果见执行层回执。`);
           }
         }
         if (tool.name === 'mc_goal') {
           const limit = trialGoalLimitNote(args as Record<string, unknown>, this.trialProgress.status, this.trialProgress.clear);
-          if (limit) return { text: `[mymc_goal 未受理] ${limit}`, failed: true, endsTurn: true, retryAfterMs: 30_000 };
+          if (limit) guidance.push(`[目标证据提示] ${limit}；World 不替 Agent 撤下或改写目标，登记与服务端完成分开核验。`);
         }
         if (tool.name === 'mc_do' && startsTrialFight(args as Record<string, unknown>)) {
           // An internal read skips the per-round display gate. A prior mymc_bag
@@ -410,14 +410,14 @@ export class MymcWorld implements World {
           const readiness = trialMeleeReadiness(bag);
           if (readiness !== 'ready') {
             const reason = readiness === 'missing'
-              ? '随身没有剑或斧。铁镐、空手、弓弩和少量箭不能替代试炼塔近战主武器。先从储物箱取出剑或斧，再核对背包后入塔。'
+              ? '本次读数未发现剑或斧；仍需核对弓弩与弹药、职业法器、防具、食物及当前副本规则，不能据此单独判断没有可用武器。'
               : '无法确认当前随身武器；等物品栏同步后重试。';
-            return `[mymc_do 未受理] 入塔装备检查：${reason}\n${toMymcText(bag)}`;
+            guidance.push(`[战备读数提示] ${reason} World 不设必须带剑的入场门槛，入场资格由服务端核验。\n${toMymcText(bag)}`);
           }
         }
         if (tool.name === 'mc_do') {
           const reason = this.prospect.redundantProbe(args as Record<string, unknown>);
-          if (reason) return { text: `[mymc_do 未受理] ${reason}`, failed: true, endsTurn: true };
+          if (reason) guidance.push(`[重复观察提示] ${reason}；World 未替 Agent 取消此次查询。`);
         }
         const planned = tool.name === 'mc_do'
           ? routeViaServerCommand(args as Record<string, unknown>, this.opts.cfg.serverTravel?.enabled === true)
@@ -425,7 +425,7 @@ export class MymcWorld implements World {
         const result = await tool.handler(planned.args, ctx);
         const addNote = (value: string): string => {
           const combatNote = tool.name === 'mc_combat_tactic' ? combatTacticNote(value) : null;
-          return [combatNote, planned.note, value].filter(Boolean).join('\n');
+          return [...guidance, combatNote, planned.note, value].filter(Boolean).join('\n');
         };
         return typeof result === 'string'
           ? addNote(toMymcText(result))

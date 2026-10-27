@@ -232,14 +232,14 @@
     },
     {
       "name": "mymc_cast",
-      "description": "Cast one server-listed /mycli spell immediately, even during combat or retreat. This does not enter the task queue or take movement control. The reply only confirms sending; the server message and observed effects determine whether the spell worked. For planned timed movement, prepare the route first and queue the cast chat command with dependent flight steps in one mymc_do group; do not start the timer while earlier queued work is still running. Pass server-required arguments as separate tokens, such as arguments:[\"bread\"] for a creation spell. This always sends /mycli cast <spell>; other server command namespaces must use mymc_do chat with the exact observed usage. Use /mycli goddess skills or /mycli spells to discover available spell IDs.",
+      "description": "Cast one server-listed /mycli spell immediately, even during combat or retreat. This does not enter the task queue or take movement control. The reply only confirms sending; the server message and observed effects determine whether the spell worked. For planned timed movement, prepare the route first and queue the cast chat command with dependent flight steps in one mymc_do group; do not start the timer while earlier queued work is still running. Pass only the arguments declared by the current server skill contract as separate tokens. This always sends /mycli cast <spell>; other server command namespaces must use mymc_do chat with the exact observed usage. Use /mycli skills for current unlocks and /mycli capabilities for command contracts; historical spell lists do not prove current availability.",
       "parameters": {
         "type": "object",
         "properties": {
           "spell": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9_:-]{0,63}$",
-            "description": "Server spell ID, such as selfheal, starbolt, frostnova, or flamewave."
+            "description": "Skill ID from the current server listing, with its current unlock and target requirements."
           },
           "arguments": {
             "type": "array",
@@ -825,7 +825,7 @@
                   "type": "integer",
                   "minimum": 1,
                   "maximum": 64,
-                  "description": "用于 collect / craft(item=要新增的产物个数(按配方产量向上取整);grid=配方重复次数。不是原料数。) / smelt / brew(1-3;放几瓶(三个瓶位)) / toss / stow / take(定量取物必须显式写;不再默认成 1)"
+                  "description": "用于 collect / craft(item=要新增的产物个数(按配方产量向上取整);grid=配方重复次数。不是原料数。) / smelt / brew(1-3;放几瓶(三个瓶位)) / toss / stow / take(定量取物必须显式写;不默认数量)"
                 },
                 "buried": {
                   "type": "boolean",
@@ -3801,7 +3801,7 @@
                         "type": "integer",
                         "minimum": 1,
                         "maximum": 64,
-                        "description": "定量取物必须显式写;不再默认成 1"
+                        "description": "定量取物必须显式写;不默认数量"
                       },
                       "at": {
                         "type": [
@@ -3825,10 +3825,6 @@
                         ],
                         "description": "从当前打开的容器窗口取;不写 = 找附近箱子"
                       },
-                      "all": {
-                        "type": "boolean",
-                        "description": "at+all:true 取指定容器;炉子有原料时保留原料和燃料"
-                      },
                       "pick": {
                         "type": "string",
                         "minLength": 1
@@ -3842,7 +3838,50 @@
                       }
                     },
                     "required": [
-                      "skill"
+                      "skill",
+                      "item",
+                      "count"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "skill": {
+                        "type": "string",
+                        "const": "take"
+                      },
+                      "at": {
+                        "type": [
+                          "array",
+                          "string"
+                        ],
+                        "items": {
+                          "type": [
+                            "number",
+                            "string"
+                          ]
+                        },
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "description": "点名哪一格容器"
+                      },
+                      "all": {
+                        "type": "boolean",
+                        "const": true
+                      },
+                      "needs": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    },
+                    "required": [
+                      "skill",
+                      "at",
+                      "all"
                     ],
                     "additionalProperties": false
                   }
@@ -4779,6 +4818,7 @@
               "storage",
               "tasks",
               "skills",
+              "legacy-skills",
               "flight",
               "control",
               "combat",

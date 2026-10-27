@@ -19,21 +19,40 @@ const RANGED = new Set(['skeleton', 'stray', 'bogged', 'pillager', 'witch', 'bla
 
 /** Qiandengji spell catalogue, reply parser and explicit server fallback profile. */
 export class CombatSpells extends CombatAbilities {
+  private readonly unlockDenials = new Map<string, number>();
+  override reset(): void { super.reset(); this.unlockDenials.clear(); }
   protected override get defaultSpells() { return SPELLS; }
   protected override get defaultCosts() { return DEFAULT_COST; }
   protected override get defaultCooldowns() { return SPELL_COOLDOWN_MS; }
   protected override get supportSpell() { return 'selfheal'; }
   protected override cooldownOf(spell: string) { return this.cooldowns.get(spell) ?? SPELL_COOLDOWN_MS[spell] ?? 15_000; }
   override noteAbilities(abilities: Parameters<CombatAbilities['noteAbilities']>[0], now = Date.now()): void {
-    super.noteAbilities(abilities.map(a => ({...a, id:a.id.split(':').at(-1)!})), now);
+    const current = abilities.map(a => ({...a, id:a.id.split(':').at(-1)!}));
+    for (const ability of current) {
+      const deniedAt = this.unlockDenials.get(ability.id);
+      if (deniedAt !== undefined && now >= deniedAt) this.unlockDenials.delete(ability.id);
+    }
+    super.noteAbilities(current, now);
+  }
+  override capabilityIndex(now = Date.now()): string {
+    const denials = [...this.unlockDenials].slice(-16).map(([id, at]) => ({ id, reason: 'not-unlocked', observedAt: new Date(at).toISOString() }));
+    return super.capabilityIndex(now) + (denials.length ? '\n[服务端技能拒绝观察] ' + JSON.stringify(denials)
+      + '；按当前 /mycli skills status 与单项详情核对，观察记录不增加手动施法禁令。' : '');
   }
   noteServerMessage(text: string, now = Date.now()): void {
     const attempt = this.casts.at(-1);
+    const result = attempt && viewerCastResult(text, attempt.spell);
     if (attempt && now - Date.parse(attempt.sentAt) >= 0
       && now - Date.parse(attempt.sentAt) <= 3_000 && !attempt.reply
-      && viewerCastResult(text, attempt.spell)) {
+      && result) {
       attempt.reply = text.slice(0, 240);
       attempt.replyAt = new Date(now).toISOString();
+      if (result.detail === '技能未解锁') {
+        this.unlockDenials.set(attempt.spell, now);
+        if (this.unlockDenials.size > 128) this.unlockDenials.delete(this.unlockDenials.keys().next().value!);
+        this.available.delete(attempt.spell);
+        this.serverReadyAt.delete(attempt.spell);
+      }
     }
     const reportedMana = manaSnapshotFromText(text);
     if (reportedMana) this.noteMana(reportedMana.current, now);
@@ -65,6 +84,7 @@ export class CombatSpells extends CombatAbilities {
       && /冷却中|cooldown|无法施放|施法失败|cannot cast|failed to cast/i.test(text)) {
       this.pending = null;
     }
+    if (attempt?.replyAt === new Date(now).toISOString() && result?.phase === 'failed') this.pending = null;
   }
 
   protected override selectFallback(_bot: Bot, foes: Bot['entity'][], ready: (spell: string) => boolean, near: (radius: number) => number): string | null {

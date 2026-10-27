@@ -18,7 +18,7 @@ describe('trial melee readiness', () => {
     expect(trialMeleeReadiness('[背包] 物品栏还在从服务器同步')).toBe('unknown');
   });
 
-  it('blocks tower entry without a melee weapon but leaves other tasks available', async () => {
+  it('reports equipment evidence without imposing a host-only sword requirement', async () => {
     let accepted = 0;
     let bagReads = 0;
     let bag = '工具物品名:iron_pickaxe、bow。';
@@ -36,13 +36,15 @@ describe('trial melee readiness', () => {
     const action = world.tools().find((tool) => tool.name === 'mymc_do')!;
     const ctx = { role: 'main', log: {} as never, round: 12 };
     const denied = await action.handler({ steps: [{ skill: 'use', at: [-596, 92, -313] }] }, ctx);
-    expect(denied).toContain('入塔装备检查');
-    expect(accepted).toBe(0);
+    expect(denied).toContain('战备读数提示');
+    expect(denied).toContain('已受理');
+    expect(denied).toContain('职业法器');
+    expect(accepted).toBe(1);
     expect(bagReads).toBe(1);
     expect(await action.handler({ steps: [{ skill: 'chat', text: '/mycli guild status' }] }, ctx)).toContain('已受理');
-    expect(accepted).toBe(1);
+    expect(accepted).toBe(2);
     bag = '工具物品名:diamond_sword、iron_pickaxe。';
     expect(await action.handler({ steps: [{ skill: 'use', at: [-596, 92, -313] }] }, ctx)).toContain('已受理');
-    expect(accepted).toBe(2);
+    expect(accepted).toBe(3);
   });
 });

@@ -24,15 +24,15 @@ export const SERVER_TOOLS: ReadonlyArray<Omit<ToolDef,'handler'>> = [{
       + 'This does not enter the task queue or take movement control. The reply only confirms sending; '
       + 'the server message and observed effects determine whether the spell worked. '
       + 'For planned timed movement, prepare the route first and queue the cast chat command with dependent flight steps in one mc_do group; do not start the timer while earlier queued work is still running. '
-      + 'Pass server-required arguments as separate tokens, such as arguments:["bread"] for a creation spell. '
+      + 'Pass only the arguments declared by the current server skill contract as separate tokens. '
       + 'This always sends /mycli cast <spell>; other server command namespaces must use mc_do chat with the exact observed usage. '
-      + 'Use /mycli goddess skills or /mycli spells to discover available spell IDs.',
+      + 'Use /mycli skills for current unlocks and /mycli capabilities for command contracts; historical spell lists do not prove current availability.',
     parameters: {
       type: 'object',
       properties: {
         spell: {
           type: 'string', pattern: '^[a-z][a-z0-9_:-]{0,63}$',
-          description: 'Server spell ID, such as selfheal, starbolt, frostnova, or flamewave.',
+          description: 'Skill ID from the current server listing, with its current unlock and target requirements.',
         },
         arguments: {
           type: 'array',
@@ -172,7 +172,7 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     super.extensionSpawn(bot); this.selfHealAvailable=false; this.arenaFloor=null;
     this.extensionRespawn();
     const generation=this.connectionGeneration;
-    setTimeout(()=>{ if(!this.shuttingDown && this.bridge?.bot===bot && generation===this.connectionGeneration) bot.chat('/mycli goddess skills'); },1500).unref();
+    setTimeout(()=>{ if(!this.shuttingDown && this.bridge?.bot===bot && generation===this.connectionGeneration) bot.chat('/mycli skills status --json'); },1500).unref();
   }
   protected override extensionRespawn() { const mana=this.bridge?.agentManaState; if(mana!==undefined)this.combatSpells.noteMana(mana?.current??null); }
   protected override attachExtension(bot: Bot) {

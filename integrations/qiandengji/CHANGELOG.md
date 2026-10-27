@@ -1,3 +1,9 @@
+## 0.4.1-rc.50
+
+- Consume core 0.5.7-rc.114: confirmed food hand swaps, truthful consumption outcomes and connection-generation facts.
+- Read native RPG skills as a compact current index with change events; preserve legacy observations for on-demand history.
+- Skill metadata, target, equipment and repeated-observation checks guide decisions instead of imposing World admission policy. Server/execution failures remain authoritative.
+
 ## 0.4.1-rc.49
 
 - Consume core 0.5.7-rc.113: actual logical chat-send receipts with source clocks, public/private address and queued task/step correlation.

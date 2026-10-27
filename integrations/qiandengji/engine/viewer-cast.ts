@@ -24,6 +24,12 @@ export function viewerCastCommand(text: unknown): ViewerCastCommand | null {
 
 export function viewerCastResult(text: unknown, spellId: string): ViewerCastResult | null {
   if (typeof text !== 'string' || text.length > 1_024) return null;
+  const locked = /\bSpell\s+([a-z0-9_:-]+)\s+is not unlocked\b/i.exec(text);
+  if (locked) return locked[1].toLowerCase() === spellId.toLowerCase()
+    ? { phase: 'failed', detail: '技能未解锁' } : null;
+  if (/\[RPG\].*(?:参数过多|缺少参数|参数无效|用法错误)/u.test(text)) {
+    return { phase: 'failed', detail: '施法参数被拒绝' };
+  }
   if (/(?:not|don't have) enough (?:mana|magic)|insufficient (?:mana|magic)|(?:on |in )?cooldown|you cannot (?:blink|cast|use)|cannot cast|failed to cast|\bno permission\b|魔力不足|灵力不足|冷却中|无法施放|施法失败|未学会|不能在此施法|不可在此施法|没有看得见的怪物|没有可用目标/i.test(text)) {
     return { phase: 'failed', detail: '施法受阻' };
   }

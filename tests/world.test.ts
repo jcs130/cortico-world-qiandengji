@@ -374,6 +374,27 @@ describe('Mymc World contract', () => {
     await world.stop();
   });
 
+  it('projects native skill changes before event delivery and invalidates current status on reconnection', async () => {
+    const fake = fakeEngine(), outer = fakeHost();
+    Object.assign(fake.engine, { requestFacts: () => ({ text: '当前世界', snapshotTypes: [], parts: [{ key: 'connection', text: 'online' }] }) });
+    const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
+    await world.start(outer.host);
+    try {
+      const state = { available: ['arcane_bolt'], common: ['home'], learnable: [{ id: 'frost_bolt' }], skillPoints: 2 };
+      const event = { ts: '2026-10-28T00:00:00+08:00', source: 'minecraft', type: 'minecraft.chat',
+        text: '[MC 系统] MC_RPG ' + JSON.stringify(state) };
+      await fake.bridge().pushEvent(event);
+      expect(world.requestFacts()?.text).toContain('原生技能现读');
+      expect(world.requestFacts()?.text).toContain('arcane_bolt');
+      expect(outer.stored.filter(e => e.type === 'mymc.skill')).toHaveLength(1);
+      await fake.bridge().pushEvent(event);
+      expect(outer.stored.filter(e => e.type === 'mymc.skill')).toHaveLength(1);
+      await fake.bridge().pushEvent({ ...event, type: 'minecraft.event', text: 'New connection',
+        meta: { connection: { phase: 'spawned', generation: 2 } } });
+      expect(world.requestFacts()?.text).toContain('旧可用记录待核验');
+    } finally { await world.stop(); }
+  });
+
   it('remembers server skill listings and reports changes across World restarts', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'mymc-skills-'));
     const cfg = { ...structuredClone(MYMC_DEFAULTS), host: 'example.test' };
