@@ -1,3 +1,9 @@
+## 0.4.1-rc.53
+
+- Parse the published native Vortex profile from private mcagent:state and MC_RPG, retaining class, RPG level/xp, learning points, prepared skill, mana and economy observations. Keep vanilla experience separate and unavailable money unknown.
+- Fix status queries for the native JSON response and add read-only skills.status. Retain legacy MC_STATUS and source/connection checks; native packets do not carry a request nonce or subject.
+- Invalidate current skill advice on backend/class changes, keep old catalogs historical, coalesce progression notifications and ignore replaced-bot packets.
+
 ## 0.4.1-rc.52
 
 - Consume core 0.5.7-rc.116 and expose its generic request-effect classification and conservative rejected-speech omission helpers to hosts.

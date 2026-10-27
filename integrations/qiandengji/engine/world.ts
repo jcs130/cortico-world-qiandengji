@@ -9,6 +9,7 @@ import type { MinecraftBot as Bot } from 'agent-mc-world/extension';
 import type { ToolDef, ToolOutcome } from 'agent-mc-world/contracts';
 import { parseSkillsPayload, VIEWER_STATE_CHANNEL } from './viewer-state.ts';
 import { QiandengjiBridge } from './bridge.ts';
+import { NativeRpgState } from './native-rpg.ts';
 import { parseProtectReply } from './agentfriend-protection.ts';
 import { CombatSpells, type CombatSpell } from './combat-spells.ts';
 import { CombatTacticBook } from './combat-tactics.ts';
@@ -48,6 +49,7 @@ protected selfHealAvailable = false;
 protected readonly combatSpells: CombatSpells;
 protected arenaFloor: { floor: number; total: number } | null = null;
 protected readonly observedCommands = new ObservedCommandCatalog();
+protected readonly nativeRpg = new NativeRpgState();
   constructor(options: MinecraftWorldOptions) { const tactics = new CombatSpells(new CombatTacticBook(options.dataDir ? join(options.dataDir,'minecraft-combat-tactics.json') : null)); super(options, tactics); this.combatSpells = tactics; }
   protected override battlefieldChannel() { return BATTLEFIELD_CHANNEL; }
   protected override serverQueryDefinitions() { return QIANDENGJI_SERVER_QUERIES; }
@@ -164,8 +166,20 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     return false;
   }
   protected override extensionServerFeedback(text: string): void {
+    if (text.startsWith('MC_RPG ') && this.nativeRpg.chat(text)) this.publishNativeRpg();
     const usage = observedCommandUsage(text) ?? observedCommandRoot(text, this.bridge?.bot?.username);
     if (usage) this.observedCommands.note(usage);
+  }
+  override requestFacts() {
+    const facts = super.requestFacts(), text = this.nativeRpg.brief();
+    if (!facts || !text) return facts;
+    return { ...facts, text: facts.text + '\n' + text,
+      ...(facts.parts ? { parts: [...facts.parts, { key: 'nativeRpg', text }] } : {}) };
+  }
+  protected publishNativeRpg(): void {
+    const text = this.nativeRpg.brief();
+    if (text) this.emit('minecraft.event', text, false, { trigger: 'piggyback',
+      meta: { nativeRpgObservation: true, nativeRpgProfile: this.nativeRpg.identity() } });
   }
   protected override extensionImportantMessage(text: string) { return /可用咏唱|可学习|魔力|命格|探矿|selfheal|healing restores|full health/i.test(text); }
   protected override extensionSpawn(bot: Bot) {
@@ -174,13 +188,16 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     const generation=this.connectionGeneration;
     setTimeout(()=>{ if(!this.shuttingDown && this.bridge?.bot===bot && generation===this.connectionGeneration) bot.chat('/mycli skills status --json'); },1500).unref();
   }
-  protected override extensionRespawn() { const mana=this.bridge?.agentManaState; if(mana!==undefined)this.combatSpells.noteMana(mana?.current??null); }
+  protected override extensionRespawn() { this.nativeRpg.reset(); const mana=this.bridge?.agentManaState; if(mana!==undefined)this.combatSpells.noteMana(mana?.current??null); }
   protected override attachExtension(bot: Bot) {
+    this.nativeRpg.reset();
     this.observedCommands.clear();
     watchAgentFriendFlight(bot);
     bot.on('physicsTick',()=>{if(!this.shuttingDown)this.tryAutoCombatSpell(bot);});
     bot.on('death',()=>{this.arenaFloor=null;this.combatSpells.noteMana(null);});
     bot._client.on('custom_payload',(packet:{channel?:unknown;data?:unknown})=>{
+      if (this.shuttingDown || this.bridge?.bot !== bot) return;
+      if (this.nativeRpg.packet(packet.channel, packet.data)) this.publishNativeRpg();
       const state=parseSkillsPayload(packet.channel,packet.data);if(!state)return;
       if(packet.channel===VIEWER_STATE_CHANNEL){this.combatSpells.noteMana(state.mana?.current??null);this.combatSpells.noteAbilities(state.abilities);this.selfHealAvailable=this.combatSpells.hasAbility('selfheal');}
       else if(state.mana)this.combatSpells.noteMana(state.mana.current);

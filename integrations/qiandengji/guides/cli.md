@@ -35,23 +35,22 @@ Mineflayer 使用 `mymc_query {}` 查看本服务器包明确声明的只读查�
 查询直接走独立通道，不会取消、替换或排到行走、战斗、存取任务之后；不要为查询状态提交 `mymc_do chat`。
 一次仅有一个查询在途；按回执里的 `requestId` 读取原请求结果，不因等待或超时自动重发。
 
-目前只声明 `/mycli status`、`/mycli dungeon status <ID>` 和 `/mycli dungeon info <ID>`。
+目前声明 `/mycli status --json`、`/mycli skills status --json`、`/mycli dungeon status <ID>` 和 `/mycli dungeon info <ID>`。技能资格使用 `mymc_query {"query":"skills.status"}`。
 ID 是服务端给出的 1–64 位小写字母开头、后续字母/数字/下划线/连字符的标识，不是名字、坐标或任意命令。
 `status full`、开始/加入/传送/领奖、未知命令和带 `status` 字样的其他命令不属于本通道。
 帮助与更多入口仍按下方目录发现，不会隐式执行服务端返回的 `nextCommand`。
 
-结果只匹配本连接发出后的可信服务端回执，并核对本人名称或 recipient 与副本 ID；玩家转述和旧缓存不算答复。
-这些协议未回显请求 nonce，因此匹配范围只是当前连接、消息类型、本人及副本；超时或断线仍为未知。
+结果只匹配本连接发出后的可信服务端回执；旧 MC_STATUS 核对本人名称，副本回执核对 recipient 与副本 ID。原生 MC_RPG 没有角色名或请求 nonce，只能按当前连接和各查询的具体结构匹配，不能宣称唯一请求归因；玩家转述和旧缓存不算答复。超时或断线仍为未知。
 `dungeon.info` 是入口和规则说明，不证明当前局状态或冷却；`dungeon.status` 的 `lastOutcome` 也不能替代当前局。
 读到 `run`、完成记录或奖励字段时保留原值；缺少字段不猜测。SDK/MCP 使用同一核心 `mc_query` 接口。
 
 | 命令 | 用途或回执 |
 | --- | --- |
-| `/mycli status` | 只读当前状态，返回 `MC_STATUS` |
+| `/mycli status --json` | 原生 `MC_RPG` 职业、RPG等级/经验、魔力和经济；兼容旧 `MC_STATUS` |
 | `/mycli status full` | 旧详细输出和状态实练入口 |
 | `/mycli progress all 1` | 分页查看主线、专项实练、公会委托 |
-| `/mycli skills status` | 本人技能资格、魔力消耗与冷却 |
-| `/mycli skills status all 1` | 全部技能 |
+| `/mycli skills status --json` | 原生 `MC_RPG` 当前可用/通用/可学习技能与学习点；消耗、目标和冷却按单项详情及私有状态读取 |
+| `/mycli skills info <ID>` | 读取一项当前技能定义、学习资格和参数 |
 
 专项完成不等于主线毕业；以 `mainlineGraduated` 或主线 `graduated=true` 为准。冷却 null 保留未知，不能推断零冷却或可以施放。
 

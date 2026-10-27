@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { MinecraftOption, MinecraftOptionIntent } from 'agent-mc-world/contracts';
+import { readNativeSkills, type NativeSkills } from './engine/native-rpg.ts';
 
 interface CatalogFile {
   version: 1;
@@ -10,21 +11,6 @@ interface CatalogFile {
   spells?: Record<string, SpellRecord>;
   directory?: DirectoryObservation;
   nativeSkills?: NativeSkills;
-}
-
-interface NativeSkills { observedAt: string; available: string[]; common: string[]; learnable: string[]; skillPoints: number }
-
-function readNativeSkills(value: unknown, at: string, saved = false): NativeSkills | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value) || !Number.isFinite(Date.parse(at))) return null;
-  const row = value as Record<string, unknown>;
-  const ids = (values: unknown): string[] | null => Array.isArray(values) && values.length <= 256
-    && values.every(id => typeof id === 'string' && /^[a-z][a-z0-9_:-]{0,63}$/i.test(id))
-    ? [...new Set(values as string[])] : null;
-  const available = ids(row.available), common = ids(row.common);
-  const learnable = ids(saved ? row.learnable : Array.isArray(row.learnable)
-    ? row.learnable.map(v => v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>).id : null) : null);
-  if (!available || !common || !learnable || !Number.isSafeInteger(row.skillPoints) || Number(row.skillPoints) < 0) return null;
-  return { observedAt: at, available, common, learnable, skillPoints: row.skillPoints as number };
 }
 
 interface SpellSummary {
@@ -94,6 +80,7 @@ export class SkillCatalog {
   private readonly liveCommands = new Map<string, { command: string; receivedAt: number }>();
   private nativeSkills: NativeSkills | null = null;
   private nativeSkillsCurrent = false;
+  private nativeIdentity: string | undefined;
 
   constructor(server: string, dataDir?: string) {
     this.server = server;
@@ -243,7 +230,7 @@ export class SkillCatalog {
 
   compactIndex(): string {
     if (this.nativeSkillsCurrent) return this.nativeIndex() + '\n' + SKILL_ENTRY;
-    if (this.nativeSkills) return '[原生技能待核验] 旧可用记录待核验；当前 /mycli skills status --json，历史按需用 mymc_skills 查询。';
+    if (this.nativeSkills || this.nativeIdentity !== undefined) return '[原生技能待核验] 旧可用记录待核验，本次职业/后端的可用技能待同步；mc_query {"query":"skills.status"} 或 /mycli skills status --json。旧目录仅按需查历史。';
     const groups = new Map<string, string[]>();
     for (const { item } of this.spells.values()) {
       const names = groups.get(item.category) ?? [];
@@ -262,7 +249,7 @@ export class SkillCatalog {
 
   /** When the shared situational index exists, keep the full name directory out of every request. */
   discoveryIndex(): string {
-    return (this.nativeSkills ? this.nativeIndex() + '\n' : '')
+    return (this.nativeSkills ? this.nativeIndex() + '\n' : this.nativeIdentity !== undefined ? this.compactIndex() + '\n' : '')
       + `[历史技能入口] 缓存 ${this.spells.size} 项，最近目录观测 ${this.updatedAt || '未知'}。`
       + '当前相关用途见可选办法索引；mymc_options 按意图读取，mymc_skills {id} 读单项历史原文。'
       + '当前目录/参数查 /mycli capabilities info <ID>，资格/魔力/冷却查 /mycli skills status；只在需要核验时查询。';
@@ -274,12 +261,22 @@ export class SkillCatalog {
 
   /** Only a recently received contract may reject a live call; disk history is advisory. */
   currentCommandFor(id: string): string | null {
-    if (this.nativeSkillsCurrent) return null;
+    if (this.nativeSkillsCurrent || this.nativeIdentity !== undefined) return null;
     const live = this.liveCommands.get(id.trim().toLowerCase());
     return live && Date.now() - live.receivedAt <= 300_000 ? live.command : null;
   }
 
-  resetConnection(): void { this.liveCommands.clear(); this.nativeSkillsCurrent = false; }
+  resetConnection(): void { this.liveCommands.clear(); this.nativeSkillsCurrent = false; this.nativeIdentity = undefined; }
+  noteNativeProfile(profile: unknown): void {
+    if (!profile || typeof profile !== 'object' || Array.isArray(profile)) return;
+    const value = profile as Record<string, unknown>;
+    if (typeof value.available !== 'boolean' || value.available && typeof value.classId !== 'string') return;
+    const identity = value.available ? String(value.classId) : 'unavailable';
+    if (identity === this.nativeIdentity) return;
+    this.nativeIdentity = identity;
+    this.nativeSkillsCurrent = false;
+    this.liveCommands.clear();
+  }
 
   private nativeIndex(): string {
     const s = this.nativeSkills!;
@@ -291,6 +288,7 @@ export class SkillCatalog {
 
   /** Historical effects make abilities discoverable by need; they never certify this account's eligibility. */
   discoveryOptions(): MinecraftOption[] {
+    if (!this.nativeSkillsCurrent && (this.nativeSkills || this.nativeIdentity !== undefined)) return [];
     const current = this.nativeSkillsCurrent && this.nativeSkills
       ? new Set([...this.nativeSkills.common, ...this.nativeSkills.available]) : null;
     const patterns: Array<[MinecraftOptionIntent, RegExp]> = [
@@ -355,11 +353,15 @@ export class SkillCatalog {
     if (this.nativeSkills) {
       const s = this.nativeSkills;
       const key = id?.trim().toLowerCase();
-      const indexed = key ? `\n${key}：${s.common.includes(key) || s.available.includes(key) ? '本次记录列为可用' : s.learnable.includes(key) ? '本次记录列为可学习，不等于已学会' : '本次清单未列出，须查当前详情'}。/mycli skills info ${key}`
+      const indexed = key ? `\n${key}：${s.common.includes(key) || s.available.includes(key) ? this.nativeSkillsCurrent ? '本次记录列为可用' : '历史记录曾列为可用，本次资格待核验' : s.learnable.includes(key) ? this.nativeSkillsCurrent ? '本次记录列为可学习，不等于已学会' : '历史记录曾列为可学习，本次资格待核验' : '本次清单未列出，须查当前详情'}。/mycli skills info ${key}`
         : `\n通用：${s.common.join('、')}\n职业可用：${s.available.join('、')}\n可学习：${s.learnable.join('、')}`;
       const historical = key ? this.spells.get(key) : undefined;
       return this.nativeIndex() + indexed + (historical
         ? `\n[旧 MC_SPELL 历史，仅供查询] 观测 ${historical.detailAt ?? historical.observedAt ?? this.updatedAt}\n${JSON.stringify(historical.detail ?? historical.item)}` : '');
+    }
+    if (this.nativeIdentity !== undefined) {
+      const old = id ? this.spells.get(id.trim().toLowerCase()) : undefined;
+      return this.compactIndex() + (old ? '\n[旧 MC_SPELL 历史，不证明当前可用]\n' + JSON.stringify(old.detail ?? old.item) : '');
     }
     if (id) {
       const record = this.spells.get(id.trim().toLowerCase());

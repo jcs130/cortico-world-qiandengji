@@ -19,10 +19,10 @@ const info = { ...dungeon, name: '亡灵墓穴·三室封印', start: [-425, 4, 
 
 describe('explicit Qiandengji read-only server query definitions', () => {
   it('exposes only the reviewed subset through the optional server engine hook', () => {
-    expect(QIANDENGJI_SERVER_QUERIES.map(item => item.id)).toEqual(['status', 'dungeon.status', 'dungeon.info']);
+    expect(QIANDENGJI_SERVER_QUERIES.map(item => item.id)).toEqual(['status', 'skills.status', 'dungeon.status', 'dungeon.info']);
     const engine = Object.create(QiandengjiEngine.prototype) as any;
     expect(engine.serverQueryDefinitions()).toBe(QIANDENGJI_SERVER_QUERIES);
-    expect(query('status').command([])).toBe('/mycli status');
+    expect(query('status').command([])).toBe('/mycli status --json');
     expect(query('dungeon.status').command(['undead_crypt'])).toBe('/mycli dungeon status undead_crypt');
     expect(query('dungeon.info').command(['undead_crypt'])).toBe('/mycli dungeon info undead_crypt');
   });

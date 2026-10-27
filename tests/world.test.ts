@@ -389,6 +389,12 @@ describe('Mymc World contract', () => {
       expect(outer.stored.filter(e => e.type === 'mymc.skill')).toHaveLength(1);
       await fake.bridge().pushEvent(event);
       expect(outer.stored.filter(e => e.type === 'mymc.skill')).toHaveLength(1);
+      await fake.bridge().pushEvent({ ...event, type: 'minecraft.event', text: 'Native profession changed',
+        meta: { nativeRpgObservation: true, nativeRpgProfile: { available: true, classId: 'ranger' } } });
+      expect(world.requestFacts()?.text).toContain('待核验');
+      expect(world.requestFacts()?.text).not.toContain('原生技能现读');
+      await fake.bridge().pushEvent(event);
+      expect(world.requestFacts()?.text).toContain('原生技能现读');
       await fake.bridge().pushEvent({ ...event, type: 'minecraft.event', text: 'New connection',
         meta: { connection: { phase: 'spawned', generation: 2 } } });
       expect(world.requestFacts()?.text).toContain('旧可用记录待核验');

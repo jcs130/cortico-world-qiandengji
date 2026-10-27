@@ -1,4 +1,5 @@
 import type { ServerQueryDefinition } from 'agent-mc-world/extension';
+import { nativeRpgMessage, readNativeRpgStatus, readNativeSkills } from './native-rpg.ts';
 
 /**
  * Explicit read-only subset of the optional Qiandengji protocol.
@@ -42,14 +43,26 @@ function dungeonDefinition(kind: 'status' | 'info', marker: string, description:
 export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
   {
     id: 'status',
-    description: 'Read current personal MC_STATUS. arguments:[] only; does not use status full or run status practice. Matches schemaVersion1, scope self, readOnly true and the connected username.',
-    command: args => args.length === 0 ? '/mycli status' : null,
+    description: 'Read current self status, including Vortex class, RPG level/xp, mana and economy when available. arguments:[] only. Requests --json and matches either the native MC_RPG status shape or legacy MC_STATUS self/name. Native replies have no subject/nonce: the core checks trusted server transport/current connection, not unique request attribution.',
+    command: args => args.length === 0 ? '/mycli status --json' : null,
     matchReply: (text, args, username) => {
       if (args.length || !username) return null;
+      const native = nativeRpgMessage(text);
+      if (native && readNativeRpgStatus(native)) return { data: native, ok: true };
       const value = payload(text, 'MC_STATUS');
       if (!value || value.kind !== 'state' || value.scope !== 'self'
         || value.readOnly !== true || value.name !== username) return null;
       return { data: value, ok: true };
+    },
+  },
+  {
+    id: 'skills.status',
+    description: 'Read current self native MC_RPG available/common/learnable skills and skillPoints, preserving complete server fields such as learning cost/requiredLevel. arguments:[] only. Querying never chooses a class, learns/prepares/casts or spends points. No subject/nonce in native replies; current-connection server provenance is checked by the core.',
+    command: args => args.length === 0 ? '/mycli skills status --json' : null,
+    matchReply: (text, args, username) => {
+      if (args.length || !username) return null;
+      const value = nativeRpgMessage(text);
+      return value && readNativeSkills(value, new Date().toISOString()) ? { data: value, ok: true } : null;
     },
   },
   dungeonDefinition('status', 'MC_SITE_DUNGEON_STATE',

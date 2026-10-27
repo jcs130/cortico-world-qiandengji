@@ -230,6 +230,8 @@ function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgres
     const mapped = toMymcEvent(event);
     const connection = mapped.meta?.connection as { phase?: unknown; generation?: unknown } | undefined;
     if (mapped.type === 'mymc.event' && connection?.phase === 'spawned' && Number.isSafeInteger(connection.generation)) catalog.resetConnection();
+    if (mapped.type === 'mymc.event' && mapped.meta?.nativeRpgObservation === true)
+      catalog.noteNativeProfile(mapped.meta.nativeRpgProfile);
     const channel = mapped.type === 'mymc.chat' ? messageChannel(mapped.text) : null;
     if (channel) {
       try { messages.observe(mapped, options?.deliver !== false); }
