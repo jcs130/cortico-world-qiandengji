@@ -1,3 +1,8 @@
+## 0.4.1-rc.47
+
+- Consume core rc.111: persistent follow now offers grounded checkpoints for explicitly queued work and auto-eating. Resume the original task after rechecking its named target, preserving combat and emergency control ownership.
+- Keep explicit append ordering and existing SDK/MCP contracts. Offline validation does not establish live gameplay improvement.
+
 ## 0.4.1-rc.46
 
 - Consume core rc.110: when a full hotbar has a named selected item, prefer exchanging an ordinary stack while preserving the selected shortcut. Both stacks and cursor remain server-confirmed; rejection and cancellation never trigger repeated slot attempts.
