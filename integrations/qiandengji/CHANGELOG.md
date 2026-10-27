@@ -1,3 +1,9 @@
+## 0.4.1-rc.51
+
+- Consume core 0.5.7-rc.115: choose reachable shores in one path search, allow real detours and confirm dry landing.
+- Keep empty partial searches pending and retain cancellation/ownership cleanup; vertical swim_to pulses keep their heading.
+- Preserve rc.50 native RPG discovery and evidence-based World guidance; no new host-specific movement rules.
+
 ## 0.4.1-rc.50
 
 - Consume core 0.5.7-rc.114: confirmed food hand swaps, truthful consumption outcomes and connection-generation facts.
