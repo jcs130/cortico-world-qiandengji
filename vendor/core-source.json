@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.108",
-  "file": "agent-mc-world-0.5.7-rc.108-29cde18c.tgz",
-  "sha256": "29cde18c47148d06d97ae1054bdcf12a08e106d40b21ae9e8ad916a694edcfd5",
+  "version": "0.5.7-rc.109",
+  "file": "agent-mc-world-0.5.7-rc.109-d75e1de9.tgz",
+  "sha256": "d75e1de91a9ab05699a6918a14238b1d7d1a97269810ff5f5e113cd773c7cf3a",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "8170ebd0384ffa00c7cd43031e23779a54224bf0",
+  "sourceCommit": "0d142563d321aed26595b8aa236352b50cd59f0a",
   "parent": "d32ace49b09fa737e57cf8a66aa23f3e81d144e7",
   "channel": "local-candidate",
-  "sourceStatus": "rc.108 surrounding observation; 2363 core tests passed, public SDK/MCP consumption verified; candidate not loaded or published",
+  "sourceStatus": "rc.109: 2372 full-suite passes/1 skipped plus 33 final targeted passes (1 new case); independent SDK/MCP, API5/6 and 12 host extension checks passed; not yet loaded or published",
   "viewerIncluded": true,
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",

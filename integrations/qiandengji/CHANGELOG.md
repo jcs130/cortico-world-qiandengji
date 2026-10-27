@@ -1,3 +1,9 @@
+## 0.4.1-rc.45
+
+- Consume core rc.109: default 64-block surrounding entity awareness and separately labelled nearby occlusion (8 blocks, configurable). Snapshot, attention and battlefield use the same radius.
+- Preserve strict visibility gates for actions and completion checks; hidden enemies do not satisfy visible-enemy spell thresholds.
+- Prioritize nearby threats and players over drops in compact summaries, with explicit omission counts. Local terrain scans remain bounded.
+
 ## 0.4.1-rc.44
 
 - Consume core rc.108: nearby entity awareness no longer depends on camera facing; the default surrounding range is 32 blocks, with camera-only mode and a 1–64 block range available in configuration.
