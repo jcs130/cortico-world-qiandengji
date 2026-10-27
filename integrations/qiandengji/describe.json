@@ -8155,6 +8155,10 @@
       "description": "同一游戏连接实际收到的玩家聊天，保留发言人。"
     },
     {
+      "type": "mymc.chat.sent",
+      "description": "玩家聊天的客户端实际发送回执；保留原时间、目标、逻辑消息及任务步骤关联，不代表对方已读。"
+    },
+    {
       "type": "mymc.client.action",
       "description": "原生客户端动作回执；受理和完成分开记录。"
     },

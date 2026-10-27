@@ -1,3 +1,8 @@
+## 0.4.1-rc.49
+
+- Consume core 0.5.7-rc.113: actual logical chat-send receipts with source clocks, public/private address and queued task/step correlation.
+- Declare the non-waking chat.sent event. Admission and recipient acknowledgment remain separate.
+
 ## 0.4.1-rc.48
 
 - Consume core 0.5.7-rc.112: native PowerContext conditional replacement/recoverable forgetting, usable-loadout checks before automatic combat, and the Java 1.21.1 viewer material/confirmed-cast fixes.

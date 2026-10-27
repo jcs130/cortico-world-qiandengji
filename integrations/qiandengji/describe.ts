@@ -6,6 +6,7 @@ import {HARNESS2_PRACTICE_TOOL} from 'agent-mc-world/learning';
 const events: Readonly<Record<string, string>> = {
   body: '身体控制权、当前执行状态和恢复条件。',
   chat: '同一游戏连接实际收到的玩家聊天，保留发言人。',
+  'chat.sent': '玩家聊天的客户端实际发送回执；保留原时间、目标、逻辑消息及任务步骤关联，不代表对方已读。',
   'client.action': '原生客户端动作回执；受理和完成分开记录。',
   'client.disconnected': '原生客户端连接中断及其原因。',
   'client.message': '原生客户端实际收到的系统或界面消息。',
