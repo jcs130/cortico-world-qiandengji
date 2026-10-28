@@ -107,7 +107,7 @@ console.log('Built neutral server pack, API 6 public World and private compatibi
 const configFile = ts.readConfigFile(join(root, 'tsconfig.json'), ts.sys.readFile);
 const parsed = ts.parseJsonConfigFileContent(configFile.config, ts.sys, root);
 const declarationDir = join(pack, 'dist/types');
-const program = ts.createProgram({ rootNames: [join(sourceBase, 'neutral.ts'), join(sourceBase, 'host/index.ts'),
+const program = ts.createProgram({ rootNames: [join(sourceBase, 'neutral.ts'), join(sourceBase, 'engine/index.ts'), join(sourceBase, 'host/index.ts'),
   join(sourceBase, 'data-packs/qiandengji/manifest.ts')], options: { ...parsed.options, noEmit: false,
     declaration: true, emitDeclarationOnly: true, rootDir: root, outDir: declarationDir } });
 const diagnostics = ts.getPreEmitDiagnostics(program);

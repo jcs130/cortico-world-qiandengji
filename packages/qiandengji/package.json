@@ -6,6 +6,10 @@
   "license": "MIT",
   "main": "./dist/neutral.js",
   "exports": {
+    "./engine": {
+      "types": "./dist/types/integrations/qiandengji/engine/index.d.ts",
+      "default": "./dist/engine/index.js"
+    },
     ".": {
       "types": "./dist/types/integrations/qiandengji/neutral.d.ts",
       "default": "./dist/neutral.js"

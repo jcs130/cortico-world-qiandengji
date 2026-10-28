@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.116-41df164c.tgz
+  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.116-513f2c5d.tgz
   vec3: 0.2.0
 
 importers:
@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       agent-mc-world:
-        specifier: file:vendor/agent-mc-world-0.5.7-rc.116-41df164c.tgz
-        version: file:vendor/agent-mc-world-0.5.7-rc.116-41df164c.tgz
+        specifier: file:vendor/agent-mc-world-0.5.7-rc.116-513f2c5d.tgz
+        version: file:vendor/agent-mc-world-0.5.7-rc.116-513f2c5d.tgz
       vec3:
         specifier: 0.2.0
         version: 0.2.0
@@ -707,8 +707,8 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.116-41df164c.tgz:
-    resolution: {integrity: sha512-DMrxChvH6kdDgoYAWTIWSnSM8fKFZrRcY1Uohpr6rX9jArZZG82+lZbAFjmr15OuVoQ8t2iWHmX4xz5PLZc7VA==, tarball: file:vendor/agent-mc-world-0.5.7-rc.116-41df164c.tgz}
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.116-513f2c5d.tgz:
+    resolution: {integrity: sha512-gPVjf0ynalHjhTzNfdf5t1FImA/lpsGX4TqxIOID1PiHVniFMfHy5xlDGR+DUXkUIeIWD4tKHp+YhLvr258mbQ==, tarball: file:vendor/agent-mc-world-0.5.7-rc.116-513f2c5d.tgz}
     version: 0.5.7-rc.116
     engines: {node: '>=22'}
     hasBin: true
@@ -1798,7 +1798,6 @@ packages:
 
   uuid@8.3.0:
     resolution: {integrity: sha512-fX6Z5o4m6XsXBdli9g7DtWgAx+osMsRRZFKma1mIUsLCz6vRvv+pz5VNbyu9UEDzpMWulZfvpgb/cmDXVulYFQ==}
-    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   vary@1.1.2:
@@ -2405,7 +2404,7 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.116-41df164c.tgz:
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.116-513f2c5d.tgz:
     dependencies:
       '@mcap/core': 2.3.0
       '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.5)
@@ -3319,8 +3318,6 @@ snapshots:
     dependencies:
       prismarine-nbt: 2.8.0
       prismarine-registry: 1.12.0
-    transitivePeerDependencies:
-      - supports-color
 
   prismarine-nbt@2.8.0:
     dependencies:
@@ -3376,8 +3373,6 @@ snapshots:
       prismarine-item: 1.18.0
       prismarine-registry: 1.12.0
       typed-emitter: 2.1.0
-    transitivePeerDependencies:
-      - supports-color
 
   prismarine-world@3.7.0:
     dependencies:
