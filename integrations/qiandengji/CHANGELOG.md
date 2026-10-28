@@ -1,3 +1,10 @@
+## 0.4.1-rc.54
+
+- Consume core 0.5.7-rc.119: completed travel legs offer the existing safe checkpoint so pending short work need not wait for the full route.
+- Retain the current position-only server travel contract, public transport/login hooks, opt-in fact updates and the already-satisfied navigation guard.
+- Keep shared viewer c0b9a7a6 with first-person cave visibility and original inventory armor fixes. No new host gameplay policy or implicit fact-stream adoption.
+- Source and packed checks are separate from publication, deployment and live behavior.
+
 ## 0.4.1-rc.53
 
 - Parse the published native Vortex profile from private mcagent:state and MC_RPG, retaining class, RPG level/xp, learning points, prepared skill, mana and economy observations. Keep vanilla experience separate and unavailable money unknown.
