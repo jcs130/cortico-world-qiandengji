@@ -1,3 +1,7 @@
+## 0.4.1-rc.60
+
+Consume core rc.135 complete safety-preemption terminals and equipped ranged-defense choice. Preserve rc.59 native skill routes and chat audience semantics; no new server rules, tactics or live actions.
+
 ## 0.4.1-rc.59
 
 Consume core rc.132 chat audience evidence and neutral rc.41 native skill invocation routes. Preserve raw sender identity, distinguish nearby/shout/private scope, and report known command-route mismatches before dispatch without automatic rerouting.
