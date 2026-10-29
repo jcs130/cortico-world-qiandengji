@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { ServerQueryLane } from 'agent-mc-world/extension';
 import { QIANDENGJI_SERVER_QUERIES } from '../integrations/qiandengji/engine/server-query.ts';
 import { QiandengjiEngine } from '../integrations/qiandengji/engine/world.ts';
 import { MymcWorld } from '../integrations/qiandengji/world.ts';
@@ -24,8 +25,8 @@ describe('explicit Qiandengji read-only server query definitions', () => {
     const engine = Object.create(QiandengjiEngine.prototype) as any;
     expect(engine.serverQueryDefinitions()).toBe(QIANDENGJI_SERVER_QUERIES);
     expect(query('status').command([])).toBe('/mycli status --json');
-    expect(query('dungeon.status').command(['undead_crypt'])).toBe('/mycli dungeon status undead_crypt');
-    expect(query('dungeon.info').command(['undead_crypt'])).toBe('/mycli dungeon info undead_crypt');
+    expect(query('dungeon.status').command(['undead_crypt'])).toBe('/mycli dungeon status undead_crypt --json');
+    expect(query('dungeon.info').command(['undead_crypt'])).toBe('/mycli dungeon info undead_crypt --json');
   });
 
   it('never admits arbitrary status-like operations or command suffixes', () => {
@@ -58,6 +59,30 @@ describe('explicit Qiandengji read-only server query definitions', () => {
       .toEqual({ ok: true, data: info });
     expect(info).not.toHaveProperty('run');
     expect(info).not.toHaveProperty('cooldown');
+  });
+
+  it.each([
+    { id: 'dungeon.status', marker: 'MC_SITE_DUNGEON_STATE', value: state },
+    { id: 'dungeon.info', marker: 'MC_SITE_DUNGEON_INFO', value: info },
+  ])('requests machine output and correlates $id through the public query lane', ({ id, marker, value }) => {
+    const send = vi.fn(), lane = new ServerQueryLane();
+    const context = { generation: 'current-connection', username: 'ag_Fixture', afterSequence: 10, send };
+    try {
+      const sent = lane.call({ query: id, arguments: ['undead_crypt'] }, QIANDENGJI_SERVER_QUERIES, context);
+      expect(sent.data).toMatchObject({ phase: 'sent', outcomeUnknown: true, goal_completed: false });
+      expect(send).toHaveBeenCalledWith(`/mycli dungeon ${id.split('.')[1]} undead_crypt --json`);
+      expect(lane.receive('[地下城] 亡灵墓穴·三室封印 · 按下一步处理', context.generation, context.username, 11)).toBe(false);
+      const { recipient: _recipient, ...withoutRecipient } = value;
+      expect(lane.receive(marker + ' ' + JSON.stringify(withoutRecipient), context.generation, context.username, 12)).toBe(false);
+      const text = marker + ' ' + JSON.stringify(value);
+      expect(lane.receive(text, 'old-connection', context.username, 13)).toBe(false);
+      expect(lane.receive(text, context.generation, context.username, 10)).toBe(false);
+      expect(lane.receive(text, context.generation, context.username, 14)).toBe(true);
+      const read = lane.call({ requestId: sent.data?.requestId }, QIANDENGJI_SERVER_QUERIES, context);
+      expect(read.data).toMatchObject({ phase: 'replied', outcomeUnknown: false, goal_completed: false,
+        reply: { data: value } });
+      expect(send).toHaveBeenCalledTimes(1);
+    } finally { lane.reset('Fixture finished'); }
   });
 
   it('requires exact dungeon subject, recipient, root and reply type', () => {

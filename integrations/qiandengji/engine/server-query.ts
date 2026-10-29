@@ -43,7 +43,7 @@ function dungeonDefinition(kind: 'status' | 'info', marker: string, description:
     id: `dungeon.${kind}`,
     description,
     command: args => args.length === 1 && subjectId.test(args[0])
-      ? `/mycli dungeon ${kind} ${args[0]}` : null,
+      ? `/mycli dungeon ${kind} ${args[0]} --json` : null,
     matchReply: (text, args, username) => {
       if (args.length !== 1 || !subjectId.test(args[0]) || !username) return null;
       const value = payload(text, marker);
