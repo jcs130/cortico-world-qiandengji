@@ -1,3 +1,12 @@
+## 0.4.1-rc.55
+
+- Preserve bounded native Vortex progression guidance in the current RPG facts, including the actual missing prerequisite and next query. Keep source time and unknown flags; never choose a class, spend points or follow a command automatically.
+- Publish changes to the server guidance even when class and level stay the same; discard obsolete guidance when a new observation omits it or the connection is reset.
+- Read the native profile before the skill list once on a live spawn, rather than first invalidating an already-read skill list when class identity arrives later. Replaced-connection timers do nothing; no polling or automatic progression action is added.
+- Add read-only native profession list/status/info and skill detail query contracts. Match their distinct published response shapes and exact IDs; mutation receipts, unknown IDs and write arguments do not satisfy a read.
+- Update the on-demand skills guide for the formal AF.27 RPG release: unselected class versus common abilities, starter skills, learning nodes, preparation and the independent casting tool. No extra resident skill directory.
+- Export the same neutral RPG projection through the server engine entry for independent consumers. Core remains the explicitly pinned rc.119 for this isolated server-protocol fix; newer core changes are not implicitly deployed.
+
 ## 0.4.1-rc.54
 
 - Consume core 0.5.7-rc.119: completed travel legs offer the existing safe checkpoint so pending short work need not wait for the full route.

@@ -58,6 +58,95 @@ it('coalesces mana/xp updates without event spam, but tracks real class/progress
   state.reset(); expect(state.brief()).toBe(''); expect(state.identity()).toBeNull();
 });
 
+it('retains the real unselected-class next step through the compact native facts, without choosing a class', () => {
+  const guide = { step: 'class', reason: 'class_required', nextAction: '选择喜欢的职业；基础生存技能已可用',
+    nextCommand: '/mycli profession list', verifyCommand: '/mycli profession status',
+    queryOnly: true, requiresWorldAction: false, missing: [] };
+  const state = new NativeRpgState();
+  state.chat(line({ ...status, class: 'none', guide }), at);
+  expect(state.identity()).toEqual({ available: true, classId: 'none' });
+  expect(state.brief()).toContain('职业 未选职业');
+  expect(state.brief()).toContain('class_required');
+  expect(state.brief()).toContain('/mycli profession list');
+  expect(state.brief()).toContain('未执行');
+  expect(state.brief()).toContain('"queryOnly":true');
+  // A later packet did not supply that guidance; do not freshen/replay an older suggestion.
+  state.packet('mcagent:state', packet(), '2026-10-28T00:00:01Z');
+  expect(state.brief()).not.toContain('/mycli profession list');
+  state.reset(); expect(state.brief()).toBe('');
+});
+
+it('publishes a changed server progression reason even when class, level and balances stayed the same', () => {
+  const state = new NativeRpgState();
+  const guide = { step: 'skills', reason: 'skill_required', nextAction: '查看当前职业技能',
+    nextCommand: '/mycli skills list', queryOnly: true, requiresWorldAction: false, missing: [] };
+  expect(state.chat(line({ ...status, guide }), at)).toBe(true);
+  expect(state.chat(line({ ...status, guide }), at)).toBe(false);
+  expect(state.chat(line({ ...status, guide: { ...guide, reason: 'task_available',
+    nextCommand: '/mycli tasks status' } }), at)).toBe(true);
+  expect(state.brief()).toContain('/mycli tasks status');
+  expect(state.brief()).not.toContain('/mycli skills list');
+});
+
+it('ignores malformed or oversized guidance without discarding the real RPG profile', () => {
+  for (const guide of [{ nextAction: 'x'.repeat(513) }, { step: 'class', reason: 'class_required',
+    nextAction: 'choose\n/op someone', nextCommand: '/op someone' }, ['not a guide']]) {
+    const state = new NativeRpgState(); state.chat(line({ ...status, guide }), at);
+    expect(state.brief()).toContain('职业 法师');
+    expect(state.brief()).not.toContain('/op');
+    expect(state.brief().length).toBeLessThan(600);
+  }
+});
+
+it('leaves absent guidance flags and unmet-requirement data unknown', () => {
+  const parsed = readNativeRpgStatus({ ...status, guide: { step: 'skills', reason: 'inspect', nextAction: '核对当前说明' } });
+  expect(parsed?.guidance).toEqual({ step: 'skills', reason: 'inspect', nextAction: '核对当前说明',
+    queryOnly: null, requiresWorldAction: null, missing: null });
+});
+
+it('lets independent read-only clients discover classes and skill requirements without choosing, learning or casting', () => {
+  const query = (id: string) => QIANDENGJI_SERVER_QUERIES.find(q => q.id === id)!;
+  const fixtures: Array<[string, string[], string, unknown]> = [
+    ['profession.list', [], '/mycli profession list --json', { classes: ['knight', 'mage', 'ranger'] }],
+    ['profession.status', [], '/mycli profession status --json', { class: 'none', queryOnly: true }],
+    ['profession.info', ['mage'], '/mycli profession info mage --json', { id: 'mage', starterSpell: 'arcane_bolt', queryOnly: true }],
+    ['skills.info', ['food'], '/mycli skills info food --json', { id: 'food', common: true, available: true, learned: true }],
+    ['skills.info', ['arcane_bolt'], '/mycli skills info arcane_bolt --json', { definition: { id: 'arcane_bolt', mana: 4 }, available: true }],
+    ['skills.info', ['iron_body'], '/mycli skills info iron_body --json', { skill: { id: 'iron_body', cost: 2 }, learned: false, queryOnly: true }],
+    ['skills.info', ['iron_skin'], '/mycli skills info iron_skin --json', { talent: { id: 'iron_skin', cost: 1 }, learned: false, queryOnly: true }],
+  ];
+  for (const [id, args, command, value] of fixtures) {
+    const definition = query(id); expect(definition.command(args)).toBe(command);
+    expect(definition.matchReply(line(value), args, 'ag_Fixture')).toEqual({ data: value, ok: true });
+    expect(definition.matchReply(line({ success: true, saved: true }), args, 'ag_Fixture')).toBeNull();
+    expect(definition.matchReply(line(value), args, '')).toBeNull();
+    expect(definition.command([...args, 'choose'])).toBeNull();
+    if (args.length) expect(definition.matchReply(line(value), ['different_id'], 'ag_Fixture')).toBeNull();
+  }
+  for (const id of ['profession.info', 'skills.info']) for (const args of [['mage\n/op'], ['mage;op'], ['mage', 'learn'], ['--json']]) {
+    expect(query(id).command(args)).toBeNull();
+  }
+  expect(query('profession.status').matchReply(line(status), [], 'ag_Fixture')).toBeNull();
+  expect(query('profession.list').matchReply(line({ classes: ['mage\n/op'] }), [], 'ag_Fixture')).toBeNull();
+});
+
+it('reads the native profile before the skill list once per live spawn and ignores obsolete connection timers', () => {
+  vi.useFakeTimers();
+  try {
+    vi.spyOn(TacticalMinecraftWorld.prototype as any, 'extensionSpawn').mockImplementation(() => {});
+    const engine = Object.create(QiandengjiEngine.prototype) as any;
+    const bot = { chat: vi.fn() };
+    Object.assign(engine, { bridge: { bot }, connectionGeneration: 1, shuttingDown: false,
+      extensionRespawn: vi.fn(), diag: { write: vi.fn() } });
+    engine.extensionSpawn(bot); vi.advanceTimersByTime(1500);
+    expect(bot.chat.mock.calls.map((x: unknown[]) => x[0])).toEqual(['/mycli status --json', '/mycli skills status --json']);
+    vi.advanceTimersByTime(30000); expect(bot.chat).toHaveBeenCalledTimes(2);
+    engine.extensionSpawn(bot); engine.connectionGeneration = 2; vi.advanceTimersByTime(1500);
+    expect(bot.chat).toHaveBeenCalledTimes(2);
+    expect(engine.diag.write).not.toHaveBeenCalled();
+  } finally { vi.useRealTimers(); }
+});
+
 it('uses the latest learning-point observation without carrying a prior class skill list into another class', () => {
   const state = new NativeRpgState(); state.packet('mcagent:state', packet(), at);
   const skills = { available: ['arcane_bolt'], common: ['home'], learnable: [{ id: 'frost_bolt', cost: 2, requiredLevel: 3 }], skillPoints: 1 };
@@ -89,11 +178,14 @@ it('projects actual plugin/CLI data through the engine facts and emits only a pi
   const engine = Object.create(QiandengjiEngine.prototype) as any;
   engine.nativeRpg = new NativeRpgState(); engine.observedCommands = { note: vi.fn() }; engine.emit = vi.fn();
   vi.spyOn(TacticalMinecraftWorld.prototype, 'requestFacts').mockReturnValue({ text: '原版经验94级，饥饿8', parts: [{ key: 'status', text: '原版经验94级，饥饿8' }], snapshotTypes: [] });
-  engine.extensionServerFeedback(line(status));
+  engine.extensionServerFeedback(line({ ...status, guide: { step: 'skills', reason: 'skill_required',
+    nextAction: '查看本人职业技能', nextCommand: '/mycli skills list', queryOnly: true,
+    requiresWorldAction: false, missing: [] } }));
   expect(engine.emit).toHaveBeenCalledWith('minecraft.event', expect.stringContaining('职业 法师'), false,
     { trigger: 'piggyback', meta: { nativeRpgObservation: true, nativeRpgProfile: { available: true, classId: 'mage' } } });
   const facts = engine.requestFacts(); expect(facts.text).toContain('原版经验94级'); expect(facts.text).toContain('RPG战斗等级 3');
   expect(facts.parts.at(-1).key).toBe('nativeRpg');
+  expect(facts.parts.at(-1).text).toContain('/mycli skills list');
 });
 
 it('reads a real custom_payload event before the viewer projection can drop profession fields, and ignores a replaced bot', () => {
@@ -108,7 +200,7 @@ it('reads a real custom_payload event before the viewer projection can drop prof
   expect(engine.emit).toHaveBeenCalledTimes(1);
   engine.bridge = { bot: {} };
   bot._client.emit('custom_payload', { channel: 'mcagent:state', data: packet({ ...profile, combat: 'ranger', level: 99 }) });
-  expect(engine.nativeRpg.brief()).toContain('法师'); expect(engine.nativeRpg.brief()).not.toContain('99');
+  expect(engine.nativeRpg.brief()).toContain('法师'); expect(engine.nativeRpg.brief()).not.toContain('RPG战斗等级 99');
   expect(engine.emit).toHaveBeenCalledTimes(1);
 });
 

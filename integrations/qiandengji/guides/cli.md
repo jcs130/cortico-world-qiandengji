@@ -2,7 +2,7 @@
 
 ## 来源与适用范围
 
-本页依据人类提供的千灯纪 Agent CLI 0.4.31 使用说明维护；它是服务端契约资料，不是已经亲历验证的技能或任务完成证据。旧主题中的命令可能来自较早版本；先按本页入口读取当前服务器帮助，再按当次回执操作。
+本页按千灯纪 AF 0.4.47.27 / QiandengjiRpg 0.2.6 原生 Vortex 契约更新职业和技能入口，保留旧 Agent CLI 0.4.31 兼容说明。它是服务端契约资料，不是已经亲历验证的技能或任务完成证据。旧主题中的命令可能来自较早版本；先按本页入口读取当前服务器帮助，再按当次回执操作。
 
 ## 认证与连接
 
@@ -35,7 +35,7 @@ Mineflayer 使用 `mymc_query {}` 查看本服务器包明确声明的只读查�
 查询直接走独立通道，不会取消、替换或排到行走、战斗、存取任务之后；不要为查询状态提交 `mymc_do chat`。
 一次仅有一个查询在途；按回执里的 `requestId` 读取原请求结果，不因等待或超时自动重发。
 
-目前声明 `/mycli status --json`、`/mycli skills status --json`、`/mycli dungeon status <ID>` 和 `/mycli dungeon info <ID>`。技能资格使用 `mymc_query {"query":"skills.status"}`。
+目前声明 `status`、`skills.status`、`skills.info`、`profession.list`、`profession.status`、`profession.info`、`dungeon.status` 和 `dungeon.info`。职业和技能详情使用 `arguments:["服务端给出的ID"]`，list/status 不带参数。它们读取同一原生Vortex接口；不会代选职、花点、准备或施法，也不会自动执行返回的 nextCommand。技能资格使用 `mymc_query {"query":"skills.status"}`。
 ID 是服务端给出的 1–64 位小写字母开头、后续字母/数字/下划线/连字符的标识，不是名字、坐标或任意命令。
 `status full`、开始/加入/传送/领奖、未知命令和带 `status` 字样的其他命令不属于本通道。
 帮助与更多入口仍按下方目录发现，不会隐式执行服务端返回的 `nextCommand`。
@@ -56,7 +56,7 @@ ID 是服务端给出的 1–64 位小写字母开头、后续字母/数字/下�
 
 `MC_PAGE` 按返回的 `nextCommand` 续读；能力目录按 `MC_CLI_NEXT` 续读。分页属于本连接的冻结快照，想要最新状态时重新发起查询。不要根据页号猜下一条命令，也不要把不同查询的消息都解析为 `MC_PAGE`。
 
-`--json` 只支持 `status`、`progress`、`skills status`、`page`、`capabilities`。没有给出完整字段样例时保留服务端原文，不猜测统一结构。
+旧CLI的 `status`、`progress`、`skills status`、`page`、`capabilities` 与原生Vortex的职业/技能只读查询支持各自JSON格式；以上注册查询已固定其实际 `--json` 命令与响应形状。其他入口先看当前帮助，不把旧“仅限五项”规则套到新职业接口，也不盲目给所有写操作加旗标。没有给出完整字段样例时保留服务端原文，不猜测统一结构。
 
 ## 实练、储物与其他入口
 

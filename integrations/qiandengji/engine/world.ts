@@ -186,7 +186,17 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     super.extensionSpawn(bot); this.selfHealAvailable=false; this.arenaFloor=null;
     this.extensionRespawn();
     const generation=this.connectionGeneration;
-    setTimeout(()=>{ if(!this.shuttingDown && this.bridge?.bot===bot && generation===this.connectionGeneration) bot.chat('/mycli skills status --json'); },1500).unref();
+    setTimeout(()=>{
+      if(this.shuttingDown || this.bridge?.bot!==bot || generation!==this.connectionGeneration)return;
+      // Bind the actual native profile before accepting its skill list as current.
+      // Both are finite read-only observations; never choose/learn/prepare here.
+      for(const command of ['/mycli status --json','/mycli skills status --json']){
+        try{bot.chat(command);}catch(error){
+          this.diag.write({lane:'link',event:'native-rpg-sync-send-failed',msg:String(error)});
+          break; // Unknown delivery is not automatically retried.
+        }
+      }
+    },1500).unref();
   }
   protected override extensionRespawn() { this.nativeRpg.reset(); const mana=this.bridge?.agentManaState; if(mana!==undefined)this.combatSpells.noteMana(mana?.current??null); }
   protected override attachExtension(bot: Bot) {

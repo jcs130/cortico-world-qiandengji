@@ -29,6 +29,28 @@ export interface NativeRpgProfile {
   available: boolean; classId?: string; level?: number; xp?: number; nextLevelXp?: number;
   mana?: { current: number; max: number }; skillPoints?: number; activeSkill?: string;
   economy?: { available: boolean; balance: number | null }; preview?: boolean;
+  guidance?: NativeRpgGuidance;
+}
+/** A bounded server observation, never an instruction to execute or a local progression policy. */
+export interface NativeRpgGuidance {
+  step: string; reason: string; nextAction: string;
+  nextCommand?: string; verifyCommand?: string;
+  queryOnly: boolean | null; requiresWorldAction: boolean | null; missing: string[] | null;
+}
+function guidance(value: unknown): NativeRpgGuidance | undefined {
+  if (!object(value)) return undefined;
+  const text = (v: unknown, max: number): v is string => typeof v === 'string' && v.trim().length > 0
+    && v.length <= max && !/[\u0000-\u001f\u007f]/.test(v);
+  if (!id(value.step) || !id(value.reason) || !text(value.nextAction, 512)) return undefined;
+  const command = (v: unknown) => text(v, 180) && v.startsWith('/mycli ') ? v : undefined;
+  const missing = Array.isArray(value.missing) && value.missing.length <= 12
+    && value.missing.every(v => text(v, 120)) ? [...value.missing] as string[] : null;
+  return { step: value.step, reason: value.reason, nextAction: value.nextAction,
+    ...(command(value.nextCommand) ? { nextCommand: command(value.nextCommand) } : {}),
+    ...(command(value.verifyCommand) ? { verifyCommand: command(value.verifyCommand) } : {}),
+    queryOnly: typeof value.queryOnly === 'boolean' ? value.queryOnly : null,
+    requiresWorldAction: typeof value.requiresWorldAction === 'boolean' ? value.requiresWorldAction : null,
+    missing };
 }
 function economy(value: unknown): NativeRpgProfile['economy'] {
   if (!object(value) || typeof value.available !== 'boolean') return undefined;
@@ -42,8 +64,10 @@ export function readNativeRpgStatus(value: unknown): NativeRpgProfile | null {
   if (!object(value) || value.authority !== 'VortexRPG' || !id(value.class)
     || !points(value.level) || !nonnegative(value.xp) || !nonnegative(value.nextLevelXp)
     || !mana(value.mana, value.maxMana) || typeof value.preview !== 'boolean' || !economy(value.economy)) return null;
+  const next = guidance(value.guide);
   return { available: true, classId: value.class, level: value.level, xp: value.xp, nextLevelXp: value.nextLevelXp,
-    mana: mana(value.mana, value.maxMana), economy: economy(value.economy), preview: value.preview };
+    mana: mana(value.mana, value.maxMana), economy: economy(value.economy), preview: value.preview,
+    ...(next ? { guidance: next } : {}) };
 }
 export function readNativeRpgPacket(channel: unknown, data: unknown): NativeRpgProfile | null {
   if (channel !== 'mcagent:state' || !Buffer.isBuffer(data) || data.length > 65_536) return null;
@@ -93,7 +117,7 @@ export class NativeRpgState {
         ...(value.activeSkill === undefined && prior.activeSkill !== undefined ? { activeSkill: prior.activeSkill } : {}) };
     }
     this.profile = { value, at, source };
-    const signature = JSON.stringify([value.available, value.classId, value.level, value.skillPoints, value.activeSkill, value.economy, value.preview]);
+    const signature = JSON.stringify([value.available, value.classId, value.level, value.skillPoints, value.activeSkill, value.economy, value.preview, value.guidance]);
     const changed = signature !== this.signature; this.signature = signature; return changed;
   }
   brief(): string {
@@ -108,6 +132,7 @@ export class NativeRpgState {
     fields.push(p.mana ? `魔力 ${p.mana.current}/${p.mana.max}` : '魔力未知');
     fields.push(p.economy?.available && p.economy.balance !== null ? `服务端余额 ${p.economy.balance}` : '经济未就绪或余额未知');
     if (p.preview) fields.push('服务端标记预览');
-    return head + fields.join('；') + '。RPG等级与原版经验等级分别记录；技能资格查 mc_query {"query":"skills.status"}，完整状态查 mc_query {"query":"status"}。';
+    return head + fields.join('；') + '。RPG等级与原版经验等级分别记录；技能资格查 mc_query {"query":"skills.status"}，完整状态查 mc_query {"query":"status"}。'
+      + (p.guidance ? '\n服务端建议数据（沿用本次状态观察时间，未执行）：' + JSON.stringify(p.guidance) : '');
   }
 }
