@@ -60,6 +60,17 @@ describe('服务器玩法按需资料', () => {
         expect(current).toContain('已有角色沿用原账号');
         continue; // The historical fixture remains unchanged; its old invitation advice was superseded.
       }
+      if (paragraph.startsWith('同一个 chat 步骤发送不带 `/` 的文字会进游戏公屏')) {
+        const current = readServerGuide('social').text;
+        expect(current).toContain('当前的实际游戏名或已确认的称呼');
+        expect(current).toContain('按实际所在世界、距离和频道过滤');
+        expect(current).toContain('当前服务端帮助或已核验的通信契约');
+        expect(current).toContain('不默认改成全服广播');
+        expect(current).toContain('不擅自把原私聊内容转发公屏');
+        expect(current).toContain('服务端回显不证明对方收到');
+        expect(current).not.toMatch(/CortiLan|Corti 或可缇/);
+        continue; // Preserve historical text only in the fixture, not as current role/channel guidance.
+      }
       const exactMatches = manuals.flatMap((manual) => manual.split(/\r?\n/)).filter((line) => line === paragraph);
       expect(exactMatches, `未完整迁移：${paragraph.slice(0, 60)}`).toHaveLength(1);
     }
