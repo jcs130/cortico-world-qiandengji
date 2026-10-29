@@ -103,7 +103,7 @@ export const MYMC_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [...MINE
 })), {
   name: 'mymc_skills',
   tags: ['read'],
-  description: 'Read historically observed Qiandengji MC_SPELL entries. Pass id for a cached full detail. The current CLI uses /mycli capabilities, /mycli capabilities info <ID> and /mycli skills status; read mymc_guide cli for authentication and pagination. Old cached commands and unknown cooldowns do not establish current availability.',
+  description: 'Read this connection\'s observed native available profession spells, common spells, learnable nodes and prepared click skill; pass id for its membership and any historical detail. Current details and conditions use mymc_query skills.info; mymc_combat_tactic reads or composes observed skills. Old MC_SPELL records are explicitly historical. Read mymc_query skills.status to refresh eligibility; list membership, preparation, sending and actual effects are separate.',
   parameters: { type: 'object', properties: { id: { type: 'string', description: 'Optional stable spell ID, e.g. flight or frostnova.' } }, required: [] },
 }, {
   name: 'mymc_guide',
@@ -358,7 +358,7 @@ export class MymcWorld implements World {
   tools(): ToolDef[] {
     const engineTools = [...this.engine.tools(), this.choice, minecraftLifeTool()];
     const bagTool = engineTools.find((tool) => tool.name === 'mc_bag');
-    return withToolHelp(this.learning.tools([...engineTools.filter((tool) => tool.name !== 'mc_escape').map((tool): ToolDef => ({
+    return withToolHelp(this.learning.tools([...engineTools.filter((tool) => !['mc_escape', 'mc_skills'].includes(tool.name)).map((tool): ToolDef => ({
       ...tool,
       name: tool.name.replace(/^mc_/, 'mymc_'),
       description: toolDescription(tool.name, tool.description),
@@ -436,7 +436,13 @@ export class MymcWorld implements World {
       },
     })), {
       ...MYMC_TOOL_DECLS.find((decl) => decl.name === 'mymc_skills')!,
-      handler: async (args) => this.catalog.readout(typeof args.id === 'string' ? args.id : undefined),
+      handler: async (args, ctx) => {
+        const live = engineTools.find(tool => tool.name === 'mc_skills');
+        const result = await live?.handler(args, ctx);
+        if (result && typeof result !== 'string' && result.meta?.nativeSkillsCurrent === true)
+          return toMymcText(result.text);
+        return this.catalog.readout(typeof args.id === 'string' ? args.id : undefined);
+      },
     }, {
       ...MYMC_TOOL_DECLS.find((decl) => decl.name === 'mymc_messages')!,
       readOnlyCall: args => args.action !== 'review',

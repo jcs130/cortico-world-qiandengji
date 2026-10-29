@@ -280,10 +280,12 @@ export class SkillCatalog {
 
   private nativeIndex(): string {
     const s = this.nativeSkills!;
-    const available = [...new Set([...s.common, ...s.available])];
+    const available = [...new Set([...s.available, ...s.common])];
     return `[原生技能${this.nativeSkillsCurrent ? '现读' : '历史'}] 来源 MC_RPG，观测 ${s.observedAt}；`
       + `${this.nativeSkillsCurrent ? '本次本人可用' : '旧可用记录待核验'}：${available.slice(0, 16).join('、') || '未列出'}${available.length > 16 ? `等${available.length}项` : ''}；`
-      + `可学 ${s.learnable.length} 项，学习点 ${s.skillPoints}。mymc_skills 可查完整索引；当前详情 /mycli skills info <ID>。旧 MC_SPELL 与女神提示不代表此后端当前资格。`;
+      + `可学 ${s.learnable.length} 项，学习点 ${s.skillPoints}。`
+      + (s.activeSpell !== undefined ? `点击技 ${s.activeSpell || '未设置'}。` : '')
+      + 'mymc_skills 可查完整索引；当前详情 /mycli skills info <ID>。旧 MC_SPELL 与女神提示不代表此后端当前资格。';
   }
 
   /** Historical effects make abilities discoverable by need; they never certify this account's eligibility. */

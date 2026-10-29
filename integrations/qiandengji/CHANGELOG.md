@@ -1,3 +1,9 @@
+## 0.4.1-rc.58
+
+Consume core rc.131 to retain existing memory-service identity bindings across native map changes without merging local spatial notebooks or weakening ownership checks.
+
+Include the reviewed profession ability projection: read validated native profession spells into the existing combat contracts and one current skills entry point. Preserve level/point/bonus learning-node facts, class-change invalidation and the original observation clocks. Observing a spell does not automatically author or adopt a combat tactic.
+
 ## 0.4.1-rc.57
 
 Consume core rc.130 with nearby voice, native-world isolation and server/account goal intention continuity; preserve request ledgers and expose separate output modes.

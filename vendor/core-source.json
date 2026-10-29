@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.130",
-  "file": "agent-mc-world-0.5.7-rc.130-97f5962b.tgz",
-  "sha256": "97f5962bcdd818783bcc1551c66eb5cd2f6f26e1a4bddac70a9a30a0190c2664",
+  "version": "0.5.7-rc.131",
+  "file": "agent-mc-world-0.5.7-rc.131-9f44f2d0.tgz",
+  "sha256": "9f44f2d0b0ccc9aaa4c38dfd60463b9c7b8b666c33a42c58d5430862f5c4f48a",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "f23656ecf827b1c75d3df5637adc96fd4d333d00",
+  "sourceCommit": "272d5d18ece90b88b1207abe6e3c4a8633b032cb",
   "parent": "f23656ecf827b1c75d3df5637adc96fd4d333d00",
   "channel": "local-candidate",
-  "sourceStatus": "Core full tests/types/build passed; branch pushed. Local package not loaded or published.",
+  "sourceStatus": "Verified committed core candidate; not deployed or published.",
   "viewerIncluded": true,
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",

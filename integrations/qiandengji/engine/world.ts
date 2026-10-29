@@ -43,7 +43,11 @@ export const SERVER_TOOLS: ReadonlyArray<Omit<ToolDef,'handler'>> = [{
       },
       required: ['spell'],
     },
-  }, COMBAT_TACTIC_TOOL];
+  }, COMBAT_TACTIC_TOOL, {
+    name: 'mc_skills', tags: ['read'],
+    description: 'Read this connection and class\'s native available profession spells, common spells and learnable nodes. Optional id selects its membership; a learnable/passive node is not a castable spell. No queries, point spending, preparation or casting are performed. Unknown cost/cooldown/effect remain null. Read mc_query skills.info for the current full definition, mc_combat_tactic for observed combat constraints and Agent-authored combinations, and actual server receipts for effects.',
+    parameters: { type: 'object', properties: { id: { type: 'string', pattern: '^[a-z][a-z0-9_:-]{0,63}$' } } },
+  }];
 export class QiandengjiEngine extends TacticalMinecraftWorld {
 protected selfHealAvailable = false;
 protected readonly combatSpells: CombatSpells;
@@ -54,7 +58,12 @@ protected readonly nativeRpg = new NativeRpgState();
   protected override battlefieldChannel() { return BATTLEFIELD_CHANNEL; }
   protected override serverQueryDefinitions() { return QIANDENGJI_SERVER_QUERIES; }
   protected override combatHealingUrgent(bot: Bot) { return this.selfHealAvailable && this.combatSpells.wantsHeal(bot.health ?? 0); }
-  protected override extensionTools(): ToolDef[] { return [...super.extensionTools(), {...SERVER_TOOLS[0], handler: async args => this.castSpell(args)}]; }
+  protected override extensionTools(): ToolDef[] { return [...super.extensionTools(),
+    {...SERVER_TOOLS[0], handler: async args => this.castSpell(args)},
+    {...SERVER_TOOLS[2], handler: async args => ({
+      text: this.nativeRpg.skillsReadout(typeof args.id === 'string' ? args.id : undefined),
+      meta: { nativeSkillsCurrent: this.nativeRpg.hasCurrentSkills() },
+    })}]; }
 protected castSpell(args: Record<string, unknown>): string | ToolOutcome {
     if (this.bodyInhibitReason) return { text: this.toolLog('mc_cast', args, `[mc_cast 未发送] ${this.bodyInhibitReason}`), failed: true, endsTurn: true };
     const spell = args.spell;
