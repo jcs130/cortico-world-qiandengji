@@ -8,7 +8,7 @@ export function corticoWorldStorage(dataDir: string) {
   const directory = worldDataDirectory(dataDir, 'mymc');
   const owned=new Set(['minecraft-world.json','minecraft-chests.json','minecraft-deaths.json','minecraft-explored.json',
     'minecraft-works.json','minecraft-policy.json','minecraft-blueprints.json','minecraft-break-permissions.json',
-    'minecraft-directional-sweeps.json','minecraft-memory','minecraft-methods','minecraft-skins','minecraft-photos',
+    'minecraft-directional-sweeps.json','minecraft-memory','minecraft-methods','minecraft-skins','minecraft-photos','minecraft-voice',
     'mymc-skills.json','mymc-guild-progress.json','mymc-trial-progress.json','website-access','harness2']);
   const options = async (): Promise<WorldStorageOptions> => ({dataDir,id:'mymc',entries:
     (await readdir(dataDir).catch((e: NodeJS.ErrnoException) => {if(e.code==='ENOENT')return [];throw e;}))

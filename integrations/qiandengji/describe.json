@@ -5333,7 +5333,8 @@
               "login",
               "plugin",
               "private",
-              "public"
+              "public",
+              "nearby-voice"
             ]
           },
           "status": {
@@ -8164,6 +8165,41 @@
       ]
     },
     {
+      "name": "mymc_voice",
+      "description": "Optional speech to nearby Minecraft players, using the existing authenticated game connection. Not audience commentary, private chat or shout. {} shows availability and output mode. {action:\"speak\",text,requestId?} synthesizes ONE full line through the configured audio producer; {action:\"upload\",audio_handle,requestId?} uploads a PCM16 WAV blob (0.1–30s, max4MiB). Game-only mode sends only game audio; live-and-game mirrors the SAME audio to the livestream, whose own queue still applies. Ordinary audience commentary stays in the presentation World, never forwarded here. No automatic dubbing of game text. Returns immediately with separate game/broadcast receipts; {action:\"status\",requestId} checks the SAME request after timeout. Never change ID to replay an unknown effect. sent means server frames sent, not heard or full text generated. Nearby voice input retains real speaker UUID and utterance ID. Captions, nearby text, shout and private chat remain separate.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "speak",
+              "upload",
+              "status"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "audio_handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "tags": [
+        "speak"
+      ]
+    },
+    {
       "name": "mymc_wait",
       "description": "Wait cancellably for the original action terminal. Cancelling this wait does not cancel the body action.",
       "parameters": {
@@ -8197,7 +8233,11 @@
     },
     {
       "type": "mymc.chat",
-      "description": "同一游戏连接实际收到的玩家聊天，保留发言人。"
+      "description": "同一游戏连接实际收到的玩家聊天；附近语音单独标记频道、真实UUID、utteranceId与送达世界，语音转写不当作私聊或观众解说。"
+    },
+    {
+      "type": "mymc.voice",
+      "description": "附近游戏语音与可选直播镜像的独立请求回执；sent仅表示服务端帧发送完，直播受理不等于实际播放。"
     },
     {
       "type": "mymc.chat.sent",

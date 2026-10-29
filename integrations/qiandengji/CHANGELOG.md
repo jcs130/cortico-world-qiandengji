@@ -1,3 +1,7 @@
+## 0.4.1-rc.57
+
+Consume core rc.130 with nearby voice, native-world isolation and server/account goal intention continuity; preserve request ledgers and expose separate output modes.
+
 ## 0.4.1-rc.56
 
 - Preserve server-provided learning levels, point costs, descriptions, bonuses and granted active spell IDs. Publish a bounded current learning index and expose full observed nodes on demand without learning or spending automatically.
