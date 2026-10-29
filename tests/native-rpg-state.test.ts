@@ -5,6 +5,7 @@ import { TacticalMinecraftWorld } from 'agent-mc-world/tactics';
 import { SkillCatalog } from '../src/skill-catalog.ts';
 import { QIANDENGJI_SERVER_QUERIES } from '../integrations/qiandengji/engine/server-query.ts';
 import { EventEmitter } from 'node:events';
+import {ChatPolicyState} from '../integrations/qiandengji/engine/chat-policy.ts';
 
 // Fictitious values in the exact published VortexBridge.selfState/status shapes.
 const at = '2026-10-28T00:00:00Z';
@@ -205,7 +206,7 @@ it('adds an independent native skills query, preserves full server detail, and c
 
 it('projects actual plugin/CLI data through the engine facts and emits only a piggyback observation', () => {
   const engine = Object.create(QiandengjiEngine.prototype) as any;
-  engine.nativeRpg = new NativeRpgState(); engine.observedCommands = { note: vi.fn() }; engine.emit = vi.fn();
+  engine.nativeRpg = new NativeRpgState(); engine.chatPolicy = new ChatPolicyState(); engine.observedCommands = { note: vi.fn() }; engine.emit = vi.fn();
   vi.spyOn(TacticalMinecraftWorld.prototype, 'requestFacts').mockReturnValue({ text: '原版经验94级，饥饿8', parts: [{ key: 'status', text: '原版经验94级，饥饿8' }], snapshotTypes: [] });
   engine.extensionServerFeedback(line({ ...status, guide: { step: 'skills', reason: 'skill_required',
     nextAction: '查看本人职业技能', nextCommand: '/mycli skills list', queryOnly: true,
@@ -220,7 +221,7 @@ it('projects actual plugin/CLI data through the engine facts and emits only a pi
 it('reads a real custom_payload event before the viewer projection can drop profession fields, and ignores a replaced bot', () => {
   const engine = Object.create(QiandengjiEngine.prototype) as any;
   const bot = Object.assign(new EventEmitter(), { _client: new EventEmitter() });
-  engine.nativeRpg = new NativeRpgState(); engine.observedCommands = { clear() {} }; engine.bridge = { bot };
+  engine.nativeRpg = new NativeRpgState(); engine.chatPolicy = new ChatPolicyState(); engine.observedCommands = { clear() {} }; engine.bridge = { bot };
   engine.combatSpells = { noteMana: vi.fn(), noteAbilities: vi.fn(), hasAbility: () => false };
   engine.emit = vi.fn(); engine.attachExtension(bot);
   bot._client.emit('custom_payload', { channel: 'mcagent:state', data: packet() });

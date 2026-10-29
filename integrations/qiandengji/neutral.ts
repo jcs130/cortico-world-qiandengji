@@ -11,7 +11,9 @@ export { QIANDENGJI_PACK } from './data-packs/qiandengji/manifest.ts';
 export { readServerGuide, serverGuideIndex } from './server-guide.ts';
 export { QIANDENGJI_SERVER_QUERIES } from './engine/server-query.ts';
 /** Read-only native RPG projection for hosts keeping their original body/tools. */
-export { NativeRpgState, nativeRpgMessage, readNativeSkills, readNativeRpgStatus, readNativeRpgPacket } from './engine/native-rpg.ts';
-export type { NativeSkills, NativeSkillNode, NativeRpgProfile } from './engine/native-rpg.ts';
+export { NativeRpgState, nativeRpgMessage, readNativeSkills, readNativeRpgStatus, readNativeRpgPacket,
+  readNativeSkillDetail, readNativeSkillInvocations } from './engine/native-rpg.ts';
+export type { NativeSkills, NativeSkillNode, NativeRpgProfile, NativeSkillDetail } from './engine/native-rpg.ts';
+export {ChatPolicyState} from './engine/chat-policy.ts';
 export { QiandengjiPortalAccess, QIANDENGJI_WEBSITE, QIANDENGJI_GAME } from './portal-access.ts';
 export type { QiandengjiAccessState } from './portal-access.ts';

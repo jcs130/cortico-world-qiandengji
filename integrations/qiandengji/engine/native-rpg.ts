@@ -49,6 +49,33 @@ export function nativeRpgMessage(text: string): Record<string, unknown> | null {
   try { const value = JSON.parse(text.slice(7)); return object(value) ? value : null; } catch { return null; }
 }
 
+export interface NativeSkillDetail {
+  id: string; name: string; command: string; observedAt: string;
+  source: 'MC_RPG'; invocation: 'cast' | 'command';
+  mana: number | null; cooldownMs: number | null; cooldownRemainingMs: number | null;
+  effect: string | null; requires: string | null; available: boolean | null;
+}
+/** A skill ID is not necessarily a /cast subcommand. Read the advertised route. */
+export function readNativeSkillDetail(value: unknown, at: string): NativeSkillDetail | null {
+  const text = (v: unknown, max: number): v is string => typeof v === 'string' && !!v.trim() && v.length <= max
+    && !/[\u0000-\u001f\u007f-\u009f\u00a7]/.test(v);
+  if (!object(value) || value.schemaVersion !== 1 || !id(value.id) || !text(value.name, 80)
+    || !text(value.command, 256) || !value.command.startsWith('/mycli ') || !Number.isFinite(Date.parse(at))) return null;
+  const cast = `/mycli cast ${value.id}`;
+  return { id: value.id, name: value.name, command: value.command, observedAt: at, source: 'MC_RPG',
+    invocation: value.command === cast || value.command.startsWith(cast + ' ') ? 'cast' : 'command',
+    mana: nonnegative(value.mana) ? value.mana : null, cooldownMs: nonnegative(value.cooldownMs) ? value.cooldownMs : null,
+    cooldownRemainingMs: nonnegative(value.cooldownRemainingMs) ? value.cooldownRemainingMs : null,
+    effect: text(value.effect, 1024) ? value.effect : null, requires: text(value.requires, 1024) ? value.requires : null,
+    available: typeof value.available === 'boolean' ? value.available : null };
+}
+export function readNativeSkillInvocations(value: unknown, at: string): NativeSkillDetail[] | null {
+  if(!object(value)||value.schemaVersion!==1||value.kind!=='skill_invocations'||value.queryOnly!==true
+    ||!Array.isArray(value.entries)||value.entries.length>64)return null;
+  const entries=value.entries.map(e=>readNativeSkillDetail(e,at));
+  return entries.every((e):e is NativeSkillDetail=>e!==null)&&new Set(entries.map(e=>e.id)).size===entries.length?entries:null;
+}
+
 export interface NativeRpgProfile {
   available: boolean; classId?: string; level?: number; xp?: number; nextLevelXp?: number;
   mana?: { current: number; max: number }; skillPoints?: number; activeSkill?: string;
@@ -121,8 +148,10 @@ export class NativeRpgState {
   private learning: { points: number; at: string; skills?: NativeSkills } | null = null;
   private skills: NativeSkills | null = null;
   private abilitySnapshot: { ids: string[]; at: string } | null = null;
+  private details = new Map<string, NativeSkillDetail>();
   private signature = '';
-  reset(): void { this.profile = null; this.learning = null; this.skills = null; this.abilitySnapshot = null; this.signature = ''; }
+  reset(): void { this.profile = null; this.learning = null; this.skills = null; this.abilitySnapshot = null; this.details.clear(); this.signature = ''; }
+  skillDetail(id: string): NativeSkillDetail | null { return this.details.get(id) ?? null; }
   identity(): { available: boolean; classId?: string } | null {
     return this.profile ? { available: this.profile.value.available, classId: this.profile.value.classId } : null;
   }
@@ -133,6 +162,12 @@ export class NativeRpgState {
   }
   chat(text: string, at = new Date().toISOString()): boolean {
     const value = nativeRpgMessage(text); if (!value) return false;
+    const invocations=readNativeSkillInvocations(value,at);
+    if(invocations){
+      for(const detail of invocations){this.details.delete(detail.id);this.details.set(detail.id,detail);}
+      while(this.details.size>64)this.details.delete(this.details.keys().next().value!);
+      return true;
+    }
     const profile = readNativeRpgStatus(value);
     if (profile) return this.update(profile, at, 'MC_RPG status');
     const skills = readNativeSkills(value, at);
@@ -145,6 +180,13 @@ export class NativeRpgState {
       this.skills = this.profile?.value.available ? skills : null;
       return changed;
     }
+    const detail = readNativeSkillDetail(value, at);
+    if (detail) {
+      const old = this.details.get(detail.id);
+      this.details.delete(detail.id); this.details.set(detail.id, detail);
+      while (this.details.size > 64) this.details.delete(this.details.keys().next().value!);
+      return JSON.stringify(old && { ...old, observedAt: '' }) !== JSON.stringify({ ...detail, observedAt: '' });
+    }
     return false;
   }
   packet(channel: unknown, data: unknown, at = new Date().toISOString()): boolean {
@@ -152,7 +194,7 @@ export class NativeRpgState {
   }
   private update(value: NativeRpgProfile, at: string, source: string): boolean {
     const prior = this.profile?.value;
-    if (!value.available || prior?.classId !== value.classId) { this.learning = null; this.skills = null; this.abilitySnapshot = null; }
+    if (!value.available || prior?.classId !== value.classId) { this.learning = null; this.skills = null; this.abilitySnapshot = null; this.details.clear(); }
     if (value.skillIds) this.abilitySnapshot = { ids: value.skillIds, at };
     if (value.skillPoints !== undefined && this.learning?.points !== value.skillPoints)
       this.learning = { points: value.skillPoints, at };
@@ -193,11 +235,16 @@ export class NativeRpgState {
         + (available.slice(0, 12).join('、') || '无') + (available.length > 12 ? `（共${available.length}项，摘要省略其余）` : '')
         + (this.skills ? '；完整清单的原观察时间读 mc_skills' : '；通用/可学习清单尚未读取')
         + '。mc_skills 读完整列表；mc_query {"query":"skills.info","arguments":["技能ID"]} 查目标/效果/消耗。已学不等于已编排，mc_combat_tactic 可按当前条件组合；发送不等于生效。' : '')
+      + ([...this.details.values()].some(d => d.invocation === 'command') ? '\n已查专用入口（不是 /mycli cast）：'
+        + [...this.details.values()].filter(d => d.invocation === 'command').slice(-4).map(d => `${d.id} → ${d.command}（${d.observedAt}）`).join('；') : '')
       + (p.guidance ? '\n服务端建议数据（沿用本次状态观察时间，未执行）：' + JSON.stringify(p.guidance) : '');
   }
   /** Connection-local, class-bound list; no disk history, command or learned conclusion. */
   hasCurrentSkills(): boolean { return !!this.profile?.value.available && !!(this.skills || this.abilitySnapshot); }
   skillsReadout(skillId?: string): string {
+    const detail = skillId ? this.skillDetail(skillId) : null;
+    if (detail) return '[本连接技能详情；按实际 command 选择工具，未执行]\n' + JSON.stringify(detail)
+      + (detail.invocation === 'command' ? '\n这是专用命令入口，不是 mc_cast 技能。用 mc_do 的 chat 步骤发送明确的 command；不要把技能 ID 或原参数塞进 /mycli cast。' : '\nmc_cast 按此 ID 和服务端参数施法；发送不证明效果。');
     if ((!this.skills && !this.abilitySnapshot) || !this.profile?.value.available)
       return '当前职业技能列表未同步；用 mc_query {"query":"skills.status"} 读取本人当前列表，未返回历史能力。';
     const s = this.skills;
@@ -208,6 +255,6 @@ export class NativeRpgState {
       available, availableObservedAt: current.at, source: current.source,
       lastSkillsList: s, ...(skillId ? { id: skillId, category } : {}), cost: null, cooldownRemainingMs: null, effectVerified: null })
       + '\n单项效果/目标/消耗用 mc_query {"query":"skills.info","arguments":["技能ID"]}；当前魔力/冷却和已选组合读 mc_combat_tactic。'
-      + '主动技用 mc_cast；被动节点无需施放。规则/程序可由 Agent 读说明后编排；未编排不自动施放，实际效果查服务端回执。';
+      + '先按单项 command 区分 mc_cast 施法和专用命令；被动节点无需施放。规则/程序可由 Agent 读说明后编排；未编排不自动施放，实际效果查服务端回执。';
   }
 }

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { MinecraftOption, MinecraftOptionIntent } from 'agent-mc-world/contracts';
-import { readNativeSkills, type NativeSkills } from './engine/native-rpg.ts';
+import { readNativeSkills, readNativeSkillDetail, readNativeSkillInvocations, type NativeSkills, type NativeSkillDetail } from './engine/native-rpg.ts';
 
 interface CatalogFile {
   version: 1;
@@ -81,6 +81,7 @@ export class SkillCatalog {
   private nativeSkills: NativeSkills | null = null;
   private nativeSkillsCurrent = false;
   private nativeIdentity: string | undefined;
+  private readonly nativeDetails = new Map<string, NativeSkillDetail>();
 
   constructor(server: string, dataDir?: string) {
     this.server = server;
@@ -127,7 +128,18 @@ export class SkillCatalog {
     if (native) {
       try {
         if (line.length > 65_536) return null;
-        const next = readNativeSkills(JSON.parse(native[1]), at);
+        const value = JSON.parse(native[1]), detail = readNativeSkillDetail(value, at);
+        const invocations=readNativeSkillInvocations(value,at);
+        if(invocations){for(const entry of invocations){this.nativeDetails.delete(entry.id);this.nativeDetails.set(entry.id,entry);}
+          while(this.nativeDetails.size>64)this.nativeDetails.delete(this.nativeDetails.keys().next().value!);
+          return '原生技能入口';}
+        if (detail) {
+          this.nativeDetails.delete(detail.id); this.nativeDetails.set(detail.id, detail);
+          while (this.nativeDetails.size > 64) this.nativeDetails.delete(this.nativeDetails.keys().next().value!);
+          this.liveCommands.set(detail.id, { command: detail.command, receivedAt: Date.parse(at) });
+          return '原生技能详情';
+        }
+        const next = readNativeSkills(value, at);
         if (!next) return null;
         const changed = !this.nativeSkillsCurrent || JSON.stringify({ ...next, observedAt: '' })
           !== JSON.stringify({ ...this.nativeSkills, observedAt: '' });
@@ -261,12 +273,14 @@ export class SkillCatalog {
 
   /** Only a recently received contract may reject a live call; disk history is advisory. */
   currentCommandFor(id: string): string | null {
+    const detail = this.nativeDetails.get(id.trim().toLowerCase());
+    if (detail) return detail.command;
     if (this.nativeSkillsCurrent || this.nativeIdentity !== undefined) return null;
     const live = this.liveCommands.get(id.trim().toLowerCase());
     return live && Date.now() - live.receivedAt <= 300_000 ? live.command : null;
   }
 
-  resetConnection(): void { this.liveCommands.clear(); this.nativeSkillsCurrent = false; this.nativeIdentity = undefined; }
+  resetConnection(): void { this.liveCommands.clear(); this.nativeDetails.clear(); this.nativeSkillsCurrent = false; this.nativeIdentity = undefined; }
   noteNativeProfile(profile: unknown): void {
     if (!profile || typeof profile !== 'object' || Array.isArray(profile)) return;
     const value = profile as Record<string, unknown>;
@@ -274,6 +288,7 @@ export class SkillCatalog {
     const identity = value.available ? String(value.classId) : 'unavailable';
     if (identity === this.nativeIdentity) return;
     this.nativeIdentity = identity;
+    this.nativeDetails.clear();
     this.nativeSkillsCurrent = false;
     this.liveCommands.clear();
   }
@@ -352,6 +367,8 @@ export class SkillCatalog {
   }
 
   readout(id?: string): string {
+    const currentDetail = id ? this.nativeDetails.get(id) : undefined;
+    if (currentDetail) return '[本连接原生技能详情；未执行]\n' + JSON.stringify(currentDetail);
     if (this.nativeSkills) {
       const s = this.nativeSkills;
       const key = id?.trim().toLowerCase();

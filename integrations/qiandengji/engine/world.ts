@@ -10,6 +10,7 @@ import type { ToolDef, ToolOutcome } from 'agent-mc-world/contracts';
 import { parseSkillsPayload, VIEWER_STATE_CHANNEL } from './viewer-state.ts';
 import { QiandengjiBridge } from './bridge.ts';
 import { NativeRpgState } from './native-rpg.ts';
+import {ChatPolicyState} from './chat-policy.ts';
 import { parseProtectReply } from './agentfriend-protection.ts';
 import { CombatSpells, type CombatSpell } from './combat-spells.ts';
 import { CombatTacticBook } from './combat-tactics.ts';
@@ -54,6 +55,7 @@ protected readonly combatSpells: CombatSpells;
 protected arenaFloor: { floor: number; total: number } | null = null;
 protected readonly observedCommands = new ObservedCommandCatalog();
 protected readonly nativeRpg = new NativeRpgState();
+protected readonly chatPolicy = new ChatPolicyState();
   constructor(options: MinecraftWorldOptions) { const tactics = new CombatSpells(new CombatTacticBook(options.dataDir ? join(options.dataDir,'minecraft-combat-tactics.json') : null)); super(options, tactics); this.combatSpells = tactics; }
   protected override battlefieldChannel() { return BATTLEFIELD_CHANNEL; }
   protected override serverQueryDefinitions() { return QIANDENGJI_SERVER_QUERIES; }
@@ -82,6 +84,14 @@ protected castSpell(args: Record<string, unknown>): string | ToolOutcome {
     if (inputError) return { text: this.toolLog('mc_cast', args, `[mc_cast 失败] ${inputError}`), failed: true };
     const bot = this.bridge?.bot;
     if (!bot) return { text: this.toolLog('mc_cast', args, '[mc_cast 失败] 还没连上服务器'), failed: true };
+    const detail = this.nativeRpg?.skillDetail(spell);
+    if (detail?.invocation === 'command') {
+      return { text: this.toolLog('mc_cast', args,
+        `[mc_cast 未发送] ${detail.name}（${spell}）的本连接服务端命令是 ${detail.command}，不是 /mycli cast。`
+        + ` 用 mc_do ${JSON.stringify({steps:[{skill:'chat',text:detail.command}]})}；先读该入口的目标和前提。`
+        + '未附加原施法参数、未代为执行。来源 MC_RPG，观测 ' + detail.observedAt), failed: true,
+        meta: { reason: 'command-route-mismatch', skillId: spell, advertisedCommand: detail.command, dispatchStarted: false } };
+    }
     const route = this.combatSpells.hasAbility(spell) ? null
       : this.observedCommands.misplacedPrefix(command, '/mycli cast');
     if (route) {
@@ -175,15 +185,20 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     return false;
   }
   protected override extensionServerFeedback(text: string): void {
+    this.chatPolicy?.observe(text,this.bridge?.bot?.player?.uuid ?? this.bridge?.bot?._client?.uuid);
     if (text.startsWith('MC_RPG ') && this.nativeRpg.chat(text)) this.publishNativeRpg();
     const usage = observedCommandUsage(text) ?? observedCommandRoot(text, this.bridge?.bot?.username);
     if (usage) this.observedCommands.note(usage);
   }
   override requestFacts() {
-    const facts = super.requestFacts(), text = this.nativeRpg.brief();
-    if (!facts || !text) return facts;
-    return { ...facts, text: facts.text + '\n' + text,
-      ...(facts.parts ? { parts: [...facts.parts, { key: 'nativeRpg', text }] } : {}) };
+    const facts = super.requestFacts(), parts = [{key:'nativeRpg',text:this.nativeRpg.brief()},
+      {key:'communication',text:this.chatPolicy.brief()}].filter(p=>p.text);
+    if (!facts || !parts.length) return facts;
+    return { ...facts, text: facts.text + '\n' + parts.map(p=>p.text).join('\n'),
+      ...(facts.parts ? { parts: [...facts.parts, ...parts] } : {}) };
+  }
+  protected override extensionChatAudience(text:string,rendered?:string,direction:'incoming'|'outgoing'='outgoing'){
+    return this.chatPolicy.audience(text,rendered,direction);
   }
   protected publishNativeRpg(): void {
     const text = this.nativeRpg.brief();
@@ -207,9 +222,10 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
       }
     },1500).unref();
   }
-  protected override extensionRespawn() { this.nativeRpg.reset(); const mana=this.bridge?.agentManaState; if(mana!==undefined)this.combatSpells.noteMana(mana?.current??null); }
+  protected override extensionRespawn() { this.nativeRpg.reset(); this.chatPolicy.reset(); const mana=this.bridge?.agentManaState; if(mana!==undefined)this.combatSpells.noteMana(mana?.current??null); }
   protected override attachExtension(bot: Bot) {
     this.nativeRpg.reset();
+    this.chatPolicy.reset();
     this.observedCommands.clear();
     watchAgentFriendFlight(bot);
     bot.on('physicsTick',()=>{if(!this.shuttingDown)this.tryAutoCombatSpell(bot);});

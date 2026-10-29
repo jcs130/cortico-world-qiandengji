@@ -60,6 +60,14 @@ describe('服务器玩法按需资料', () => {
         expect(current).toContain('已有角色沿用原账号');
         continue; // The historical fixture remains unchanged; its old invitation advice was superseded.
       }
+      if(paragraph.startsWith('同一个 chat 步骤发送不带')){
+        const current=readServerGuide('social').text;
+        for(const detail of ['同一实际世界','48 格','@名字','!内容','/msg 玩家完整登录名 内容','mymc_voice','avatar_voice'])
+          expect(current).toContain(detail);
+        expect(current).not.toContain('会进游戏公屏');
+        expect(current).not.toContain('CortiLan、Corti 或可缇');
+        continue; // The server now routes nearby/shout separately; keep the old fixture as history.
+      }
       const exactMatches = manuals.flatMap((manual) => manual.split(/\r?\n/)).filter((line) => line === paragraph);
       expect(exactMatches, `未完整迁移：${paragraph.slice(0, 60)}`).toHaveLength(1);
     }

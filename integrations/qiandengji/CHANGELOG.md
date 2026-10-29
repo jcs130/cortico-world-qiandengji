@@ -1,3 +1,7 @@
+## 0.4.1-rc.59
+
+Consume core rc.132 chat audience evidence and neutral rc.41 native skill invocation routes. Preserve raw sender identity, distinguish nearby/shout/private scope, and report known command-route mismatches before dispatch without automatic rerouting.
+
 ## 0.4.1-rc.58
 
 Consume core rc.131 to retain existing memory-service identity bindings across native map changes without merging local spatial notebooks or weakening ownership checks.
