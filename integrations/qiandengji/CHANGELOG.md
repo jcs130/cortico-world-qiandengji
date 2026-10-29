@@ -1,3 +1,9 @@
+## 0.4.1-rc.57-casttools.2
+
+- Extract the existing `mc_cast` implementation into one public factory for hosts retaining their own body. The neutral Engine consumes the same implementation; no extra connection, movement owner or automatic cast loop is added.
+- Export the existing validated skill/state parsers and observation ledger for explicit retained-body composition. Keep authentication, downed state, cooldowns and server effect evidence with their original owners. A send exception remains unknown and is never replayed automatically.
+- Consume the matching neutral candidate. Include the explicit dungeon `--json` query repair so a text summary is not falsely treated as a lost protocol reply. Local candidates only; source, packaging, loading and gameplay effects are separate.
+
 ## 0.4.1-rc.56
 
 - Consume the validated Vortex `profession.abilities` layer alongside common abilities. Preserve server cost and cooldown readings in the existing shared combat/viewer contracts; observing a new spell does not author or enable a tactic.

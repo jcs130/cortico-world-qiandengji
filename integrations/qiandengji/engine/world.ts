@@ -1,6 +1,7 @@
+import { QIANDENGJI_CAST_TOOL, invokeQiandengjiCast } from './cast-tool.ts';
 import { portableStorageMisuseNote } from './portable-storage.ts';
 import type { SkillCall } from 'agent-mc-world/extension';
-import {chatInputError, ObservedCommandCatalog} from 'agent-mc-world/extension';
+import {ObservedCommandCatalog} from 'agent-mc-world/extension';
 import { observedCommandRoot, observedCommandUsage } from './command-usage.ts';
 import { QIANDENGJI_SERVER_QUERIES } from './server-query.ts';
 import { type MinecraftWorldOptions } from 'agent-mc-world/extension';
@@ -17,33 +18,7 @@ import { publishViewerCastCommand } from './viewer-cast.ts';
 import { watchAgentFriendFlight } from './agentfriend-flight.ts';
 import { trialBodyState, TRIAL_DOWNED_REASON } from './trial-body-state.ts';
 import { TacticalMinecraftWorld, COMBAT_TACTIC_TOOL, BATTLEFIELD_CHANNEL } from 'agent-mc-world/tactics';
-export const SERVER_TOOLS: ReadonlyArray<Omit<ToolDef,'handler'>> = [{
-    name: 'mc_cast',
-    tags: ['act'],
-    description:
-      'Cast one server-listed /mycli spell immediately, even during combat or retreat. '
-      + 'This does not enter the task queue or take movement control. The reply only confirms sending; '
-      + 'the server message and observed effects determine whether the spell worked. '
-      + 'For planned timed movement, prepare the route first and queue the cast chat command with dependent flight steps in one mc_do group; do not start the timer while earlier queued work is still running. '
-      + 'Pass only the arguments declared by the current server skill contract as separate tokens. '
-      + 'This always sends /mycli cast <spell>; other server command namespaces must use mc_do chat with the exact observed usage. '
-      + 'Use /mycli skills for current unlocks and /mycli capabilities for command contracts; historical spell lists do not prove current availability.',
-    parameters: {
-      type: 'object',
-      properties: {
-        spell: {
-          type: 'string', pattern: '^[a-z][a-z0-9_:-]{0,63}$',
-          description: 'Skill ID from the current server listing, with its current unlock and target requirements.',
-        },
-        arguments: {
-          type: 'array',
-          items: { type: 'string', minLength: 1, pattern: '^[^\\s\\u0000-\\u001f\\u007f-\\u009f\\u00a7<>]+$' },
-          description: 'Optional command arguments in server order, one token per item. No whitespace, control characters or <placeholder> text; read the spell description for required values.',
-        },
-      },
-      required: ['spell'],
-    },
-  }, COMBAT_TACTIC_TOOL, {
+export const SERVER_TOOLS: ReadonlyArray<Omit<ToolDef,'handler'>> = [QIANDENGJI_CAST_TOOL, COMBAT_TACTIC_TOOL, {
     name: 'mc_skills', tags: ['read'],
     description: 'Read this connection and class\'s native available profession spells, common spells and learnable nodes. Optional id selects its membership; a learnable/passive node is not a castable spell. No queries, point spending, preparation or casting are performed. Unknown cost/cooldown/effect remain null. Read mc_query skills.info for the current full definition, mc_combat_tactic for observed combat constraints and Agent-authored combinations, and actual server receipts for effects.',
     parameters: { type: 'object', properties: { id: { type: 'string', pattern: '^[a-z][a-z0-9_:-]{0,63}$' } } },
@@ -65,44 +40,15 @@ protected readonly nativeRpg = new NativeRpgState();
       meta: { nativeSkillsCurrent: this.nativeRpg.hasCurrentSkills() },
     })}]; }
 protected castSpell(args: Record<string, unknown>): string | ToolOutcome {
-    if (this.bodyInhibitReason) return { text: this.toolLog('mc_cast', args, `[mc_cast 未发送] ${this.bodyInhibitReason}`), failed: true, endsTurn: true };
-    const spell = args.spell;
-    if (typeof spell !== 'string' || !/^[a-z][a-z0-9_:-]{0,63}$/.test(spell)) {
-      return { text: this.toolLog('mc_cast', args, '[mc_cast 失败] spell 必须是服务端给出的英文技能 ID'), failed: true };
-    }
-    const parameters = args.arguments === undefined ? [] : args.arguments;
-    if (!Array.isArray(parameters)
-      || !parameters.every((value: unknown) => typeof value === 'string' && value.length > 0
-        && !/[\s\u0000-\u001f\u007f-\u009f<>]/u.test(value))) {
-      return { text: this.toolLog('mc_cast', args,
-        '[mc_cast 失败] arguments 必须是独立参数词组成的数组，不能包含空白、控制符或 <占位符>；按服务端说明填写实际值'), failed: true };
-    }
-    const command = `/mycli cast ${spell}${parameters.length ? ` ${parameters.join(' ')}` : ''}`;
-    const inputError = chatInputError(command);
-    if (inputError) return { text: this.toolLog('mc_cast', args, `[mc_cast 失败] ${inputError}`), failed: true };
-    const bot = this.bridge?.bot;
-    if (!bot) return { text: this.toolLog('mc_cast', args, '[mc_cast 失败] 还没连上服务器'), failed: true };
-    const route = this.combatSpells.hasAbility(spell) ? null
-      : this.observedCommands.misplacedPrefix(command, '/mycli cast');
-    if (route) {
-      const example = JSON.stringify({ steps: [{ skill: 'chat', text: route.suggestedCommand }] });
-      return { text: this.toolLog('mc_cast', args,
-        `[mc_cast 未发送] 本工具固定使用 /mycli cast；服务端已给出 ${route.id} 的另一条命令用法：${route.usage}（观测 ${new Date(route.observedAt).toISOString()}）。`
-        + ` 若仍要执行该操作，用 mc_do ${example}；先核对服务端前提。这里只纠正命令入口，未代替执行，也未确认子命令、参数、目标或资格。`), failed: true };
-    }
-    const blocked = this.combatSpells.manualCastBlock(spell);
-    if (blocked) {
-      return { text: this.toolLog('mc_cast', args, `[mc_cast 暂缓] ${blocked}；该技能以新的服务端状态为准，其他技能和动作仍可选择`),
-        failed: true, endsTurn: true };
-    }
-    try {
-      bot.chat(command);
-      publishViewerCastCommand(bot, command);
-      this.combatSpells.noteManualCast(spell);
-      return this.toolLog('mc_cast', args, `[mc_cast] 已发送 ${command}；是否生效以服务端回执和现场状态为准`);
-    } catch (error) {
-      return { text: this.toolLog('mc_cast', args, `[mc_cast 失败] 命令没发出去:${String(error)}`), failed: true };
-    }
+    return invokeQiandengjiCast({
+      blockedReason: () => this.bodyInhibitReason,
+      abilities: this.combatSpells, commands: this.observedCommands,
+      connection: () => {
+        const bot = this.bridge?.bot;
+        return bot ? { send: command => bot.chat(command), published: command => publishViewerCastCommand(bot, command) } : null;
+      },
+      log: (name, input, result) => this.toolLog(name, input, result),
+    }, args);
   }
 protected tryAutoSelfHeal(bot: Bot): boolean {
     if (this.bodyInhibitReason || !this.selfHealAvailable || (bot.health ?? 0) <= 0) return false;

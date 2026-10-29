@@ -6,6 +6,8 @@ rc.26 候选由宿主提供共享核心 rc.90 或兼容版本，通过 peerDepen
 
 默认导出具名端口：`MymcAgentRuntime`、`MymcWorld`、配置与校验、资料目录、`QIANDENGJI_PACK`。`/host-decisions` 提供显式宿主快决策服务。启用前配置服务地址；不配置时没有额外模型请求。
 
+保留宿主原身体时，可显式组合公开的 `createQiandengjiCastTool`：提供本人现有已认证连接的发送端口、当前 `CombatSpells` 观察账、`ObservedCommandCatalog` 及认证/倒地门禁。工厂复用中立 Engine 的同一 `mc_cast` 实现，不创建连接、不接管移动或任务队列、不自动施法。可信系统回执和经校验的 `parseSkillsPayload` 用于更新当前观察；断线/换连接应重置状态。`已发送` 与实际生效、目标完成分别核验；传输异常保持未知，不自动重试。宿主可经核心的 `createServerToolRouter` 注册工具，需保留自己的调用身份、取消和防重放机制。这里只提供显式单次施放，不宣称接入了自动组合控制器。
+
 `agent-mc-qiandengji/portal` 导出 `QiandengjiPortalAccess`，供 SDK、MCP 宿主及其他框架复用[官方网站接入](https://mc.kangqiang.site/agent-api.html)。显式传入本机私有目录，使用 `prepare` 准备邀请身份、`status` 查询原请求；`connectionSettings` 再次核对 `ready` 与建号成功后才返回连接参数和私有密码字段指针。`state` 只读本地状态，不产生网络或模型请求。已有网站身份使用 `importIdentity` 续用；普通游戏角色保持原连接，不用邀请重建。此模块不自动连接游戏，不提供后台轮询或额外模型循环。
 
 普通 `goto` 默认保持步行。确认服务器支持并需要自动改道时，显式配置 `serverTravel.enabled: true`，才会在匹配目的地前加入服务器传送。Agent 主动请求的传送命令不受此开关限制。升级后不再把附近取物自动改成传送。
