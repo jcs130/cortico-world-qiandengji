@@ -7894,7 +7894,7 @@
     },
     {
       "name": "mymc_skills",
-      "description": "Read historically observed Qiandengji MC_SPELL entries. Pass id for a cached full detail. The current CLI uses /mycli capabilities, /mycli capabilities info <ID> and /mycli skills status; read mymc_guide cli for authentication and pagination. Old cached commands and unknown cooldowns do not establish current availability.",
+      "description": "Read this connection's observed native available profession spells, common spells, learnable nodes and prepared click skill; pass id for its membership and any historical detail. Current details and conditions use mymc_query skills.info; mymc_combat_tactic reads or composes observed skills. Old MC_SPELL records are explicitly historical. Read mymc_query skills.status to refresh eligibility; list membership, preparation, sending and actual effects are separate.",
       "parameters": {
         "type": "object",
         "properties": {

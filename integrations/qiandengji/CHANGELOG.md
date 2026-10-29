@@ -1,3 +1,10 @@
+## 0.4.1-rc.56
+
+- Consume the validated Vortex `profession.abilities` layer alongside common abilities. Preserve server cost and cooldown readings in the existing shared combat/viewer contracts; observing a new spell does not author or enable a tactic.
+- Expose a read-only `mc_skills` in the neutral engine. Keep current profession spells separate from common spells and the timestamped learnable list. New native snapshots update availability without a relog; class changes and disconnects invalidate it.
+- Cormy's `mymc_skills` uses the same live engine projection, with one correctly named tool and historical-catalog fallback for older engines. Prefer the newer of CLI and native observations, retain unknowns, and keep point spending, preparation, casting and verified effects distinct.
+- Existing shared `mc_combat_tactic` rules/programs compose observed skill IDs. Tests cover a profession spell followed by a ready common spell, class invalidation and independent Cormy consumption; these are offline checks, not claims of live tactical mastery.
+
 ## 0.4.1-rc.55
 
 - Preserve bounded native Vortex progression guidance in the current RPG facts, including the actual missing prerequisite and next query. Keep source time and unknown flags; never choose a class, spend points or follow a command automatically.

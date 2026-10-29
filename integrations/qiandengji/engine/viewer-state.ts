@@ -3,6 +3,7 @@ import { createViewerObserverBridge } from './viewer-observer.mjs';
 import { viewerCastCommand, viewerCastResult } from './viewer-cast.ts';
 import type { ViewerSkills } from 'agent-mc-world/extension';
 import type { ViewerServerProtocol } from 'agent-mc-world/extension';
+import { readNativeRpgPacket } from './native-rpg.ts';
 const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 const bounded = (value: unknown, min: number, max: number): number | null => finite(value) ? Math.max(min,Math.min(max,value)) : null;
 export const VIEWER_STATE_CHANNEL = 'mcagent:state';
@@ -67,7 +68,14 @@ export function parseSkillsPayload(channel: unknown, data: unknown): ViewerSkill
       requiredXp: bounded(row.requiredXp, 0, 1_000_000_000) };
   });
   if (skills.some((entry) => !entry)) return null;
-  const abilitiesInput = Array.isArray(input.abilities) ? input.abilities : [];
+  const topAbilities = Array.isArray(input.abilities) ? input.abilities : [];
+  // Vortex publishes profession spells separately from the common ability layer.
+  // Consume only the validated current native profile, never viewer/history data.
+  const profession = input.profession as Record<string, unknown> | undefined;
+  const native = channel === VIEWER_STATE_CHANNEL ? readNativeRpgPacket(channel, data) : null;
+  const professionAbilities = native?.available && Array.isArray(profession?.abilities)
+    && profession.abilities.length <= 48 ? profession.abilities : [];
+  const abilitiesInput = [...topAbilities, ...professionAbilities];
   const abilities = abilitiesInput.map((value) => {
     if (!value || typeof value !== 'object') return null;
     const row = value as Record<string, unknown>;
@@ -88,7 +96,8 @@ export function parseSkillsPayload(channel: unknown, data: unknown): ViewerSkill
   });
   if (abilities.some((entry) => !entry)) return null;
   return { schemaVersion: 1, mana: current !== null && max !== null && max > 0 && current <= max ? { current, max } : null,
-    skills: skills as ViewerSkills['skills'], abilities: abilities as ViewerSkills['abilities'] };
+    skills: skills as ViewerSkills['skills'],
+    abilities: [...new Map((abilities as ViewerSkills['abilities']).map(a => [a.id, a])).values()] };
 }
 function matchingAbility(abilities: ViewerSkills['abilities'], id: string) {
   const exact = abilities.find((entry) => entry.id === id);

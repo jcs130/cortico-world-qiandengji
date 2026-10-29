@@ -8,7 +8,7 @@ const nonnegative = (value: unknown): value is number => number(value) && value 
 const points = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0;
 const id = (value: unknown): value is string => typeof value === 'string' && /^[a-z][a-z0-9_:-]{0,63}$/i.test(value);
 
-export interface NativeSkills { observedAt: string; available: string[]; common: string[]; learnable: string[]; skillPoints: number }
+export interface NativeSkills { observedAt: string; available: string[]; common: string[]; learnable: string[]; skillPoints: number; activeSpell?: string }
 export function readNativeSkills(value: unknown, at: string, saved = false): NativeSkills | null {
   if (!object(value) || !Number.isFinite(Date.parse(at))) return null;
   const ids = (values: unknown): string[] | null => Array.isArray(values) && values.length <= 256 && values.every(id)
@@ -17,7 +17,8 @@ export function readNativeSkills(value: unknown, at: string, saved = false): Nat
   const learnable = ids(saved ? value.learnable : Array.isArray(value.learnable)
     ? value.learnable.map(v => object(v) ? v.id : null) : null);
   return available && common && learnable && points(value.skillPoints)
-    ? { observedAt: at, available, common, learnable, skillPoints: value.skillPoints } : null;
+    ? { observedAt: at, available, common, learnable, skillPoints: value.skillPoints,
+      ...(value.activeSpell === '' || id(value.activeSpell) ? { activeSpell: value.activeSpell as string } : {}) } : null;
 }
 
 export function nativeRpgMessage(text: string): Record<string, unknown> | null {
@@ -30,6 +31,8 @@ export interface NativeRpgProfile {
   mana?: { current: number; max: number }; skillPoints?: number; activeSkill?: string;
   economy?: { available: boolean; balance: number | null }; preview?: boolean;
   guidance?: NativeRpgGuidance;
+  /** Current Vortex spell IDs from profession.abilities, not learnable/passive nodes. */
+  skillIds?: string[];
 }
 /** A bounded server observation, never an instruction to execute or a local progression policy. */
 export interface NativeRpgGuidance {
@@ -79,9 +82,12 @@ export function readNativeRpgPacket(channel: unknown, data: unknown): NativeRpgP
   if (!(value.combat === '' || id(value.combat)) || !points(value.level) || !nonnegative(value.xp)
     || !points(value.skillPoints) || !(value.activeSkill === '' || id(value.activeSkill))) return null;
   const m = object(value.mana) ? mana(value.mana.current, value.mana.max) : undefined;
+  const skillIds = Array.isArray(value.abilities) && value.abilities.length <= 48
+    && value.abilities.every(a => object(a) && id(a.id))
+    ? [...new Set(value.abilities.map(a => String((a as Record<string, unknown>).id).replace(/^mycli:/, '')))] : undefined;
   return { available: true, classId: value.combat || 'none', level: value.level, xp: value.xp,
     skillPoints: value.skillPoints, activeSkill: value.activeSkill, ...(m ? { mana: m } : {}),
-    economy: economy(value.economy) };
+    economy: economy(value.economy), ...(skillIds ? { skillIds } : {}) };
 }
 
 const names: Record<string, string> = { none: '未选职业', knight: '骑士', mage: '法师', ranger: '游侠',
@@ -90,17 +96,30 @@ const names: Record<string, string> = { none: '未选职业', knight: '骑士', 
 export class NativeRpgState {
   private profile: { value: NativeRpgProfile; at: string; source: string } | null = null;
   private learning: { points: number; at: string } | null = null;
+  private skills: NativeSkills | null = null;
+  private abilitySnapshot: { ids: string[]; at: string } | null = null;
   private signature = '';
-  reset(): void { this.profile = null; this.learning = null; this.signature = ''; }
+  reset(): void { this.profile = null; this.learning = null; this.skills = null; this.abilitySnapshot = null; this.signature = ''; }
   identity(): { available: boolean; classId?: string } | null {
     return this.profile ? { available: this.profile.value.available, classId: this.profile.value.classId } : null;
+  }
+  private currentAbilities(): { ids: string[]; at: string; source: string } | null {
+    if (this.abilitySnapshot && (!this.skills || Date.parse(this.abilitySnapshot.at) >= Date.parse(this.skills.observedAt)))
+      return { ...this.abilitySnapshot, source: 'mcagent:state.profession' };
+    return this.skills ? { ids: this.skills.available, at: this.skills.observedAt, source: 'MC_RPG' } : null;
   }
   chat(text: string, at = new Date().toISOString()): boolean {
     const value = nativeRpgMessage(text); if (!value) return false;
     const profile = readNativeRpgStatus(value);
     if (profile) return this.update(profile, at, 'MC_RPG status');
     const skills = readNativeSkills(value, at);
-    if (skills) { const changed = this.learning?.points !== skills.skillPoints; this.learning = { points: skills.skillPoints, at }; return changed; }
+    if (skills) {
+      const changed = JSON.stringify({ ...skills, observedAt: '' }) !== JSON.stringify({ ...this.skills, observedAt: '' });
+      this.learning = { points: skills.skillPoints, at };
+      // A list without a bound native identity cannot certify this class's abilities.
+      this.skills = this.profile?.value.available ? skills : null;
+      return changed;
+    }
     return false;
   }
   packet(channel: unknown, data: unknown, at = new Date().toISOString()): boolean {
@@ -108,7 +127,8 @@ export class NativeRpgState {
   }
   private update(value: NativeRpgProfile, at: string, source: string): boolean {
     const prior = this.profile?.value;
-    if (!value.available || prior?.classId !== value.classId) this.learning = null;
+    if (!value.available || prior?.classId !== value.classId) { this.learning = null; this.skills = null; this.abilitySnapshot = null; }
+    if (value.skillIds) this.abilitySnapshot = { ids: value.skillIds, at };
     if (value.skillPoints !== undefined) this.learning = { points: value.skillPoints, at };
     // Queries omit activeSkill/skillPoints. Preserve their latest same-class observation,
     // but not their old mana or balance. An explicit unavailable profile clears everything.
@@ -117,7 +137,7 @@ export class NativeRpgState {
         ...(value.activeSkill === undefined && prior.activeSkill !== undefined ? { activeSkill: prior.activeSkill } : {}) };
     }
     this.profile = { value, at, source };
-    const signature = JSON.stringify([value.available, value.classId, value.level, value.skillPoints, value.activeSkill, value.economy, value.preview, value.guidance]);
+    const signature = JSON.stringify([value.available, value.classId, value.level, value.skillPoints, value.activeSkill, value.economy, value.preview, value.guidance, value.skillIds]);
     const changed = signature !== this.signature; this.signature = signature; return changed;
   }
   brief(): string {
@@ -132,7 +152,28 @@ export class NativeRpgState {
     fields.push(p.mana ? `魔力 ${p.mana.current}/${p.mana.max}` : '魔力未知');
     fields.push(p.economy?.available && p.economy.balance !== null ? `服务端余额 ${p.economy.balance}` : '经济未就绪或余额未知');
     if (p.preview) fields.push('服务端标记预览');
+    const skills = this.skills;
+    const current = this.currentAbilities(), available = current?.ids;
     return head + fields.join('；') + '。RPG等级与原版经验等级分别记录；技能资格查 mc_query {"query":"skills.status"}，完整状态查 mc_query {"query":"status"}。'
+      + (available ? '\n[职业技能现读] ' + current!.source + ' ' + current!.at + '；职业可用：'
+        + (available.slice(0, 12).join('、') || '无') + (available.length > 12 ? `（共${available.length}项，摘要省略其余）` : '')
+        + (skills ? '；通用/可学习清单另于 ' + skills.observedAt + ' 观测，完整记录读 mc_skills' : '；通用/可学习清单尚未读取')
+        + '。mc_skills 读完整列表；mc_query {"query":"skills.info","arguments":["技能ID"]} 查目标/效果/消耗。已学不等于已编排，mc_combat_tactic 可按当前条件组合；发送不等于生效。' : '')
       + (p.guidance ? '\n服务端建议数据（沿用本次状态观察时间，未执行）：' + JSON.stringify(p.guidance) : '');
+  }
+  /** Connection-local, class-bound list; no disk history, command or learned conclusion. */
+  hasCurrentSkills(): boolean { return !!this.profile?.value.available && !!(this.skills || this.abilitySnapshot); }
+  skillsReadout(skillId?: string): string {
+    if ((!this.skills && !this.abilitySnapshot) || !this.profile?.value.available)
+      return '当前职业技能列表未同步；用 mc_query {"query":"skills.status"} 读取本人当前列表，未返回历史能力。';
+    const s = this.skills;
+    const current = this.currentAbilities()!, available = current.ids;
+    const category = !skillId ? null : available.includes(skillId) ? 'profession-available'
+      : s?.common.includes(skillId) ? 'common-available' : s?.learnable.includes(skillId) ? 'learnable-in-last-list' : 'not-listed';
+    return '[本人职业技能观察；可用与编排不同，未执行任何操作]\n' + JSON.stringify({ classId: this.profile.value.classId,
+      available, availableObservedAt: current.at, source: current.source,
+      lastSkillsList: s, ...(skillId ? { id: skillId, category } : {}), cost: null, cooldownRemainingMs: null, effectVerified: null })
+      + '\n单项效果/目标/消耗用 mc_query {"query":"skills.info","arguments":["技能ID"]}；当前魔力/冷却和已选组合读 mc_combat_tactic。'
+      + '主动技用 mc_cast；被动节点无需施放。规则/程序可由 Agent 读说明后编排；未编排不自动施放，实际效果查服务端回执。';
   }
 }
