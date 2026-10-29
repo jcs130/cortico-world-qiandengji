@@ -2,6 +2,8 @@ import {expect, it, vi} from 'vitest';
 import {NativeRpgState, readNativeSkillDetail, readNativeSkillInvocations} from '../integrations/qiandengji/engine/native-rpg.ts';
 import {QiandengjiEngine} from '../integrations/qiandengji/engine/world.ts';
 import {SkillCatalog} from '../integrations/qiandengji/skill-catalog.ts';
+import {MymcWorld} from '../integrations/qiandengji/world.ts';
+import {MYMC_DEFAULTS} from '../integrations/qiandengji/config.ts';
 import {ObservedCommandCatalog} from 'agent-mc-world/extension';
 
 // The native reply observed on 2026-10-29; skill ID and command namespace differ.
@@ -34,6 +36,14 @@ it('makes current native detail available to the host catalog without treating o
   const c=new SkillCatalog('test.invalid');c.observe('[MC 插件] '+line(detail),at);
   expect(c.currentCommandFor('travel')).toBe('/mycli waypoint menu');expect(c.readout('travel')).toContain('"invocation":"command"');
   c.resetConnection();expect(c.currentCommandFor('travel')).toBeNull();
+});
+it('forwards an actual native route through the host even before an eligibility list is ready',async()=>{
+  const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS)});
+  (engine as any).emit=()=>{};(engine as any).extensionServerFeedback(line(detail));
+  const world=new MymcWorld({cfg:structuredClone(MYMC_DEFAULTS)},engine);
+  const tool=world.tools().find(t=>t.name==='mymc_skills')!;
+  const result=await tool.handler({id:'travel'},{role:'test',log:{} as never});
+  expect(result).toContain('/mycli waypoint menu');expect(result).not.toContain('旧 MC_SPELL');
 });
 it('accepts a bounded invocation index independently of skill eligibility, without marking omitted costs known',()=>{
   const index={schemaVersion:1,kind:'skill_invocations',queryOnly:true,entries:[detail,

@@ -152,6 +152,7 @@ export class NativeRpgState {
   private signature = '';
   reset(): void { this.profile = null; this.learning = null; this.skills = null; this.abilitySnapshot = null; this.details.clear(); this.signature = ''; }
   skillDetail(id: string): NativeSkillDetail | null { return this.details.get(id) ?? null; }
+  hasInvocationInfo(id?: string): boolean { return id ? this.details.has(id) : this.details.size > 0; }
   identity(): { available: boolean; classId?: string } | null {
     return this.profile ? { available: this.profile.value.available, classId: this.profile.value.classId } : null;
   }
@@ -245,6 +246,8 @@ export class NativeRpgState {
     const detail = skillId ? this.skillDetail(skillId) : null;
     if (detail) return '[本连接技能详情；按实际 command 选择工具，未执行]\n' + JSON.stringify(detail)
       + (detail.invocation === 'command' ? '\n这是专用命令入口，不是 mc_cast 技能。用 mc_do 的 chat 步骤发送明确的 command；不要把技能 ID 或原参数塞进 /mycli cast。' : '\nmc_cast 按此 ID 和服务端参数施法；发送不证明效果。');
+    const invocations=[...this.details.values()].map(d=>({id:d.id,name:d.name,command:d.command,invocation:d.invocation,observedAt:d.observedAt}));
+    if(!skillId&&invocations.length&&!this.hasCurrentSkills())return '[本连接命令入口观察；本人资格清单尚未同步，未执行]\n'+JSON.stringify({invocations});
     if ((!this.skills && !this.abilitySnapshot) || !this.profile?.value.available)
       return '当前职业技能列表未同步；用 mc_query {"query":"skills.status"} 读取本人当前列表，未返回历史能力。';
     const s = this.skills;
@@ -253,7 +256,7 @@ export class NativeRpgState {
       : s?.common.includes(skillId) ? 'common-available' : s?.learnable.includes(skillId) ? 'learnable-in-last-list' : 'not-listed';
     return '[本人职业技能观察；可用与编排不同，未执行任何操作]\n' + JSON.stringify({ classId: this.profile.value.classId,
       available, availableObservedAt: current.at, source: current.source,
-      lastSkillsList: s, ...(skillId ? { id: skillId, category } : {}), cost: null, cooldownRemainingMs: null, effectVerified: null })
+      lastSkillsList: s, ...(skillId ? { id: skillId, category } : {}), ...(invocations.length?{invocations}:{}), cost: null, cooldownRemainingMs: null, effectVerified: null })
       + '\n单项效果/目标/消耗用 mc_query {"query":"skills.info","arguments":["技能ID"]}；当前魔力/冷却和已选组合读 mc_combat_tactic。'
       + '先按单项 command 区分 mc_cast 施法和专用命令；被动节点无需施放。规则/程序可由 Agent 读说明后编排；未编排不自动施放，实际效果查服务端回执。';
   }

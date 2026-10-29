@@ -64,7 +64,8 @@ protected readonly chatPolicy = new ChatPolicyState();
     {...SERVER_TOOLS[0], handler: async args => this.castSpell(args)},
     {...SERVER_TOOLS[2], handler: async args => ({
       text: this.nativeRpg.skillsReadout(typeof args.id === 'string' ? args.id : undefined),
-      meta: { nativeSkillsCurrent: this.nativeRpg.hasCurrentSkills() },
+      meta: { nativeSkillsCurrent: this.nativeRpg.hasCurrentSkills(),
+        nativeSkillRouteObserved:this.nativeRpg.hasInvocationInfo(typeof args.id==='string'?args.id:undefined) },
     })}]; }
 protected castSpell(args: Record<string, unknown>): string | ToolOutcome {
     if (this.bodyInhibitReason) return { text: this.toolLog('mc_cast', args, `[mc_cast 未发送] ${this.bodyInhibitReason}`), failed: true, endsTurn: true };
