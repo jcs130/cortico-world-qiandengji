@@ -16,6 +16,35 @@ const packet = (profession: unknown = profile) => Buffer.from(JSON.stringify({ s
 const status = { authority: 'VortexRPG', class: 'mage', level: 3, xp: 57, nextLevelXp: 143,
   mana: 13, maxMana: 40, economy: profile.economy, preview: false };
 const line = (value: unknown) => 'MC_RPG ' + JSON.stringify(value);
+
+it('retains native learning requirements as bounded facts and changes on a new node without spending points', () => {
+  const state = new NativeRpgState(); state.packet('mcagent:state', packet(), at);
+  const skills = { available: ['arcane_bolt'], common: ['home'], activeSpell: 'arcane_bolt', skillPoints: 2,
+    learnable: [{ id: 'focus', displayName: '专注', requiredLevel: 2, cost: 1 },
+      { id: 'nova', requiredLevel: 4, cost: 1, grantedSpellId: 'nova' }] };
+  expect(state.chat(line(skills), at)).toBe(true);
+  expect(state.brief()).toContain('"id":"focus","name":"专注","requiredLevel":2,"learningPointCost":1');
+  expect(state.brief()).toContain('"kind":"passive_attribute_node","levelAndPointsMet":true');
+  expect(state.brief()).toContain('"grantsActiveSpell":"nova","levelAndPointsMet":false');
+  expect(state.chat(line(skills), '2026-10-28T00:00:01Z')).toBe(false);
+  expect(state.chat(line({ ...skills, learnable: [...skills.learnable, { id: 'ward', requiredLevel: 3, cost: 2 }] }), at)).toBe(true);
+  expect(state.brief()).toContain('ward');
+  // A later point change can mean a purchase/reset; old candidates must not look current.
+  state.packet('mcagent:state', packet({ ...profile, skillPoints: 1 }), '2026-10-28T00:00:02Z');
+  expect(state.brief()).toContain('学习点 1'); expect(state.brief()).not.toContain('learningPointCost');
+});
+
+it('keeps source time and same-class skill detail across telemetry, and clears it on connection/class changes', () => {
+  const state = new NativeRpgState(); state.packet('mcagent:state', packet(), at);
+  state.chat(line({ available: ['arcane_bolt'], common: [], skillPoints: 2,
+    learnable: [{ id: 'focus', cost: 1, requiredLevel: 2 }] }), at);
+  state.packet('mcagent:state', packet({ ...profile, xp: 99 }), '2026-10-28T00:01:00Z');
+  expect(state.brief()).toContain(`职业技能最近观测 ${at}`);
+  expect(state.brief()).toContain('learningPointCost');
+  state.packet('mcagent:state', packet({ ...profile, combat: 'ranger' }), '2026-10-28T00:01:01Z');
+  expect(state.brief()).not.toContain('learningPointCost'); expect(state.brief()).not.toContain('可用 arcane_bolt');
+  state.reset(); expect(state.brief()).toBe('');
+});
 afterEach(() => vi.restoreAllMocks());
 
 it('reads the private plugin profession envelope, including class, RPG xp, active skill and actual Vault balance', () => {

@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.119",
-  "file": "agent-mc-world-0.5.7-rc.119-8965da23.tgz",
-  "sha256": "8965da230076affa7ba32957c4063e0bcba92090f535d5889cf71be734548341",
+  "version": "0.5.7-rc.129",
+  "file": "agent-mc-world-0.5.7-rc.129-920f1fa4.tgz",
+  "sha256": "920f1fa48b96f9b66f49f1a421ccbba82a4b8f045abacfc3ba74b28bad731de3",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "aad36fa6f19bfa5620d9b4f6af486c7215f48993",
-  "parent": "102b64f32552bb7f2918f935977882b8f0cd1416",
+  "sourceCommit": "51bed4f6a1f3ebfcfdb09486e39e8246ac13565f",
+  "parent": "a64e0bf6ab15ce9640eee1c6a990d624da71c0b5",
   "channel": "local-candidate",
-  "sourceStatus": "Reviewed PR #1 integration, current checkpoint ownership and public SDK contracts. Offline and packed verification are separate from publication/loading.",
+  "sourceStatus": "Core rc.129 source committed and pushed on codex/afternoon-reliability-20261029. Full tests, types and viewer-inclusive build passed. Local artifact; not published or loaded.",
   "viewerIncluded": true,
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
@@ -108,5 +108,7 @@
     ],
     "runtimeRegistryVersion": 1,
     "missingExactMaterials": "automatic-compatible-materials-with-actual-connection-registry"
-  }
+  },
+  "sourceCommitPending": false,
+  "sourcePushed": true
 }

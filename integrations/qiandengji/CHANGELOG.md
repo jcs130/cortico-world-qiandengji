@@ -1,3 +1,9 @@
+## 0.4.1-rc.56
+
+- Preserve server-provided learning levels, point costs, descriptions, bonuses and granted active spell IDs. Publish a bounded current learning index and expose full observed nodes on demand without learning or spending automatically.
+- Invalidate stale skill details after class/point changes and retain their original source clocks in restored history.
+- Pin core rc.129 for exact-footing diagnostics, historical container contradictions and query-specific argument recovery.
+
 ## 0.4.1-rc.55
 
 - Preserve bounded native Vortex progression guidance in the current RPG facts, including the actual missing prerequisite and next query. Keep source time and unknown flags; never choose a class, spend points or follow a command automatically.

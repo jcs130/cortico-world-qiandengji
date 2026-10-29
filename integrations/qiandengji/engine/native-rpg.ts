@@ -8,7 +8,14 @@ const nonnegative = (value: unknown): value is number => number(value) && value 
 const points = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0;
 const id = (value: unknown): value is string => typeof value === 'string' && /^[a-z][a-z0-9_:-]{0,63}$/i.test(value);
 
-export interface NativeSkills { observedAt: string; available: string[]; common: string[]; learnable: string[]; skillPoints: number }
+export interface NativeSkillNode {
+  id: string; requiredLevel: number; cost: number; displayName?: string; grantedSpellId?: string;
+  description?: string; permanentBonuses?: Record<string, number>;
+}
+export interface NativeSkills {
+  observedAt: string; available: string[]; common: string[]; learnable: string[]; skillPoints: number;
+  nodes?: NativeSkillNode[]; activeSpell?: string;
+}
 export function readNativeSkills(value: unknown, at: string, saved = false): NativeSkills | null {
   if (!object(value) || !Number.isFinite(Date.parse(at))) return null;
   const ids = (values: unknown): string[] | null => Array.isArray(values) && values.length <= 256 && values.every(id)
@@ -16,8 +23,25 @@ export function readNativeSkills(value: unknown, at: string, saved = false): Nat
   const available = ids(value.available), common = ids(value.common);
   const learnable = ids(saved ? value.learnable : Array.isArray(value.learnable)
     ? value.learnable.map(v => object(v) ? v.id : null) : null);
-  return available && common && learnable && points(value.skillPoints)
-    ? { observedAt: at, available, common, learnable, skillPoints: value.skillPoints } : null;
+  if (!available || !common || !learnable || !points(value.skillPoints)) return null;
+  const node = (v: unknown): NativeSkillNode | null => {
+    if (!object(v) || !id(v.id) || !points(v.requiredLevel) || !points(v.cost)) return null;
+    const bonuses = object(v.permanentBonuses) && Object.keys(v.permanentBonuses).length <= 16
+      && Object.entries(v.permanentBonuses).every(([key,value])=>id(key) && number(value) && Math.abs(value)<=1_000_000)
+      ? {...v.permanentBonuses} as Record<string,number> : undefined;
+    return { id: v.id, requiredLevel: v.requiredLevel, cost: v.cost,
+      ...(typeof v.displayName === 'string' && v.displayName.length <= 80 && !/[\u0000-\u001f\u007f]/.test(v.displayName)
+        ? { displayName: v.displayName } : {}),
+      ...(typeof v.description === 'string' && v.description.length <= 512 && !/[\u0000-\u001f\u007f]/.test(v.description)
+        ? {description:v.description} : {}),
+      ...(bonuses ? {permanentBonuses:bonuses} : {}),
+      ...(id(v.grantedSpellId) ? { grantedSpellId: v.grantedSpellId } : {}) };
+  };
+  const rawNodes = saved ? value.nodes : value.learnable;
+  const parsed = (Array.isArray(rawNodes) ? rawNodes : []).map(node).filter((v): v is NativeSkillNode => v !== null);
+  return { observedAt: at, available, common, learnable, skillPoints: value.skillPoints,
+    ...(parsed.length ? { nodes: parsed } : {}),
+    ...(value.activeSpell === '' || id(value.activeSpell) ? { activeSpell: value.activeSpell } : {}) };
 }
 
 export function nativeRpgMessage(text: string): Record<string, unknown> | null {
@@ -89,7 +113,7 @@ const names: Record<string, string> = { none: '未选职业', knight: '骑士', 
 /** Ephemeral connection-local readings; never load old class/money/mana as current. */
 export class NativeRpgState {
   private profile: { value: NativeRpgProfile; at: string; source: string } | null = null;
-  private learning: { points: number; at: string } | null = null;
+  private learning: { points: number; at: string; skills?: NativeSkills } | null = null;
   private signature = '';
   reset(): void { this.profile = null; this.learning = null; this.signature = ''; }
   identity(): { available: boolean; classId?: string } | null {
@@ -100,7 +124,13 @@ export class NativeRpgState {
     const profile = readNativeRpgStatus(value);
     if (profile) return this.update(profile, at, 'MC_RPG status');
     const skills = readNativeSkills(value, at);
-    if (skills) { const changed = this.learning?.points !== skills.skillPoints; this.learning = { points: skills.skillPoints, at }; return changed; }
+    if (skills) {
+      // A changed list matters even when the remaining points did not change.
+      const changed = JSON.stringify(this.learning?.skills && { ...this.learning.skills, observedAt: '' })
+        !== JSON.stringify({ ...skills, observedAt: '' });
+      this.learning = { points: skills.skillPoints, at, skills };
+      return changed;
+    }
     return false;
   }
   packet(channel: unknown, data: unknown, at = new Date().toISOString()): boolean {
@@ -109,7 +139,8 @@ export class NativeRpgState {
   private update(value: NativeRpgProfile, at: string, source: string): boolean {
     const prior = this.profile?.value;
     if (!value.available || prior?.classId !== value.classId) this.learning = null;
-    if (value.skillPoints !== undefined) this.learning = { points: value.skillPoints, at };
+    if (value.skillPoints !== undefined && this.learning?.points !== value.skillPoints)
+      this.learning = { points: value.skillPoints, at };
     // Queries omit activeSkill/skillPoints. Preserve their latest same-class observation,
     // but not their old mana or balance. An explicit unavailable profile clears everything.
     if (value.available && prior?.available && prior.classId === value.classId) {
@@ -132,7 +163,16 @@ export class NativeRpgState {
     fields.push(p.mana ? `魔力 ${p.mana.current}/${p.mana.max}` : '魔力未知');
     fields.push(p.economy?.available && p.economy.balance !== null ? `服务端余额 ${p.economy.balance}` : '经济未就绪或余额未知');
     if (p.preview) fields.push('服务端标记预览');
+    const skills = this.learning?.skills;
+    const options = skills?.nodes?.slice(0, 6).map(n => ({ id: n.id,
+      ...(n.displayName ? { name: n.displayName } : {}), requiredLevel: n.requiredLevel, learningPointCost: n.cost,
+      ...(n.grantedSpellId ? { grantsActiveSpell: n.grantedSpellId } : { kind: 'passive_attribute_node' }),
+      levelAndPointsMet: p.level === undefined ? null : p.level >= n.requiredLevel && this.learning!.points >= n.cost }));
     return head + fields.join('；') + '。RPG等级与原版经验等级分别记录；技能资格查 mc_query {"query":"skills.status"}，完整状态查 mc_query {"query":"status"}。'
+      + (skills ? `\n职业技能最近观测 ${skills.observedAt}：可用 ${skills.available.slice(0, 8).join('、') || '无'}；`
+        + `学习候选 ${JSON.stringify(options ?? skills.learnable.slice(0, 6))}`
+        + (skills.learnable.length > 6 ? `；另有 ${skills.learnable.length - 6} 项未展开` : '')
+        + '。这是服务器清单；等级和学习点满足不代表已学习，详情与其他条件按 skills.info 回执核对。' : '')
       + (p.guidance ? '\n服务端建议数据（沿用本次状态观察时间，未执行）：' + JSON.stringify(p.guidance) : '');
   }
 }

@@ -356,7 +356,11 @@ export class SkillCatalog {
       const indexed = key ? `\n${key}：${s.common.includes(key) || s.available.includes(key) ? this.nativeSkillsCurrent ? '本次记录列为可用' : '历史记录曾列为可用，本次资格待核验' : s.learnable.includes(key) ? this.nativeSkillsCurrent ? '本次记录列为可学习，不等于已学会' : '历史记录曾列为可学习，本次资格待核验' : '本次清单未列出，须查当前详情'}。/mycli skills info ${key}`
         : `\n通用：${s.common.join('、')}\n职业可用：${s.available.join('、')}\n可学习：${s.learnable.join('、')}`;
       const historical = key ? this.spells.get(key) : undefined;
-      return this.nativeIndex() + indexed + (historical
+      const nodes = key ? s.nodes?.filter(n => n.id === key) : s.nodes;
+      const details = nodes?.length ? `\n[服务器学习节点${this.nativeSkillsCurrent ? '最近观测' : '历史，资格待核验'}] ${s.observedAt}\n`
+        + nodes.map(n => JSON.stringify({ ...n, kind: n.grantedSpellId ? 'grants_active_spell' : 'passive_attribute_node' })).join('\n')
+        + '\n学习节点 ID 与施法 ID 分开；可学不等于已学，等级、点数及其他条件按当前 skills.info 回执核对。' : '';
+      return this.nativeIndex() + indexed + details + (historical
         ? `\n[旧 MC_SPELL 历史，仅供查询] 观测 ${historical.detailAt ?? historical.observedAt ?? this.updatedAt}\n${JSON.stringify(historical.detail ?? historical.item)}` : '');
     }
     if (this.nativeIdentity !== undefined) {

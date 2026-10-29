@@ -49,6 +49,27 @@ describe('current RPG discovery and advisory history', () => {
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 
+  it('keeps server-provided level, cost and granted spell in on-demand and restored history readouts', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'rpg-nodes-'));
+    try {
+      const catalog = new SkillCatalog('example.test:25565', dir);
+      catalog.observe(line({ ...state, learnable: [
+        { id: 'war_stomp', displayName: '战争践踏', requiredLevel: 4, cost: 1, grantedSpellId: 'war_stomp' },
+        { id: 'iron_body', displayName: '钢铁之躯', description:'提高体质，增强生存能力。', requiredLevel: 2, cost: 1, permanentBonuses:{VITALITY:3} },
+      ] }), now);
+      expect(catalog.readout('war_stomp')).toContain('"requiredLevel":4,"cost":1');
+      expect(catalog.readout('war_stomp')).toContain('"grantedSpellId":"war_stomp"');
+      expect(catalog.readout('war_stomp')).not.toContain('钢铁之躯');
+      expect(catalog.readout('iron_body')).toContain('passive_attribute_node');
+      expect(catalog.readout('iron_body')).toContain('"permanentBonuses":{"VITALITY":3}');
+      expect(catalog.readout('iron_body')).toContain('提高体质，增强生存能力。');
+      const restored = new SkillCatalog('example.test:25565', dir);
+      expect(restored.readout('war_stomp')).toContain('历史，资格待核验');
+      expect(restored.readout('war_stomp')).toContain(now);
+      expect(restored.readout('war_stomp')).toContain('战争践踏');
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
   it.each([{ ...state, available: ['bad\n/op'] }, { ...state, common: null }, { ...state, skillPoints: -1 },
     { ...state, learnable: [{ name: 'missing-id' }] }])('rejects malformed native metadata: %j', value => {
     const catalog = new SkillCatalog('example.test:25565');
