@@ -62,7 +62,9 @@ describe('服务器玩法按需资料', () => {
       }
       if(paragraph.startsWith('同一个 chat 步骤发送不带')){
         const current=readServerGuide('social').text;
-        for(const detail of ['同一实际世界','48 格','@名字','!内容','/msg 玩家完整登录名 内容','mymc_voice','avatar_voice'])
+        for(const detail of ['同一实际世界','48 格','@名字','!内容','/msg 玩家完整登录名 内容','mymc_voice','avatar_voice',
+          '当前的实际游戏名或已确认的称呼','按实际所在世界、距离和频道过滤',
+          '当前服务端帮助或已核验的通信契约','不默认改成全服广播','不擅自把原私聊内容转发公屏','服务端回显不证明对方收到'])
           expect(current).toContain(detail);
         expect(current).not.toContain('会进游戏公屏');
         expect(current).not.toContain('CortiLan、Corti 或可缇');

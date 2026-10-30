@@ -17,3 +17,9 @@ export type { NativeSkills, NativeSkillNode, NativeRpgProfile, NativeSkillDetail
 export {ChatPolicyState} from './engine/chat-policy.ts';
 export { QiandengjiPortalAccess, QIANDENGJI_WEBSITE, QIANDENGJI_GAME } from './portal-access.ts';
 export type { QiandengjiAccessState } from './portal-access.ts';
+
+export { QIANDENGJI_CAST_TOOL, createQiandengjiCastTool, invokeQiandengjiCast, type QiandengjiCastToolPort } from './engine/cast-tool.ts';
+export { CombatSpells } from './engine/combat-spells.ts';
+export { parseSkillsPayload, VIEWER_STATE_CHANNEL } from './engine/viewer-state.ts';
+export { observedCommandRoot, observedCommandUsage } from './engine/command-usage.ts';
+export { trialBodyState, TRIAL_DOWNED_REASON } from './engine/trial-body-state.ts';

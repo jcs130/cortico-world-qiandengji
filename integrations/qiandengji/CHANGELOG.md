@@ -1,3 +1,17 @@
+## 0.4.1-rc.61
+
+- Integrate the validated rc.60 branch and upstream shared-cast factory on the mainline. Keep native command-route checks, class-bound profession learning facts, observed chat audiences, nearby voice and memory identity bindings.
+- Expose the same native command-route diagnostic through the retained-body cast port; do not append failed cast arguments to another namespace or replay unknown sends. Keep core rc.139 pinned for reproducible consumer verification.
+- Keep the neutral protocol package on a compatible core peer, selected once by the host/World. Remove the duplicate runtime core dependency and verify the real publication manifests during release checks.
+- Local candidate only. Source integration does not replace the running rc.60 package or authorize another reload.
+
+## 0.4.1-rc.57-casttools.2
+
+- Extract the existing `mc_cast` implementation into one public factory for hosts retaining their own body. The neutral Engine consumes the same implementation; no extra connection, movement owner or automatic cast loop is added.
+- Export the existing validated skill/state parsers and observation ledger for explicit retained-body composition. Keep authentication, downed state, cooldowns and server effect evidence with their original owners. A send exception remains unknown and is never replayed automatically.
+- Consume the matching neutral candidate. Include the explicit dungeon `--json` query repair so a text summary is not falsely treated as a lost protocol reply. Local candidates only; source, packaging, loading and gameplay effects are separate.
+
+
 ## 0.4.1-rc.60
 
 Consume core rc.135 complete safety-preemption terminals and equipped ranged-defense choice. Preserve rc.59 native skill routes and chat audience semantics; no new server rules, tactics or live actions.
@@ -21,6 +35,11 @@ Consume core rc.130 with nearby voice, native-world isolation and server/account
 - Preserve server-provided learning levels, point costs, descriptions, bonuses and granted active spell IDs. Publish a bounded current learning index and expose full observed nodes on demand without learning or spending automatically.
 - Invalidate stale skill details after class/point changes and retain their original source clocks in restored history.
 - Pin core rc.129 for exact-footing diagnostics, historical container contradictions and query-specific argument recovery.
+
+- Consume the validated Vortex `profession.abilities` layer alongside common abilities. Preserve server cost and cooldown readings in the existing shared combat/viewer contracts; observing a new spell does not author or enable a tactic.
+- Expose a read-only `mc_skills` in the neutral engine. Keep current profession spells separate from common spells and the timestamped learnable list. New native snapshots update availability without a relog; class changes and disconnects invalidate it.
+- Cormy's `mymc_skills` uses the same live engine projection, with one correctly named tool and historical-catalog fallback for older engines. Prefer the newer of CLI and native observations, retain unknowns, and keep point spending, preparation, casting and verified effects distinct.
+- Existing shared `mc_combat_tactic` rules/programs compose observed skill IDs. Tests cover a profession spell followed by a ready common spell, class invalidation and independent Cormy consumption; these are offline checks, not claims of live tactical mastery.
 
 ## 0.4.1-rc.55
 
