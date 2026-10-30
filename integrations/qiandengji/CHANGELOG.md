@@ -1,3 +1,8 @@
+## 0.4.1-rc.63
+
+- Consume shared core rc.144 interaction approach and countdown event-stream fixes; keep native hand/effect verification, single-body ownership and optional server protocols.
+- Keep neutral protocol rc.44 unchanged on its compatible peer range; use one pinned core in SDK/MCP and host consumers. Local candidate; no publication or server change.
+
 ## 0.4.1-rc.62
 
 - Consume the verified core rc.140 food-risk reference, concrete explicit-meal preflight and current inventory/recovery facts. Keep explicit requests permitted and real side effects visible.

@@ -1,12 +1,12 @@
 {
-  "version": "0.5.7-rc.140",
-  "file": "agent-mc-world-0.5.7-rc.140-5701b968.tgz",
-  "sha256": "5701b968364340619c53a6ce7ad601c0b8064512623bf86333705c79f8357cd4",
+  "version": "0.5.7-rc.144",
+  "file": "agent-mc-world-0.5.7-rc.144-c5a1b969.tgz",
+  "sha256": "c5a1b969a9258394adad34ae831f0fc43185c83aab497dc0c2398ee6c69498fb",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "parent": "1cd17289b1a14b4e7fa1891748e3a6a0aaf1b7db",
+  "parent": "32d0bcaa",
   "channel": "local-candidate",
-  "sourceStatus": "Core rc.140: 2664 passed / 1 skipped, types/build/public declarations and fresh packed SDK/MCP/API6 consumer passed. Local candidate; not published or loaded.",
+  "sourceStatus": "Core rc.144: complete suite and exact targeted rechecks (2677 unique tests passed, 1 skipped), source/runtime/declarations/viewer and isolated SDK/MCP/API5/6 checks passed. Raw Windows transient rename failure retained in private acceptance evidence. Local candidate, not published.",
   "viewerIncluded": true,
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
@@ -111,5 +111,5 @@
   "sourceCommitPending": false,
   "sourcePushed": true,
   "sourceCommit": "081e5e705dd4be9b7c33b277a23911166c46f966",
-  "commit": "58e84de49d32807996d1d724a2b4aaf6f62ae7d8"
+  "commit": "86b428e1"
 }
