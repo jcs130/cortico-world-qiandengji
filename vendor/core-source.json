@@ -1,12 +1,13 @@
 {
-  "version": "0.5.7-rc.144",
-  "file": "agent-mc-world-0.5.7-rc.144-c5a1b969.tgz",
-  "sha256": "c5a1b969a9258394adad34ae831f0fc43185c83aab497dc0c2398ee6c69498fb",
+  "version": "0.5.7-rc.146",
+  "file": "agent-mc-world-0.5.7-rc.146-bc986e5b.tgz",
+  "sha256": "bc986e5b39387fd9f722ca842ccf59082f6415019029ce5cab56bbd53e09d520",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "parent": "32d0bcaa",
+  "parent": "f0bbe855bd4c61733fb7100f5bf4a8a913df0990",
+  "sourceCommit": "e495c57bbe5a455e029735fc3573a3eeffe27f14",
   "channel": "local-candidate",
-  "sourceStatus": "Core rc.144: complete suite and exact targeted rechecks (2677 unique tests passed, 1 skipped), source/runtime/declarations/viewer and isolated SDK/MCP/API5/6 checks passed. Raw Windows transient rename failure retained in private acceptance evidence. Local candidate, not published.",
+  "sourceStatus": "Local rc.146 candidate: native planning-versus-movement stall evidence, preserving upstream continuous-water fixes; complete source/declarations/viewer verified. Source, acceptance and loading are recorded separately.",
   "viewerIncluded": true,
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
