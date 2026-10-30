@@ -1,3 +1,8 @@
+## 0.4.1-rc.65
+
+- Consume shared core rc.147 coordinate withdrawal and pinned-workstation interaction reach. Retain native window admission, cancellation and confirmed inventory accounting.
+- Keep optional neutral protocol rc.44 and the existing host/voice configuration unchanged. Local candidate; source, packaging, loading and live acceptance are separate.
+
 ## 0.4.1-rc.64
 
 - Consume shared core rc.146 planning-versus-movement stall evidence, preserving upstream continuous-water fixes and owned-route cancellation. Keep optional server protocols and host selection independent.

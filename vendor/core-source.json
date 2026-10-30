@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.146",
-  "file": "agent-mc-world-0.5.7-rc.146-bc986e5b.tgz",
-  "sha256": "bc986e5b39387fd9f722ca842ccf59082f6415019029ce5cab56bbd53e09d520",
+  "version": "0.5.7-rc.147",
+  "file": "agent-mc-world-0.5.7-rc.147-43431a88.tgz",
+  "sha256": "43431a883a6e5ae6c5d688e6ffeb623fd830cb03acb370e46b09af10f8a315a3",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "parent": "f0bbe855bd4c61733fb7100f5bf4a8a913df0990",
-  "sourceCommit": "e495c57bbe5a455e029735fc3573a3eeffe27f14",
+  "parent": "3ac3547db56cc34a0773caddb53673d5e3fb11db",
+  "sourceCommit": "66ab3f108944205da51e4fa5a13d890312af5c41",
   "channel": "local-candidate",
-  "sourceStatus": "Local rc.146 candidate: native planning-versus-movement stall evidence, preserving upstream continuous-water fixes; complete source/declarations/viewer verified. Source, acceptance and loading are recorded separately.",
+  "sourceStatus": "Core rc.147: shared coordinate-withdrawal and pinned-workstation interaction reach. Full suite and unchanged-source targeted recheck covered 2691 tests (one skipped); raw water-route failure retained. Runtime/declarations/viewer, isolated SDK/MCP and API 5/6/7 checks passed. Local candidate, not published or loaded; canonical sourceCommit replaces the older duplicate provenance fields.",
   "viewerIncluded": true,
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
@@ -111,6 +111,5 @@
   },
   "sourceCommitPending": false,
   "sourcePushed": true,
-  "sourceCommit": "081e5e705dd4be9b7c33b277a23911166c46f966",
-  "commit": "86b428e1"
+  "commit": "66ab3f108944205da51e4fa5a13d890312af5c41"
 }
