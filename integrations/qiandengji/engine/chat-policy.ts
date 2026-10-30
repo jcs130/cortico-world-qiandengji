@@ -1,6 +1,7 @@
 import type {ChatAudienceEvidence} from 'agent-mc-world/extension';
 type Policy={schema:'agent-mc/chat-policy/v1';provider:string;defaultChannel:'nearby'|'server'|'unknown';
-  nearby:{scope:'same-world-range';radius:number};shout:{prefix:string;scope:'server'};observedAt:string};
+  nearby:{scope:'same-world-range';radius:number};shout:{prefix:string;scope:'server'};
+  permissions:{shout:boolean|null;private:boolean|null};privateCommand:string|null;observedAt:string};
 /** Authenticated server-system observations only. Never infer a world identity from a display label. */
 export class ChatPolicyState {
   private value:Policy|null=null;
@@ -19,8 +20,13 @@ export class ChatPolicyState {
         ||p.nearby?.scope!=='same-world-range'||!Number.isFinite(p.nearby.radius)||p.nearby.radius<0||p.nearby.radius>10000
         ||p.defaultChannel==='nearby'&&p.nearby.radius===0
         ||p.shout?.scope!=='server'||typeof p.shout.prefix!=='string'||!/^[^\s\p{Cc}<>/\\]$/u.test(p.shout.prefix))return false;
+      const permission=(node:string):boolean|null=>p.permissionObservationSource==='bukkit.hasPermission'
+        &&typeof p.permissionNodes?.[node]==='boolean'?p.permissionNodes[node]:null;
+      const privateCommand=p.private?.scope==='single-recipient'&&typeof p.private.command==='string'
+        &&/^\/[a-z][a-z0-9_-]{0,31} <player> <text>$/i.test(p.private.command)?p.private.command:null;
       this.unknownAt=null;this.value={schema:p.schema,provider:p.provider,defaultChannel:p.defaultChannel,
         nearby:{scope:'same-world-range',radius:p.nearby.radius},shout:{prefix:p.shout.prefix,scope:'server'},
+        permissions:{shout:permission('essentials.chat.shout'),private:permission('essentials.msg')},privateCommand,
         observedAt:new Date(envelope.observedAt).toISOString()};return true;
     }catch{return false;}
   }
@@ -39,7 +45,12 @@ export class ChatPolicyState {
   }
   brief():string {
     const p=this.value;if(!p)return this.unknownAt?'[聊天频道服务端观测] '+this.unknownAt+'；当前频道提供方或范围未知，不沿用旧范围；未自动改用喊话或私聊。':'';
+    const permission=(value:boolean|null)=>value===true?'本人已获权限':value===false?'本人无权限':'本人权限未知';
     return '[聊天频道服务端观测] '+p.observedAt+'；普通文字：'+(p.defaultChannel==='nearby'?`同一实际世界附近 ${p.nearby.radius} 格`:p.defaultChannel==='server'?'服务器范围':'默认范围未知')
-      +`；${p.shout.prefix}内容为单次全服喊话；/msg 玩家 内容为私聊。@名字不扩大范围；传输成功不证明收到、听见或已读。`;
+      +`；${p.shout.prefix}内容为单次全服喊话（${permission(p.permissions.shout)}）`
+      +`；私聊：${permission(p.permissions.private)}`
+      +(p.privateCommand?`，服务端命令 ${p.privateCommand}`:'，当前命令未知')
+      +(p.permissions.private===false?'，不要重复尝试无权限私聊':'')
+      +'。@名字不扩大范围；传输成功不证明收到、听见或已读。';
   }
 }

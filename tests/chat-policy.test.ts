@@ -32,3 +32,43 @@ it('does not adopt another player, a quote or malformed scope',()=>{
   expect(r.observe(line({...payload,communication:{...payload.communication,nearby:{scope:'dimension',radius:48}}}),uuid)).toBe(false);
   expect(r.brief()).toBe('');
 });
+it('retains authenticated own permissions and the observed private command without assuming delivery',()=>{
+  const r=new ChatPolicyState();
+  expect(r.observe(line({...payload,communication:{...payload.communication,
+    private:{command:'/msg <player> <text>',scope:'single-recipient'},
+    permissionNodes:{'essentials.chat.shout':true,'essentials.msg':false},
+    permissionObservationSource:'bukkit.hasPermission'}}),uuid)).toBe(true);
+  expect(r.brief()).toContain('全服喊话（本人已获权限）');
+  expect(r.brief()).toContain('私聊：本人无权限');
+  expect(r.brief()).toContain('不要重复尝试无权限私聊');
+  expect(r.brief()).toContain('/msg <player> <text>');
+  expect(r.audience('@Alex hello',undefined,'outgoing')).toMatchObject({channel:'nearby',scope:'same-world-range'});
+  expect(r.brief()).toContain('传输成功不证明收到');
+});
+it('keeps missing or unattributed permission observations unknown and replaces old grants',()=>{
+  const r=new ChatPolicyState();
+  const granted={...payload,communication:{...payload.communication,
+    private:{command:'/msg <player> <text>',scope:'single-recipient'},
+    permissionNodes:{'essentials.chat.shout':false,'essentials.msg':true},permissionObservationSource:'bukkit.hasPermission'}};
+  r.observe(line(granted),uuid);
+  expect(r.brief()).toContain('全服喊话（本人无权限）');
+  expect(r.brief()).toContain('私聊：本人已获权限');
+  r.observe(line(payload),uuid);
+  expect(r.brief()).toContain('全服喊话（本人权限未知）');
+  expect(r.brief()).toContain('私聊：本人权限未知，当前命令未知');
+  expect(r.brief()).not.toContain('/msg');
+  r.observe(line({...granted,communication:{...granted.communication,permissionObservationSource:'player-claim'}}),uuid);
+  expect(r.brief()).not.toContain('本人已获权限');
+  r.reset();expect(r.brief()).toBe('');
+});
+it('rejects other-player grants and unsafe private command text without losing valid routing',()=>{
+  const r=new ChatPolicyState();
+  const observation={...payload,communication:{...payload.communication,
+    private:{command:'/msg <player> <text>\n!forward',scope:'single-recipient'},
+    permissionNodes:{'essentials.msg':'true'},permissionObservationSource:'bukkit.hasPermission'}};
+  expect(r.observe(line(observation),'other')).toBe(false);expect(r.brief()).toBe('');
+  expect(r.observe(line(observation),uuid)).toBe(true);
+  expect(r.brief()).toContain('私聊：本人权限未知，当前命令未知');
+  expect(r.brief()).not.toContain('forward');
+  expect(r.audience('hello',undefined,'outgoing')).toMatchObject({radius:48});
+});
