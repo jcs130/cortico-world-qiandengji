@@ -1,13 +1,12 @@
 {
-  "version": "0.5.7-rc.135",
-  "file": "agent-mc-world-0.5.7-rc.135-a4e7453d.tgz",
-  "sha256": "a4e7453d00bae1a4f0bdd6cb9eb90136914f19db3eab5b677bab2ac060b84ade",
+  "version": "0.5.7-rc.139",
+  "file": "agent-mc-world-0.5.7-rc.139-323860be.tgz",
+  "sha256": "323860be2ad93c1fbeb911e695724743c3e9e17a3082510e5ea1dc3a0c7a4d0e",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "80f81311c1fdc72a6d4b3808c4bde2a0fdaf8ea1",
-  "parent": "239d69517a979ff595df88ae5490370101ef939c",
+  "parent": "07b8757f91c8214594d4eb3a211781a05e56bb96",
   "channel": "local-candidate",
-  "sourceStatus": "Offline rc135 integration candidate. Core source tests, public types and build verified; not deployed or published.",
+  "sourceStatus": "Integrated main 07b8757f and deployed core 298cc635; 2650 tests passed, 1 skipped; package not published or loaded",
   "viewerIncluded": true,
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
@@ -110,5 +109,6 @@
     "missingExactMaterials": "automatic-compatible-materials-with-actual-connection-registry"
   },
   "sourceCommitPending": false,
-  "sourcePushed": true
+  "sourcePushed": true,
+  "sourceCommit": "081e5e705dd4be9b7c33b277a23911166c46f966"
 }

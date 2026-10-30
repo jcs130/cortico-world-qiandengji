@@ -56,8 +56,8 @@
     "node": ">=22"
   },
   "dependencies": {
-    "agent-mc-world": "^0.5.7-rc.135",
-    "agent-mc-qiandengji": "^0.5.0-rc.41",
+    "agent-mc-world": "^0.5.7-rc.139",
+    "agent-mc-qiandengji": "^0.5.0-rc.42",
     "vec3": "0.2.0"
   },
   "peerDependencies": {

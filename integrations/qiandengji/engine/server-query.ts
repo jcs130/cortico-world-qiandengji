@@ -12,12 +12,20 @@ import { nativeRpgMessage, readNativeRpgStatus, readNativeSkills } from './nativ
  * a fresh reply on the current connection, not proof of unique request identity.
  */
 const subjectId = /^[a-z][a-z0-9_-]{0,63}$/;
+const noArguments: NonNullable<ServerQueryDefinition['argumentsSchema']> = {
+  type: 'array', minItems: 0, maxItems: 0, items: { type: 'string' },
+};
+const subjectArgument: NonNullable<ServerQueryDefinition['argumentsSchema']> = {
+  type: 'array', minItems: 1, maxItems: 1,
+  items: { type: 'string', pattern: subjectId.source, maxLength: 64,
+    description: 'Copy one ID actually returned by this server; never invent or reuse an ID from another World.' },
+};
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 
 /** Published VortexBridge query shapes; mutation receipts never satisfy these definitions. */
 function nativeDefinition(id: string, description: string, command: string, argument: boolean,
   matches: (value: Record<string, unknown>, args: string[]) => boolean): ServerQueryDefinition {
-  return { id, description,
+  return { id, description, argumentsSchema: argument ? subjectArgument : noArguments,
     command: args => argument ? args.length === 1 && subjectId.test(args[0]) ? `${command} ${args[0]} --json` : null
       : args.length === 0 ? `${command} --json` : null,
     matchReply: (text, args, username) => {
@@ -42,6 +50,7 @@ function dungeonDefinition(kind: 'status' | 'info', marker: string, description:
   return {
     id: `dungeon.${kind}`,
     description,
+    argumentsSchema: subjectArgument,
     command: args => args.length === 1 && subjectId.test(args[0])
       ? `/mycli dungeon ${kind} ${args[0]} --json` : null,
     matchReply: (text, args, username) => {
@@ -57,6 +66,7 @@ function dungeonDefinition(kind: 'status' | 'info', marker: string, description:
 export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
   {
     id: 'status',
+    argumentsSchema: noArguments,
     description: 'Read current self status, including Vortex class, RPG level/xp, mana and economy when available. arguments:[] only. Requests --json and matches either the native MC_RPG status shape or legacy MC_STATUS self/name. Native replies have no subject/nonce: the core checks trusted server transport/current connection, not unique request attribution.',
     command: args => args.length === 0 ? '/mycli status --json' : null,
     matchReply: (text, args, username) => {
@@ -71,6 +81,7 @@ export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
   },
   {
     id: 'skills.status',
+    argumentsSchema: noArguments,
     description: 'Read current self native MC_RPG available/common/learnable skills and skillPoints, preserving complete server fields such as learning cost/requiredLevel. arguments:[] only. Querying never chooses a class, learns/prepares/casts or spends points. No subject/nonce in native replies; current-connection server provenance is checked by the core.',
     command: args => args.length === 0 ? '/mycli skills status --json' : null,
     matchReply: (text, args, username) => {

@@ -423,3 +423,7 @@ Consume core rc.130 with nearby voice, native-world isolation and server/account
 
 - Add a small, on-demand discovery guide for client/server photos, books, flight, blink, learning, professions and respec. Keep game eligibility and terminal evidence separate from historical documentation.
 - Consume server pack rc.30 with the same core rc.93. Avoid binding the discovery heading to an obsolete CLI version. This documentation candidate does not change a character build or claim that every skill was executed live.
+## 0.4.1-rc.60
+
+- Preserve the deployed memory, profession, nearby voice and chat-scope interfaces while consuming the integrated core.
+- Publish exact read-only query argument contracts and request explicit JSON dungeon replies. Missing IDs are reported with the selected contract; no command or unknown result is retried automatically.

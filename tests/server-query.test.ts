@@ -19,6 +19,19 @@ const info = { ...dungeon, name: '亡灵墓穴·三室封印', start: [-425, 4, 
   rooms: [{ enemies: 5, center: [-425, 4, 677], name: '守墓前厅', radius: 4 }] };
 
 describe('explicit Qiandengji read-only server query definitions', () => {
+  it('publishes exact argument counts and the observed subject ID contract for offline discovery and failed calls', () => {
+    const lane = new ServerQueryLane(), send = vi.fn();
+    const index = lane.call({}, QIANDENGJI_SERVER_QUERIES, null);
+    expect(index.data?.queries).toContainEqual(expect.objectContaining({ id: 'dungeon.info',
+      argumentsSchema: expect.objectContaining({ minItems: 1, maxItems: 1,
+        items: expect.objectContaining({ pattern: '^[a-z][a-z0-9_-]{0,63}$' }) }) }));
+    expect(query('status').argumentsSchema).toMatchObject({ minItems: 0, maxItems: 0 });
+    const failure = lane.call({ query: 'dungeon.info' }, QIANDENGJI_SERVER_QUERIES,
+      { generation: 'fixture', username: 'ag_Fixture', send });
+    expect(failure).toMatchObject({ failed: true, data: { goal_completed: false,
+      queryDefinition: { id: 'dungeon.info', argumentsSchema: { minItems: 1, maxItems: 1 } } } });
+    expect(send).not.toHaveBeenCalled();
+  });
   it('exposes only the reviewed subset through the optional server engine hook', () => {
     expect(QIANDENGJI_SERVER_QUERIES.map(item => item.id)).toEqual(['status', 'skills.status',
       'profession.list', 'profession.status', 'profession.info', 'skills.info', 'dungeon.status', 'dungeon.info']);
