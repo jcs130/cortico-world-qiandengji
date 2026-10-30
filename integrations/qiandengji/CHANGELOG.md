@@ -1,3 +1,9 @@
+## 0.4.1-rc.62
+
+- Consume the verified core rc.140 food-risk reference, concrete explicit-meal preflight and current inventory/recovery facts. Keep explicit requests permitted and real side effects visible.
+- Retain the integrated native chat audiences, nearby voice, profession routes, memory identity and shared retained-body casting interface.
+- Lock the matched neutral/core candidate and validate fresh SDK/MCP and host consumption. Publication, loading and natural gameplay results remain separate.
+
 ## 0.4.1-rc.61
 
 - Integrate the validated rc.60 branch and upstream shared-cast factory on the mainline. Keep native command-route checks, class-bound profession learning facts, observed chat audiences, nearby voice and memory identity bindings.
