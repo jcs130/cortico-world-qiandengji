@@ -24,6 +24,7 @@
     "vec3": "0.2.0"
   },
   "devDependencies": {
+    "ajv": "8.20.0",
     "@modelcontextprotocol/sdk": "1.32.1",
     "@types/node": "^22.10.0",
     "cortico": "0.2.7",

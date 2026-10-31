@@ -1,10 +1,14 @@
 {
   "name": "cortico-world-qiandengji",
-  "version": "0.4.1-rc.65",
+  "version": "0.4.1-rc.67",
   "type": "module",
   "description": "通用 Minecraft Agent World，内置现代 Web 可视化，可选千灯纪服务器资料包。",
   "main": "./dist/world/index.js",
   "exports": {
+    "./original-task-observer": {
+      "types": "./dist/original-task-observer.d.ts",
+      "default": "./dist/original-task-observer.js"
+    },
     ".": {
       "types": "./dist/world/index.d.ts",
       "default": "./dist/world/index.js"

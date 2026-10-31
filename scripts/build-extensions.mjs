@@ -16,7 +16,7 @@ await mkdir(join(pack, 'dist'), { recursive: true });
 await cp(join(root, 'LICENSE'), join(pack, 'LICENSE'));
 for (const source of await walk(sourceBase)) {
   const name = relative(sourceBase, source).replaceAll('\\', '/');
-  if (name.startsWith('dist/') || name.startsWith('node_modules/') || ['index.ts', 'cortico.ts'].includes(name)
+  if (name.startsWith('dist/') || name.startsWith('node_modules/') || ['index.ts', 'cortico.ts', 'original-task-observer.ts'].includes(name)
     || /(?:^|\/)(?:package\.json|LICENSE)$/.test(name) || ['README.md', 'cortico-activity.ts', 'cortico-activity-tap.ts', 'cortico-quick-start.ts', 'cortico-practice.ts','cortico-storage.ts','cortico-decisions.ts'].includes(name)) continue;
   if(name.startsWith('data-packs/qiandengji/viewer-items/')&&/\.(?:png|json)$/.test(name)){
     const target=join(pack,'dist',name);await mkdir(dirname(target),{recursive:true});await cp(source,target);continue;
@@ -62,6 +62,9 @@ console.log('Cortico World package files verified');
     continue;
   }
   await cp(join(root, 'scripts/verify-installed-webui.mjs'), join(base, 'dist/verify-webui.mjs'));
+  const originalObserver = (await transform(await readFile(join(base, 'original-task-observer.ts'), 'utf8'),
+    { loader: 'ts', format: 'esm', target: 'node22' })).code;
+  await writeFile(join(base, 'dist/original-task-observer.js'), originalObserver);
   await mkdir(join(base, 'dist/world'), { recursive: true });
   let adapter = (await transform(await readFile(join(base, 'cortico.ts'), 'utf8'),
     { loader: 'ts', format: 'esm', target: 'node22' })).code;
@@ -123,5 +126,14 @@ const declaration = (await readFile(join(sourceBase, 'public-contract.d.ts'), 'u
 await writeFile(join(sourceBase, 'dist/world/index.d.ts'), declaration);
 await writeFile(join(sourceBase, 'dist/host-decisions.d.ts'), 'export * from "agent-mc-qiandengji/host-decisions";\n');
 await writeFile(join(sourceBase, 'dist/pack.d.ts'), 'export * from "agent-mc-qiandengji/manifest";\n');
+
+const observerProgram = ts.createProgram({ rootNames: [join(sourceBase, 'original-task-observer.ts')], options: {
+  ...parsed.options, noEmit: false, declaration: true, emitDeclarationOnly: true, rootDir: sourceBase, outDir: join(sourceBase, 'dist'),
+} });
+const observerDiagnostics = ts.getPreEmitDiagnostics(observerProgram);
+if (observerDiagnostics.length) throw new Error(ts.formatDiagnosticsWithColorAndContext(observerDiagnostics, {
+  getCurrentDirectory: () => root, getCanonicalFileName: name => name, getNewLine: () => '\n',
+}));
+if (observerProgram.emit().emitSkipped) throw new Error('Original-body observer declaration emit was skipped');
 
 await cp(join(sourceBase, 'presentation.d.mts'), join(pack, 'dist/presentation.d.mts'));

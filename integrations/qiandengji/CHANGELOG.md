@@ -1,3 +1,7 @@
+## 0.4.1-rc.67
+
+- Export an optional observer for the original Minecraft executor, using the shared core's dependency, observed-effect and repeated no-effect evaluation. Keep the original body queue, task terminals and explicit independent speech.
+
 ## 0.4.1-rc.65
 
 - Consume shared core rc.147 coordinate withdrawal and pinned-workstation interaction reach. Retain native window admission, cancellation and confirmed inventory accounting.
