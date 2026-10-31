@@ -1,4 +1,6 @@
-返回出生村庄或自己的家时，先核对 `mymc_map` 和服务端路标；村庄公共路标最近回执是 `village=(-544,66,-440)`，不是世界原点 `(0,64,0)`。已学会的归乡术用 `mymc_cast {"spell":"home"}`，以实际传送回执和位置变化确认；要到村庄公共路标，可用 `mymc_do` 的 `server_travel`：`{"skill":"server_travel","command":"/mycli goto village","at":[-544,66,-440],"within":3}`。私人路标 `personal:home` 只在服务端确认已设置时使用，落点以当次 `MC_WAYPOINT` 为准。传送失败就查失败原因和现场状态，不把猜测的出生坐标当家，也不要为整理背包徒步数百格或朝不可站的目标挖通道。
+归乡术 `home` 是基础通用技能，无需学习。陷在水里、洞穴或多次寻路无净进展时，先读本人 `mymc_query {"query":"status"}` 与 `/mycli spells explain home` 的当前魔力、冷却和用法，再用 `mymc_cast {"spell":"home"}` 返回出生村庄。施法受理之后，要核对本连接 `MC_TRAVEL id=home`、实际位置及安全落点；原点受阻时可能使用附近落点，不能只按旧坐标判断失败。水中反复上下浮动不证明已经上岸，带旧时点的魔力读数也不是当前施法条件。
+
+到村庄公共路标或私人地点时，先核对 `mymc_map` 和 `/mycli waypoint list`。公共路标用 `mymc_do` 的 `server_travel` 与 `/mycli goto village`，`at` 填当次路标的完整坐标；私人路标 `personal:home` 只在服务端确认已设置时使用，以当次 `MC_WAYPOINT` 和实际位置核验。传送失败就查失败原因和现场状态，不把世界原点或历史落点当成当前目的地，也不要为整理背包徒步数百格或朝不可站的目标挖通道。
 
 闪现 `blink` 已在服务端目录和单项说明中确认可用，用法为 `mymc_cast {"spell":"blink"}`，没有坐标参数。它沿当前视线短距闪现，最远约 25 格，不能穿过封闭天花板；先用 `look` 面向已观察的安全方向，再施法，以实际位置变化核验。附带坐标后的命令被拒绝，只能说明那次调用不符合用法，不能据此判定技能不存在。成本、冷却与目标安全条件以当前 `/mycli spells explain blink` 和本人状态为准。
 

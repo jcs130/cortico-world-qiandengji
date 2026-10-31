@@ -70,6 +70,15 @@ describe('服务器玩法按需资料', () => {
         expect(current).not.toContain('CortiLan、Corti 或可缇');
         continue; // The server now routes nearby/shout separately; keep the old fixture as history.
       }
+      if (paragraph.startsWith('返回出生村庄或自己的家时')) {
+        const current = readServerGuide('travel').text;
+        for (const fact of ['home` 是基础通用技能，无需学习', 'mymc_query {"query":"status"}',
+          '/mycli spells explain home', 'mymc_cast {"spell":"home"}', 'MC_TRAVEL id=home',
+          '实际位置', '/mycli waypoint list', '当次路标的完整坐标']) expect(current).toContain(fact);
+        expect(current).not.toContain('已学会的归乡术');
+        expect(current).not.toContain('"at":[-544,66,-440]');
+        continue; // The old prerequisite and fixed arrival height were superseded by native help and travel receipts.
+      }
       const exactMatches = manuals.flatMap((manual) => manual.split(/\r?\n/)).filter((line) => line === paragraph);
       expect(exactMatches, `未完整迁移：${paragraph.slice(0, 60)}`).toHaveLength(1);
     }
