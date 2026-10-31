@@ -1,4 +1,4 @@
-import { SERVER_TOOLS } from './engine/world.ts';
+import { SERVER_TOOLS, SERVER_QUERY_DECLARATION } from './engine/world.ts';
 import { HostCombatDriver, validateHostCombat, type HostCombatPort } from './host/combat-driver.ts';
 /** 千灯纪的 World 契约；游戏协议与执行器沿用 Minecraft 引擎。 */
 import { readFileSync } from 'node:fs';
@@ -95,6 +95,7 @@ function toolParameters(name: string, parameters: Record<string, unknown>): Reco
 
 export const MYMC_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [...MINECRAFT_TOOL_DECLS
   .filter((decl) => decl.name !== 'mc_escape')
+  .map((decl) => decl.name === SERVER_QUERY_DECLARATION.name ? SERVER_QUERY_DECLARATION : decl)
   .map((decl) => ({
   ...decl,
   name: decl.name.replace(/^mc_/, 'mymc_'),

@@ -1,7 +1,7 @@
 import { QIANDENGJI_CAST_TOOL, invokeQiandengjiCast } from './cast-tool.ts';
 import { portableStorageMisuseNote } from './portable-storage.ts';
 import type { SkillCall } from 'agent-mc-world/extension';
-import {ObservedCommandCatalog} from 'agent-mc-world/extension';
+import {ObservedCommandCatalog, serverQueryTool} from 'agent-mc-world/extension';
 import { observedCommandRoot, observedCommandUsage } from './command-usage.ts';
 import { QIANDENGJI_SERVER_QUERIES } from './server-query.ts';
 import { type MinecraftWorldOptions } from 'agent-mc-world/extension';
@@ -19,11 +19,12 @@ import { publishViewerCastCommand } from './viewer-cast.ts';
 import { watchAgentFriendFlight } from './agentfriend-flight.ts';
 import { trialBodyState, TRIAL_DOWNED_REASON } from './trial-body-state.ts';
 import { TacticalMinecraftWorld, COMBAT_TACTIC_TOOL, BATTLEFIELD_CHANNEL } from 'agent-mc-world/tactics';
+export const SERVER_QUERY_DECLARATION = serverQueryTool(QIANDENGJI_SERVER_QUERIES);
 export const SERVER_TOOLS: ReadonlyArray<Omit<ToolDef,'handler'>> = [QIANDENGJI_CAST_TOOL, COMBAT_TACTIC_TOOL, {
     name: 'mc_skills', tags: ['read'],
     description: 'Read this connection and class\'s native available profession spells, common spells and learnable nodes. Optional id selects its membership; a learnable/passive node is not a castable spell. No queries, point spending, preparation or casting are performed. Unknown cost/cooldown/effect remain null. Read mc_query skills.info for the current full definition, mc_combat_tactic for observed combat constraints and Agent-authored combinations, and actual server receipts for effects.',
     parameters: { type: 'object', properties: { id: { type: 'string', pattern: '^[a-z][a-z0-9_:-]{0,63}$' } } },
-  }];
+  }, SERVER_QUERY_DECLARATION];
 export class QiandengjiEngine extends TacticalMinecraftWorld {
 protected selfHealAvailable = false;
 protected readonly combatSpells: CombatSpells;

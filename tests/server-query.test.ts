@@ -2,8 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { ServerQueryLane } from 'agent-mc-world/extension';
 import { QIANDENGJI_SERVER_QUERIES } from '../integrations/qiandengji/engine/server-query.ts';
 import { QiandengjiEngine } from '../integrations/qiandengji/engine/world.ts';
-import { MymcWorld } from '../integrations/qiandengji/world.ts';
+import { MymcWorld, MYMC_TOOL_DECLS } from '../integrations/qiandengji/world.ts';
 import { MYMC_DEFAULTS } from '../integrations/qiandengji/config.ts';
+import Ajv from 'ajv';
+import { compactToolSchema } from 'agent-mc-world/client';
 
 const query = (id: string) => QIANDENGJI_SERVER_QUERIES.find(item => item.id === id)!;
 const status = { schemaVersion: 1, kind: 'state', scope: 'self', readOnly: true,
@@ -19,6 +21,28 @@ const info = { ...dungeon, name: '亡灵墓穴·三室封印', start: [-425, 4, 
   rooms: [{ enemies: 5, center: [-425, 4, 677], name: '守墓前厅', radius: 4 }] };
 
 describe('explicit Qiandengji read-only server query definitions', () => {
+  it('carries registered query constraints through the real proxy, offline catalogue and compact model schema', () => {
+    // No injected engine: this exercises the public child-process proxy's
+    // actual declaration path without starting it or connecting a game.
+    const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) });
+    const mounted = world.tools().find(tool => tool.name === 'mymc_query')!;
+    const offline = MYMC_TOOL_DECLS.find(tool => tool.name === 'mymc_query')!;
+    const expectedIds = QIANDENGJI_SERVER_QUERIES.map(item => item.id);
+    for (const schema of [mounted.parameters, offline.parameters,
+      compactToolSchema(mounted, mounted.parameters).schema]) {
+      expect((schema as any).properties.query.enum).toEqual(expectedIds);
+      const validate = new Ajv({ strict: false }).compile(schema as object);
+      for (const args of [{}, { query: 'status' }, { requestId: 'query-received' },
+        { query: 'dungeon.status', arguments: ['observed_fixture'] }]) expect(validate(args), JSON.stringify(args)).toBe(true);
+      for (const args of [{ query: 'dungeon.status' }, { query: 'dungeon.info', arguments: [] },
+        { query: 'status', requestId: 'query-received' }, { query: 'skills.info' },
+        { query: 'dungeon.status', arguments: ['invalid;command'] }]) expect(validate(args), JSON.stringify(args)).toBe(false);
+    }
+    expect(mounted.parameters).toEqual(offline.parameters);
+    expect(mounted.barrierAfter).not.toBe(true);
+    expect(mounted.endsTurn).not.toBe(true);
+  });
+
   it('publishes exact argument counts and the observed subject ID contract for offline discovery and failed calls', () => {
     const lane = new ServerQueryLane(), send = vi.fn();
     const index = lane.call({}, QIANDENGJI_SERVER_QUERIES, null);
