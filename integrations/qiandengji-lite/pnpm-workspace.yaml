@@ -1,0 +1,9 @@
+packages:
+  - '.'
+allowBuilds:
+  esbuild: true
+  canvas: false
+minimumReleaseAgeExclude:
+  - cortico@0.2.11
+  - agent-mc-world
+  - agent-mc-qiandengji

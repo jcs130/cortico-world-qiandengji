@@ -1,0 +1,6 @@
+node_modules/
+dist/
+src/upstream/
+build-meta.json
+connection-meta.json
+*.tgz

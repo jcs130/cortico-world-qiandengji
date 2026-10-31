@@ -1,0 +1,571 @@
+{
+  "schema": "qiandengji-lite-upstream/v1",
+  "official": {
+    "package": "cortico",
+    "version": "0.2.11",
+    "repository": "https://github.com/Pal-AI-Lab/Cortico",
+    "mainChecked": "1de768a7670acb19ca4cd8d6181a95342e0cd233",
+    "npmIntegrity": "sha512-vOX5fgejXlC5l7oYpoy4LrsaFzZh6GpqkX5li6XjPeixhM+++hQkoOfetGGIDE8oCPUTsLFcRd/ytG85fjKJEw=="
+  },
+  "genericAuthentication": {
+    "package": "agent-mc-world",
+    "version": "0.5.7-rc.149-preview.1",
+    "publicEntry": "agent-mc-world/client",
+    "archiveSha256": "668c3c662369ddd10a2e07bf2bc9ea5b96741ebe3ebd9d0df8e9fdbc256b86c0",
+    "publicSourceCommit": "a45a4a40bd3097749fc24822a04b0a1e274747bd",
+    "publicSourceBlob": "b15bea989ed3fc0ad192b4c8a0cf78e97db1a9c1",
+    "publicSourceNormalization": "Git LF line endings",
+    "preparedFileSha256": "c09b7f10676b17cde9854d305bd73bedd25933ddf14001cead439d5aa57e8afc"
+  },
+  "serverInformation": {
+    "package": "agent-mc-qiandengji",
+    "version": "0.5.0-rc.45-preview.1",
+    "publicEntries": [
+      "/portal",
+      "/engine"
+    ],
+    "archiveSha256": "acc77842544679a5e1bf37f99cfe039a07f8d64c2f99c0b814bff37af3085933"
+  },
+  "namespace": "World minecraft to mymc_lite; tools mc_ to mymc_",
+  "files": [
+    {
+      "file": "ADAPT.md",
+      "officialSha256": "ae13c967b591bf924df3ba7576532c0e671049e50fa11d942ed3140ff3b62ae4",
+      "adaptedSha256": "ae13c967b591bf924df3ba7576532c0e671049e50fa11d942ed3140ff3b62ae4",
+      "mechanical": []
+    },
+    {
+      "file": "blueprint-plan.ts",
+      "officialSha256": "7fc887ddd5d7dc7b7ad8e78cb84bc9185540b3277fa98166ddc3b4ed5ba51f2d",
+      "adaptedSha256": "7fc887ddd5d7dc7b7ad8e78cb84bc9185540b3277fa98166ddc3b4ed5ba51f2d",
+      "mechanical": []
+    },
+    {
+      "file": "blueprint-registry.ts",
+      "officialSha256": "71b28f3246f521d41c4b87a4ce6d2ffc89ef922d489c3735dcc58289b71e1680",
+      "adaptedSha256": "71b28f3246f521d41c4b87a4ce6d2ffc89ef922d489c3735dcc58289b71e1680",
+      "mechanical": []
+    },
+    {
+      "file": "blueprint-repair.ts",
+      "officialSha256": "dff691f1567585faf7e23b4bbde45cbe156a3d544307673517727bb58a2f3093",
+      "adaptedSha256": "dff691f1567585faf7e23b4bbde45cbe156a3d544307673517727bb58a2f3093",
+      "mechanical": []
+    },
+    {
+      "file": "blueprint-resource.ts",
+      "officialSha256": "75016ff0777d45fe0b6f5c672c540014c6a0faf0863838734080d055fa470392",
+      "adaptedSha256": "a95480de94d1875f9ccfdf5b388fb160a3a16323ab2da185c417c2185cdafccf",
+      "mechanical": []
+    },
+    {
+      "file": "blueprint.ts",
+      "officialSha256": "7df0191d9ded5a18181cb7bbe900eb493c7550dcaf2498d141dc7e2286f65ea2",
+      "adaptedSha256": "7df0191d9ded5a18181cb7bbe900eb493c7550dcaf2498d141dc7e2286f65ea2",
+      "mechanical": []
+    },
+    {
+      "file": "body-lease.ts",
+      "officialSha256": "6b04245a4da0ffa53125908360781585a7746988fc6e379120e500ae8407008b",
+      "adaptedSha256": "6b04245a4da0ffa53125908360781585a7746988fc6e379120e500ae8407008b",
+      "mechanical": []
+    },
+    {
+      "file": "bridge.ts",
+      "officialSha256": "cce0fb0b399aa828c8f087892dc5252ecd5bd26fa04193df6be870ba489f5d31",
+      "adaptedSha256": "8355a0878e6e2e15dcf73901856039059cb9c5989c6bd8744175d82a25c7fe33",
+      "mechanical": [
+        "install shared private authentication before native spawn",
+        "expose body and official spawn only after current-connection MC_AUTH_SUCCESS and loaded native world"
+      ]
+    },
+    {
+      "file": "cell-facts.ts",
+      "officialSha256": "b9a98ea9241f1d463be32d486b5565761d7925461b807f651ef30ff565d6d66c",
+      "adaptedSha256": "b9a98ea9241f1d463be32d486b5565761d7925461b807f651ef30ff565d6d66c",
+      "mechanical": []
+    },
+    {
+      "file": "check.ts",
+      "officialSha256": "1d76395f53157ae1858aede6847bb0dcbb6d6680230bb6bb6910fd04901928c1",
+      "adaptedSha256": "1d76395f53157ae1858aede6847bb0dcbb6d6680230bb6bb6910fd04901928c1",
+      "mechanical": []
+    },
+    {
+      "file": "chests.ts",
+      "officialSha256": "e726811db085d0843f7806bbe6d92a388e61dcfa7a0a6dd2a2e6bcf1c6b6ee02",
+      "adaptedSha256": "1b60ea7038e5b8077f5a7ee9c9a5429c93927c7b21e8ca1e8af498ccc3950406",
+      "mechanical": []
+    },
+    {
+      "file": "client-launch.ts",
+      "officialSha256": "c08d57a18ea6e4faf148136862c90904820c614ce1edb3b0e17df7ef822223bc",
+      "adaptedSha256": "ac77b7621cbacd3a35aae4abdc492925390dc433a198ce78e5f8cca8f41fbf32",
+      "mechanical": []
+    },
+    {
+      "file": "client-options.ts",
+      "officialSha256": "11ce5dd41f5a6573bc74b1bbedf6f162001e930464e09457c9362f6c09008f00",
+      "adaptedSha256": "525a30bfecdee629bdb07d9926a21d723695308264a76a5c760a0a81c61f038e",
+      "mechanical": []
+    },
+    {
+      "file": "client-skins.ts",
+      "officialSha256": "db1fec91f134d8813da86da180610d00ea9bb41a7228ab6e8db8f27f36e78b2d",
+      "adaptedSha256": "dc0edec764b3c3b457228ffcbbc032b5a2200567985da439bc625eef7141abc7",
+      "mechanical": []
+    },
+    {
+      "file": "client-window.ps1",
+      "officialSha256": "956cc1196c3d9682efe49edb8bcc4c2c46024b3b13af69a6b6e8d2e2ddab5f37",
+      "adaptedSha256": "956cc1196c3d9682efe49edb8bcc4c2c46024b3b13af69a6b6e8d2e2ddab5f37",
+      "mechanical": []
+    },
+    {
+      "file": "client.ts",
+      "officialSha256": "3dc3e548e850160644c84720028a67af6b2e39c7c7a0b7dfec9ca22221f4c123",
+      "adaptedSha256": "5e2368df2416d5c98b3dc1cdaa91953c4a8c2e93284503822ff618ee7036ee11",
+      "mechanical": []
+    },
+    {
+      "file": "combat-context.ts",
+      "officialSha256": "be3cf874aa0a5c7b41173f6bdb68e13381e1dbaab275e88f07980da8e2922adc",
+      "adaptedSha256": "be3cf874aa0a5c7b41173f6bdb68e13381e1dbaab275e88f07980da8e2922adc",
+      "mechanical": []
+    },
+    {
+      "file": "combat.ts",
+      "officialSha256": "8c199a5a91d54df87ff50eacbd913afdf03be74dc66489631c3a196cc51eb513",
+      "adaptedSha256": "d54ae655d6aac92fd23616e8b2d20d7ebd19f35f666558fe78473961bc7012c7",
+      "mechanical": []
+    },
+    {
+      "file": "config.ts",
+      "officialSha256": "0bde57cdb80cb4a0292161e10825ac4755bccd17d0e626b362c87ea946aba3cc",
+      "adaptedSha256": "7f439151c053ec1b6bebaea13c538e6cb861a9eb00d9d9de0884ea946d8151e9",
+      "mechanical": []
+    },
+    {
+      "file": "containers.ts",
+      "officialSha256": "5cc528fb019437d2944e8c429002fbf95ab1694d724e2c158a3ded96d5636abc",
+      "adaptedSha256": "5cc528fb019437d2944e8c429002fbf95ab1694d724e2c158a3ded96d5636abc",
+      "mechanical": []
+    },
+    {
+      "file": "damage-source.ts",
+      "officialSha256": "bd6b5e60449c01aea85ca2427facb342584ebba11c088b7d43d09ac4343fbfc6",
+      "adaptedSha256": "bd6b5e60449c01aea85ca2427facb342584ebba11c088b7d43d09ac4343fbfc6",
+      "mechanical": []
+    },
+    {
+      "file": "deaths.ts",
+      "officialSha256": "05e75c3376d5d91c6b32af8d7a0914af7ebb6266e9bc12e64ab2b43ac95eed31",
+      "adaptedSha256": "3588c688507938cc45193b5626351b84116ea3ca8aae8d293c68a328b0dfe2c0",
+      "mechanical": []
+    },
+    {
+      "file": "definition.ts",
+      "officialSha256": "cdd63f76288cb877f4d9e7486b74495f205ba5d0bb97325544ad3952a8c40864",
+      "adaptedSha256": "0788b25d08f52ab9d03b2854843dd6026da70529d28e7b6a15f2f4a214247900",
+      "mechanical": []
+    },
+    {
+      "file": "dependency-patches.ts",
+      "officialSha256": "755ece75b61b27476a5de79ca20e0c24e1a0d0864bfed61b0d43540a078abcf2",
+      "adaptedSha256": "755ece75b61b27476a5de79ca20e0c24e1a0d0864bfed61b0d43540a078abcf2",
+      "mechanical": []
+    },
+    {
+      "file": "engine-child.ts",
+      "officialSha256": "e6e5bbab2fcf5aee61c5a8f80b1ce21e606d1658169b206982880f1050495294",
+      "adaptedSha256": "1260f6e56e7f13fcd22747872d662f24346ad4ecb0910e192e9e11fc68d2f701",
+      "mechanical": []
+    },
+    {
+      "file": "engine-ipc.ts",
+      "officialSha256": "4e72cf7310fa64fd0a153fa5dbc2d1f9eff2975db94cd6d3cf07eac8b8a5ad84",
+      "adaptedSha256": "f381b12254a77fd5ef50db28e5a83fc93c17f77ae3f3cd3c3a2b64a08896f5d8",
+      "mechanical": []
+    },
+    {
+      "file": "entity-facts.ts",
+      "officialSha256": "01e75e14557694b865ccf5244ade09253bb0c730602c2863c81f8b624d43a418",
+      "adaptedSha256": "01e75e14557694b865ccf5244ade09253bb0c730602c2863c81f8b624d43a418",
+      "mechanical": []
+    },
+    {
+      "file": "ENV_PROMPT.md",
+      "officialSha256": "5b299ff1a50125fa0ce988868b953a363b946bd3cbb9fba3c2c0b29b6947ed90",
+      "adaptedSha256": "5e793673df1beddd483661d4b4d1204c211cbfe1d98f88a60560f8c3ea978c67",
+      "mechanical": []
+    },
+    {
+      "file": "ENV_PROMPT_CAMERA.md",
+      "officialSha256": "82d65eaa55044e0e795e4a2e3a5ba2d6a1218ea8219ef374494d19689838d1d4",
+      "adaptedSha256": "82d65eaa55044e0e795e4a2e3a5ba2d6a1218ea8219ef374494d19689838d1d4",
+      "mechanical": []
+    },
+    {
+      "file": "escape.ts",
+      "officialSha256": "45a7c0509a022325559bb760f6702e85ee462c8a87d4ea74ed363292b1daa1be",
+      "adaptedSha256": "aabc5a3ff4df6d550350cdddc9c48848cbd485abc8fb7fe9a323a7b0bb1c51a9",
+      "mechanical": []
+    },
+    {
+      "file": "executor.ts",
+      "officialSha256": "3068d2b41f8b189bc8f30ce44510f333336f91fd2b8fe1ffaee0d8a6c1e243cf",
+      "adaptedSha256": "35c9c1b74ead01aad5b1f24efeb00684a19e9833ecb97188c2c4bba2fd075033",
+      "mechanical": []
+    },
+    {
+      "file": "explored.ts",
+      "officialSha256": "68b476c52290e7fa1ff95a8d1c1eadfdd2654654c656c6ba9f9f249da0be803e",
+      "adaptedSha256": "c6d553d0809e4bb798d55720e7a4bea032f4c6ece18225c2d8a6a86acfd4210a",
+      "mechanical": []
+    },
+    {
+      "file": "geometry.ts",
+      "officialSha256": "9dd56e6284d9109832ff2e196aa63cb06897fcf5578eddaca65ddeadf85f163e",
+      "adaptedSha256": "9dd56e6284d9109832ff2e196aa63cb06897fcf5578eddaca65ddeadf85f163e",
+      "mechanical": []
+    },
+    {
+      "file": "goal-plan.ts",
+      "officialSha256": "fa716eb62015194da2a06254cd7358735b30ce1c06ab186a541824a22af75b17",
+      "adaptedSha256": "545ad488f555f3aa035863b1a90f63f93aecb3b230e5b4dedd4a7eca38550f92",
+      "mechanical": []
+    },
+    {
+      "file": "icon.svg",
+      "officialSha256": "b08ef9d1e4d0fd9ec098e540e19172ed05140673055486cafcd902969f8c1f91",
+      "adaptedSha256": "b08ef9d1e4d0fd9ec098e540e19172ed05140673055486cafcd902969f8c1f91",
+      "mechanical": []
+    },
+    {
+      "file": "inventory.ts",
+      "officialSha256": "a041daf6a74f5131b62589a67e21cfbcabd2c987341cd0bb493b70f46f1b00a3",
+      "adaptedSha256": "a041daf6a74f5131b62589a67e21cfbcabd2c987341cd0bb493b70f46f1b00a3",
+      "mechanical": []
+    },
+    {
+      "file": "item-break.ts",
+      "officialSha256": "27d3937b87b89b9b81f9b52c9e3e9fb2fac5f5bc9bdea593e30f7bbbc154fd61",
+      "adaptedSha256": "27d3937b87b89b9b81f9b52c9e3e9fb2fac5f5bc9bdea593e30f7bbbc154fd61",
+      "mechanical": []
+    },
+    {
+      "file": "item-facts.ts",
+      "officialSha256": "97a79ffd73dc47f32571a39d9eb036826cca554fb79711f0f5f03bf4b7f9d0ea",
+      "adaptedSha256": "97a79ffd73dc47f32571a39d9eb036826cca554fb79711f0f5f03bf4b7f9d0ea",
+      "mechanical": []
+    },
+    {
+      "file": "item-pick.ts",
+      "officialSha256": "4016e3934dd4f61f36264ea57b6a326401e4f981ed2d0ac35ded9174767ac78d",
+      "adaptedSha256": "4016e3934dd4f61f36264ea57b6a326401e4f981ed2d0ac35ded9174767ac78d",
+      "mechanical": []
+    },
+    {
+      "file": "level-dat.ts",
+      "officialSha256": "b3d3b458e7353cee3a0af90111da6f8203ba4c09582f60c334d58b2e79aca389",
+      "adaptedSha256": "b3d3b458e7353cee3a0af90111da6f8203ba4c09582f60c334d58b2e79aca389",
+      "mechanical": []
+    },
+    {
+      "file": "LICENSE-mineflayer-pathfinder.txt",
+      "officialSha256": "2a2466277547229364c4b6b44a2df11d49c5b816f094a26c53fe1e5f65aba974",
+      "adaptedSha256": "2a2466277547229364c4b6b44a2df11d49c5b816f094a26c53fe1e5f65aba974",
+      "mechanical": []
+    },
+    {
+      "file": "link.ts",
+      "officialSha256": "958f1ecca6aefde0daebe9e9d66b10d4d664027fc3dd9fb1f397fcd2950779fd",
+      "adaptedSha256": "958f1ecca6aefde0daebe9e9d66b10d4d664027fc3dd9fb1f397fcd2950779fd",
+      "mechanical": []
+    },
+    {
+      "file": "log.ts",
+      "officialSha256": "63a3c6c024f08128ff6ba51f8bd3cabab5478bc3d67e1ad9bec41332f69d53b1",
+      "adaptedSha256": "62ddabc17cb4ee534724b0aa7aa296ad3b7e0b0e9c7fe009f5a449163d832f92",
+      "mechanical": []
+    },
+    {
+      "file": "map-view.ts",
+      "officialSha256": "d1bcb1e11ba9fc4fb7fed40299ef985f9b126f6dd75966798c9aa53138857737",
+      "adaptedSha256": "d1bcb1e11ba9fc4fb7fed40299ef985f9b126f6dd75966798c9aa53138857737",
+      "mechanical": []
+    },
+    {
+      "file": "melee.ts",
+      "officialSha256": "31c92f083d661c2c3ecb94dc43391e0d64955e8348dfa120142a81959a4bb7a0",
+      "adaptedSha256": "31c92f083d661c2c3ecb94dc43391e0d64955e8348dfa120142a81959a4bb7a0",
+      "mechanical": []
+    },
+    {
+      "file": "mineflayer-fixes.ts",
+      "officialSha256": "3857d9186206f81b8bf463de02bd7077a36d8884601b743428b55485aae9e62e",
+      "adaptedSha256": "6b67995cb8d3258c73f9f0d543aaa250877b16d0129b1bfaa640a8ddf89da976",
+      "mechanical": []
+    },
+    {
+      "file": "names.ts",
+      "officialSha256": "d29d7680a93f1fce3263cbf9d568c66e9cdc1745f38679446a1afcb9cd9b94af",
+      "adaptedSha256": "d29d7680a93f1fce3263cbf9d568c66e9cdc1745f38679446a1afcb9cd9b94af",
+      "mechanical": []
+    },
+    {
+      "file": "pathfinder-lib.d.ts",
+      "officialSha256": "bfa24fa9ec5948aca175c955a37fc04feb226f5d16f2b6f95b69c8a15db14b07",
+      "adaptedSha256": "bfa24fa9ec5948aca175c955a37fc04feb226f5d16f2b6f95b69c8a15db14b07",
+      "mechanical": []
+    },
+    {
+      "file": "pathfinder-perf.ts",
+      "officialSha256": "f3a020b8ca1e15a039fb00e07b29d5b6ad5c369db93344f269cef345c3d8528a",
+      "adaptedSha256": "2e9622e526ae510c691164fa8aab1661747e43113ac0f12b128c6be586bddc20",
+      "mechanical": []
+    },
+    {
+      "file": "piglin.ts",
+      "officialSha256": "f7e0dcf88ecc98b1c812559c35a8a18f8e3a7219bb80d425ceedefb354e2f55c",
+      "adaptedSha256": "f7e0dcf88ecc98b1c812559c35a8a18f8e3a7219bb80d425ceedefb354e2f55c",
+      "mechanical": []
+    },
+    {
+      "file": "placed-ledger.ts",
+      "officialSha256": "42d745ae2bc2e9c6cc5db992750ef3f036526465c965e835ba51ecccde476bcc",
+      "adaptedSha256": "42d745ae2bc2e9c6cc5db992750ef3f036526465c965e835ba51ecccde476bcc",
+      "mechanical": []
+    },
+    {
+      "file": "placement.ts",
+      "officialSha256": "668f25e740e2d1904361d90e61b442bef8987e10a452ead01416d2e1b6d5a987",
+      "adaptedSha256": "7fa51df86977af84ce7fb664c139bedcb90a5003161bc49d7521b299aecc69ae",
+      "mechanical": []
+    },
+    {
+      "file": "policy.ts",
+      "officialSha256": "237c919b92f71a06474bf24483e3d4602f0122bf123d1c589e6c3ba6813b5269",
+      "adaptedSha256": "fa5a84849333029bcc5daef62a3b8ddea62f18dff3b835731d97f46d91204bb5",
+      "mechanical": []
+    },
+    {
+      "file": "precheck.ts",
+      "officialSha256": "3e54e7a033db32cdaf9897e082dcdfc95ff7c9c73cb145c881fd0fe68ba12e71",
+      "adaptedSha256": "3e54e7a033db32cdaf9897e082dcdfc95ff7c9c73cb145c881fd0fe68ba12e71",
+      "mechanical": []
+    },
+    {
+      "file": "proxy.ts",
+      "officialSha256": "bcaf454ed0d474e0ee1b608047cffbd4337e2dd5c8c38eae2dcab9c10fe1197c",
+      "adaptedSha256": "5bc2054e30f5ffdcf1b9631cbceac588b42ee1f1334b338aad19fe2a4ee40eba",
+      "mechanical": []
+    },
+    {
+      "file": "ranged.ts",
+      "officialSha256": "e94ea6d8af4b19aacb2cab38c820aa70f187ae67db095c5e4357ae7e2efe50d4",
+      "adaptedSha256": "e94ea6d8af4b19aacb2cab38c820aa70f187ae67db095c5e4357ae7e2efe50d4",
+      "mechanical": []
+    },
+    {
+      "file": "README.md",
+      "officialSha256": "b4d845ebb16d6b394d7b8f293e41cf5828f12c5234f7857b64bf25281be63422",
+      "adaptedSha256": "9d02d84b0ae3b846524b5f3986c2d3163a7f5e3faea7fbb809b4be99a7b6b957",
+      "mechanical": []
+    },
+    {
+      "file": "readouts.ts",
+      "officialSha256": "aa216e1c86fc95d68a17dc42f90d3d8d58a831c7caa8efdd7497865f3180d04d",
+      "adaptedSha256": "aa216e1c86fc95d68a17dc42f90d3d8d58a831c7caa8efdd7497865f3180d04d",
+      "mechanical": []
+    },
+    {
+      "file": "receipt.ts",
+      "officialSha256": "73728d644d6c1492d60dbbbaf61adf47eeb168e26db0431788cee593a11549f1",
+      "adaptedSha256": "73728d644d6c1492d60dbbbaf61adf47eeb168e26db0431788cee593a11549f1",
+      "mechanical": []
+    },
+    {
+      "file": "round.ts",
+      "officialSha256": "ebca35a845fb601069f1b7ba847a3d04c86a53e3a2a2c1a8f089af22f865ec65",
+      "adaptedSha256": "5092b498cb84b06676f8f6e22da68fd781912fbfa649db81eb858febbd95e402",
+      "mechanical": []
+    },
+    {
+      "file": "search-observation.ts",
+      "officialSha256": "d2604b356c1e19de1fc51da14b6564eebad609d8548e9dffd88c3ba16e72ab37",
+      "adaptedSha256": "d2604b356c1e19de1fc51da14b6564eebad609d8548e9dffd88c3ba16e72ab37",
+      "mechanical": []
+    },
+    {
+      "file": "server-config.ts",
+      "officialSha256": "f26341ab1492bf8164e48200086914db0ab97cb7067ddc297ca309a5d7d0ab3d",
+      "adaptedSha256": "ee9f4dcc95e278705b02dcc5fbe3fbd728feff847b0840e0b7ea68f7144e2598",
+      "mechanical": []
+    },
+    {
+      "file": "server.ts",
+      "officialSha256": "58810f1587ae721a6d4ee092f862e9f035e27809b5ec390e5f6a17aecba9eb74",
+      "adaptedSha256": "09b5c80ecef29264b7b0e61b33e90200348fdf995ac40c14b47235b24c5ed597",
+      "mechanical": []
+    },
+    {
+      "file": "show.ts",
+      "officialSha256": "fb65259075db54de18240d152ee08c940c32b0fb6e77357f2a080abc65682de7",
+      "adaptedSha256": "fb65259075db54de18240d152ee08c940c32b0fb6e77357f2a080abc65682de7",
+      "mechanical": []
+    },
+    {
+      "file": "skill-context.ts",
+      "officialSha256": "85e008a3dad8f024304853cf34329ab63a66d399be3b980f4e8b3f4c4ebf24b3",
+      "adaptedSha256": "57287bd36785be375a99335e9210d5d41412504d00991640da2b24c401521f75",
+      "mechanical": []
+    },
+    {
+      "file": "skills-build.ts",
+      "officialSha256": "41385ad4163844221f63776637c1b5bebc6e84dcb2a0d0c908cd432c8e137c06",
+      "adaptedSha256": "f29532e2274b5e12b7d0ebfc283b9c8cba0a9484c483012e27a5ef9c9f96236a",
+      "mechanical": []
+    },
+    {
+      "file": "skills-container.ts",
+      "officialSha256": "db48a598a1996802590f29d9f7fa03025d05022f5f440de8a9fb2b90eeb544f6",
+      "adaptedSha256": "db48a598a1996802590f29d9f7fa03025d05022f5f440de8a9fb2b90eeb544f6",
+      "mechanical": []
+    },
+    {
+      "file": "skills-craft.ts",
+      "officialSha256": "63cc1eff7debf6f86b07344dc4d79106476b1aeacd42e96b7a97ed4b64416be4",
+      "adaptedSha256": "63cc1eff7debf6f86b07344dc4d79106476b1aeacd42e96b7a97ed4b64416be4",
+      "mechanical": []
+    },
+    {
+      "file": "skills-dig.ts",
+      "officialSha256": "15625ca0f1515a77cca491407bf479b44b5ed736f65738b59c1e594ec603afdc",
+      "adaptedSha256": "15625ca0f1515a77cca491407bf479b44b5ed736f65738b59c1e594ec603afdc",
+      "mechanical": []
+    },
+    {
+      "file": "skills-gather.ts",
+      "officialSha256": "12a4cc137df26771e01e17f894a5eb779415472ef2485650617fb3d1a5699214",
+      "adaptedSha256": "12a4cc137df26771e01e17f894a5eb779415472ef2485650617fb3d1a5699214",
+      "mechanical": []
+    },
+    {
+      "file": "skills-interact.ts",
+      "officialSha256": "f3866356ce08b1e6120a20e672edede6c01f6d146184963b543106bf5b0d39c5",
+      "adaptedSha256": "9ea804e8000e88d7078ecde29d6d9877f46733b6eebaa2c26491a276f691b7b9",
+      "mechanical": []
+    },
+    {
+      "file": "skills.ts",
+      "officialSha256": "71d4a7ef19ec0b3fd0c07b5ce150b9e7587e398f6e377fc2d9370a6650da8d1f",
+      "adaptedSha256": "69e0ac88824572f65622cefa49795b9094bc857b897ec6dcdd0b32b7a3762769",
+      "mechanical": []
+    },
+    {
+      "file": "strings.ts",
+      "officialSha256": "a0b728b3d98d43d0e215f93a86a848817a872f053094d85cdb7866d6963c70bf",
+      "adaptedSha256": "984b3c75fa0dfbe5bce23a6974c243305766d62a60dbda43b75302e025386970",
+      "mechanical": []
+    },
+    {
+      "file": "terrain.ts",
+      "officialSha256": "9d1772637996dd345201596b5b4ef56d519b0d631602482582a375c475765cf3",
+      "adaptedSha256": "d9534d0e26bb64b968707a3c59b4ced1f9d6dcbb879a1a79aa9aa2d7856a615c",
+      "mechanical": []
+    },
+    {
+      "file": "tools.ts",
+      "officialSha256": "02b3b8a3629c17acc4ce74f270194578802a2e9fbce9af5711619491f0c866d8",
+      "adaptedSha256": "02b3b8a3629c17acc4ce74f270194578802a2e9fbce9af5711619491f0c866d8",
+      "mechanical": []
+    },
+    {
+      "file": "travel.ts",
+      "officialSha256": "4c3ceef3926bb818dcdb2109aa744bc05496b7b895262bac2b6a0e2a4869d737",
+      "adaptedSha256": "763dcbd185d085dcc21ccf0e16e43dde67511419776e030d8606fc96dfe3e850",
+      "mechanical": []
+    },
+    {
+      "file": "until.ts",
+      "officialSha256": "dbaa0b125cf94a0824e6d9f442baf70212a60ffcfa88d8d95ebc19b06d6a129e",
+      "adaptedSha256": "dbaa0b125cf94a0824e6d9f442baf70212a60ffcfa88d8d95ebc19b06d6a129e",
+      "mechanical": []
+    },
+    {
+      "file": "webui/access.ts",
+      "officialSha256": "a8948cee6cc02c8f4bdab6dec6a7feefd63d84e263ff4a4ec6d7bcf895b4db71",
+      "adaptedSha256": "f01d3d915da70718a800fc632c464533df8b3db7ab7481edd375134d7c3faf8a",
+      "mechanical": []
+    },
+    {
+      "file": "webui/client.ts",
+      "officialSha256": "fbddc9d6fc3548faef891ae2acb1ea553154035951f399b30ac1f04e707523cf",
+      "adaptedSha256": "f7242b3f2548e7bf8623c461b61eb98b06c31bca3b99715dc22d64e482c78c0f",
+      "mechanical": []
+    },
+    {
+      "file": "webui/log.ts",
+      "officialSha256": "7f19848e0cca2b0162b1197422ba12d60d18efcdabfe93bd8c0edbffe8cfe7bc",
+      "adaptedSha256": "abaaae9d8102c772189615d12e987ef93fd8294ab880a47e9841b1b0eb3e0a7c",
+      "mechanical": []
+    },
+    {
+      "file": "webui/mount.ts",
+      "officialSha256": "7a39f8a22401a1af6440feeaf81e81431af46183b57b45bacd5a4f0f0fc79ad6",
+      "adaptedSha256": "855a3fc616d09388785619094c4c75e836ded42e29565c8af98aef796d77d2f7",
+      "mechanical": []
+    },
+    {
+      "file": "webui/skin.ts",
+      "officialSha256": "81351d916933603132803d814afa4d745a74629b3559403b0606350420c066d6",
+      "adaptedSha256": "d36f6876fcfeabdcc052505122549ce617e2b21eae9b24a36eae1bfd67c407d6",
+      "mechanical": []
+    },
+    {
+      "file": "webui/strings.ts",
+      "officialSha256": "399911ce55c1c5106cf8e496ab0bb1631e70a4713362f34dbb1d1b51ac7196ed",
+      "adaptedSha256": "63ad2b999db696d2f39509dd08366a0ba67dc364e0338b9f25ce3942b7125b15",
+      "mechanical": []
+    },
+    {
+      "file": "webui/style.css",
+      "officialSha256": "4590f41c5116509e212abbedad84d6922d5cc979443119f459c199d762df63d3",
+      "adaptedSha256": "4590f41c5116509e212abbedad84d6922d5cc979443119f459c199d762df63d3",
+      "mechanical": []
+    },
+    {
+      "file": "webui/world.ts",
+      "officialSha256": "abf02b0a8e314a7f1f7e2741b26537fdaece4566eaa4ffbf6cacc4d6a2cd52fc",
+      "adaptedSha256": "4ed455c8f65183285155bac85b1398530666db79782344202e8e6c8a103e1e76",
+      "mechanical": []
+    },
+    {
+      "file": "window.ts",
+      "officialSha256": "458408ebbdb2fd93e81df3e6c5b23483fd7f7aa7d3117f5e4f942cef0d008f91",
+      "adaptedSha256": "27c49a98e9d9bd607c0bfd86a5602eaa08426c3e3a7d465ce8e60b449000bcec",
+      "mechanical": []
+    },
+    {
+      "file": "works.ts",
+      "officialSha256": "7eecd675bbb7860c36913d54d0cfb647947e88345fb40d792ca678e163ea7f7a",
+      "adaptedSha256": "623b3f5bdb398d291df3bca16e1224b547a3320e669de44cd58b4b75bf42b4b7",
+      "mechanical": []
+    },
+    {
+      "file": "world.ts",
+      "officialSha256": "4a707597efcb26e9bfc2fffe3651fa75b81c4fa5af7a08b1f15148c1b15bea74",
+      "adaptedSha256": "1175da16e3e19b266d82b8173fc128bf2dab6789fcd683e0c27e14ac98f865b1",
+      "mechanical": [
+        "pass private credential reference and connection status paths to bridge"
+      ]
+    }
+  ],
+  "runtimeDependencies": {
+    "mineflayer": "4.37.1",
+    "mineflayer-pathfinder": "2.4.5",
+    "prismarine-viewer": "1.33.0",
+    "vec3": "0.1.10"
+  }
+}
