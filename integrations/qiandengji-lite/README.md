@@ -5,10 +5,10 @@
 
 在 Cortico 扩展页安装 `cortico-world-qiandengji-lite`，启用 World `mymc_lite`。同一角色只启用一份 Minecraft 连接，先停用旧的 Minecraft／联机版 World。沿用原有 username、host、port 和协议版本；人设、Memory 和原游戏账本目录保持原样。配置段是 `worlds.mymc_lite`，游戏工具沿用 `mymc_` 前缀。原官方账本可使用原目录；其他引擎的账本保留作历史记录，不推断格式兼容。
 
-此候选版先通过 GitHub Release 提供预编译包，npm 尚未上架。在 Cortico 的 `extensions/` 目录安装固定发行附件：
+正式版通过 GitHub Release 提供预编译包；npm 和市场状态以发行页为准。在 Cortico 的 `extensions/` 目录安装固定发行附件：
 
 ```sh
-pnpm add https://github.com/jcs130/cortico-world-qiandengji/releases/download/qiandengji-lite-v0.1.0-rc.1/cortico-world-qiandengji-lite-0.1.0-rc.1.tgz
+pnpm add https://github.com/jcs130/cortico-world-qiandengji/releases/download/qiandengji-lite-v0.1.0/cortico-world-qiandengji-lite-0.1.0.tgz
 ```
 
 也可以下载 Release 的 zip，解压后在包目录运行 `pnpm install --prod`，再从 WebUI 扩展页选择该本机目录。安装后重启原 Cortico 实例，保留原部署目录；在新 World 的配置里填原服务器和原用户名，然后启用。不要新建 Bot 或另一份自主循环。此发行方式按版本下载，不使用 npm 自动更新。
@@ -22,3 +22,15 @@ pnpm add https://github.com/jcs130/cortico-world-qiandengji/releases/download/qi
 `mymc_server_info` 读取本连接认证、职业／技能最新观测、玩家名单和官网入口。职业／技能信息超过 15 秒就返回未知；玩家名单不声称距离或可见性。没有新增自动规划、模型循环、语音或隐式技能施放。
 
 发行包包含所需的共享认证与服务器投影代码，不要求安装未发布的 SDK 候选包。构建依赖和锁文件记录其归档来源；生产游戏引擎仍是官方版本。Prismarine 向量统一锁定到其公共依赖范围内的 vec3 0.1.10，支持默认 pnpm 独立消费。需 Cortico >=0.2.11 <0.3.0、Node.js >=22。世界扩展不包含 Minecraft Java 图形客户端或服务端插件。
+
+## 配套图形客户端
+
+同一发行页另提供 Minecraft Java 1.21.1／Fabric 客户端配置包。它与 World 扩展分别安装：World 是 Agent 的游戏身体；图形客户端供真人正常游玩或另一个账号观战。不要用同一账号同时登录 World 和图形客户端，否则服务器会将原连接挤下线。
+
+普通玩家使用自己的原用户名和原有注册／登录流程。观战模式只接受符合服务器规则的 `xxx_eye` 账号（完整用户名不超过 16 个字符），还需要服务器实际授予旁观与跟拍权限。客户端不会通过改名、发送 OP 命令或伪造模式来取得权限，也不会注册或重置现有角色。不要把部署中保留的特殊 `live` 账号当成新用户模板。
+
+配套包不包含任何账号、密码、私人身份文件、Agent 记忆或模型原包。第三方模组从其官方地址下载并按哈希校验；Minecraft、Java、Fabric 与微软账号登录由已有启动器管理。原作者模型通过匹配的服务器模型链同步，不替换为重建素材。
+
+请按发行页的服务端兼容表选择 YSM。2.6.5 已通过 AMD 单人联载，但在本次正式入口实测中模型同步仍停在等待、仅有 1 项模型目录；恢复匹配的 2.4.1 后恢复为 21 项。服务端配套切换前，不能把 2.6.5 的客户端登录成功当成完整外观验收。60 帧上限和 Lithium、FerriteCore、ImmediatelyFast 优化不依赖这次服务器切换。
+
+此正式发布代表扩展与发行包的验证结果，不表示第三方 `ag_yiyilin` 实例已经安装，也不表示已验证该账号真实入服。安装者应核对当前连接的认证成功和世界就绪。

@@ -1,0 +1,143 @@
+{
+  "schema": "qiandengji-client-mods/v1",
+  "version": "0.1.0",
+  "minecraft": "1.21.1",
+  "fabricLoader": "0.19.5",
+  "ysm": "2.4.1",
+  "files": [
+    {
+      "file": "fabric-api-0.115.4+1.21.1.jar",
+      "bytes": 2403084,
+      "sha1": "8212a511d62643c244af53ac863e4545836bab51",
+      "sha256": "8725739e35cc359e3b2bb8eff15815849670ae1607a40c3519378fba837988ab",
+      "sha512": "15457923c076aabb32b52ddc0bd9fdd4bd88cd80cc34c76b5ac0263ba576dc51d788ac6e69303aa451a3d544755f84676f5814308f180a57b3d61ebaa8bd7410",
+      "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/TMgpR77k/fabric-api-0.115.4%2B1.21.1.jar",
+      "source": "https://modrinth.com/mod/P7dR8mSH/version/TMgpR77k",
+      "advertisedMinecraftVersions": [
+        "1.21.1"
+      ],
+      "actualNative1211Acceptance": false
+    },
+    {
+      "file": "ForgeConfigAPIPort-v21.1.6-1.21.1-Fabric.jar",
+      "bytes": 633065,
+      "sha1": "18bf1f21cd2db6dcd4e42db85eae54e2a49a48ee",
+      "sha256": "2e3a8f0e3bda85a7d722720e7ce879cbd9d028d9395c6fc224d329b3c982d9b1",
+      "sha512": "cd9296e78ba969f7aed6e3692aa25eb61c102c79c55ca5f9592576bacaa26feab5d5d48fa30cf07ca852e0f1d42afc4d4558feff69a67b225183d2bc15898cf9",
+      "url": "https://cdn.modrinth.com/data/ohNO6lps/versions/N5qzq0XV/ForgeConfigAPIPort-v21.1.6-1.21.1-Fabric.jar",
+      "source": "https://modrinth.com/mod/ohNO6lps/version/N5qzq0XV",
+      "advertisedMinecraftVersions": [
+        "1.21.1"
+      ],
+      "actualNative1211Acceptance": false
+    },
+    {
+      "file": "sodium-fabric-0.6.13+mc1.21.1.jar",
+      "bytes": 1297761,
+      "sha1": "928a2598178c3a58b0638bab842f467d2e49251a",
+      "sha256": "e04599514d88e41765f710eeba59e3814909833396bc11b977f48fc2e7e50353",
+      "sha512": "13032e064c554fc8671573dadb07bc70e6ea2f68706c65c086c4feb1d2f664346a3414cbf9d1367b42b8d063a35e40f2f967ef9af31642e1f0093b852161fe91",
+      "url": "https://cdn.modrinth.com/data/AANobbMI/versions/u1OEbNKx/sodium-fabric-0.6.13%2Bmc1.21.1.jar",
+      "source": "https://modrinth.com/mod/AANobbMI/version/u1OEbNKx",
+      "advertisedMinecraftVersions": [
+        "1.21",
+        "1.21.1"
+      ],
+      "actualNative1211Acceptance": false
+    },
+    {
+      "file": "lithium-fabric-0.15.4+mc1.21.1.jar",
+      "bytes": 797454,
+      "sha1": "7d82a004403b7780d4443d8e40361a55cfd0ae63",
+      "sha256": "92329d98c57f5a22091a0adb509fdb1d60113a5602c708b799b13134bad13baa",
+      "sha512": "182064b00e6315e2255b857eaab8eb759e6b042ebd4cc8b855ff0d93f875a5a7188fac49f878d7b29d4ef7e6b6341190ad7f6f6f39f4a6d2c62003468b08e4c6",
+      "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/N08Z8wog/lithium-fabric-0.15.4%2Bmc1.21.1.jar",
+      "source": "https://modrinth.com/mod/gvQqBUqZ/version/N08Z8wog",
+      "advertisedMinecraftVersions": [
+        "1.21.1"
+      ],
+      "actualNative1211Acceptance": false
+    },
+    {
+      "file": "ferritecore-7.0.3-fabric.jar",
+      "bytes": 123450,
+      "sha1": "a8a6a34fcda177da2828cedef44e0e538cf78aad",
+      "sha256": "98c3ab1d5aab8f14b5d082d3f1a467727fd335f02d124555c94339761c4c18f2",
+      "sha512": "3ad31620fac4ff44327dc7dedbe162b2d978f3f246dc16255a6e400ce9592a0d326fe36a626f3c1bf30a11f813093cbb4dcc107af039cff724d0cdf648541fdf",
+      "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/sOzRw3CG/ferritecore-7.0.3-fabric.jar",
+      "source": "https://modrinth.com/mod/uXXizFIs/version/sOzRw3CG",
+      "advertisedMinecraftVersions": [
+        "1.21.1"
+      ],
+      "actualNative1211Acceptance": false
+    },
+    {
+      "file": "ImmediatelyFast-Fabric-1.6.15+1.21.1.jar",
+      "bytes": 342235,
+      "sha1": "5067bdff1d5cc6d2dd89986f98bd8bd7ae62fb98",
+      "sha256": "9c391f0864caf9083cac98e44b1ab6235e45fbf340efda5ba75e0a21929d05d5",
+      "sha512": "d4ac2d574d80000cd59b0b362706a6f86778bfc717748dca854f05ee8d09ce158738488e58c6b8ee05d5e54017f05b6c66c3bcaa3fa357d38cbfd75893dda9f4",
+      "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/aLnBqxFW/ImmediatelyFast-Fabric-1.6.15%2B1.21.1.jar",
+      "source": "https://modrinth.com/mod/5ZwdcRci/version/aLnBqxFW",
+      "advertisedMinecraftVersions": [
+        "1.21",
+        "1.21.1"
+      ],
+      "actualNative1211Acceptance": false
+    },
+    {
+      "file": "camerautils-fabric-1.21.1-1.0.16.jar",
+      "bytes": 351542,
+      "sha1": "95a7e24e6202ad34946971657a9dc7600b3fecec",
+      "sha256": "ad1a1a47accca759fbaa7ec5a1f49501fdda40152139fb1d79392c3192b705eb",
+      "sha512": "83d691a5b2cb323e3cd3e30949609e72bf44bf23ec92cf6a5ab0b9c6ab5bb9170caa9d06866449d38b64a67b7a48da667dc1ac6c53e8390d0ae04565711917e4",
+      "url": "https://cdn.modrinth.com/data/rrwQMaWQ/versions/ZUEjVQxa/camerautils-fabric-1.21.1-1.0.16.jar",
+      "source": "https://modrinth.com/mod/rrwQMaWQ/version/ZUEjVQxa",
+      "advertisedMinecraftVersions": [
+        "1.21",
+        "1.21.1"
+      ],
+      "actualNative1211Acceptance": false
+    },
+    {
+      "file": "spectatorplus-fabric-1.2.1-mc1.21.jar",
+      "bytes": 137804,
+      "sha1": "f7be242d09fbe51b782123be8d68ceaa8d53cec3",
+      "sha256": "435fe1a3e77e671e6c8e9f731466d6758c9db5a57c4e0da3150490d6a4c86f1f",
+      "sha512": "fc98b7a1755d5fa3daea486b1dd934a458c4d5134425b53bcecb044f81ed35239c546334a4dc2d973af31b034763348c164d64c82c972be10b10c20668adb164",
+      "url": "https://cdn.modrinth.com/data/qnFMs6Ja/versions/pruX55yu/spectatorplus-fabric-1.2.1-mc1.21.jar",
+      "source": "https://modrinth.com/mod/qnFMs6Ja/version/pruX55yu",
+      "advertisedMinecraftVersions": [
+        "1.21"
+      ],
+      "actualNative1211Acceptance": true
+    },
+    {
+      "file": "voicechat-fabric-1.21.1-2.6.27.jar",
+      "bytes": 5389006,
+      "sha1": "0b078093df28328d8faa0dc6495969bab5c75707",
+      "sha256": "bae2c4fa9f7764abac621ee70e1099bd39b7316cbc636280d188045b07f17ab1",
+      "sha512": "4ab4e18279bb17b999d67271f45e6eccaaf30b5c86a27693860eaf8dd8d3d3b26030aabcbcfcc51d87b9a28169d753ce96cc8a9e0ceba3619aee9fd1ffc9413c",
+      "url": "https://cdn.modrinth.com/data/9eGKb6K1/versions/dyhq1XyO/voicechat-fabric-1.21.1-2.6.27.jar",
+      "source": "https://modrinth.com/mod/9eGKb6K1/version/dyhq1XyO",
+      "advertisedMinecraftVersions": [
+        "1.21",
+        "1.21.1"
+      ],
+      "actualNative1211Acceptance": false
+    },
+    {
+      "file": "yesstevemodel-fabric-1.21.1-2.4.1-release.jar",
+      "bytes": 29484480,
+      "sha1": "4195e3f1a490b931d357db787b9c3fe83a6f984a",
+      "sha256": "ec51cfae84d219a45fac5098a31bfe980bcb7c2d8b413e8fffbd05a411a85680",
+      "sha512": "9078cb39bceeec013ecb221f0d9b2b762ed3af1f59bcddc3f30e03ee4bb0289e2ecfbed8218792d3278ddaf006fdea38d99574479f24f78eeccb4dc3383302a2",
+      "url": "https://cdn.modrinth.com/data/86xjpqqS/versions/1cHRrrpZ/yesstevemodel-fabric-1.21.1-2.4.1-release.jar",
+      "source": "https://modrinth.com/mod/86xjpqqS/version/1cHRrrpZ",
+      "advertisedMinecraftVersions": [
+        "1.21.1"
+      ],
+      "actualNative1211Acceptance": false
+    }
+  ]
+}

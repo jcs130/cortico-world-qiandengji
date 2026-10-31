@@ -1,0 +1,10 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {cameraRequest} from './profile.mjs';
+const args=process.argv.slice(2),value=k=>{const i=args.indexOf(k);return i<0?undefined:args[i+1];};
+if(!value('--game-dir'))throw Error('请指定 --game-dir');
+const game=path.resolve(value('--game-dir')),read=async p=>JSON.parse(await fs.readFile(path.join(game,p),'utf8'));
+const request=cameraRequest(await read('config/qiandengji-client-mode.json'),await read('diagnostics/mcvisual-native-director.json'),{target:value('--target'),view:value('--view')});
+const target=path.join(game,'config/mcvisual-director-request.json'),temp=target+'.'+request.id+'.tmp';
+await fs.writeFile(temp,JSON.stringify(request)+'\n');await fs.rename(temp,target);
+console.log(JSON.stringify({submitted:true,id:request.id,lease:request.lease,resultFile:path.join(game,'diagnostics/mcvisual-native-director.json'),completed:false,note:'须按同一 id 和 lease 查询受理及实际 cameraUuid，提交不代表跟拍成功；未知结果不要重发原请求。'}));
