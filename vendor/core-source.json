@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.149-preview.1",
-  "file": "agent-mc-world-0.5.7-rc.149-preview.1-668c3c66.tgz",
-  "sha256": "668c3c662369ddd10a2e07bf2bc9ea5b96741ebe3ebd9d0df8e9fdbc256b86c0",
+  "version": "0.5.7-rc.150-preview.2",
+  "file": "agent-mc-world-0.5.7-rc.150-preview.2-336306c5.tgz",
+  "sha256": "336306c504c9a895ab02f7e2ec94711dc915626e8f78e8cdc75d5ca197ac29ac",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "parent": "a45a4a40bd3097749fc24822a04b0a1e274747bd",
-  "sourceCommit": "b6ac47b27cd68a5abf0f6a3294d9c576eac89d98",
+  "parent": "9c2684c87ed26079c1f603499fd8e1d1592922a1",
+  "sourceCommit": "75d4801a83df6adaa34a7cbaf12106a7fc193ffa",
   "channel": "local-candidate",
-  "sourceStatus": "Core query candidate: 2698 passed, 2 skipped after build; types, declarations, viewer and packed build verified. Local only, not published or loaded.",
+  "sourceStatus": "Committed and pushed to main; 2716 tests passed, 2 skipped, declarations/build and isolated SDK/MCP consumer passed. Not registry-published.",
   "viewerIncluded": true,
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
@@ -111,5 +111,5 @@
   },
   "sourceCommitPending": false,
   "sourcePushed": true,
-  "commit": "66ab3f108944205da51e4fa5a13d890312af5c41"
+  "registryPublished": false
 }

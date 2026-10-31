@@ -1288,7 +1288,8 @@
                 "needs": {
                   "type": "array",
                   "items": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                   },
                   "description": "依赖本次 steps 内更早步骤的1起序号；第一步只能省略或写[]。省略只推导物品及定点交互依赖，不推测台词含义；[]=独立步。确认前步结果的chat须显式needs。上游ok或partial才放行，partial不等于全部完成。"
                 }
@@ -6376,7 +6377,8 @@
                 "needs": {
                   "type": "array",
                   "items": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                   },
                   "description": "依赖本次 steps 内更早步骤的1起序号；第一步只能省略或写[]。省略只推导物品及定点交互依赖，不推测台词含义；[]=独立步。确认前步结果的chat须显式needs。上游ok或partial才放行，partial不等于全部完成。"
                 }

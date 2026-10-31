@@ -13,7 +13,7 @@ describe('packaged OBS subject integration', () => {
     const register = vi.fn((name: string, packet: { channel: string; data: Buffer }) => {
       expect(name).toBe('custom_payload');
       expect(packet.channel).toBe('minecraft:register');
-      expect(packet.data.toString()).toBe('mcviewer:state');
+      expect(['mcagent:state','mcviewer:state']).toContain(packet.data.toString());
     });
     Object.assign(protocol, { state: 'play', write: register });
     Object.assign(bot.entity, { metadata: { 8: 3 } });
@@ -21,7 +21,10 @@ describe('packaged OBS subject integration', () => {
     const viewer = await startModernViewer(bot as never, {
       serverProtocol: serverViewerProtocol, port: await freeViewerPort(), assetsDir: MYMC_DEFAULTS.viewerAssetsDir, speechSourceId: 'offline-obs-test',
     });
-    expect(register).toHaveBeenCalledTimes(1);
+    // The updated core declares the installed RPG decoder; the observer also
+    // declares its separate camera-attested subject channel. Neither is an action.
+    expect(register).toHaveBeenCalledTimes(2);
+    expect(register.mock.calls.map(([,packet])=>packet.data.toString()).sort()).toEqual(['mcagent:state','mcviewer:state']);
     const events: Array<{ name: string; value: any }> = [];
     const socket = io(viewer.url, { query: { overlay: '1' }, autoConnect: false, reconnection: false, transports: ['websocket'] });
     socket.onAny((name, value) => events.push({ name, value }));
@@ -45,5 +48,6 @@ describe('packaged OBS subject integration', () => {
     } finally { socket.disconnect(); await viewer.close(); }
     expect(protocol.listenerCount('camera')).toBe(0);
     expect(bot.listenerCount('windowClose')).toBe(0);
+    expect(bot.listenerCount('spawn')).toBe(0);
   });
 });
