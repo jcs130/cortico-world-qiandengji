@@ -72,7 +72,19 @@ export function readNativeSkillDetail(value: unknown, at: string): NativeSkillDe
 export function readNativeSkillInvocations(value: unknown, at: string): NativeSkillDetail[] | null {
   if(!object(value)||value.schemaVersion!==1||value.kind!=='skill_invocations'||value.queryOnly!==true
     ||!Array.isArray(value.entries)||value.entries.length>64)return null;
-  const entries=value.entries.map(e=>readNativeSkillDetail(e,at));
+  const entries=value.entries.map(entry=>{
+    // Current servers publish a small route directory, not full skill details:
+    // {id, invocation:{kind, command}}. Costs, qualification and effects remain
+    // unknown until their own observation; the ID is only a display fallback.
+    if(object(entry)&&object(entry.invocation)){
+      const route=entry.invocation;
+      if(!id(entry.id)||(route.kind!=='cast'&&route.kind!=='command'))return null;
+      const detail=readNativeSkillDetail({schemaVersion:1,id:entry.id,name:entry.id,command:route.command},at);
+      return detail?.invocation===route.kind?detail:null;
+    }
+    // Retain the earlier full-detail directory for existing servers.
+    return readNativeSkillDetail(entry,at);
+  });
   return entries.every((e):e is NativeSkillDetail=>e!==null)&&new Set(entries.map(e=>e.id)).size===entries.length?entries:null;
 }
 
