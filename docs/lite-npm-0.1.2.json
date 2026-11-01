@@ -12,9 +12,12 @@
   "freshRegistryInstall": true,
   "officialCorticoExtensionCheck": true,
   "marketSyncIssue": "https://github.com/Pal-AI-Lab/cortico-extensions/issues/647",
-  "marketSyncVerified": false,
+  "marketSyncVerified": true,
   "modelCalls": 0,
   "productionPlayersStarted": 0,
   "productionReloaded": false,
-  "note": "Publication receipts do not establish a third-party account login or live RPG outcome. The published archive is retained unchanged."
+  "note": "Publication receipts do not establish a third-party account login or live RPG outcome. The published archive is retained unchanged.",
+  "marketIndexedVersion": "0.1.2",
+  "marketIssueClosed": true,
+  "marketEvidence": "https://github.com/Pal-AI-Lab/cortico-extensions/issues/647#issuecomment-6560784304"
 }
