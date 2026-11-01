@@ -1,5 +1,6 @@
 .qiandengji-lite-login {
   display: grid;
+  align-content: start;
   gap: 12px;
   max-width: 760px;
   padding-block: 12px;
@@ -33,3 +34,12 @@
   outline-offset: 2px;
 }
 .qiandengji-lite-login pre { overflow-wrap: anywhere; }
+.qiandengji-lite-login .lite-modes { display: flex; gap: 12px; }
+.qiandengji-lite-login .lite-modes [aria-pressed="true"] { border-color: var(--accent, #4bd1a6); }
+.qiandengji-lite-login .lite-hint { color: var(--ink-soft, #aaa); font-size: .9em; }
+.qiandengji-lite-login .lite-primary { background: var(--accent, #238c6a); color: #fff; }
+.qiandengji-lite-login details { display: grid; gap: 10px; }
+.qiandengji-lite-login [hidden] { display: none !important; }
+.qiandengji-lite-client { display: grid; align-content: start; gap: 16px; max-width: 780px; padding-block: 20px; }
+.qiandengji-lite-client :is(h3,p) { margin: 0; line-height: 1.7; }
+.qiandengji-lite-client a { width: fit-content; max-width: 100%; box-sizing: border-box; align-self: start; padding: 12px 18px; border-radius: 8px; background: var(--accent, #238c6a); color: #fff; justify-self: start; }

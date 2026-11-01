@@ -1,3 +1,7 @@
+## 0.4.1-rc.68
+
+- 消费服务器包 0.5.0-rc.48-preview.1 的官方一键接入助手；游戏核心、角色与现役加载不变。
+
 ## 0.4.1-rc.67
 
 - Export an optional observer for the original Minecraft executor, using the shared core's dependency, observed-effect and repeated no-effect evaluation. Keep the original body queue, task terminals and explicit independent speech.

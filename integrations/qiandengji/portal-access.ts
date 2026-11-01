@@ -14,7 +14,7 @@ interface Journal { identityFile?: string; state?: string; username?: string; ga
 const labels: Record<string,string> = {
   missing:'粘贴网站连接中心提供的专属邀请链接，创建自己的新角色；已有角色沿用原连接。',
   identity_saved:'身份已保存在本机；继续查询同一身份。',
-  ready:'API 已确认游戏建号就绪；点击“使用此身份进入游戏”后，仍需等待真实进服与认证。',
+  ready:'游戏建号已确认，仍需等待当前连接认证与世界就绪。',
   not_created:'API 身份已保存，游戏账号尚未激活。',
   pending:'游戏建号正在处理，请查询原请求；身份与请求号保持不变。',
   unknown:'原请求结果未确认，请查询同一身份；不要另建账号。',
@@ -75,9 +75,9 @@ export class QiandengjiPortalAccess {
     }catch(e){await this.remember({state:'unknown',gameAccountCreated:false,message:publicError(e).message}).catch(()=>{});throw publicError(e);}
     finally{activeDirectories.delete(this.directory);this.busy=false;}
   }
-  private async official(action:string,extra:string[]=[],identityFile?:string):Promise<any>{
+  private async official(action:string,extra:string[]=[],identityFile?:string,timing?:{maxWaitMs?:number;pollIntervalMs?:number}):Promise<any>{
     let result:any;
-    await runAgentAccess([action,...extra,'--identity-file',identityFile??await this.identityFile()],line=>{result=JSON.parse(line);});
+    await runAgentAccess([action,...extra,'--identity-file',identityFile??await this.identityFile()],line=>{result=JSON.parse(line);},timing);
     return result;
   }
   private async queryAndSave(){
@@ -112,6 +112,39 @@ export class QiandengjiPortalAccess {
     });
   }
   async status():Promise<QiandengjiAccessState>{return this.lock(async()=>{await this.queryAndSave();return this.state();});}
+  /** Consumes the server's explicit plugin self-service policy; never falls back to an invitation. */
+  async joinPlugin(form:{username?:unknown}={},timing:{maxWaitMs?:number;pollIntervalMs?:number}={}):Promise<QiandengjiAccessState>{
+    return this.joinUsing('join-plugin',form,timing);
+  }
+  /** Explicit one-click access, using the unchanged official resumable helper. */
+  async join(form:{inviteUrl?:unknown;username?:unknown}={},timing:{maxWaitMs?:number;pollIntervalMs?:number}={}):Promise<QiandengjiAccessState>{
+    return this.joinUsing('join',form,timing);
+  }
+  private async joinUsing(action:'join'|'join-plugin',form:{inviteUrl?:unknown;username?:unknown},timing:{maxWaitMs?:number;pollIntervalMs?:number}):Promise<QiandengjiAccessState>{
+    if(timing.maxWaitMs!==undefined&&(!Number.isInteger(timing.maxWaitMs)||timing.maxWaitMs<0||timing.maxWaitMs>60000))throw Error('INVALID_JOIN_WAIT');
+    return this.lock(async()=>{
+      let identity:any;try{identity=await this.identity();}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
+      const username=typeof form.username==='string'?form.username.trim():identity?.username;
+      if(!/^ag_[A-Za-z0-9_]{1,13}$/.test(username??''))throw Error('INVALID_AGENT_NAME');
+      if(identity&&identity.username!==username)throw Error('EXISTING_IDENTITY_CONFLICT');
+      let invitation:string|undefined;
+      if(!identity&&action==='join'){
+        if(typeof form.inviteUrl!=='string'||parseInviteLink(form.inviteUrl).origin!==QIANDENGJI_WEBSITE)throw Error('INVITE_AND_NAME_REQUIRED');
+        invitation=path.join(this.directory,'invitation-'+randomUUID()+'.txt');
+        await fs.writeFile(invitation,form.inviteUrl.trim(),{flag:'wx',mode:0o600});
+      }
+      let result:any;
+      try{result=await this.official(action,['--username',username,...(action==='join-plugin'?['--portal',QIANDENGJI_WEBSITE]:[]),...(invitation?['--invite-url-file',invitation]:[])],undefined,{maxWaitMs:timing.maxWaitMs??0,pollIntervalMs:timing.pollIntervalMs??1500});}
+      finally{if(invitation)await fs.unlink(invitation).catch(()=>{});}
+      const retained=await this.identity();
+      if(result?.username!==retained.username||typeof result.state!=='string')throw Error('STATUS_RESPONSE_MISMATCH');
+      // A mutation may return only a short acknowledgment. Confirm readiness
+      // with a fresh authoritative status, including its role/address/version.
+      if(result.state==='ready')result=await this.queryAndSave();
+      await this.remember({username:retained.username,state:result.state,gameAccountCreated:result.gameAccountCreated===true,checkedAt:new Date().toISOString(),message:labels[result.state]??'接入未完成，请继续查询同一身份。'});
+      return this.state();
+    });
+  }
   async importIdentity(file:unknown):Promise<QiandengjiAccessState>{
     if(typeof file!=='string'||!path.isAbsolute(file))throw Error('请填写本机私有身份文件的绝对路径。');
     return this.lock(async()=>{

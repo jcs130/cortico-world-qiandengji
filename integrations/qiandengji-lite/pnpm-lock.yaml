@@ -25,11 +25,11 @@ importers:
         specifier: ^22.10.0
         version: 22.20.5
       agent-mc-qiandengji:
-        specifier: file:../../vendor/agent-mc-qiandengji-0.5.0-rc.45-preview.1.tgz
-        version: file:../../vendor/agent-mc-qiandengji-0.5.0-rc.45-preview.1.tgz(agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.149-preview.1.tgz)
+        specifier: file:../../vendor/agent-mc-qiandengji-0.5.0-rc.48-preview.1-480ecb28.tgz
+        version: file:../../vendor/agent-mc-qiandengji-0.5.0-rc.48-preview.1-480ecb28.tgz(agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz)
       agent-mc-world:
-        specifier: file:../../vendor/agent-mc-world-0.5.7-rc.149-preview.1.tgz
-        version: file:../../vendor/agent-mc-world-0.5.7-rc.149-preview.1.tgz
+        specifier: file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz
+        version: file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz
       cortico:
         specifier: 0.2.11
         version: 0.2.11
@@ -715,16 +715,16 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-qiandengji@file:../../vendor/agent-mc-qiandengji-0.5.0-rc.45-preview.1.tgz:
-    resolution: {integrity: sha512-l25ssVrL7R76yrQ65L+6+allV3O6JFDoW22fcPekqimRXiqCiBNc0KBx9vWSVd4Kt14jd4O6ryL9u7dLYY1QxA==, tarball: file:../../vendor/agent-mc-qiandengji-0.5.0-rc.45-preview.1.tgz}
-    version: 0.5.0-rc.45-preview.1
+  agent-mc-qiandengji@file:../../vendor/agent-mc-qiandengji-0.5.0-rc.48-preview.1-480ecb28.tgz:
+    resolution: {integrity: sha512-i3bgtChzUxXqzRaCKHiVPTG/j9yZEr6I9yDBtr7X/nTIPBDaweeM4NetZOrzL7HqMb2mLjipQClWRx35RvASWA==, tarball: file:../../vendor/agent-mc-qiandengji-0.5.0-rc.48-preview.1-480ecb28.tgz}
+    version: 0.5.0-rc.48-preview.1
     engines: {node: '>=22'}
     peerDependencies:
-      agent-mc-world: ^0.5.7-rc.149-preview.1
+      agent-mc-world: ^0.5.7-rc.150-preview.3
 
-  agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.149-preview.1.tgz:
-    resolution: {integrity: sha512-ZPUbjOXVe08CPec6agIM0CIfGPk0PvK6EIxPKNNGwM3M6zGT+GSc6PJtfVYBhQF1Vx2z1+zf8bqYfRrwh7bQnw==, tarball: file:../../vendor/agent-mc-world-0.5.7-rc.149-preview.1.tgz}
-    version: 0.5.7-rc.149-preview.1
+  agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz:
+    resolution: {integrity: sha512-sJRvUxeSZnEHfC86rZBMWR4sG4VN9SpHk3gTQEKkVnM9yAhuJJ2VcltsKKCESuHGSkVF0PohP1XmJkbkmGlMDg==, tarball: file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz}
+    version: 0.5.7-rc.150-preview.3
     engines: {node: '>=22'}
     hasBin: true
 
@@ -2440,12 +2440,12 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-qiandengji@file:../../vendor/agent-mc-qiandengji-0.5.0-rc.45-preview.1.tgz(agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.149-preview.1.tgz):
+  agent-mc-qiandengji@file:../../vendor/agent-mc-qiandengji-0.5.0-rc.48-preview.1-480ecb28.tgz(agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz):
     dependencies:
-      agent-mc-world: file:../../vendor/agent-mc-world-0.5.7-rc.149-preview.1.tgz
+      agent-mc-world: file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz
       vec3: 0.2.0
 
-  agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.149-preview.1.tgz:
+  agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz:
     dependencies:
       '@mcap/core': 2.3.0
       '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.5)

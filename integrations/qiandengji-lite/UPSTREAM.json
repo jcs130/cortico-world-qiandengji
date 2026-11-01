@@ -9,9 +9,9 @@
   },
   "genericAuthentication": {
     "package": "agent-mc-world",
-    "version": "0.5.7-rc.149-preview.1",
+    "version": "0.5.7-rc.150-preview.3",
     "publicEntry": "agent-mc-world/client",
-    "archiveSha256": "668c3c662369ddd10a2e07bf2bc9ea5b96741ebe3ebd9d0df8e9fdbc256b86c0",
+    "archiveSha256": "6d947a37592308810a558daaf71e8471638f1894124e1cd4250ab283fe170110",
     "publicSourceCommit": "a45a4a40bd3097749fc24822a04b0a1e274747bd",
     "publicSourceBlob": "b15bea989ed3fc0ad192b4c8a0cf78e97db1a9c1",
     "publicSourceNormalization": "Git LF line endings",
@@ -19,12 +19,12 @@
   },
   "serverInformation": {
     "package": "agent-mc-qiandengji",
-    "version": "0.5.0-rc.45-preview.1",
+    "version": "0.5.0-rc.48-preview.1",
     "publicEntries": [
       "/portal",
       "/engine"
     ],
-    "archiveSha256": "acc77842544679a5e1bf37f99cfe039a07f8d64c2f99c0b814bff37af3085933"
+    "archiveSha256": "480ecb281c0e30a08b58511c5a457ac39ac4477ecf2fb727c0e63198d8dc2c95"
   },
   "namespace": "World minecraft to mymc-lite; tools mc_ to mymc_",
   "files": [

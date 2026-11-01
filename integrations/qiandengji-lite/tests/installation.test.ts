@@ -1,7 +1,7 @@
-import {describe,it,expect} from 'vitest';
+import {describe,it,expect,vi} from 'vitest';
 import {validateContributions,pageIdFor} from 'cortico/web/shared/webui-protocol.ts';
 import {migrateLiteConfig} from '../client/migrate-lite-config.mjs';
-import {mkdtemp,rm} from 'node:fs/promises';
+import {mkdtemp,rm,writeFile} from 'node:fs/promises';
 import {join,resolve,dirname,basename} from 'node:path';
 import {tmpdir} from 'node:os';
 const entry='../dist/index.js';
@@ -18,6 +18,15 @@ describe('official host installation contract',()=>{
     const declaration=world.webUi('zh');
     expect(world.id).toBe(definition.id);
     expect(declaration.panels.some((p:any)=>p.id==='login')).toBe(true);
+    expect(declaration.panels.map((p:any)=>p.id)).toEqual(['login','client','log']);
+    expect(Object.keys(declaration.config[0].schema.properties)).toEqual(['worlds.mymc-lite.host','worlds.mymc-lite.port','worlds.mymc-lite.username','worlds.mymc-lite.version']);
+    expect(JSON.stringify(declaration.config)).not.toMatch(/cheats|local\.|ops\.json/);
+    expect(definition.defaults().local.cheats).toBe(false);
+    await expect(declaration.invoke('access','grant',['someone'])).rejects.toThrow('不提供本地服务器管理');
+    const start=vi.fn();world.official.start=start;
+    await world.start({});expect(start).not.toHaveBeenCalled();
+    await writeFile(join(directory,'config.json'),JSON.stringify({displayName:'RenamedAgent'}));
+    expect(await declaration.invoke('login','state',[])).toMatchObject({agentName:'RenamedAgent',suggestedUsername:'ag_RenamedAgent',username:''});
     const contribution={...declaration,id:pageIdFor('world',world.id),kind:'world'};
     expect(validateContributions([contribution])).toEqual([]);
     expect(world.tools().some((tool:any)=>tool.name==='mymc_do')).toBe(true);

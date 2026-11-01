@@ -10,7 +10,7 @@ const officialSrc=join(officialPackage,'src'),official=join(officialSrc,'worlds/
 const upstream=join(root,'src/upstream'),dist=join(root,'dist');
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const packageMetadata=JSON.parse(await readFile(join(root,'package.json'),'utf8'));
-for(const [name,expected] of [['agent-mc-world','668c3c662369ddd10a2e07bf2bc9ea5b96741ebe3ebd9d0df8e9fdbc256b86c0'],['agent-mc-qiandengji','acc77842544679a5e1bf37f99cfe039a07f8d64c2f99c0b814bff37af3085933']]){
+for(const [name,expected] of [['agent-mc-world','6d947a37592308810a558daaf71e8471638f1894124e1cd4250ab283fe170110'],['agent-mc-qiandengji','480ecb281c0e30a08b58511c5a457ac39ac4477ecf2fb727c0e63198d8dc2c95']]){
   const spec=packageMetadata.devDependencies[name];if(!spec.startsWith('file:')||sha(await readFile(resolve(root,spec.slice(5))))!==expected)throw Error('Prepared SDK archive mismatch: '+name);
 }
 const version=JSON.parse(await readFile(join(officialPackage,'package.json'),'utf8')).version;
@@ -80,7 +80,7 @@ await build({entryPoints:[join(root,'src/webui.ts')],outfile:join(dist,'webui.js
 await cp(join(officialPackage,'LICENSE'),join(root,'LICENSE'));
 const notices=[['Agent MC World / Qiandengji server pack',await readFile(join(sdkRoots[0],'LICENSE'),'utf8')],['Official Qiandengji Agent Skill',await readFile(join(sdkRoots[1],'dist/portal/LICENSE-official-agent-skill.md'),'utf8')]];
 await writeFile(join(root,'THIRD-PARTY-NOTICES.md'),'<!-- Owner: scripts/build.mjs -->\n\n'+notices.map(([name,text])=>'# '+name+'\n\n'+text.trim()+'\n').join('\n'));
-await writeFile(join(root,'UPSTREAM.json'),JSON.stringify({schema:'qiandengji-lite-upstream/v1',official:{package:'cortico',version,repository:'https://github.com/Pal-AI-Lab/Cortico',mainChecked:'1de768a7670acb19ca4cd8d6181a95342e0cd233',npmIntegrity:'sha512-vOX5fgejXlC5l7oYpoy4LrsaFzZh6GpqkX5li6XjPeixhM+++hQkoOfetGGIDE8oCPUTsLFcRd/ytG85fjKJEw=='},genericAuthentication:{package:'agent-mc-world',version:'0.5.7-rc.149-preview.1',publicEntry:'agent-mc-world/client',archiveSha256:'668c3c662369ddd10a2e07bf2bc9ea5b96741ebe3ebd9d0df8e9fdbc256b86c0'},serverInformation:{package:'agent-mc-qiandengji',version:'0.5.0-rc.45-preview.1',publicEntries:['/portal','/engine'],archiveSha256:'acc77842544679a5e1bf37f99cfe039a07f8d64c2f99c0b814bff37af3085933'},namespace:'minecraft/mc_ to mymc/mymc_',files:records},null,2)+'\n');
+await writeFile(join(root,'UPSTREAM.json'),JSON.stringify({schema:'qiandengji-lite-upstream/v1',official:{package:'cortico',version,repository:'https://github.com/Pal-AI-Lab/Cortico',mainChecked:'1de768a7670acb19ca4cd8d6181a95342e0cd233',npmIntegrity:'sha512-vOX5fgejXlC5l7oYpoy4LrsaFzZh6GpqkX5li6XjPeixhM+++hQkoOfetGGIDE8oCPUTsLFcRd/ytG85fjKJEw=='},genericAuthentication:{package:'agent-mc-world',version:'0.5.7-rc.150-preview.3',publicEntry:'agent-mc-world/client',archiveSha256:'6d947a37592308810a558daaf71e8471638f1894124e1cd4250ab283fe170110'},serverInformation:{package:'agent-mc-qiandengji',version:'0.5.0-rc.48-preview.1',publicEntries:['/portal','/engine'],archiveSha256:'480ecb281c0e30a08b58511c5a457ac39ac4477ecf2fb727c0e63198d8dc2c95'},namespace:'minecraft/mc_ to mymc/mymc_',files:records},null,2)+'\n');
 console.log(JSON.stringify({officialVersion:version,officialFiles:records.length,connectionPatches:records.filter(r=>r.mechanical.length).map(r=>r.file)}));
 const sdkEntry=require.resolve('agent-mc-world/client');
 const loginSource=await readFile(resolve(dirname(sdkEntry),'../../core/server-login.mjs'));

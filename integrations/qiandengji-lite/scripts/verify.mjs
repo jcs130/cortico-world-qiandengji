@@ -4,4 +4,5 @@ if(p.cortico.kind!=='world'||p.cortico.api!==6||p.name!=='cortico-world-qiandeng
 for(const file of [p.main,p.cortico.webUiClient,p.cortico.webUiStyle,p.cortico.describe,'UPSTREAM.json','README.md','CHANGELOG.md','LICENSE','THIRD-PARTY-NOTICES.md','dist/upstream/engine-child.js','dist/upstream/dependency-patches.js'])await access(new URL(file,root));
 const provenance=JSON.parse(await readFile(new URL('UPSTREAM.json',root),'utf8'));
 if(provenance.official.version!=='0.2.11'||provenance.files.filter(f=>f.mechanical.length).length!==2)throw Error('Unexpected official gameplay changes');
+if((await readFile(new URL(p.main,root),'utf8')).includes('PLUGIN_SELF_SERVICE_NOT_READY'))throw Error('Unimplemented plugin onboarding cannot be packaged for release');
 console.log('Qiandengji-lite package, official provenance and native child files verified');
