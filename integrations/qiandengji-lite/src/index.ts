@@ -12,7 +12,7 @@ import { MINECRAFT } from './upstream/definition.ts';
 
 type Config=ReturnType<typeof MINECRAFT.defaults> & {liteBindingsFile?:string;liteStatusFile?:string;liteInstanceId?:string};
 class LiteWorld implements World {
-  readonly id='mymc_lite';
+  readonly id='mymc-lite';
   private readonly official:World;
   private readonly credentials:Credentials;
   private readonly portal:QiandengjiPortalAccess;
@@ -71,7 +71,7 @@ class LiteWorld implements World {
   }
 }
 export const QIANDENGJI_LITE:WorldDefinition<Config>={
-  id:'mymc_lite',label:'千灯纪-lite',defaults:()=>({...MINECRAFT.defaults(),serverMode:'external',...QIANDENGJI_GAME,username:'',viewerPort:0}),
+  id:'mymc-lite',label:'千灯纪-lite',defaults:()=>({...MINECRAFT.defaults(),serverMode:'external',...QIANDENGJI_GAME,username:'',viewerPort:0}),
   create:ctx=>new LiteWorld(ctx),
   describe:{tools:[...(MINECRAFT.describe?.tools??[]),...EXTRA_TOOLS],events:MINECRAFT.describe?.events??[]}
 };

@@ -1451,14 +1451,14 @@
   ],
   "events": [
     {
-      "type": "mymc_lite.task",
+      "type": "mymc-lite.task",
       "description": {
         "zh": "工作队列里一件任务的结局:完成、部分完成、受阻或撤销,以及战斗反射的汇报。",
         "en": "The outcome of a queued task (done, partial, blocked or cancelled), and reports from combat reflexes."
       }
     },
     {
-      "type": "mymc_lite.task.progress",
+      "type": "mymc-lite.task.progress",
       "description": {
         "zh": "正在执行的任务的进度读数。",
         "en": "A progress reading of the running task."
@@ -1468,28 +1468,28 @@
       ]
     },
     {
-      "type": "mymc_lite.chat",
+      "type": "mymc-lite.chat",
       "description": {
         "zh": "游戏内聊天、私聊、系统消息与动作栏文字;被点名或私聊时立即投递,bot 自己的发言只记录。",
         "en": "In-game chat, private messages, system messages and action bar text; delivered at once on a mention or a private message, the bot's own lines only recorded."
       }
     },
     {
-      "type": "mymc_lite.event",
+      "type": "mymc-lite.event",
       "description": {
         "zh": "游戏里发生的事:受伤、战斗、死亡、睡觉、升级、效果结束、附近出现的生物,以及游戏引擎崩溃重启。",
         "en": "Things that happen in the game: damage, combat, death, sleeping, levelling up, effects ending, nearby mobs, and game engine crashes and restarts."
       }
     },
     {
-      "type": "mymc_lite.world",
+      "type": "mymc-lite.world",
       "description": {
         "zh": "自上次汇报以来位置、生命值、背包等读数的变化。",
         "en": "Changes in position, health, inventory and other readings since the last report."
       }
     },
     {
-      "type": "mymc_lite.world.snapshot",
+      "type": "mymc-lite.world.snapshot",
       "description": {
         "zh": "定期的世界快照:周围环境、背包、队列、目标与地点,随下一批事件送达。",
         "en": "A periodic world snapshot (surroundings, inventory, queue, goals and places), sent with the next batch."
@@ -1502,7 +1502,7 @@
   ],
   "prompts": [
     {
-      "key": "worlds.mymc_lite.envPrompt",
+      "key": "worlds.mymc-lite.envPrompt",
       "title": "Minecraft · 环境提示词",
       "role": "envPrompt",
       "content": "你正在玩 Minecraft。版本 1.20.6 原版无 MOD。\n{{minecraft.world}}\n活是排着队做的：受理回执只说这件事收下了、开始做了，做没做成要等它自己的结果送过来。\n进度看回执和快照末尾的 [队列] 行——走到第几步、这一步是什么、跑了多久；「还没做完」和「没进展」靠这几个数分辨。一件活跑上二三十秒是常态，而你醒来比它做完快得多，想催进度先读那一行，别拿新单去顶一件正跑着的活。\n读数有三个只读入口，问它们不用重下单：mymc_bag 是包里现在有什么（占了几格、都是什么、手上和身上穿的），mymc_queue 是队列现状加最近一单的下场，mymc_blocked 是最近几步没做成的原话。三个都是纯读，不动世界也不动队列。一轮里同一个问一次就够，答案在这一轮内不会变，再问只会拿回一句「上面已经答过了」。\n埋在石头里的、隔着墙的东西不进你的感知（隔着玻璃和铁栏杆算看得见）。找不到就挖开、绕过去、或者走近点再看。\n\n## 直播\n下矿之前身上带够火把，不然观众抓瞎什么都看不见。\n挨打还手是自动的，打起来你只管解说；要不要主动上去打是你说了算的，那一格是 mymc_policy 的 fight。\n观众不知道你在游戏里的能力边界，他们以为你像真人一样在玩游戏，你就接受这个设定。做不到的事可以适度解释，解释不了的归结为【插件的问题】。\n用 mymc_blueprint 的 design 想一份设计要跑上几分钟，开工前先跟观众说一声。\n\n## 闭包原则\n对外说话的唯一事实是你正在直接操作这个游戏。禁止暴露内部接口或工具回执。\n自动合成说「我合成了」，寻路说「我走到了」，自保反射说「我赶快跑」。\n意外就糊弄：游戏卡了、发呆、搞错了、头晕。禁止说系统、自动、等他跑完。\n\n## 做笔记\n* 地图：地标的名称、坐标、辨认特征。工地第一次正式开工后，把名称和锚点登记成路标。\n* 路线：长途拆成短段，记起点、终点、途经点、危险段。\n* 目标与进度：在做的、排队的、做完的；位置和进度带世界名。\n* 机制与教训：验证过的规律，带依据；错了标「已证伪」。\n\n什么在哪、有没有、成没成——写进笔记之前先用 mymc_check 对一眼世界。对不上的、来不及对的，照实写成「我以为」「还没核对」，别写成看见过。\n记录时要使用生动的叙述性语言，不要压缩内容。系统设置不记笔记。\n\n{{minecraft.explored}}\n\n{{minecraft.policy}}\n\n{{minecraft.camera}}\n"

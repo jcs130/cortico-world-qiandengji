@@ -26,7 +26,7 @@
     ],
     "archiveSha256": "acc77842544679a5e1bf37f99cfe039a07f8d64c2f99c0b814bff37af3085933"
   },
-  "namespace": "World minecraft to mymc_lite; tools mc_ to mymc_",
+  "namespace": "World minecraft to mymc-lite; tools mc_ to mymc_",
   "files": [
     {
       "file": "ADAPT.md",
@@ -73,7 +73,7 @@
     {
       "file": "bridge.ts",
       "officialSha256": "cce0fb0b399aa828c8f087892dc5252ecd5bd26fa04193df6be870ba489f5d31",
-      "adaptedSha256": "8355a0878e6e2e15dcf73901856039059cb9c5989c6bd8744175d82a25c7fe33",
+      "adaptedSha256": "38f1e473f8a1b7774f186c0f0955ae66a9c296b3d4971ac8e648796711cc03da",
       "mechanical": [
         "install shared private authentication before native spawn",
         "expose body and official spawn only after current-connection MC_AUTH_SUCCESS and loaded native world"
@@ -100,7 +100,7 @@
     {
       "file": "client-launch.ts",
       "officialSha256": "c08d57a18ea6e4faf148136862c90904820c614ce1edb3b0e17df7ef822223bc",
-      "adaptedSha256": "ac77b7621cbacd3a35aae4abdc492925390dc433a198ce78e5f8cca8f41fbf32",
+      "adaptedSha256": "403fd9197dae494f5ea0e9174f3cd8145b8e51f0f407127bb9daef3daa1ccf2a",
       "mechanical": []
     },
     {
@@ -142,7 +142,7 @@
     {
       "file": "config.ts",
       "officialSha256": "0bde57cdb80cb4a0292161e10825ac4755bccd17d0e626b362c87ea946aba3cc",
-      "adaptedSha256": "7f439151c053ec1b6bebaea13c538e6cb861a9eb00d9d9de0884ea946d8151e9",
+      "adaptedSha256": "2bf0312e2e0152b0e306a4fe7d2d9c100b879bf624bcac75d76a95baa5474b3b",
       "mechanical": []
     },
     {
@@ -166,7 +166,7 @@
     {
       "file": "definition.ts",
       "officialSha256": "cdd63f76288cb877f4d9e7486b74495f205ba5d0bb97325544ad3952a8c40864",
-      "adaptedSha256": "0788b25d08f52ab9d03b2854843dd6026da70529d28e7b6a15f2f4a214247900",
+      "adaptedSha256": "848ba214b022ac290d8c8cd81d8cb09c859bb9d0a95ef14006a13c475b6c36a4",
       "mechanical": []
     },
     {
@@ -286,7 +286,7 @@
     {
       "file": "log.ts",
       "officialSha256": "63a3c6c024f08128ff6ba51f8bd3cabab5478bc3d67e1ad9bec41332f69d53b1",
-      "adaptedSha256": "62ddabc17cb4ee534724b0aa7aa296ad3b7e0b0e9c7fe009f5a449163d832f92",
+      "adaptedSha256": "cd616c10152e9540f8d6c73b50bff0a55438a5d2d67152730d2f2e372585303a",
       "mechanical": []
     },
     {
@@ -358,7 +358,7 @@
     {
       "file": "proxy.ts",
       "officialSha256": "bcaf454ed0d474e0ee1b608047cffbd4337e2dd5c8c38eae2dcab9c10fe1197c",
-      "adaptedSha256": "5bc2054e30f5ffdcf1b9631cbceac588b42ee1f1334b338aad19fe2a4ee40eba",
+      "adaptedSha256": "e1517fc23009ae9a17723a48ea72ccec7c76e5244d0c404eef82eceb2f1b87d3",
       "mechanical": []
     },
     {
@@ -370,7 +370,7 @@
     {
       "file": "README.md",
       "officialSha256": "b4d845ebb16d6b394d7b8f293e41cf5828f12c5234f7857b64bf25281be63422",
-      "adaptedSha256": "9d02d84b0ae3b846524b5f3986c2d3163a7f5e3faea7fbb809b4be99a7b6b957",
+      "adaptedSha256": "c831c8ff20036e4eaf183c81e69945a4e3aef0fb95a1b32ccc411d48a2c0b2c4",
       "mechanical": []
     },
     {
@@ -406,7 +406,7 @@
     {
       "file": "server.ts",
       "officialSha256": "58810f1587ae721a6d4ee092f862e9f035e27809b5ec390e5f6a17aecba9eb74",
-      "adaptedSha256": "09b5c80ecef29264b7b0e61b33e90200348fdf995ac40c14b47235b24c5ed597",
+      "adaptedSha256": "c6b75215a125a89259794d92365ea19ce37a287cce1eff65daf31f7efb2c0bcd",
       "mechanical": []
     },
     {
@@ -466,7 +466,7 @@
     {
       "file": "strings.ts",
       "officialSha256": "a0b728b3d98d43d0e215f93a86a848817a872f053094d85cdb7866d6963c70bf",
-      "adaptedSha256": "984b3c75fa0dfbe5bce23a6974c243305766d62a60dbda43b75302e025386970",
+      "adaptedSha256": "96ad22867d04849e3ff0d825ee6eca060989f8588e989aeffcfbe820902d8992",
       "mechanical": []
     },
     {
@@ -502,7 +502,7 @@
     {
       "file": "webui/client.ts",
       "officialSha256": "fbddc9d6fc3548faef891ae2acb1ea553154035951f399b30ac1f04e707523cf",
-      "adaptedSha256": "f7242b3f2548e7bf8623c461b61eb98b06c31bca3b99715dc22d64e482c78c0f",
+      "adaptedSha256": "f1f12b4393cc7d0740510cd0da48ce72e39641b3bc84fb07f0b00488717daf17",
       "mechanical": []
     },
     {
@@ -514,7 +514,7 @@
     {
       "file": "webui/mount.ts",
       "officialSha256": "7a39f8a22401a1af6440feeaf81e81431af46183b57b45bacd5a4f0f0fc79ad6",
-      "adaptedSha256": "855a3fc616d09388785619094c4c75e836ded42e29565c8af98aef796d77d2f7",
+      "adaptedSha256": "ffb3442a1e9e93eac5de1ecebdaf776e9a4fa56cc33070354d0af0fa09a4bcca",
       "mechanical": []
     },
     {
@@ -526,7 +526,7 @@
     {
       "file": "webui/strings.ts",
       "officialSha256": "399911ce55c1c5106cf8e496ab0bb1631e70a4713362f34dbb1d1b51ac7196ed",
-      "adaptedSha256": "63ad2b999db696d2f39509dd08366a0ba67dc364e0338b9f25ce3942b7125b15",
+      "adaptedSha256": "1a73812a2667259b29630948888245735749ffe6591d06b69f6a283b695ff8b0",
       "mechanical": []
     },
     {
@@ -556,7 +556,7 @@
     {
       "file": "world.ts",
       "officialSha256": "4a707597efcb26e9bfc2fffe3651fa75b81c4fa5af7a08b1f15148c1b15bea74",
-      "adaptedSha256": "1175da16e3e19b266d82b8173fc128bf2dab6789fcd683e0c27e14ac98f865b1",
+      "adaptedSha256": "63cc45ff9ce2958d61aaebc206cd979d5e0b327118e552467eb370ac337eb041",
       "mechanical": [
         "pass private credential reference and connection status paths to bridge"
       ]

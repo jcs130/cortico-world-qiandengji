@@ -1,8 +1,11 @@
 import type { WebUiPanelContext } from 'cortico/web/shared/client-panel.ts';
 import official from './upstream/webui/client.ts';
+import './login.css';
 
 export function mountLogin(ctx:WebUiPanelContext){
   const root=ctx.root,heading=document.createElement('h3'),scope=document.createElement('p'),status=document.createElement('pre');
+  root.classList.add('qiandengji-lite-login');
+  ctx.signal.addEventListener('abort',()=>root.classList.remove('qiandengji-lite-login'),{once:true});
   heading.textContent='服务器账号';status.style.whiteSpace='pre-wrap';
   const label=document.createElement('label');label.textContent='服务器密码';
   const password=document.createElement('input');password.type='password';password.autocomplete='new-password';password.name='server-password';password.maxLength=128;
@@ -11,9 +14,12 @@ export function mountLogin(ctx:WebUiPanelContext){
   save.textContent='保存密码';connect.textContent='连接／重连';
   const website=document.createElement('a');website.href='https://mc.kangqiang.site';website.target='_blank';website.rel='noreferrer';website.textContent='千灯纪官网／连接中心';
   const identity=document.createElement('input');identity.type='text';identity.placeholder='已有官网私密身份文件的本机路径';
+  identity.setAttribute('aria-label','已有官网身份文件');
   const importIdentity=document.createElement('button');importIdentity.textContent='导入已有官网身份';
   const invite=document.createElement('input');invite.type='password';invite.autocomplete='off';invite.placeholder='官网专属邀请链接（仅新账号）';
+  invite.setAttribute('aria-label','新账号专属邀请链接');
   const username=document.createElement('input');username.placeholder='新账号名 ag_…';
+  username.setAttribute('aria-label','新账号名');
   const register=document.createElement('button');register.textContent='注册／查询原注册请求';
   const useIdentity=document.createElement('button');useIdentity.textContent='为当前同名角色启用官网登录';
   let current:{server:string;username:string;passwordSet:boolean;connection:any;portal:any}|undefined;

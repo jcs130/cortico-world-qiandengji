@@ -1,0 +1,35 @@
+.qiandengji-lite-login {
+  display: grid;
+  gap: 12px;
+  max-width: 760px;
+  padding-block: 12px;
+}
+.qiandengji-lite-login h3,
+.qiandengji-lite-login p,
+.qiandengji-lite-login pre { margin: 0; }
+.qiandengji-lite-login label { display: grid; gap: 8px; }
+.qiandengji-lite-login input {
+  width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+  border: 1px solid var(--line, #555);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: var(--surface, #202522);
+  color: var(--ink, #eee);
+}
+.qiandengji-lite-login button {
+  justify-self: start;
+  min-height: 36px;
+  padding: 7px 14px;
+  border: 1px solid var(--line, #555);
+  border-radius: 8px;
+  background: var(--surface, #202522);
+  color: var(--ink, #eee);
+  cursor: pointer;
+}
+.qiandengji-lite-login :is(input,button):focus-visible {
+  outline: 2px solid var(--accent, #4bd1a6);
+  outline-offset: 2px;
+}
+.qiandengji-lite-login pre { overflow-wrap: anywhere; }

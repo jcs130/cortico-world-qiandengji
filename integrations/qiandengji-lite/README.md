@@ -3,15 +3,19 @@
 
 基于官方 Cortico 0.2.11 的 Minecraft World。动作、导航、合成、战斗、任务队列、游戏记忆与原版面板沿用官方实现；差异是独立的服务器认证通道与只读服务器信息。完整来源和每个文件的 SHA-256 见 UPSTREAM.json。
 
-在 Cortico 扩展页安装 `cortico-world-qiandengji-lite`，启用 World `mymc_lite`。同一角色只启用一份 Minecraft 连接，先停用旧的 Minecraft／联机版 World。沿用原有 username、host、port 和协议版本；人设、Memory 和原游戏账本目录保持原样。配置段是 `worlds.mymc_lite`，游戏工具沿用 `mymc_` 前缀。原官方账本可使用原目录；其他引擎的账本保留作历史记录，不推断格式兼容。
+需官方 Cortico >=0.2.11 <0.3.0，建议使用 0.2.12 与 Node.js 24 LTS。官方 0.2.12 使用 Node 22.14 时会因缺少 `node:module.registerHooks` 而无法启动。通过下面的 GitHub 固定包安装，重启后启用 World `mymc-lite`。npm 尚未发布时不要点击市场里的旧版千灯纪替代。同一角色只启用一份 Minecraft 连接，先停用旧的 Minecraft／联机版 World。沿用原有 username、host、port 和协议版本；人设、Memory 和原游戏账本目录保持原样。配置段是 `worlds.mymc-lite`，游戏工具沿用 `mymc_` 前缀。原官方账本可使用原目录；其他引擎的账本保留作历史记录，不推断格式兼容。
 
 正式版通过 GitHub Release 提供预编译包；npm 和市场状态以发行页为准。在 Cortico 的 `extensions/` 目录安装固定发行附件：
 
 ```sh
-pnpm add https://github.com/jcs130/cortico-world-qiandengji/releases/download/qiandengji-lite-v0.1.0/cortico-world-qiandengji-lite-0.1.0.tgz
+pnpm add https://github.com/jcs130/cortico-world-qiandengji/releases/download/qiandengji-lite-v0.1.1/cortico-world-qiandengji-lite-0.1.1.tgz
 ```
 
-也可以下载 Release 的 zip，解压后在包目录运行 `pnpm install --prod`，再从 WebUI 扩展页选择该本机目录。安装后重启原 Cortico 实例，保留原部署目录；在新 World 的配置里填原服务器和原用户名，然后启用。不要新建 Bot 或另一份自主循环。此发行方式按版本下载，不使用 npm 自动更新。
+首次创建 `extensions/` 时按官方文档放置独立工作区文件 `pnpm-workspace.yaml`（`packages: []`），避免把扩展装进 Cortico 主工程。WebUI 的 npm 包名输入框不支持网页 URL，上述 GitHub 命令须在终端执行。
+
+也可以下载 Release 的 zip，解压后在包目录运行 `pnpm install --prod`，再从 WebUI 扩展页选择该本机目录。官方 0.2.12 的本机目录校验只允许 ASCII 字符，中文用户名或下载目录会被拒绝；请改用全英文解压路径，或使用上面的固定 GitHub 命令。安装后重启原 Cortico 实例，保留原部署目录；在新 World 的配置里填原服务器和原用户名，然后启用。不要新建 Bot 或另一份自主循环。此发行方式按版本下载，不使用 npm 自动更新；npm 未发布时“更新检查 404”不代表本地扩展加载失败。
+
+从 0.1.0 升级时，先正常停止原 Cortico，再在解压包中执行 `node client/migrate-lite-config.mjs <原部署目录/config.json>`，将旧的 `worlds.mymc_lite` 改为 `worlds.mymc-lite`。工具保留原配置备份，目标键已存在时拒绝覆盖。原服务器、用户名、密码文件、部署 data 和 Memory 目录不变，游戏工具仍为 `mymc_`；不要新建角色或删除原部署。全新安装无需迁移。
 
 在“账号登录”页填写“服务器密码”。Windows 使用当前用户 DPAPI；其他系统使用权限 0600 的私密文件。密码绑定服务器、端口与角色，页面和模型工具不读回密码。先保存，再连接；之后每次建连、自然重连都从原私密配置读取。密码不经普通游戏任务队列，不作为环境提示、工具参数或事件正文投递。`/login` 和 `/register` 不由模型聊天工具处理。
 
@@ -21,7 +25,7 @@ pnpm add https://github.com/jcs130/cortico-world-qiandengji/releases/download/qi
 
 `mymc_server_info` 读取本连接认证、职业／技能最新观测、玩家名单和官网入口。职业／技能信息超过 15 秒就返回未知；玩家名单不声称距离或可见性。没有新增自动规划、模型循环、语音或隐式技能施放。
 
-发行包包含所需的共享认证与服务器投影代码，不要求安装未发布的 SDK 候选包。构建依赖和锁文件记录其归档来源；生产游戏引擎仍是官方版本。Prismarine 向量统一锁定到其公共依赖范围内的 vec3 0.1.10，支持默认 pnpm 独立消费。需 Cortico >=0.2.11 <0.3.0、Node.js >=22。世界扩展不包含 Minecraft Java 图形客户端或服务端插件。
+发行包包含所需的共享认证与服务器投影代码，不要求安装未发布的 SDK 候选包。构建依赖和锁文件记录其归档来源；生产游戏引擎仍是官方版本。Prismarine 向量统一锁定到其公共依赖范围内的 vec3 0.1.10，支持默认 pnpm 独立消费。需 Cortico >=0.2.11 <0.3.0、Node.js 22.15+ 或 24 LTS（建议 24 LTS）。世界扩展不包含 Minecraft Java 图形客户端或服务端插件。
 
 ## 配套图形客户端
 

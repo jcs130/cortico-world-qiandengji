@@ -25,10 +25,10 @@ for(const source of await walk(official)){
   if(name==='AGENTS.md')continue;
   const bytes=await readFile(source);let text=bytes.toString('utf8');const mechanical=[];
   if(/\.(ts|md)$/.test(name)){
-    text=text.replace(/\bmc_/g,'mymc_').replaceAll('worlds.minecraft','worlds.mymc_lite').replaceAll('world:minecraft','world:mymc_lite');
-    for(const event of ['task.progress','task','chat','event','world.snapshot','world'])text=text.replaceAll(`'minecraft.${event}'`,`'mymc_lite.${event}'`);
-    text=text.replaceAll("readonly id = 'minecraft'","readonly id = 'mymc_lite'").replaceAll("id: 'minecraft'","id: 'mymc_lite'");
-    text=text.replaceAll("senderKey: 'minecraft'","senderKey: 'mymc_lite'").replaceAll("senderKey ?? 'minecraft'","senderKey ?? 'mymc_lite'");
+    text=text.replace(/\bmc_/g,'mymc_').replaceAll('worlds.minecraft','worlds.mymc-lite').replaceAll('world:minecraft','world:mymc-lite');
+    for(const event of ['task.progress','task','chat','event','world.snapshot','world'])text=text.replaceAll(`'minecraft.${event}'`,`'mymc-lite.${event}'`);
+    text=text.replaceAll("readonly id = 'minecraft'","readonly id = 'mymc-lite'").replaceAll("id: 'minecraft'","id: 'mymc-lite'");
+    text=text.replaceAll("senderKey: 'minecraft'","senderKey: 'mymc-lite'").replaceAll("senderKey ?? 'minecraft'","senderKey ?? 'mymc-lite'");
     text=text.replace(/((?:from\s*|import\s*(?:\(\s*)?)['"])(\.\.[^'"\r\n]+)(['"])/g,(all,prefix,spec,suffix)=>{
       const absolute=resolve(dirname(source),spec);if(absolute.startsWith(official+('/').replace('/',process.platform==='win32'?'\\':'/')))return all;
       if(!absolute.startsWith(officialSrc))throw Error('Unexpected outside framework dependency '+spec);
@@ -92,6 +92,6 @@ provenance.genericAuthentication.publicSourceCommit='a45a4a40bd3097749fc24822a04
 provenance.genericAuthentication.publicSourceBlob=loginBlob;
 provenance.genericAuthentication.publicSourceNormalization='Git LF line endings';
 provenance.genericAuthentication.preparedFileSha256=sha(loginSource);
-provenance.namespace='World minecraft to mymc_lite; tools mc_ to mymc_';
+provenance.namespace='World minecraft to mymc-lite; tools mc_ to mymc_';
 provenance.runtimeDependencies=packageMetadata.dependencies;
 await writeFile(provenanceFile,JSON.stringify(provenance,null,2)+'\n');
