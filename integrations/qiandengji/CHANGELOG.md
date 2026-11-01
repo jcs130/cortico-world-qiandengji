@@ -1,3 +1,8 @@
+## 0.4.1-rc.69
+
+- Consume core rc.151-preview.1: validate landing blocks before path expansion, report measured control stalls, and retain bounded recovery evidence in native task events.
+- Apply the same recovery evidence to the original-body observer without replacing its executor or replaying actions.
+
 ## 0.4.1-rc.68
 
 - 消费服务器包 0.5.0-rc.48-preview.1 的官方一键接入助手；游戏核心、角色与现役加载不变。

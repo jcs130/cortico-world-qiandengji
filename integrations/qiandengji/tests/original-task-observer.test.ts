@@ -63,3 +63,12 @@ it('uses shared material dependencies and leaves speech and explicit needs uncha
   expect(r.observer.causalNeeds(steps, 2, null)).toEqual([]);
   expect(steps[2].needs).toEqual([]); expect(steps[3].needs).toEqual([2]);
 });
+
+it('surfaces shared recovery evidence without changing original terminal identities',()=>{
+ const r=fixture(),first=finish(r,1,true,'blocked'),second=finish(r,2,true,'partial');
+ expect(first.text).not.toContain('[行动恢复记录]');
+ expect(second.text).toContain('[行动恢复记录]');
+ expect(second.text).toContain('原任务 1、2');
+ expect(second.progress.goalVerified).toBe(false);
+ r.reset();expect(finish(r,3,true,'blocked').text).not.toContain('[行动恢复记录]');
+});

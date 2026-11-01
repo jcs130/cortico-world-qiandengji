@@ -1,6 +1,6 @@
 /** Public-core readback for hosts retaining their original Minecraft executor. */
 import {
-  causalNeeds, sampleEffect, observedEffect, taskEffectProgress, NoEffectPlanBook,
+  causalNeeds, sampleEffect, observedEffect, taskEffectProgress, NoEffectPlanBook, TaskRecoveryBook,
   type SkillCall, type EffectSample, type ObservedEffect,
 } from 'agent-mc-world/client';
 type Bot = Parameters<typeof sampleEffect>[0];
@@ -11,7 +11,9 @@ type Sample = { cell: [number, number, number] | null; dimension: string; value:
 
 export function createOriginalTaskObserver(options: { now?: () => number; scope?: () => string } = {}) {
   const book = new NoEffectPlanBook({ now: options.now });
+  const recovery = new TaskRecoveryBook({now:options.now});
   let previous: Bot | null = null;
+  const syncBody=(bot:Bot|null)=>{if(bot!==previous){previous=bot;book.clear();recovery.clear();}};
   const dimension = (bot: Bot) => String(bot.game?.dimension ?? 'unknown');
   const cell = (call: Step): [number, number, number] | null =>
     Array.isArray(call.at) && call.at.length === 3 && call.at.every(n => typeof n === 'number' && Number.isFinite(n))
@@ -20,7 +22,7 @@ export function createOriginalTaskObserver(options: { now?: () => number; scope?
   // This retained body supplies a conservative frame of its loaded entities.
   // Unknown item metadata or targets leave comparison unavailable.
   const context = (steps: readonly Step[], bot: Bot | null, readback: Readback): string | null => {
-    if (bot !== previous) { previous = bot; book.clear(); }
+    syncBody(bot);
     if (!bot || !readback.inventoryReady || !steps.some(s => s.skill === 'pickup')
         || steps.some(s => !['goto', 'pickup', 'look', 'wait'].includes(s.skill))) return null;
     try {
@@ -59,6 +61,7 @@ export function createOriginalTaskObserver(options: { now?: () => number; scope?
     },
     causalNeeds: (steps: readonly Step[], index: number, bot: Bot | null) => causalNeeds(steps as readonly SkillCall[], index, bot),
     beforeStep(call: Step, bot: Bot, readback: Readback): Sample {
+      syncBody(bot);
       const at = cell(call);
       return { cell: at, dimension: dimension(bot), value: sampleEffect(bot, at, { inventoryReady: readback.inventoryReady }) };
     },
@@ -69,12 +72,18 @@ export function createOriginalTaskObserver(options: { now?: () => number; scope?
       return observedEffect(call.skill, dimension(bot), sample.cell, sample.value, after);
     },
     onTaskFinished(task: { id: number; kind: 'done' | 'partial' | 'blocked'; steps: readonly Step[]; landings: readonly Landing[] }, bot: Bot | null, readback: Readback) {
+      syncBody(bot);
       const progress = taskEffectProgress(task.landings.map(s => ({ outcome: s.outcome, skill: s.call.skill,
         ...(s.observedEffect ? { observedEffect: s.observedEffect as ObservedEffect } : {}) })));
       if (task.kind === 'done') book.record({ key: key(task.steps), taskId: task.id, context: context(task.steps, bot, readback), progress });
+      const review=recovery.record({scope:options.scope?.()??'retained-body',executionId:String(task.id),
+        phase:task.kind==='done'?'completed':task.kind,
+        steps:task.landings.map(s=>({step:s.step,outcome:s.outcome,
+          ...(s.observedEffect?{observedEffect:s.observedEffect as ObservedEffect}:{})}))});
       const label = { changed: '有变化', unchanged: '未变化', unknown: '未知' }[progress.workObservation];
-      return { progress, text: `[本单客户端工作读数] ${label}；已测${progress.measuredSteps}步，未知${progress.unknownSteps}步。目标完成仍由原始回执与实际结果核对。` };
+      return { progress, text: `[本单客户端工作读数] ${label}；已测${progress.measuredSteps}步，未知${progress.unknownSteps}步。目标完成仍由原始回执与实际结果核对。`
+        +(review?`\n[行动恢复记录] 相近实测位置已有 ${review.attempts.length} 次未解决步骤，原任务 ${review.attempts.map(a=>a.executionId).join('、')}。核对原回执与现场再选择下一步；没有自动重放。`:'') };
     },
   };
-  return { observer, reset() { previous = null; book.clear(); } };
+  return { observer, reset() { previous = null; book.clear(); recovery.clear(); } };
 }
