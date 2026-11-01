@@ -1,3 +1,8 @@
+## 0.4.1-rc.70
+
+- Publish the verified original-body recovery and nested native skill invocation fixes with core 0.5.7-rc.153 and server pack 0.5.0-rc.49.
+- Keep optional server features, host-owned credentials/personas/memory, one-connection ownership, and explicit authentication/readiness checks.
+
 ## 0.4.1-rc.69
 
 - Consume core rc.151-preview.1: validate landing blocks before path expansion, report measured control stalls, and retain bounded recovery evidence in native task events.

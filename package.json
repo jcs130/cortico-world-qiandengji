@@ -4,7 +4,7 @@
   "version": "0.4.0",
   "type": "module",
   "description": "Qiandengji server extension and Cortico World adapter; consumes the independent agent-mc-world package",
-  "packageManager": "pnpm@11.5.0",
+  "packageManager": "pnpm@11.28.6",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -20,7 +20,7 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json"
   },
   "dependencies": {
-    "agent-mc-world": "file:vendor/agent-mc-world-0.5.7-rc.151-preview.1-d8a6aac8.tgz",
+    "agent-mc-world": "file:vendor/agent-mc-world-0.5.7-rc.153-6e6d9d66.tgz",
     "vec3": "0.2.0"
   },
   "devDependencies": {
