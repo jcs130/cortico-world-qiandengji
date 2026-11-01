@@ -1,0 +1,66 @@
+{
+  "schema": "public-npm-release/v1",
+  "packages": [
+    {
+      "name": "agent-mc-world",
+      "version": "0.5.7-rc.153",
+      "tag": "next",
+      "sha256": "6e6d9d66b33c0e684b5966e0e99093fa35c515fb6e22fdcc068efffc2645d0e5",
+      "integrity": "sha512-AXFCt70BiomWdNICBQGjTay2mqU2EfpMqNCct+tQih1wG4q2WxPsu97XVFkFdCU0G28c+c6lM1LU6+ryWJ4Qkg==",
+      "bytes": 86793694,
+      "npmUrl": "https://www.npmjs.com/package/agent-mc-world/v/0.5.7-rc.153"
+    },
+    {
+      "name": "agent-mc-qiandengji",
+      "version": "0.5.0-rc.49",
+      "tag": "next",
+      "sha256": "8ebc59360f661f509f7c58bb35c315153b50ea61a53478eb6ff840f9e6e96412",
+      "integrity": "sha512-aulO95m9eRnAECTl3WtpcyziEqktg8LLUv0MRxcncsVifyAw3G3ASoGPOIFX0V6sXxU2mE09SWKQHHCa1riAkw==",
+      "bytes": 203905,
+      "npmUrl": "https://www.npmjs.com/package/agent-mc-qiandengji/v/0.5.0-rc.49"
+    },
+    {
+      "name": "cortico-world-qiandengji",
+      "version": "0.4.1-rc.70",
+      "tag": "next",
+      "sha256": "d82e41e654471780c9cda30cb96a76dd610ff5232c28b9c325625d34db9b6de9",
+      "integrity": "sha512-VZR8PkohFWVUUD0L9sT4TZbvihWbkT3Djbgd+78BTYqnAO04OHVGC05SxQSFpy+LFK+3WUwyGVDNMfN3KspAlQ==",
+      "bytes": 165664,
+      "npmUrl": "https://www.npmjs.com/package/cortico-world-qiandengji/v/0.4.1-rc.70"
+    }
+  ],
+  "sourceCommits": {
+    "core": "8c79d72dccb84b9318557826b2b823800174130e",
+    "world": "6f028a0a97d43620e4da2d12006c0aea5263e825"
+  },
+  "anonymousArchivesAndTagsVerified": true,
+  "coreFullTestsPassed": 2753,
+  "coreSkipped": 2,
+  "worldTestsPassed": 418,
+  "publicDeclarations": 390,
+  "api6AndPrivateApi5Checks": true,
+  "freshInstall": {
+    "directProductionDependencies": [
+      "cortico-world-qiandengji@0.4.1-rc.70"
+    ],
+    "registryOnly": true,
+    "defaultInstallProtections": true,
+    "packedWebUi": true,
+    "officialCorticoCheck": "0.2.12",
+    "sdkMcp": true,
+    "mcpTools": 41,
+    "compiledEngineIpc": true,
+    "offlineGameMemory": true,
+    "modelCalls": 0,
+    "gameConnections": 0
+  },
+  "market": {
+    "issue": "https://github.com/Pal-AI-Lab/cortico-extensions/issues/655",
+    "indexedLatest": "0.1.2",
+    "requestedNext": "0.4.1-rc.70",
+    "nextSelfDescriptionIndexed": false,
+    "installCurrent": "cortico-world-qiandengji@next"
+  },
+  "productionReloaded": false,
+  "publishedArchivesRetainedUnchanged": true
+}

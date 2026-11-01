@@ -1,9 +1,13 @@
 # 联机版我的世界 / 千灯纪资料包
 
-**普通用户入口**：安装扩展后，打开 World「联机版我的世界」的「开始游戏」。新接入千灯纪可粘贴网站连接中心的专属邀请链接，准备账号后进入游戏；已有角色展开「已有服务器 / 手动连接」，沿用原账号。
+**当前发行（2026-11-02）**：完整版 `cortico-world-qiandengji@0.4.1-rc.70` 已在 npm `next` 发布，使用核心 `0.5.7-rc.153` 和服务器包 `0.5.0-rc.49`。仅从 npm 安装 World 的独立消费者已通过界面、官方 Cortico 0.2.12 自描述和 SDK/MCP 验收；公开归档哈希与验收包一致。见[本批分发回执](docs/npm-release-20261102.json)。市场当前卡片仍显示旧 `latest`，安装完整版新版请输入 `cortico-world-qiandengji@next`。
+
+**官方实现最小接入**：[千灯纪-lite 0.1.2](integrations/qiandengji-lite/README.md) 已在 npm 与 Cortico 市场发布，包名 `cortico-world-qiandengji-lite`，提供免邀请码注册、原账号私密登录及官网 Java 客户端入口。一个角色只启用一个 Minecraft World，继续沿用原账号、模型、目标和记忆。
+
+**完整版入口**：安装扩展后，打开 World「联机版我的世界」的「开始游戏」。新接入千灯纪可粘贴网站连接中心的专属邀请链接，准备账号后进入游戏；已有角色展开「已有服务器 / 手动连接」，沿用原账号。
 模型沿用宿主配置。首次完整音频准备会显示进度并缓存。[简明说明](integrations/qiandengji/README.md) · [发布步骤](docs/release-quick-start.md)。
 
-当前公测 `cortico-world-qiandengji@0.4.1-rc.25` 已发布到 `next`，使用核心 `^0.5.7-rc.86` 和服务器包 `^0.5.0-rc.24`，通过官方 Cortico 0.2.7 / API 6 验证。保留基础画面就绪后启动游戏、后台音频校验与取消机制；新增笔记与皮肤设置通过薄适配保留原行为，矿物查询仍默认关闭。
+2026-10-25 历史公测 `cortico-world-qiandengji@0.4.1-rc.25` 已发布到 `next`，使用核心 `^0.5.7-rc.86` 和服务器包 `^0.5.0-rc.24`，通过官方 Cortico 0.2.7 / API 6 验证。保留基础画面就绪后启动游戏、后台音频校验与取消机制；新增笔记与皮肤设置通过薄适配保留原行为，矿物查询仍默认关闭。
 
 三个公开归档已实际下载并核对 SHA256 和 npm integrity；仅安装公开 World 的全新消费者通过 API 6、自描述、严格声明及 SDK/MCP 检查，并复用同一核心实例。World rc.25 / 核心 rc.86 已完成现役装载验收；Minecraft 当时保持停用，没有实际游戏效果结论。使用 `@next` 可跟随后续公测更新，具体版本和验收边界见[发布记录](docs/release-quick-start.md)。
 
@@ -19,7 +23,7 @@
 | --- | --- | --- |
 | `agent-mc-world` | 通用感知与身体、SDK/MCP、动作/合成、脚本与技能库、游戏记忆与学习证据、快决策契约、可视化接入 | 首要项目，在 MC AI Friend 维护 |
 | `agent-mc-qiandengji` | 千灯纪协议、技能与魔力报文解析、服务器物品用法和玩法资料 | 版本见子包声明；本地归档来源见 `vendor/core-source.json` |
-| `cortico-world-qiandengji` | 唯一公开 Cortico World，显示“联机版我的世界” | 核心 + 可选服务器资料包 |
+| `cortico-world-qiandengji` | 完整版 Cortico World，显示“联机版我的世界” | 核心 + 可选服务器资料包 |
 | `dsh-minecraft-agent` | DSH 宿主适配器，独立仓库 | 同一个核心包 |
 
 核心不依赖这些宿主或资料包。通用可视化仍由 `jcs130/mc-visual-console` 维护。

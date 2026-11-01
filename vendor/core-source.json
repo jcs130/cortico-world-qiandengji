@@ -7,7 +7,7 @@
   "parent": "66b8e51d2b0a32563587260437d93bd2b34c81fa",
   "sourceCommit": "8c79d72dccb84b9318557826b2b823800174130e",
   "channel": "next-release-candidate",
-  "sourceStatus": "Final Zod-patched source tested and normally pushed to main; registry receipt separate.",
+  "sourceStatus": "Source normally pushed; exact immutable core archive published and anonymously verified.",
   "viewerIncluded": true,
   "viewer": {
     "repository": "https://github.com/jcs130/mc-visual-console",
@@ -111,5 +111,6 @@
   },
   "sourceCommitPending": false,
   "sourcePushed": true,
-  "registryPublished": false
+  "registryPublished": true,
+  "registryVerifiedSha256": "6e6d9d66b33c0e684b5966e0e99093fa35c515fb6e22fdcc068efffc2645d0e5"
 }
