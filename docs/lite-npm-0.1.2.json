@@ -1,0 +1,20 @@
+{
+  "package": "cortico-world-qiandengji-lite",
+  "version": "0.1.2",
+  "tag": "latest",
+  "published": true,
+  "npmUrl": "https://www.npmjs.com/package/cortico-world-qiandengji-lite/v/0.1.2",
+  "githubRelease": "https://github.com/jcs130/cortico-world-qiandengji/releases/tag/qiandengji-lite-v0.1.2",
+  "sourceCommit": "00231a9ecaae28d9cf206b39fd2154182353b513",
+  "sha256": "8dae249cc58d6fb451f3fcec287401e90cff42781782d72ab9f112b7937904e5",
+  "integrity": "sha512-L3y+5bRAeLNfUDHKiPD3zqr3gAzv/8EGL+ZgCREQESA51MhZMnV32Vp/yGLJDwJbAyQAvTOLe6GAWS9S6gX4zA==",
+  "anonymousRegistryDownloadMatchesGithub": true,
+  "freshRegistryInstall": true,
+  "officialCorticoExtensionCheck": true,
+  "marketSyncIssue": "https://github.com/Pal-AI-Lab/cortico-extensions/issues/647",
+  "marketSyncVerified": false,
+  "modelCalls": 0,
+  "productionPlayersStarted": 0,
+  "productionReloaded": false,
+  "note": "Publication receipts do not establish a third-party account login or live RPG outcome. The published archive is retained unchanged."
+}
