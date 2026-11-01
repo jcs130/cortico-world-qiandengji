@@ -2,6 +2,7 @@
 
 - Consume core rc.151-preview.1: validate landing blocks before path expansion, report measured control stalls, and retain bounded recovery evidence in native task events.
 - Apply the same recovery evidence to the original-body observer without replacing its executor or replaying actions.
+- Accept server-reported nested skill invocation routes, preserving the original command and requiring actual effect receipts separately.
 
 ## 0.4.1-rc.68
 
