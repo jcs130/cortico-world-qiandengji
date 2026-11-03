@@ -18,6 +18,19 @@ const status = { authority: 'VortexRPG', class: 'mage', level: 3, xp: 57, nextLe
   mana: 13, maxMana: 40, economy: profile.economy, preview: false };
 const line = (value: unknown) => 'MC_RPG ' + JSON.stringify(value);
 
+it('matches the current common skill detail without inventing the absent learned flag', () => {
+  const query = QIANDENGJI_SERVER_QUERIES.find(q => q.id === 'skills.info')!;
+  const reply = { schemaVersion: 1, id: 'food', name: '饱食术', category: 'recovery',
+    command: '/mycli cast food', effect: '恢复 4 点饥饿值和 2.5 点饱和度。', target: '自己',
+    mana: 3, cooldownMs: 30000, available: true, common: true, queryOnly: true,
+    invocation: { command: '/mycli cast food', kind: 'cast' }, cooldownRemainingMs: 0 };
+  expect(query.matchReply(line(reply), ['food'], 'ag_Fixture')).toEqual({data: reply, ok: true});
+  expect(query.matchReply(line(reply), ['selfheal'], 'ag_Fixture')).toBeNull();
+  expect(query.matchReply(line({...reply,queryOnly:undefined}), ['food'], 'ag_Fixture')).toBeNull();
+  expect(query.matchReply(line({id:'food',common:true,available:true,success:true}), ['food'], 'ag_Fixture')).toBeNull();
+  expect(reply).not.toHaveProperty('learned');
+});
+
 it('retains native learning requirements as bounded facts and changes on a new node without spending points', () => {
   const state = new NativeRpgState(); state.packet('mcagent:state', packet(), at);
   const skills = { available: ['arcane_bolt'], common: ['home'], activeSpell: 'arcane_bolt', skillPoints: 2,

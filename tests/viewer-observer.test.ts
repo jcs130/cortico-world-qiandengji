@@ -19,7 +19,7 @@ describe('packaged OBS subject integration', () => {
     Object.assign(bot.entity, { metadata: { 8: 3 } });
     const columns = vi.spyOn(bot.world, 'getColumnAt');
     const viewer = await startModernViewer(bot as never, {
-      serverProtocol: serverViewerProtocol, port: await freeViewerPort(), assetsDir: MYMC_DEFAULTS.viewerAssetsDir, speechSourceId: 'offline-obs-test',
+      serverProtocol: serverViewerProtocol, port: await freeViewerPort(), assetsDir: process.env.AGENT_MC_TEST_VIEWER_ASSETS || MYMC_DEFAULTS.viewerAssetsDir, speechSourceId: 'offline-obs-test',
     });
     // The updated core declares the installed RPG decoder; the observer also
     // declares its separate camera-attested subject channel. Neither is an action.

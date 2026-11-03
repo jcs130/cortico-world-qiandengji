@@ -106,6 +106,12 @@ export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
     'Read a current skill/spell or learning/talent node. arguments:["observed_id"]. Preserves the full native definition, prerequisites, actual learning state and nextCommand without executing it. Learning nodes and castable spells are distinct; no points, preparation or casting are performed.',
     '/mycli skills info', true, (value, args) =>
       value.id === args[0] && value.common === true && typeof value.available === 'boolean' && typeof value.learned === 'boolean'
+      // Current common-skill definitions do not carry a learned flag: they
+      // need no learning. Require the read-only definition and exact subject;
+      // never substitute true for an absent learning state or accept a cast ack.
+      || value.id === args[0] && value.common === true && value.queryOnly === true
+        && typeof value.available === 'boolean' && typeof value.name === 'string'
+        && typeof value.command === 'string' && typeof value.effect === 'string'
       || object(value.definition) && value.definition.id === args[0] && typeof value.available === 'boolean'
       || object(value.skill) && value.skill.id === args[0] && value.queryOnly === true && typeof value.learned === 'boolean'
       || object(value.talent) && value.talent.id === args[0] && value.queryOnly === true && typeof value.learned === 'boolean'),

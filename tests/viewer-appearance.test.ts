@@ -12,7 +12,7 @@ it('does not register or request server plugin channels without an explicit exte
   const {bot,protocol}=viewerBot();
   const write=vi.fn(()=>{throw Error('Unconfigured plugin packet');});
   Object.assign(protocol,{state:'play',write});
-  const viewer=await startModernViewer(bot as never,{port:await freeViewerPort(),assetsDir:MYMC_DEFAULTS.viewerAssetsDir});
+  const viewer=await startModernViewer(bot as never,{port:await freeViewerPort(),assetsDir:process.env.AGENT_MC_TEST_VIEWER_ASSETS || MYMC_DEFAULTS.viewerAssetsDir});
   try {
     bot.emit('spawn');
     protocol.emit('custom_payload',{channel:APPEARANCE_CHANNEL,data:Buffer.from('{}')});
@@ -60,7 +60,7 @@ it.each(['1.21.1', '1.20.6'])('relays verified original appearance assets on Jav
     channel: APPEARANCE_CHANNEL, data: Buffer.from(JSON.stringify(value)),
   });
   const viewer = await startModernViewer(bot as never, {
-    serverProtocol: serverViewerProtocol, port: await freeViewerPort(), assetsDir: MYMC_DEFAULTS.viewerAssetsDir,
+    serverProtocol: serverViewerProtocol, port: await freeViewerPort(), assetsDir: process.env.AGENT_MC_TEST_VIEWER_ASSETS || MYMC_DEFAULTS.viewerAssetsDir,
   });
   expect(registrations).toBe(1);
   const clients: Socket[] = [];

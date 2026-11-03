@@ -1,116 +1,17 @@
 {
-  "version": "0.5.7-rc.153",
-  "file": "agent-mc-world-0.5.7-rc.153-6e6d9d66.tgz",
-  "sha256": "6e6d9d66b33c0e684b5966e0e99093fa35c515fb6e22fdcc068efffc2645d0e5",
+  "version": "0.5.7-rc.160-preview.2",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.2-eb1b67c5.tgz",
+  "sha256": "eb1b67c550da15fe3b3e01bae5fc7da1aa9223d9cf56b907eb4dedbbf05ab05f",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "parent": "66b8e51d2b0a32563587260437d93bd2b34c81fa",
-  "sourceCommit": "8c79d72dccb84b9318557826b2b823800174130e",
-  "channel": "next-release-candidate",
-  "sourceStatus": "Source normally pushed; exact immutable core archive published and anonymously verified.",
-  "viewerIncluded": true,
-  "viewer": {
-    "repository": "https://github.com/jcs130/mc-visual-console",
-    "commit": "5e9405067bd1eda4a23abc06f6b70383154c9408",
-    "assetPack": "java-1.21.1",
-    "additionalPacks": [
-      "java-1.20.6",
-      "java-1.21.11",
-      "java-1.21.5"
-    ],
-    "preset": null,
-    "artifact": "vendor/mc-visual-console-java-1.21.1-5e940506-compatible.tgz",
-    "sha256": "163b056c3e61f9197a8fa9453d5bf550fe533a607e9bea4874a5bbe651de23cf",
-    "soundPacks": [
-      "java-1.21.1-sounds",
-      "java-1.20.6-sounds",
-      "original-bgm"
-    ],
-    "completeAudio": false,
-    "publicOriginalBgmTracks": 8,
-    "audioCoverage": {
-      "1.21.1": "exact-version-separate-download",
-      "1.20.6": "exact-version-separate-download",
-      "1.21.11": "disabled-no-original-audio-pack",
-      "1.21.5": "disabled-no-original-audio-pack"
-    },
-    "deferredAudioInput": {
-      "package": "agent-mc-world@0.5.7-rc.85",
-      "sha256": "8bb01430f2f8e9a8259df5f3105449bfdcc3b0c77a7fd8a46c33a72fa52b3936",
-      "filesCheckedAgainstCurrentSharedAssetPacks": 28
-    },
-    "previousFrozenInput": {
-      "commit": "c0b9a7a6772c2f4de8c502a091af10f363bc427a",
-      "sha256": "3e2d3d9e79e496569eaa03675ba5f173be6871a4122700718e9af4adc9092916"
-    },
-    "originalAssetInput": {
-      "commit": "4da993d1d96e79c7ba195ef38d49976250a621aa",
-      "sha256": "a53a6cb443096ee113c964d44b4427e4a629acdf08584956004a147b0dc59b69",
-      "versions": [
-        "1.21.1",
-        "1.20.6",
-        "1.21.11"
-      ]
-    },
-    "generatedVanillaVersions": [
-      {
-        "version": "1.21.1",
-        "clientJarSha256": "499f6897d1837516680f3114072d8106e11c9adcd933fe5cf051b551089b0c99",
-        "browserBundleSha256": "2ed8dbaf6c3d7c7af8142295e1045be4589ac89f2fe744397316413b6b99b4e4",
-        "mesherSha256": "2d3c925683f77dc18bad734e85d192c756b0431136216fcc02d475742bef2f21",
-        "buildSource": {
-          "sourceSha256": "61dd653deed86152d8ae7a110f96c253cf0150f9dec690f76cffd83eb44d1d60",
-          "sourceFiles": 423,
-          "scope": "renderer_source_host_adapters_and_asset_preparation"
-        },
-        "preset": null,
-        "armorTextureCount": 15
-      },
-      {
-        "version": "1.20.6",
-        "clientJarSha256": "02dfd345ac1ad55692d5dbc8486ac7e4fea72cd54ac494a79cd48963048e56b2",
-        "browserBundleSha256": "e2876f225f8f0b7e87130f6861a16c92ed29c7484008ea9bc308722d5e8e23d8",
-        "mesherSha256": "60348a1993e46c943aba13a127ecdbab1210ad60441f76ca60c0b2cb40d1f263",
-        "buildSource": {
-          "sourceSha256": "61dd653deed86152d8ae7a110f96c253cf0150f9dec690f76cffd83eb44d1d60",
-          "sourceFiles": 423,
-          "scope": "renderer_source_host_adapters_and_asset_preparation"
-        },
-        "preset": null,
-        "armorTextureCount": 15
-      },
-      {
-        "version": "1.21.11",
-        "clientJarSha256": "1473c9489ac50fda3c435049a76a70d61a10b8610db27f5ba9d8756b686cd3bd",
-        "browserBundleSha256": "3cf9b7f72dcf1baf316cd85a79c5599ddd03c19fded19defce584fdbec6a6551",
-        "mesherSha256": "4380630138ce835f228cc0bd2b52aecf4e62d2d7e8d32ff46c9079285ba5c926",
-        "buildSource": {
-          "sourceSha256": "61dd653deed86152d8ae7a110f96c253cf0150f9dec690f76cffd83eb44d1d60",
-          "sourceFiles": 423,
-          "scope": "renderer_source_host_adapters_and_asset_preparation"
-        },
-        "preset": null,
-        "armorTextureCount": 17
-      },
-      {
-        "version": "1.21.5",
-        "clientJarSha256": "522672ad20b460c02c2e39b6c5035ef6a849af28eb11ab2ac7eb293d395a8c11",
-        "browserBundleSha256": "ed862185cacd8d510afa0c413a91e63aafcc76e47b33adff072c11466c19f09a",
-        "mesherSha256": "c4951379058f0b99d7851ef3f57c67070c683ad4dd678051e39a048783c47534",
-        "buildSource": {
-          "sourceSha256": "61dd653deed86152d8ae7a110f96c253cf0150f9dec690f76cffd83eb44d1d60",
-          "sourceFiles": 423,
-          "scope": "renderer_source_host_adapters_and_asset_preparation"
-        },
-        "preset": null,
-        "armorTextureCount": 15
-      }
-    ],
-    "runtimeRegistryVersion": 1,
-    "missingExactMaterials": "automatic-compatible-materials-with-actual-connection-registry"
-  },
+  "parent": "8272b51c26e7ef6da4771220beae1a5e7355f08f",
   "sourceCommitPending": false,
-  "sourcePushed": true,
-  "registryPublished": true,
-  "registryVerifiedSha256": "6e6d9d66b33c0e684b5966e0e99093fa35c515fb6e22fdcc068efffc2645d0e5"
+  "channel": "unpublished-candidate",
+  "viewerIncluded": false,
+  "viewer": {
+    "mode": "existing-external-assets-preserved"
+  },
+  "registryPublished": false,
+  "sourceCommit": "cea3df6a4ac71bc475a6a714446081ef0f71cb4a",
+  "sourcePushed": false
 }

@@ -61,9 +61,15 @@ describe('installable World', () => {
     expect(JSON.parse(JSON.stringify(mymcEngineConfig(cfg))).username).toBe('ag_ExistingUser');
   });
 
-  it('uses packaged modern assets with all three camera pages and an original asset manifest', () => {
-    const viewer = MYMC_DEFAULTS.viewerAssetsDir;
-    expect(viewer).toBe(MINECRAFT_CLIENT_DEFAULTS.viewerAssetsDir);
+  it('uses packaged or explicitly supplied modern assets with all three camera pages and an original asset manifest', () => {
+    const source = JSON.parse(readFileSync(new URL('../vendor/core-source.json', import.meta.url), 'utf8'));
+    expect(MYMC_DEFAULTS.viewerAssetsDir).toBe(MINECRAFT_CLIENT_DEFAULTS.viewerAssetsDir);
+    if (source.viewerIncluded === false) {
+      // An engine-only candidate must prove its separately supplied assets;
+      // neither skip viewer checks nor pretend they are inside the archive.
+      expect(process.env.AGENT_MC_TEST_VIEWER_ASSETS).toBeTruthy();
+    }
+    const viewer = source.viewerIncluded === false ? process.env.AGENT_MC_TEST_VIEWER_ASSETS! : MYMC_DEFAULTS.viewerAssetsDir;
     for (const page of ['index.html', 'third/index.html', '3dview/index.html']) {
       expect(existsSync(join(viewer, 'public', page)), page).toBe(true);
     }

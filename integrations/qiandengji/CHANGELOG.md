@@ -1,3 +1,9 @@
+## 0.4.1-rc.71-preview.1
+
+- Consume the version-scoped Java 1.21.1 food-component codec repair in core rc.160-preview.2. Preserve the existing external viewer assets.
+- Accept complete query-only common-skill details without inventing a learned flag; mutation acknowledgements and mismatched skill IDs still do not complete queries.
+- Retain upstream nested skill invocation fixes and original-body recovery. Local candidate, not published or loaded.
+
 ## 0.4.1-rc.70
 
 - Publish the verified original-body recovery and nested native skill invocation fixes with core 0.5.7-rc.153 and server pack 0.5.0-rc.49.
