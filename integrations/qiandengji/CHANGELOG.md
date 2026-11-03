@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.2
+
+- Pin core rc.160-preview.3 with compact inventory previews; retain full internal click validation, Java 1.21.1 item decoding and the common-skill reply matcher. External viewer configuration stays unchanged. Candidate only, not published or loaded.
+
 ## 0.4.1-rc.71-preview.1
 
 - Consume the version-scoped Java 1.21.1 food-component codec repair in core rc.160-preview.2. Preserve the existing external viewer assets.
