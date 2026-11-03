@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.3
+
+- Consume core respawn health/episode facts and native readiness diagnostics. Keep transport, recovery health and physical landing separate. No server restart or fabricated position. Unpublished, not loaded.
+
 ## 0.4.1-rc.71-preview.2
 
 - Pin core rc.160-preview.3 with compact inventory previews; retain full internal click validation, Java 1.21.1 item decoding and the common-skill reply matcher. External viewer configuration stays unchanged. Candidate only, not published or loaded.
