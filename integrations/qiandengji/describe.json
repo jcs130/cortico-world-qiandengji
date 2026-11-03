@@ -391,9 +391,9 @@
             }
           },
           "healAtOrBelow": {
-            "type": "integer",
+            "type": "number",
             "minimum": 1,
-            "maximum": 20
+            "description": "Absolute health points from the current server, not a normalized 20-point scale."
           },
           "rules": {
             "type": "array",
@@ -459,12 +459,12 @@
                     "healthAtOrBelow": {
                       "type": "number",
                       "minimum": 1,
-                      "maximum": 20
+                      "description": "Absolute current health points; RPG health is not normalized to 20."
                     },
                     "healthAtOrAbove": {
                       "type": "number",
                       "minimum": 1,
-                      "maximum": 20
+                      "description": "Absolute current health points; RPG health is not normalized to 20."
                     },
                     "manaAtLeast": {
                       "type": "number",

@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.4
+
+- Pin the shared core combat query classification and absolute RPG health thresholds. Preserve thin adapter behavior, explicit tactic adoption, cooldowns and the single-body lease. No automatic strategy changes or production reload.
+
 ## 0.4.1-rc.71-preview.3
 
 - Consume core respawn health/episode facts and native readiness diagnostics. Keep transport, recovery health and physical landing separate. No server restart or fabricated position. Unpublished, not loaded.

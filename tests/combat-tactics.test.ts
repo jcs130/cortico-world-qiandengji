@@ -21,14 +21,15 @@ describe('World-scoped combat tactic persistence', () => {
     const path = file();
     const first = new CombatSpells(new CombatTacticBook(path));
     first.useRealm('world-a');
-    first.setTactic({ spells: ['golem', 'frostnova'], healAtOrBelow: 12,
-      rules: [{ id: 'crowd', spell: 'frostnova', when: { hostilesAtLeast: 3, reserveMana: 6 } }] });
+    first.setTactic({ spells: ['golem', 'frostnova'], healAtOrBelow: 35.5,
+      rules: [{ id: 'crowd', spell: 'frostnova', when: { hostilesAtLeast: 3, reserveMana: 6, healthAtOrAbove: 30 } }] });
     first.noteServerMessage('探索咏唱：守护傀儡(golem，12 魔力/75 秒)', 100_000);
     first.noteManualCast('golem', 100_000);
     const receipt = first.recordCombat(result(99_000));
     const replacement = new CombatSpells(new CombatTacticBook(path));
     replacement.useRealm('world-a');
     expect(replacement.getTactic()).toEqual(first.getTactic());
+    expect(replacement.getTactic()?.healAtOrBelow).toBe(35.5);
     expect(replacement.readout(receipt.id)).toContain('"healthAfter":0');
     expect(replacement.readout()).toContain('本连接尚未确认该能力');
     replacement.useRealm('world-b');
@@ -73,7 +74,7 @@ describe('World-scoped combat tactic persistence', () => {
   it('rejects malformed saved settings before applying them', () => {
     const path = file();
     writeFileSync(path, JSON.stringify({ version: 1, realms: { a: { revision: 1,
-      updatedAt: null, tactic: { spells: ['selfheal'], healAtOrBelow: 80 }, reports: [] } } }));
+      updatedAt: null, tactic: { spells: ['selfheal'], healAtOrBelow: -1 }, reports: [] } } }));
     expect(() => new CombatTacticBook(path)).toThrow('Invalid combat tactic state');
   });
 });
