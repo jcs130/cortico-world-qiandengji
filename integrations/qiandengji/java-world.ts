@@ -6,6 +6,7 @@ import type { World, WorldHost, ToolDef, WorldConsoleDecl, WorldRequestFacts } f
 import { createMinecraftChoiceTool, WorldOperationLearning, withToolHelp, mapWorldEventNamespace, namespaceWorldHost, namespaceWorldStorage } from 'agent-mc-world/extension';
 import { SkillCatalog } from './skill-catalog.ts';
 import { MessageInbox, MESSAGE_TOOL, MESSAGE_PARAMETERS } from './message-inbox.ts';
+import { ActivityBindings, activitySubjects } from './activity-binding.ts';
 import { GuildProgress } from './guild-progress.ts';
 import { readServerGuide, serverGuideIndex } from './server-guide.ts';
 import { mymcLoginName, mymcCoreConfig, type MymcConfigSection } from './config.ts';
@@ -19,6 +20,7 @@ export class JavaMymcWorld implements World {
   private readonly catalog: SkillCatalog;
   private readonly messages: MessageInbox;
   private readonly guildProgress: GuildProgress | null;
+  private readonly activities: ActivityBindings;
   private host: WorldHost | null = null;
   private timer?: ReturnType<typeof setInterval>;
   private renewing = false;
@@ -32,6 +34,7 @@ export class JavaMymcWorld implements World {
       ...(opts.cfg.serverPack === 'qiandengji' ? { messageInbox: false as const }
         : { messageInboxOptions: { toolName: 'mymc_messages' } }),
     });
+    this.activities = new ActivityBindings(mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName));
     this.learning = new WorldOperationLearning(opts.dataDir, () => this.requestFacts());
     this.catalog = new SkillCatalog(`${opts.cfg.host}:${opts.cfg.port}`, opts.dataDir);
     this.messages = new MessageInbox(`${opts.cfg.host}:${opts.cfg.port}:${mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName)}`, opts.dataDir);
@@ -47,10 +50,10 @@ export class JavaMymcWorld implements World {
     const guild = this.guildProgress?.facts();
     if (guild) parts.push({ key: 'guildState', text: `[Minecraft / mymc · ${this.opts.cfg.host}:${this.opts.cfg.port}:${mymcLoginName(this.opts.cfg.username, this.opts.cfg.preserveLoginName)}]\n${guild}\n以上是带时间的最新已收服务端观察，不代表此刻已重新验证；阶段与计数以同一服务器较新回执更新。只适用于此 Minecraft 世界，不提供其他 World 的目标、背包、职业或行动点。` });
     return { ...facts, parts, text: parts.map(part => part.text).join('\n'),
-      ...(facts.experience?.scope && this.guildProgress ? { workStates: this.guildProgress.workStates(facts.experience.scope) } : {}) };
+      ...(facts.experience?.scope && this.guildProgress ? { workStates: this.guildProgress.workStates(facts.experience.scope), workBindings: this.activities.bindings(facts.experience.scope) } : {}) };
   }
   tools(): ToolDef[] {
-    const tools = this.body.tools().filter(tool => !(this.opts.cfg.javaHostControl?.enabled && tool.name === 'mc_control')).map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description), handler: async (args, ctx) => {
+    const tools = this.body.tools().filter(tool => !(this.opts.cfg.javaHostControl?.enabled && tool.name === 'mc_control')).map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description), ...(this.opts.cfg.serverPack === 'qiandengji' ? {workSubjects:(args:Record<string,unknown>)=>activitySubjects(tool.name,args)} : {}), handler: async (args, ctx) => {
       const result = await tool.handler(args, ctx);
       return !['mc_help', 'mc_script'].includes(tool.name) || tool.name === 'mc_script' && !args.api ? result : typeof result === 'string' ? this.helpText(result) : { ...result, text: this.helpText(result.text) };
     } } satisfies ToolDef));
@@ -101,6 +104,8 @@ export class JavaMymcWorld implements World {
           // player's quotation, private message, HUD or unknown channel to state.
           if (event.meta?.kind === 'system' && !sender && !outgoing && !whisper) {
             this.guildProgress?.observe('[MC 系统] ' + event.text, event.ts);
+            const workBindings=this.activities.observe('[MC 系统] '+event.text,this.body.requestFacts()?.experience?.scope);
+            if(workBindings.length)mapped.meta={...mapped.meta,workBindings};
           }
           try {
             this.catalog.observe(prefix + event.text, event.ts);
@@ -128,7 +133,7 @@ export class JavaMymcWorld implements World {
     } catch (error) { await this.stop().catch(() => {}); throw error; }
   }
   async stop() {
-    ++this.epoch; clearInterval(this.timer); this.timer = undefined; this.host = null;
+    ++this.epoch; this.activities.reset(); clearInterval(this.timer); this.timer = undefined; this.host = null;
     try { await this.body.stop(); } finally { this.learning.stop(); }
   }
 }

@@ -32,6 +32,7 @@ import { MessageInbox, MESSAGE_TOOL, MESSAGE_PARAMETERS, messageChannel } from '
 import { startsTrialFight, trialMeleeReadiness } from './trial-readiness.ts';
 import { TrialProgress, trialGoalLimitNote } from './trial-status.ts';
 import { ProspectEvidence } from './prospect-evidence.ts';
+import { ActivityBindings, activitySubjects } from './activity-binding.ts';
 import { GuildProgress } from './guild-progress.ts';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from './server-guide.ts';
 import { createMinecraftChoiceTool, minecraftLifeTool } from 'agent-mc-world/extension';
@@ -221,7 +222,7 @@ export function routeViaServerCommand(args: Record<string, unknown>, autoTravel 
 }
 
 function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgress,
-  prospect: ProspectEvidence, guild: GuildProgress, messages: MessageInbox): WorldHost {
+  prospect: ProspectEvidence, guild: GuildProgress, messages: MessageInbox, activities: ActivityBindings, scope: () => WorldRequestFacts['experience']): WorldHost {
   const bridge: WorldHost = {
     pushEvent:(event,options)=>host.pushEvent(event,options),pushDeferred:(event,options)=>host.pushDeferred(event,options),
     drainPendingEvents:filter=>host.drainPendingEvents(filter),store:host.store,blob:handle=>host.blob(handle),
@@ -230,7 +231,7 @@ function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgres
   bridge.pushEvent = async (event, options) => {
     const mapped = toMymcEvent(event);
     const connection = mapped.meta?.connection as { phase?: unknown; generation?: unknown } | undefined;
-    if (mapped.type === 'mymc.event' && connection?.phase === 'spawned' && Number.isSafeInteger(connection.generation)) catalog.resetConnection();
+    if (mapped.type === 'mymc.event' && connection?.phase === 'spawned' && Number.isSafeInteger(connection.generation)) { catalog.resetConnection(); activities.reset(); }
     if (mapped.type === 'mymc.event' && mapped.meta?.nativeRpgObservation === true)
       catalog.noteNativeProfile(mapped.meta.nativeRpgProfile);
     const channel = mapped.type === 'mymc.chat' ? messageChannel(mapped.text) : null;
@@ -246,6 +247,8 @@ function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgres
       prospect.observe(mapped.text, mapped.ts);
       progress.observe(mapped.text, mapped.ts);
       guild.observe(mapped.text, mapped.ts);
+      const workBindings = activities.observe(mapped.text, scope()?.scope);
+      if(workBindings.length) mapped.meta = {...mapped.meta, workBindings};
       heading = catalog.observe(mapped.text, mapped.ts);
     }
     // A host may start the next request while admitting this event. Publish facts
@@ -283,6 +286,7 @@ export class MymcWorld implements World {
   private readonly messages: MessageInbox;
   private readonly trialProgress: TrialProgress;
   private readonly guildProgress: GuildProgress;
+  private readonly activities: ActivityBindings;
   private readonly prospect = new ProspectEvidence();
   private readonly requireProtectSupport: boolean;
   /** Host-owned read-only model/tool telemetry forwarded through the shared core. */
@@ -301,6 +305,7 @@ export class MymcWorld implements World {
     this.messages = new MessageInbox(identity, opts.dataDir);
     this.trialProgress = new TrialProgress(identity, opts.dataDir);
     this.guildProgress = new GuildProgress(identity, opts.dataDir);
+    this.activities = new ActivityBindings(mymcLoginName(opts.cfg.username, opts.cfg.preserveLoginName));
   }
 
   envPromptVars(): Record<string, string> {
@@ -346,7 +351,7 @@ export class MymcWorld implements World {
     const baseText = parts?.length ? parts.map(p => p.text).filter(Boolean).join('\n') : toMymcText(facts.text);
     return {
       ...facts,
-      ...(facts.experience?.scope ? { workStates: this.guildProgress.workStates(facts.experience.scope) } : {}),
+      ...(facts.experience?.scope ? { workStates: this.guildProgress.workStates(facts.experience.scope), workBindings: this.activities.bindings(facts.experience.scope) } : {}),
       ...(options ? { options } : {}),
       text: [baseText, ...additions.map(part => part.text)].join('\n'),
       ...(parts?.length ? { parts: [...parts, ...additions] } : {}),
@@ -364,6 +369,7 @@ export class MymcWorld implements World {
       name: tool.name.replace(/^mc_/, 'mymc_'),
       description: toolDescription(tool.name, tool.description),
       parameters: toolParameters(tool.name, tool.parameters),
+      workSubjects: args => activitySubjects(tool.name,args),
       handler: async (args, ctx) => {
         const guidance: string[] = [];
         if (tool.name === 'mc_options') {
@@ -522,7 +528,7 @@ export class MymcWorld implements World {
     host = this.learning.start(host);
     this.host = host;
     try {
-      await this.engine.start(mymcHost(host, this.catalog, this.trialProgress, this.prospect, this.guildProgress, this.messages));
+      await this.engine.start(mymcHost(host, this.catalog, this.trialProgress, this.prospect, this.guildProgress, this.messages, this.activities, () => this.engine.requestFacts?.()?.experience));
       if (this.opts.cfg.hostDecisions?.combat?.enabled) {
         const tool = this.learning.tools(this.engine.tools(), 'system1').find(tool => tool.name === 'mc_combat_tactic');
         if (!tool) throw new Error('Host fast combat requires the selected pack tactic port.');

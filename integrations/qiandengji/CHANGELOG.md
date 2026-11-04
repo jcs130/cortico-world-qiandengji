@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.8
+
+- Expose native activity attribution separately from completion evidence. Keep current owned runs distinct from historical outcomes and other parties, and expose command subjects for host assignment checks.
+
 ## 0.4.1-rc.71-preview.7
 
 - Pin shared workstation route selection and interaction reach. Prefer a confirmed walking route, retain unknown routes and cancellation, and keep native crafting/inventory confirmation.
