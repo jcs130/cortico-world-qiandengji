@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.5
+
+- Pin shared native inventory component decoding and explicit decode-failure recovery. Preserve thin adapter behavior and actual server confirmation. No automatic reconnect or replay.
+
 ## 0.4.1-rc.71-preview.4
 
 - Pin the shared core combat query classification and absolute RPG health thresholds. Preserve thin adapter behavior, explicit tactic adoption, cooldowns and the single-body lease. No automatic strategy changes or production reload.
