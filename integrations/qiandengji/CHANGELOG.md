@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.7
+
+- Pin shared workstation route selection and interaction reach. Prefer a confirmed walking route, retain unknown routes and cancellation, and keep native crafting/inventory confirmation.
+
 ## 0.4.1-rc.71-preview.6
 
 - Pin shared authentication-aware death recovery. Login proxy zero-health packets no longer hide a synchronized player inventory; a fresh authenticated zero-health packet still starts genuine recovery. No automatic reconnect or action replay.

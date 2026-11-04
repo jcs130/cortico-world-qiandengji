@@ -11,5 +11,5 @@ allowBuilds:
   esbuild: true
 
 overrides:
-  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.160-preview.8-ab6320cf.tgz
+  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.160-preview.9-1969b1a2.tgz
   vec3: 0.2.0
