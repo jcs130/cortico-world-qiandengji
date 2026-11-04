@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.6
+
+- Pin shared authentication-aware death recovery. Login proxy zero-health packets no longer hide a synchronized player inventory; a fresh authenticated zero-health packet still starts genuine recovery. No automatic reconnect or action replay.
+
 ## 0.4.1-rc.71-preview.5
 
 - Pin shared native inventory component decoding and explicit decode-failure recovery. Preserve thin adapter behavior and actual server confirmation. No automatic reconnect or replay.
