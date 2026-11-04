@@ -55,6 +55,10 @@ function dungeonDefinition(kind: 'status' | 'info', marker: string, description:
       ? `/mycli dungeon ${kind} ${args[0]} --json` : null,
     matchReply: (text, args, username) => {
       if (args.length !== 1 || !subjectId.test(args[0]) || !username) return null;
+      const error = payload(text, 'MC_SITE_DUNGEON_RESULT');
+      if (error && error.activityType === 'site_dungeon' && error.commandRoot === '/mycli dungeon'
+        && error.recipient === username && error.id === args[0] && error.action === kind
+        && error.success === false && typeof error.reason === 'string') return { data: error, ok: false };
       const value = payload(text, marker);
       if (!value || value.activityType !== 'site_dungeon' || value.commandRoot !== '/mycli dungeon'
         || value.recipient !== username || value.id !== args[0]) return null;

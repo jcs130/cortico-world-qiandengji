@@ -5768,11 +5768,29 @@
               "armed",
               "off"
             ],
-            "description": "怪贴到跟前主动动手的条件;挨打一律还手,这一条管不了"
+            "description": "自动接敌的条件；受击还手另由 retaliate 控制，显式攻击任务不受此项控制"
+          },
+          "jump": {
+            "type": "string",
+            "enum": [
+              "off",
+              "gap",
+              "native"
+            ],
+            "description": "寻路跨空：off 禁止；gap 仅同高完整落脚的一格间隙；native 使用原生跑酷候选。修改后重新算路，仍检查碰撞和危险接触"
+          },
+          "retaliate": {
+            "type": "string",
+            "enum": [
+              "default",
+              "on",
+              "off"
+            ],
+            "description": "受击自动还手：default 沿宿主配置，on 开启，off 关闭。低血撤离和环境自救仍启用；不取消已经开始的显式攻击任务"
           }
         },
         "required": [],
-        "description": "干活的常驻规矩,给哪个字段就改哪个,立即生效直到下次改。不排队,不占任务号。\n一个字段都不给 = 只念一遍现在生效的规矩。\nscaffold  [\"dirt\",\"cobblestone\"]   脚下没底时垫一格用哪些方块,顺序即优先。\n                                   赶路、逃跑、tunnel 垫桥、塔的每一格、上露天的\n                                   每一格都用这份。[] = 不垫\nlight     [\"torch\"]                周身黑下来插一根用哪些。[] = 不插\nlightWhen \"dig\" | \"anywhere\"       什么场合黑了才插:dig 只在挖通道/挖空间的时候\n                                   (默认),anywhere 赶路和采集途中也插\ntravel    \"auto\" | \"dig\" | \"place\" 赶路遇到坎:auto 按代价自选,dig 能挖就不垫,\n                                   place 能垫就不挖\nreserve   [\"iron_pickaxe\"]         这几件家伙什收着,挖东西不主动拿。\n                                   收着的那把是唯一挖得出掉落的时候仍然会拿。[] = 都不收着\nfight     \"auto\" | \"armed\" | \"off\" 怪贴到跟前主动动手的条件:armed 手上有趁手的\n                                   家伙才动手(默认),auto 空手也一律动手,\n                                   off 不主动动手。挨打一律还手,这一条改不了。\n                                   这一格重连之后回 armed,别的五格留着\n方块/物品一律用英文 id(dirt、cobblestone、torch、iron_pickaxe)。\n料不在包里的那一条就不做,不算受阻;做过的进收工回执报数。\n回执一律念出六条当下生效的规矩,没改过的念默认值。"
+        "description": "干活的常驻规矩,给哪个字段就改哪个,立即生效直到下次改。不排队,不占任务号。\n一个字段都不给 = 只念一遍现在生效的规矩。\nscaffold  [\"dirt\",\"cobblestone\"]   脚下没底时垫一格用哪些方块,顺序即优先。\n                                   赶路、逃跑、tunnel 垫桥、塔的每一格、上露天的\n                                   每一格都用这份。[] = 不垫\nlight     [\"torch\"]                周身黑下来插一根用哪些。[] = 不插\nlightWhen \"dig\" | \"anywhere\"       什么场合黑了才插:dig 只在挖通道/挖空间的时候\n                                   (默认),anywhere 赶路和采集途中也插\ntravel    \"auto\" | \"dig\" | \"place\" 赶路遇到坎:auto 按代价自选,dig 能挖就不垫,\n                                   place 能垫就不挖\nreserve   [\"iron_pickaxe\"]         这几件家伙什收着,挖东西不主动拿。\n                                   收着的那把是唯一挖得出掉落的时候仍然会拿。[] = 都不收着\nfight     \"auto\" | \"armed\" | \"off\" 怪贴到跟前主动动手的条件:armed 手上有趁手的\n                                   家伙才动手(默认),auto 空手也一律动手,\n                                   off 不自动接敌。受击还手由 retaliate 控制。\n                                   这一格重启之后回 armed，重连不重置；显式攻击任务不受此项控制\njump      \"off\" | \"gap\" | \"native\" 寻路跨空模式，默认 gap。native 的更长/高低差跳跃不保证成功；不允许踩火或踩岩浆。\nretaliate \"default\" | \"on\" | \"off\" 受击还手，独立于 fight。关闭不会关闭低血撤离或环境自救。\n方块/物品一律用英文 id(dirt、cobblestone、torch、iron_pickaxe)。\n料不在包里的那一条就不做,不算受阻;做过的进收工回执报数。\n回执列出当前生效的规矩，未修改项显示默认值；jump/retaliate 跨重启保留。"
       },
       "tags": [
         "write"

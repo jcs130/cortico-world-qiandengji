@@ -1,3 +1,8 @@
+## 0.4.1-rc.71-preview.9
+
+- Recognize correlated native query failures immediately, retaining failure details and next commands without retry.
+- Consume core contact-only fire rescue, configurable jump/retaliation, precise biome labels and ranged target lease and acquisition fixes. Distinguish active combat continuity from idle in decision details.
+
 ## 0.4.1-rc.71-preview.8
 
 - Expose native activity attribution separately from completion evidence. Keep current owned runs distinct from historical outcomes and other parties, and expose command subjects for host assignment checks.

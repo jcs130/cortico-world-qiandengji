@@ -21,6 +21,21 @@ const info = { ...dungeon, name: '亡灵墓穴·三室封印', start: [-425, 4, 
   rooms: [{ enemies: 5, center: [-425, 4, 677], name: '守墓前厅', radius: 4 }] };
 
 describe('explicit Qiandengji read-only server query definitions', () => {
+  it('settles an exactly matched native query rejection instead of waiting for timeout', () => {
+    const lane = new ServerQueryLane(), send = vi.fn();
+    const context = { generation: 'current', username: 'ag_Fixture', send };
+    const sent = lane.call({ query: 'dungeon.status', arguments: ['arena'] }, QIANDENGJI_SERVER_QUERIES, context);
+    const failure = { ...dungeon, action: 'status', id: 'arena', success: false, reason: 'unknown_dungeon',
+      nextCommands: ['/mycli dungeon list'] };
+    try {
+      for (const patch of [{ recipient: 'other' }, { id: 'other' }, { action: 'start' }, { success: true }])
+        expect(query('dungeon.status').matchReply('MC_SITE_DUNGEON_RESULT '+JSON.stringify({...failure,...patch}), ['arena'], 'ag_Fixture')).toBeNull();
+      expect(lane.receive('MC_SITE_DUNGEON_RESULT '+JSON.stringify(failure), 'current', 'ag_Fixture', 1)).toBe(true);
+      expect(lane.call({ requestId: sent.data?.requestId }, QIANDENGJI_SERVER_QUERIES, context).data).toMatchObject({
+        phase: 'replied', outcomeUnknown: false, goal_completed: false, reply: { ok: false, data: failure } });
+      expect(send).toHaveBeenCalledTimes(1);
+    } finally { lane.reset('done'); }
+  });
   it('carries registered query constraints through the real proxy, offline catalogue and compact model schema', () => {
     // No injected engine: this exercises the public child-process proxy's
     // actual declaration path without starting it or connecting a game.
