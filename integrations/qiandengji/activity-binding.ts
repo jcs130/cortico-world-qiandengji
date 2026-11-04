@@ -37,6 +37,7 @@ export class ActivityBindings {
 
 /** Known native command grammar only; never infer activity from prose or coordinates. */
 export function activitySubjects(tool: string, args: Record<string, unknown>): string[] {
+  if (tool === 'mc_query' && args.query === 'trial.status') return ['trial_tower'];
   if (tool === 'mc_query' && typeof args.query === 'string' && /^dungeon\.(status|info)$/.test(args.query)
     && Array.isArray(args.arguments) && id(args.arguments[0])) return [`site_dungeon:${args.arguments[0]}`];
   if (tool !== 'mc_do' || !Array.isArray(args.steps)) return [];

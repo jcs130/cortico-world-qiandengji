@@ -29,13 +29,14 @@
 ### 不占身体队列的即时查询
 
 Mineflayer 使用 `mymc_query {}` 查看本服务器包明确声明的只读查询。需要最新状态时，可用
-`mymc_query {"query":"status","arguments":[]}`，或
+`mymc_query {"query":"status","arguments":[]}`；试炼塔使用
+`mymc_query {"query":"trial.status"}`（对应 `/mycli arena status --json`），遗迹/墓穴使用
 `mymc_query {"query":"dungeon.status","arguments":["undead_crypt"]}` / `dungeon.info`。
 此处 `undead_crypt` 只是副本 ID 示例，实际使用当次服务端给出的 ID。
 查询直接走独立通道，不会取消、替换或排到行走、战斗、存取任务之后；不要为查询状态提交 `mymc_do chat`。
 一次仅有一个查询在途；按回执里的 `requestId` 读取原请求结果，不因等待或超时自动重发。
 
-目前声明 `status`、`skills.status`、`skills.info`、`profession.list`、`profession.status`、`profession.info`、`dungeon.status` 和 `dungeon.info`。职业和技能详情使用 `arguments:["服务端给出的ID"]`，list/status 不带参数。它们读取同一原生Vortex接口；不会代选职、花点、准备或施法，也不会自动执行返回的 nextCommand。技能资格使用 `mymc_query {"query":"skills.status"}`。
+目前声明 `trial.status`、`status`、`skills.status`、`skills.info`、`profession.list`、`profession.status`、`profession.info`、`dungeon.status` 和 `dungeon.info`。试炼塔不是名为 arena 的遗迹，不能用 `dungeon.status ["arena"]` 代查；`trial.status` 不带参数，以 participant 区分本人参赛和全服活动，lastOutcome 仅为历史结果。职业和技能详情使用 `arguments:["服务端给出的ID"]`，list/status 不带参数。查询不会代选职、花点、准备或施法，也不会自动执行返回的 nextCommand。技能资格使用 `mymc_query {"query":"skills.status"}`。
 ID 是服务端给出的 1–64 位小写字母开头、后续字母/数字/下划线/连字符的标识，不是名字、坐标或任意命令。
 `status full`、开始/加入/传送/领奖、未知命令和带 `status` 字样的其他命令不属于本通道。
 帮助与更多入口仍按下方目录发现，不会隐式执行服务端返回的 `nextCommand`。

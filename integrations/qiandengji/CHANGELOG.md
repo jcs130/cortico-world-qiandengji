@@ -525,3 +525,8 @@ Consume core rc.130 with nearby voice, native-world isolation and server/account
 
 - Preserve the deployed memory, profession, nearby voice and chat-scope interfaces while consuming the integrated core.
 - Publish exact read-only query argument contracts and request explicit JSON dungeon replies. Missing IDs are reported with the selected contract; no command or unknown result is retried automatically.
+## 0.4.1-rc.71-preview.10
+
+- Expose native trial.status through the existing non-body query lane; correlate MC_TRIAL_STATE by trusted connection and exact recipient, preserving current participation and historical outcomes separately.
+- Distinguish trial tower queries from site dungeons in the same on-demand catalogue and attribute trial reads to their activity subject.
+

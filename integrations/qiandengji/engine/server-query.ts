@@ -69,6 +69,22 @@ function dungeonDefinition(kind: 'status' | 'info', marker: string, description:
 
 export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
   {
+    id: 'trial.status',
+    argumentsSchema: noArguments,
+    description: 'Read the trial tower (试炼塔 / arena), NOT a site dungeon. arguments:[] only. Returns native MC_TRIAL_STATE with recipient, participant, current floor, remainingMobs and server guidance. Global active does not mean self participating; lastOutcome is historical. Does not start, advance, claim or trade.',
+    command: args => args.length === 0 ? '/mycli arena status --json' : null,
+    matchReply: (text, args, username) => {
+      if (args.length || !username) return null;
+      const value = payload(text, 'MC_TRIAL_STATE');
+      if (!value || value.activityType !== 'trial_tower' || value.recipient !== username
+        || typeof value.active !== 'boolean' || typeof value.participant !== 'boolean'
+        || !Number.isSafeInteger(value.floor) || Number(value.floor) < 0
+        || !Number.isSafeInteger(value.maxFloor) || Number(value.maxFloor) < 1
+        || !Number.isSafeInteger(value.remainingMobs) || Number(value.remainingMobs) < 0) return null;
+      return { data: value, ok: true };
+    },
+  },
+  {
     id: 'status',
     argumentsSchema: noArguments,
     description: 'Read current self status, including Vortex class, RPG level/xp, mana and economy when available. arguments:[] only. Requests --json and matches either the native MC_RPG status shape or legacy MC_STATUS self/name. Native replies have no subject/nonce: the core checks trusted server transport/current connection, not unique request attribution.',
@@ -120,7 +136,7 @@ export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
       || object(value.skill) && value.skill.id === args[0] && value.queryOnly === true && typeof value.learned === 'boolean'
       || object(value.talent) && value.talent.id === args[0] && value.queryOnly === true && typeof value.learned === 'boolean'),
   dungeonDefinition('status', 'MC_SITE_DUNGEON_STATE',
-    'Read a site dungeon state. arguments:["server_observed_id"], one lowercase ASCII ID (letters, digits, underscore or hyphen, max64). Matches the connected recipient and exact dungeon ID. Active/current room, attendance, rewards and lastOutcome remain the server response; no start, join, travel, claim or retry.'),
+    'Read a site dungeon state (遗迹/墓穴), NOT the trial tower; use trial.status for 试炼塔/arena. arguments:["server_observed_id"], one lowercase ASCII ID (letters, digits, underscore or hyphen, max64). Matches the connected recipient and exact dungeon ID. Active/current room, attendance, rewards and lastOutcome remain the server response; no start, join, travel, claim or retry.'),
   dungeonDefinition('info', 'MC_SITE_DUNGEON_INFO',
     'Read a site dungeon description and entry geometry. arguments:["server_observed_id"], one lowercase ASCII ID (letters, digits, underscore or hyphen, max64). Matches the connected recipient and exact dungeon ID. An info response does not establish a current run, cooldown, room clear or successful travel.'),
 ];

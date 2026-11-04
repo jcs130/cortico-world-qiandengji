@@ -21,6 +21,24 @@ const info = { ...dungeon, name: '亡灵墓穴·三室封印', start: [-425, 4, 
   rooms: [{ enemies: 5, center: [-425, 4, 677], name: '守墓前厅', radius: 4 }] };
 
 describe('explicit Qiandengji read-only server query definitions', () => {
+  it('queries the trial tower directly and preserves self/global and historical boundaries', () => {
+    const lane=new ServerQueryLane(),send=vi.fn(),context={generation:'current',username:'ag_Fixture',send};
+    const state={schemaVersion:1,activityType:'trial_tower',recipient:'ag_Fixture',active:true,participant:false,
+      floor:7,selfFloor:0,maxFloor:15,remainingMobs:0,lastOutcome:{run:'old',outcome:'lost'},nextCommand:'/mycli arena entrance'};
+    try {
+      const sent=lane.call({query:'trial.status'},QIANDENGJI_SERVER_QUERIES,context);
+      expect(send).toHaveBeenCalledWith('/mycli arena status --json');
+      for(const patch of [{recipient:'other'},{activityType:'site_dungeon'},{schemaVersion:2},{remainingMobs:-1},{participant:null}])
+        expect(query('trial.status').matchReply('MC_TRIAL_STATE '+JSON.stringify({...state,...patch}),[],'ag_Fixture')).toBeNull();
+      expect(query('trial.status').command(['start'])).toBeNull();
+      expect(lane.receive('MC_TRIAL_RESULT '+JSON.stringify(state),'current','ag_Fixture',1)).toBe(false);
+      expect(lane.receive('MC_TRIAL_STATE '+JSON.stringify(state),'old','ag_Fixture',2)).toBe(false);
+      expect(lane.receive('MC_TRIAL_STATE '+JSON.stringify(state),'current','ag_Fixture',3)).toBe(true);
+      expect(lane.call({requestId:sent.data?.requestId},QIANDENGJI_SERVER_QUERIES,context).data).toMatchObject({
+        phase:'replied',goal_completed:false,reply:{ok:true,data:state}});
+      expect(send).toHaveBeenCalledTimes(1);
+    } finally {lane.reset('done');}
+  });
   it('settles an exactly matched native query rejection instead of waiting for timeout', () => {
     const lane = new ServerQueryLane(), send = vi.fn();
     const context = { generation: 'current', username: 'ag_Fixture', send };
@@ -72,7 +90,7 @@ describe('explicit Qiandengji read-only server query definitions', () => {
     expect(send).not.toHaveBeenCalled();
   });
   it('exposes only the reviewed subset through the optional server engine hook', () => {
-    expect(QIANDENGJI_SERVER_QUERIES.map(item => item.id)).toEqual(['status', 'skills.status',
+    expect(QIANDENGJI_SERVER_QUERIES.map(item => item.id)).toEqual(['trial.status', 'status', 'skills.status',
       'profession.list', 'profession.status', 'profession.info', 'skills.info', 'dungeon.status', 'dungeon.info']);
     const engine = Object.create(QiandengjiEngine.prototype) as any;
     expect(engine.serverQueryDefinitions()).toBe(QIANDENGJI_SERVER_QUERIES);
