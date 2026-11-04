@@ -53,6 +53,18 @@ describe('服务器玩法按需资料', () => {
     const paragraphs = original.split(/\r?\n/).filter((line) => line.trim());
     const manuals = MYMC_GUIDE_TOPICS.map(({ id }) => readServerGuide(id).text);
     for (const paragraph of paragraphs) {
+      if (paragraph.startsWith('服务器快照“服务器上还有')) {
+        const current = readServerGuide('social').text;
+        for (const entry of ['当前收到的在线名单', '聊天可以与行路和准备并行', '不遍历名单群发', '队友传送', '恢复条件']) expect(current).toContain(entry);
+        expect(current).not.toContain('自己安全、补给足、没有正在打的怪');
+        continue; // Online is a contact lead, not nearby presence or a global readiness gate.
+      }
+      if (paragraph.startsWith('想送装备时先问')) {
+        const current = readServerGuide('social').text;
+        for (const entry of ['"target":"玩家完整登录名"', '2–4 格', '拾取事件', '领取未知', '不重复投送']) expect(current).toContain(entry);
+        expect(current).not.toContain('只挑自己确实富余、无专属名称或纹理');
+        continue; // Targeted handoff now has recipient evidence; preserve historical wording only in this fixture.
+      }
       if (paragraph.startsWith('直播中介绍千灯纪时')) {
         const current = readServerGuide('broadcast').text;
         expect(current).toContain('https://mc.kangqiang.site');
