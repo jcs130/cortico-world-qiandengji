@@ -70,6 +70,7 @@ ID 是服务端给出的 1–64 位小写字母开头、后续字母/数字/下�
 | `/minepacks:backpack open` | 54 格普通大背包 |
 | `/questbag` | 剧情任务袋 |
 | `/mycli arena stash` | 本人个人奖励箱 |
+| `/mycli arena stash pages` | 个人箱分页入口；按当前回执选择页，不把默认第一页当全部库存 |
 | `/mycli arena status` | 试炼塔 |
 | `/mycli dungeon status` | 遗迹地下城 |
 | `/mycli photo menu` | 女神相机，无需截图上传 |
