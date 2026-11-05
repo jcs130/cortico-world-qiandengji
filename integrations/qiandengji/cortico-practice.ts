@@ -35,9 +35,10 @@ export class CorticoMethodCognition {
     signal.throwIfAborted();if('error'in reply)throw Error(reply.error);return parseHarness2ModelReply(reply.text);
   }
 }
-const capability='Java 1.21.1 flat-ground collision physics; mc.state() gives snapshot.position and target. '
+const capability='Default fixtures (when start.caseIds is omitted): Java 1.21.1 flat-ground collision physics; mc.state() gives snapshot.position and target. '
   +'Use await bot.look(yaw,pitch), bot.setControlState(key,boolean), bot.waitForTicks(1..100), bot.clearControlStates(). '
-  +'At most 32 SDK calls and 1000 ticks per trial. No combat, oxygen, inventory operations or live scene clone. Release keys in finally.';
+  +'At most 32 SDK calls and 1000 ticks per trial. Use cases to discover scene captures, then start.caseIds to select recorded local geometry with a distinct held-out case. '
+  +'Neither environment models combat, oxygen depletion, inventory operations or Paper plugin rules. Recording is a snapshot, not a full live server clone. Release keys in finally.';
 
 export function withCorticoPractice<T extends World>(world:T,cfg:()=>CorticoPracticeConfig|undefined,dataDir:string):T {
   const tools=world.tools.bind(world),start=world.start.bind(world),stop=world.stop.bind(world),console=world.console?.bind(world);

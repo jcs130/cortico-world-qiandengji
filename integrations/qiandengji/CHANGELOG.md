@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.14
+
+- Consume shared position-dependent collision replay correction for recorded dripstone and bamboo. Clarify default flat fixtures versus explicitly selected recorded cases.
+
 ## 0.4.1-rc.71-preview.13
 
 - Consume shared background method validation and recorded-scene replay. Route explicitly selected cases to the isolated physics adapter and wake the original practice execution on settlement.
