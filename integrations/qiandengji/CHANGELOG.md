@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.12
+
+- Consume shared combat rule radius evaluation without arbitrary RPG numeric ceilings, with exact validation diagnostics.
+
 ## 0.4.1-rc.71-preview.11
 
 - Consume explicit 32-block engagement, cancellable idle strolls and public current-body status from the shared core.

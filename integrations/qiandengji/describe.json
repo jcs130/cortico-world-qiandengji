@@ -431,8 +431,7 @@
                     "within": {
                       "type": "number",
                       "minimum": 1,
-                      "maximum": 16,
-                      "description": "Count matching enemies within this 3D distance; default 12. Not a claim about spell range or line of sight."
+                      "description": "Agent-chosen 3D distance for counting currently observed enemies; default 12. Does not load more terrain, reveal unobserved entities or change spell range/line of sight."
                     },
                     "enemyTypes": {
                       "type": "array",
@@ -448,13 +447,11 @@
                     "hostilesAtLeast": {
                       "type": "integer",
                       "minimum": 1,
-                      "maximum": 64,
                       "description": "Minimum matching enemy count; default 1."
                     },
                     "hostilesAtMost": {
                       "type": "integer",
-                      "minimum": 1,
-                      "maximum": 64
+                      "minimum": 1
                     },
                     "healthAtOrBelow": {
                       "type": "number",
@@ -468,13 +465,11 @@
                     },
                     "manaAtLeast": {
                       "type": "number",
-                      "minimum": 0,
-                      "maximum": 10000
+                      "minimum": 0
                     },
                     "reserveMana": {
                       "type": "number",
                       "minimum": 0,
-                      "maximum": 10000,
                       "description": "Require at least this much mana after the observed spell cost. Unknown mana/cost fails the predicate."
                     },
                     "dimension": {
