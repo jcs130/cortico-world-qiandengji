@@ -14,6 +14,13 @@ const rig=()=>{let attached:WorldHost|null=null;const start=vi.fn(async(host:Wor
   const world:World={id:'mymc',start,stop:vi.fn(async()=>{}),envPromptVars:()=>({}),tools:()=>[{name:'mymc_fixture',description:'fixture',parameters:{},handler:async()=>({text:'ok'})}],console:()=>({})};
   return {world,start,host:()=>attached!};};
 describe('current public Cortico World contract',()=>{
+  it('preserves the shared independent speech capability through the public host wrapper',async()=>{
+    const root=await directory(),cfg={...MYMC.defaults(),provider:'mineflayer' as const,serverPack:'none' as const};
+    const world=MYMC.create({id:'mymc',cfg,dataDir:root,botDir:root,repoRoot:root,packageDir:root,timezone:'UTC',botName:'Fixture',secret:()=>'',storeSecret:()=>{},persist:()=>{},restart:async()=>{}});
+    expect(world.tools().find(tool=>tool.name==='mymc_voice')).toMatchObject({tags:['speak'],bodyControl:'independent'});
+    expect(world.tools().find(tool=>tool.name==='mymc_goal')).toMatchObject({bodyControl:'independent'});
+    expect(world.tools().find(tool=>tool.name==='mymc_do')).not.toHaveProperty('bodyControl','independent');
+  });
   it('uses mymc storage keys for every configured body and declares no private settings',async()=>{
     const root=await directory();const defaults=MYMC.defaults();expect(defaults.viewerActivity).toEqual({enabled:true});
     for(const [provider,serverPack]of [['mineflayer','none'],['mineflayer','qiandengji'],['java-client','none']]as const){

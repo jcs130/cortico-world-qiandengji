@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.15
+
+- Consume the shared body-control capability: nearby speech remains independent while a host worker controls the body. Preserve the original voice queue, request identity and transmission receipts.
+
 ## 0.4.1-rc.71-preview.14
 
 - Consume shared position-dependent collision replay correction for recorded dripstone and bamboo. Clarify default flat fixtures versus explicitly selected recorded cases.
