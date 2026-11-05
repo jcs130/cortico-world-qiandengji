@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.16
+
+- Consume shared report/wait contracts, healing-aware fast decisions and expiring search clues. A priority heal only defers offensive selection when sent; cooldown does not starve other authored rules.
+
 ## 0.4.1-rc.71-preview.15
 
 - Consume the shared body-control capability: nearby speech remains independent while a host worker controls the body. Preserve the original voice queue, request identity and transmission receipts.
