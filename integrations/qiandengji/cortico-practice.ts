@@ -1,6 +1,6 @@
 /** Cortico supplies cognition; shared core owns practice, evidence and game-memory semantics. */
 import {join} from 'node:path';
-import {HARNESS2_PRACTICE_TOOL,Harness2PracticeService,createPhysicsMethodPractice,createPracticeGameMemory,createPracticeCandidateStager,parseHarness2ModelReply} from 'agent-mc-world/learning';
+import {HARNESS2_PRACTICE_TOOL,Harness2PracticeService,practiceExecution,createPhysicsMethodPractice,createPracticeGameMemory,createPracticeCandidateStager,parseHarness2ModelReply} from 'agent-mc-world/learning';
 import {harness2WorkerPath,type Harness2Options} from 'agent-mc-world/decisions';
 import type {ToolDef,World,WorldHost,WorldRequestFacts} from 'agent-mc-world/contracts';
 import type {CognitionHost,WorldHost as CorticoWorldHost} from 'cortico/core/types.ts';
@@ -75,11 +75,17 @@ export function withCorticoPractice<T extends World>(world:T,cfg:()=>CorticoPrac
         model:{id:config.modelId||'cortico-minecraft-method/v1',generate:async(request,signal)=>{
           return model.generate(request,signal);
         }},practice:practice.executor,fixtures:practice.fixtures,capability,budget:config.budget,
+        cases:()=>call('mymc_script',{scene:{op:'list'}},new AbortController().signal),
+        prepareCases:async(ids,signal)=>{
+          const scenarios=[];for(const id of ids)scenarios.push(await call('mymc_script',{scene:{op:'read',id}},signal));
+          const recorded=createPhysicsMethodPractice({directory:join(root,'recorded-methods'),scenarios,binding:{instanceId:'isolated-recorded-physics',realm:'isolated-recorded-physics',account:'practice',agent:'practice',isolated:true}});
+          return {practice:recorded.executor,fixtures:recorded.fixtures,capability:'Recorded Java 1.21.1 local geometry, collision/controls and explicit external terrain events. Unknown cells abort the trial. No combat damage, oxygen depletion, inventory effects, opponent policy or Paper plugin rules; initial health stays fixed. Evidence measures reachability only.'};
+        },
         source:()=>{const scope=facts()?.experience?.scope;return scope?{scope,instanceId:`${scope.realm}/${scope.account}/${scope.agent}`}:null;},
         readMethod:(id,revision,signal)=>call('mymc_script',{library:{op:'read',id,revision}},signal),stageCandidate,...memory,
         settled:async event=>{await h.pushEvent({source:world.id,type:`${world.id}.practice`,ts:new Date().toISOString(),
           text:`Harness² ${event.id}: ${event.status}; eligible=${event.eligible??'unknown'}, adopted=false. 用 mymc_practice status/result 查看原始试跑与适用范围。`,
-          meta:{...event,adopted:false}},{trigger:'piggyback'});}});
+          execution:practiceExecution(event.id,event.status),meta:{...event,adopted:false}},{trigger:'flush'});}});
     }catch(error){await stop();host=null;throw error;}
   };
   world.stop=async()=>{try{await service?.close();}finally{service=null;host=null;cognitionAdapter=null;await stop();}};

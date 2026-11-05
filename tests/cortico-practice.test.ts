@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import {withCorticoPractice,PRACTICE_DEFAULTS} from '../integrations/qiandengji/cortico-practice.ts';
-import {HARNESS2_PRACTICE_TOOL} from 'agent-mc-world/learning';
+import {HARNESS2_PRACTICE_TOOL,practiceExecution} from 'agent-mc-world/learning';
 import type {World,WorldHost} from 'agent-mc-world/contracts';
 import {nullLogger} from 'agent-mc-world/client';
 import {mymcEngineConfig,MYMC_DEFAULTS} from '../integrations/qiandengji/config.ts';
@@ -14,6 +14,20 @@ function rig(){let started=0,stopped=0;
   return {world,counts:()=>({started,stopped})};
 }
 describe('Cortico isolated learning adapter',()=>{
+  it('exposes background classifiers and routes case discovery through the original script port without a model call',async()=>{
+    const r=rig(),directory=mkdtempSync(join(tmpdir(),'mc-recorded-discovery-'));let calls=0,reads=0;
+    r.world.tools=()=>[{name:'mymc_script',description:'fixture',parameters:{},tags:['read'],handler:async args=>{
+      expect(args).toEqual({scene:{op:'list'}});reads++;return {text:JSON.stringify([{id:'water-edge',hash:'a'.repeat(64)}])};}}];
+    const world=withCorticoPractice(r.world,()=>({...structuredClone(PRACTICE_DEFAULTS),enabled:true,worker:{command:process.execPath,workspace:directory}}),directory);
+    try{
+      await world.start({...host,cognition:{request:async()=>{calls++;return {error:'must not run'};}}} as any);
+      const tool=world.tools().find(t=>t.name==='mymc_practice')!;
+      expect(tool.learningCall?.({op:'start'})).toBe(true);expect(tool.readOnlyCall?.({op:'start'})).toBe(false);
+      expect(JSON.parse((await tool.handler({op:'cases'},{role:'learning',log:host.log}) as any).text)).toMatchObject([{id:'water-edge'}]);
+      expect(reads).toBe(1);expect(calls).toBe(0);
+      expect(practiceExecution('recorded-job','completed')).toMatchObject({id:'harness2:recorded-job',terminal:true,goalCompleted:false});
+    }finally{await world.stop();rmSync(directory,{recursive:true,force:true});}
+  });
   it('delivers a bounded practice continuation index without source expansion or starting background work',async()=>{
     const r=rig(),directory=mkdtempSync(join(tmpdir(),'mc-practice-facts-'));let calls=0;
     Object.assign(r.world,{requestFacts:()=>({text:'current snapshot',snapshotTypes:[],parts:[{key:'life',text:'current snapshot'}],

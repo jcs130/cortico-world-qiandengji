@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.13
+
+- Consume shared background method validation and recorded-scene replay. Route explicitly selected cases to the isolated physics adapter and wake the original practice execution on settlement.
+
 ## 0.4.1-rc.71-preview.12
 
 - Consume shared combat rule radius evaluation without arbitrary RPG numeric ceilings, with exact validation diagnostics.
