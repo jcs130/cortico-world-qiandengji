@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.21
+
+- Pin the shared combat scene-change fix and explicit automatic-rule/program ownership readout in core preview.26. Retain the optional server pack and existing external viewer assets.
+
 ## 0.4.1-rc.71-preview.20
 
 - Add bounded read-only queries for all ten personal storage pages, inventory slots, shop/recycling catalogues and player market. Preserve page/stream identity, names, enchantments, durability and currency; omit serialized item bytes from model context.
