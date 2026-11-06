@@ -1,3 +1,9 @@
+## 0.4.1-rc.71-preview.19
+
+- Consume core preview.24: trident/mace melee recognition, explicit weapon choice, persisted weapon preference and equipment/mobility discovery.
+- Consume bounded, result-confirmed enchanting and exact same-name item selection, with on-demand equipment guidance.
+- Retain the previously prepared companion identity and native maid adapter fixes. No production state, model configuration or viewer assets are changed.
+
 ## 0.4.1-rc.71-preview.18
 
 - Consume shared named-entity identity and lifecycle evidence. Unknown NPC button menus no longer masquerade as storage loot.
