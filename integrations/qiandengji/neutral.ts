@@ -10,6 +10,7 @@ export { validateHostCombat } from './host/combat-driver.ts';
 export { QIANDENGJI_PACK } from './data-packs/qiandengji/manifest.ts';
 export { readServerGuide, serverGuideIndex } from './server-guide.ts';
 export { QIANDENGJI_SERVER_QUERIES } from './engine/server-query.ts';
+export {MaidState,QIANDENGJI_MAIDS_TOOL,maidArguments,maidSystemReply} from './engine/maids.ts';
 /** Read-only native RPG projection for hosts keeping their original body/tools. */
 export { NativeRpgState, nativeRpgMessage, readNativeSkills, readNativeRpgStatus, readNativeRpgPacket,
   readNativeSkillDetail, readNativeSkillInvocations } from './engine/native-rpg.ts';

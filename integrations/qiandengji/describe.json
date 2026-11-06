@@ -4830,6 +4830,7 @@
               "building",
               "railway",
               "social",
+              "maids",
               "vision",
               "broadcast",
               "state"
@@ -5003,6 +5004,145 @@
       },
       "tags": [
         "read"
+      ]
+    },
+    {
+      "name": "mymc_maids",
+      "description": "Optional server-owned maid NPC operations, distinct from real players. Start with action:list, then context/inventory/tasks for an observed maidId. Read results are native observations. Writes require a saved requestId and enter the existing body queue; queue acceptance is not application. Use receipt with the original operationId after the body command is sent. chat invokes the native maid model; pending/queued/unknown are not replies. transfer uses playerWindowSlot (Mineflayer 9–44), not Bukkit slots; equip swaps an observed maid slot with main/off/head/chest/legs/feet. Observe actual equipment afterwards. Death/unloaded are separate; context gives original tombstone evidence. No automatic recreation or retry. Full task, voice, menu and recovery semantics are in mymc_guide topic:maids. Mutation commands are not ordinary public chat or mymc_cast spells.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "chat",
+              "talk",
+              "list",
+              "context",
+              "follow",
+              "stay",
+              "speak",
+              "receipt",
+              "inbox",
+              "ack",
+              "tasks",
+              "inventory",
+              "sit",
+              "task",
+              "schedule",
+              "pickup",
+              "transfer",
+              "equip",
+              "skins",
+              "skin",
+              "voices",
+              "voice",
+              "voice-test",
+              "mute",
+              "resources",
+              "resource-pack",
+              "rename"
+            ]
+          },
+          "maidId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requestId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,48}$"
+          },
+          "operationId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,48}$",
+            "description": "Original operation ID for receipt queries."
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 140
+          },
+          "eventId": {
+            "type": "string",
+            "description": "Exact attributed event ID from inbox, for ack only."
+          },
+          "taskId": {
+            "type": "string",
+            "description": "Exact original ID from tasks, for task only."
+          },
+          "schedule": {
+            "type": "string",
+            "enum": [
+              "DAY",
+              "NIGHT",
+              "ALL"
+            ]
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "For pickup or mute."
+          },
+          "skinId": {
+            "type": "string",
+            "description": "Exact original model ID observed in skins."
+          },
+          "voiceId": {
+            "type": "string",
+            "description": "Installed local voice ID observed in voices; optional for preview."
+          },
+          "soundEvent": {
+            "type": "string",
+            "description": "Exact available event observed in voices, for voice-test."
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "put",
+              "take"
+            ]
+          },
+          "slot": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255,
+            "description": "Observed native maid inventory slot."
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          },
+          "hand": {
+            "type": "string",
+            "enum": [
+              "main",
+              "off",
+              "head",
+              "chest",
+              "legs",
+              "feet"
+            ]
+          },
+          "playerWindowSlot": {
+            "type": "integer",
+            "minimum": 9,
+            "maximum": 44,
+            "description": "Actual self inventory window slot from the core inventory readout: 9–35 main inventory, 36–44 hotbar. Converted to Bukkit 0–35 by this adapter; do not pass a Bukkit slot here. Required for transfer put."
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "tags": [
+        "read",
+        "act"
       ]
     },
     {

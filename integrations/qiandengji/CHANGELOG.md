@@ -1,3 +1,13 @@
+## 0.4.1-rc.71-preview.18
+
+- Consume shared named-entity identity and lifecycle evidence. Unknown NPC button menus no longer masquerade as storage loot.
+- Add optional native maid discovery, dialogue, inventory, equipment and receipt tools on the original authenticated connection. Writes use the existing body queue and retained operation IDs; ownership and tombstone evidence stay separate from ordinary mobs, unavailable chunks and task completion.
+- Keep bounded companion observations in the supervisor overview and expose full inventory and native task contracts on demand. Preserve the existing delegated execution and source-owned event views.
+
+## 0.4.1-rc.71-preview.17
+
+- Consume the core's source-authored supervisor event views and tool-help routing capability without changing original event delivery or worker execution contracts. The host chooses dispatch, projection and review policy; the World remains a thin adapter.
+
 ## 0.4.1-rc.71-preview.16
 
 - Consume shared report/wait contracts, healing-aware fast decisions and expiring search clues. A priority heal only defers offensive selection when sent; cooldown does not starve other authored rules.
@@ -553,4 +563,3 @@ Consume core rc.130 with nearby voice, native-world isolation and server/account
 
 - Expose native trial.status through the existing non-body query lane; correlate MC_TRIAL_STATE by trusted connection and exact recipient, preserving current participation and historical outcomes separately.
 - Distinguish trial tower queries from site dungeons in the same on-demand catalogue and attribute trial reads to their activity subject.
-

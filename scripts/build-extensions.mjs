@@ -117,6 +117,9 @@ const diagnostics = ts.getPreEmitDiagnostics(program);
 if (diagnostics.length) throw new Error(ts.formatDiagnosticsWithColorAndContext(diagnostics, {
   getCurrentDirectory: () => root, getCanonicalFileName: name => name, getNewLine: () => '\n' }));
 if (program.emit().emitSkipped) throw new Error('Neutral declaration emit was skipped');
+// The pinned native ESM client has a hand-authored declaration which TypeScript
+// resolves but does not emit. Keep it beside the emitted importing declarations.
+await cp(join(sourceBase, 'engine/maid-port.d.mts'), join(declarationDir, 'integrations/qiandengji/engine/maid-port.d.mts'));
 for (const file of await walk(declarationDir)) {
   const text = await readFile(file, 'utf8');
   if (/from\s+['"]cortico\//.test(text)) throw new Error('Host import in neutral declaration: ' + file);
