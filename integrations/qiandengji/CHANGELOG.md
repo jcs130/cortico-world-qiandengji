@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.17
+
+- Consume the core's source-authored supervisor event views and tool-help routing capability without changing original event delivery or worker execution contracts. The host chooses dispatch, projection and review policy; the World remains a thin adapter.
+
 ## 0.4.1-rc.71-preview.16
 
 - Consume shared report/wait contracts, healing-aware fast decisions and expiring search clues. A priority heal only defers offensive selection when sent; cooldown does not starve other authored rules.
@@ -553,4 +557,3 @@ Consume core rc.130 with nearby voice, native-world isolation and server/account
 
 - Expose native trial.status through the existing non-body query lane; correlate MC_TRIAL_STATE by trusted connection and exact recipient, preserving current participation and historical outcomes separately.
 - Distinguish trial tower queries from site dungeons in the same on-demand catalogue and attribute trial reads to their activity subject.
-
