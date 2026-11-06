@@ -4,6 +4,8 @@ import type { SkillCall } from 'agent-mc-world/extension';
 import {ObservedCommandCatalog, serverQueryTool} from 'agent-mc-world/extension';
 import { observedCommandRoot, observedCommandUsage } from './command-usage.ts';
 import { QIANDENGJI_SERVER_QUERIES } from './server-query.ts';
+import { QIANDENGJI_MAIDS_TOOL, MaidState, maidArguments, maidReadAction, maidSystemReply } from './maids.ts';
+import { createMaidPort, decodeMaidReply, maidCommand, type MaidPort, type MaidReply } from './maid-port.mjs';
 import { type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import { join } from 'node:path';
 import type { MinecraftBot as Bot } from 'agent-mc-world/extension';
@@ -24,7 +26,7 @@ export const SERVER_TOOLS: ReadonlyArray<Omit<ToolDef,'handler'>> = [QIANDENGJI_
     name: 'mc_skills', tags: ['read'],
     description: 'Read this connection and class\'s native available profession spells, common spells and learnable nodes. Optional id selects its membership; a learnable/passive node is not a castable spell. No queries, point spending, preparation or casting are performed. Unknown cost/cooldown/effect remain null. Read mc_query skills.info for the current full definition, mc_combat_tactic for observed combat constraints and Agent-authored combinations, and actual server receipts for effects.',
     parameters: { type: 'object', properties: { id: { type: 'string', pattern: '^[a-z][a-z0-9_:-]{0,63}$' } } },
-  }, SERVER_QUERY_DECLARATION];
+  }, SERVER_QUERY_DECLARATION, QIANDENGJI_MAIDS_TOOL];
 export class QiandengjiEngine extends TacticalMinecraftWorld {
 protected selfHealAvailable = false;
 protected readonly combatSpells: CombatSpells;
@@ -32,6 +34,8 @@ protected arenaFloor: { floor: number; total: number } | null = null;
 protected readonly observedCommands = new ObservedCommandCatalog();
 protected readonly nativeRpg = new NativeRpgState();
 protected readonly chatPolicy = new ChatPolicyState();
+protected readonly maids = new MaidState();
+protected maidPort: MaidPort | null = null;
   constructor(options: MinecraftWorldOptions) { const tactics = new CombatSpells(new CombatTacticBook(options.dataDir ? join(options.dataDir,'minecraft-combat-tactics.json') : null)); super(options, tactics); this.combatSpells = tactics; }
   protected override battlefieldChannel() { return BATTLEFIELD_CHANNEL; }
   protected override serverQueryDefinitions() { return QIANDENGJI_SERVER_QUERIES; }
@@ -42,7 +46,27 @@ protected readonly chatPolicy = new ChatPolicyState();
       text: this.nativeRpg.skillsReadout(typeof args.id === 'string' ? args.id : undefined),
       meta: { nativeSkillsCurrent: this.nativeRpg.hasCurrentSkills(),
         nativeSkillRouteObserved:this.nativeRpg.hasInvocationInfo(typeof args.id==='string'?args.id:undefined) },
-    })}]; }
+    })}, {...QIANDENGJI_MAIDS_TOOL, handler: async (args,ctx) => {
+      let native:Record<string,unknown>;
+      try { native=maidArguments(args); } catch(error) { return {text:String(error),failed:true}; }
+      if(!this.maidPort||!this.bridge?.bot)return {text:'女仆接口未连接；先确认当前游戏认证与连接，未发送操作。',failed:true};
+      if(maidReadAction(args.action)){
+        const result=await this.maidPort.request(native);
+        const reply=maidSystemReply('QD_MAID '+JSON.stringify(result),this.bridge?.bot?.player?.uuid??this.bridge?.bot?._client?.uuid);
+        if(reply)this.observeMaidReply(reply);
+        return {text:JSON.stringify(result),...(typeof result==='object'&&result!==null&&'ok' in result&&result.ok===false?{failed:true}:{})};
+      }
+      const entry=maidCommand(native);
+      const steps:SkillCall[]=[{skill:'chat',text:entry.command}];
+      const result=this.enqueueTool('mc_do',{steps,queue:'append'},()=>({steps}),undefined,ctx.role,ctx.attribution?.controller,ctx);
+      const outcome=typeof result==='string'?{text:result}:result;
+      return {...outcome,text:outcome.text+`\n女仆 operationId=${entry.operationId}；这是身体队列受理/发送回执，不代表原生操作生效。任务发送后用 mc_maids {action:"receipt",maidId:"${entry.maidId}",operationId:"${entry.operationId}"} 读取原结果，勿换 ID 重试。`,
+        data:{...outcome.data,maidOperation:{maidId:entry.maidId,operationId:entry.operationId,action:entry.action,goalCompleted:false}}};
+    }}]; }
+protected observeMaidReply(reply:MaidReply):void {
+    const notice=this.maids.observe(reply);
+    if(notice)this.emit('minecraft.event',notice.text,notice.urgent,{meta:notice.meta});
+  }
 protected castSpell(args: Record<string, unknown>): string | ToolOutcome {
     return invokeQiandengjiCast({
       blockedReason: () => this.bodyInhibitReason,
@@ -127,17 +151,24 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     return false;
   }
   protected override extensionServerFeedback(text: string): void {
+    const maid=maidSystemReply(text,this.bridge?.bot?.player?.uuid??this.bridge?.bot?._client?.uuid);
+    if(maid)this.observeMaidReply(maid);
     this.chatPolicy?.observe(text,this.bridge?.bot?.player?.uuid ?? this.bridge?.bot?._client?.uuid);
     if (text.startsWith('MC_RPG ') && this.nativeRpg.chat(text)) this.publishNativeRpg();
     const usage = observedCommandUsage(text) ?? observedCommandRoot(text, this.bridge?.bot?.username);
     if (usage) this.observedCommands.note(usage);
   }
   override requestFacts() {
-    const facts = super.requestFacts(), parts = [{key:'nativeRpg',text:this.nativeRpg.brief()},
-      {key:'communication',text:this.chatPolicy.brief()}].filter(p=>p.text);
-    if (!facts || !parts.length) return facts;
-    return { ...facts, text: facts.text + '\n' + parts.map(p=>p.text).join('\n'),
-      ...(facts.parts ? { parts: [...facts.parts, ...parts] } : {}) };
+    const facts = super.requestFacts(), companionParts=[{key:'companions',text:this.maids.brief()}].filter(p=>p.text),
+      parts = [{key:'nativeRpg',text:this.nativeRpg.brief()},{key:'communication',text:this.chatPolicy.brief()}].filter(p=>p.text);
+    if (!facts || !parts.length&&!companionParts.length) return facts;
+    const companions=this.maids.summary();
+    return { ...facts, text: [...companionParts.map(p=>p.text),facts.text,...parts.map(p=>p.text)].join('\n'),
+      ...(facts.parts ? { parts: [...companionParts, ...facts.parts, ...parts] } : {}),
+      // Delegated execution uses the compact decision state on the supervisor.
+      // Preserve ownership and lifecycle there, without expanding the NPC's inventory/history.
+      ...(facts.decision&&companions.length?{decision:{...facts.decision,state:{...facts.decision.state,
+        companionObservations:companions}}}:{}) };
   }
   protected override extensionChatAudience(text:string,rendered?:string,direction:'incoming'|'outgoing'='outgoing'){
     return this.chatPolicy.audience(text,rendered,direction);
@@ -162,10 +193,30 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
           break; // Unknown delivery is not automatically retried.
         }
       }
+      // Discover only this authenticated owner's first page. No writes, retries,
+      // chunk loading, conversations or inference are started by discovery.
+      const port=this.maidPort;
+      if(port)void port.request({action:'list'}).then(result=>{
+        if(this.shuttingDown||this.bridge?.bot!==bot||generation!==this.connectionGeneration)return;
+        const reply=maidSystemReply('QD_MAID '+JSON.stringify(result),bot.player?.uuid??bot._client?.uuid);
+        if(reply)this.observeMaidReply(reply);
+      }).catch(error=>this.diag.write({lane:'link',event:'maid-discovery-failed',msg:String(error)}));
     },1500).unref();
   }
   protected override extensionRespawn() { this.nativeRpg.reset(); this.chatPolicy.reset(); const mana=this.bridge?.agentManaState; if(mana!==undefined)this.combatSpells.noteMana(mana?.current??null); }
   protected override attachExtension(bot: Bot) {
+    this.maidPort?.close();this.maidPort=null;this.maids.reset();
+    try { this.maidPort=createMaidPort(bot); } catch(error) {
+      this.diag.write({lane:'link',event:'maid-port-unavailable',msg:String(error)});
+    }
+    const port=this.maidPort;
+    const onMaid=(packet:unknown)=>{
+      if(this.shuttingDown||this.bridge?.bot!==bot)return;
+      const reply=decodeMaidReply(packet,bot.player?.uuid??bot._client?.uuid);if(reply)this.observeMaidReply(reply);
+    };
+    bot._client.on('custom_payload',onMaid);
+    bot._client.once('end',()=>{bot._client.off('custom_payload',onMaid);port?.close();
+      if(this.maidPort===port){this.maidPort=null;this.maids.reset();}});
     this.nativeRpg.reset();
     this.chatPolicy.reset();
     this.observedCommands.clear();

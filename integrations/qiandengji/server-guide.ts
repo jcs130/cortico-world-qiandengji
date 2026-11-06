@@ -26,6 +26,7 @@ export const MYMC_GUIDE_TOPICS = [
   { id: 'building', title: '家与建造', description: '布局、蓝图、施工核验与设计经验' },
   { id: 'railway', title: '铁路设计与连通性', description: '选线美感、轨形连通、动力与试乘' },
   { id: 'social', title: '玩家交往与动作', description: '附近感知、公屏私聊、拜访、挥手与赠物' },
+  { id: 'maids', title: '女仆同伴', description: '对话、装备与遗物' },
   { id: 'vision', title: '现场视觉与空间几何', description: '视角、射线与几何' },
   { id: 'broadcast', title: '直播与加入方式', description: '加入方式与解说节奏' },
   { id: 'state', title: '当前环境读数', description: '任务、目标、探索、规则与摄像机当前采样' },

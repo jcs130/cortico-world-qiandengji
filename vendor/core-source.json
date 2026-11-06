@@ -1,16 +1,18 @@
 {
-  "version": "0.5.7-rc.160-preview.22",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.22-e94ac86d.tgz",
-  "sha256": "e94ac86d599c532c80f880089ce30d489e777fdf8bf0cf27ca463919642365a1",
+  "version": "0.5.7-rc.160-preview.23",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.23-87a4fbc2.tgz",
+  "sha256": "87a4fbc225b91dc8ef1e1fb9c46bbf55f0b4c5a7b245dc50c63dfd143db7d26b",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "parent": "e5f9e4b1339789c89211634dc2c992a2840773c8",
+  "parent": "dd16317b1c8e2451222f04b8b86586fcb8ad0665",
+  "genericFixCommit": "c02e95f1db6cce5751b92899a0263ab13c277b2c",
+  "integrationBranch": "candidate/companion-integration-20261106",
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
   "viewer": {
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "sourceCommit": "dd16317b1c8e2451222f04b8b86586fcb8ad0665",
+  "sourceCommit": "fbda44adeb572f2645bc38aab94aa0da5e387c34",
   "sourcePushed": true
 }
