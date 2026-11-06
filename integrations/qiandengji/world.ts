@@ -155,22 +155,10 @@ export function routeViaServerCommand(args: Record<string, unknown>, autoTravel 
   const itemNote = correctedGlowBerries
     ? '已把发光浆果的物品名改为原版 ID glow_berries；glowing_berries 不是真实物品 ID。'
     : null;
-  // The bare command opens a GUI, then the task boundary closes it before the
-  // agent can inspect it. The text fallback reports only rewards queued by a
-  // full chest, not the current contents of the private chest.
-  if (steps.length === 1) {
-    const only = steps[0];
-    if (only && typeof only === 'object' && !Array.isArray(only)) {
-      const step = only as Record<string, unknown>;
-      if (step.skill === 'chat' && typeof step.text === 'string'
-        && /^\/mycli\s+arena\s+rewards\s*$/i.test(step.text)) {
-        return {
-          args: { ...args, steps: [{ ...step, text: '/mycli arena rewards list' }] },
-          note: '单独打开个人奖励箱只会闪现界面；已改查箱满后尚未入箱的奖励。此清单不反映个人箱内物品或空位；取物时把打开窗口和 take from:"open" 放在同一单。',
-        };
-      }
-    }
-  }
+  // Opening the personal store and listing pending rewards observe different
+  // inventories. Preserve the caller's explicit command. Read-only page
+  // discovery is available separately through storage.stash; never substitute
+  // a different inventory merely because this task closes its window later.
   const out: Array<{ step: unknown; origin: number | null; needs: number[] | null; travel: number | null }> = [];
   const originalToNew = new Map<number, number>();
   let note: string | null = null;

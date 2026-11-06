@@ -1,5 +1,6 @@
 import type { ServerQueryDefinition } from 'agent-mc-world/extension';
 import { nativeRpgMessage, readNativeRpgStatus, readNativeSkills } from './native-rpg.ts';
+import { STORAGE_TRADE_QUERIES } from './storage-trade-query.ts';
 
 /**
  * Explicit read-only subset of the optional Qiandengji protocol.
@@ -139,4 +140,5 @@ export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
     'Read a site dungeon state (遗迹/墓穴), NOT the trial tower; use trial.status for 试炼塔/arena. arguments:["server_observed_id"], one lowercase ASCII ID (letters, digits, underscore or hyphen, max64). Matches the connected recipient and exact dungeon ID. Active/current room, attendance, rewards and lastOutcome remain the server response; no start, join, travel, claim or retry.'),
   dungeonDefinition('info', 'MC_SITE_DUNGEON_INFO',
     'Read a site dungeon description and entry geometry. arguments:["server_observed_id"], one lowercase ASCII ID (letters, digits, underscore or hyphen, max64). Matches the connected recipient and exact dungeon ID. An info response does not establish a current run, cooldown, room clear or successful travel.'),
+  ...STORAGE_TRADE_QUERIES,
 ];

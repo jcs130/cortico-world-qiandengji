@@ -1,19 +1,20 @@
 {
-  "version": "0.5.7-rc.160-preview.24",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.24-04a276ca.tgz",
-  "sha256": "04a276ca76e61160f868a9146a47f5635d3d6efff21e2333e9f2b74624c49d70",
+  "version": "0.5.7-rc.160-preview.25",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.25-2aa69487.tgz",
+  "sha256": "2aa694877202e73edd35345a78aec643e7c5bc106238e6520ee40b2c9c1d48dc",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
   "parent": "dd16317b1c8e2451222f04b8b86586fcb8ad0665",
-  "genericFixCommit": "d0c46a6a778e4e8d9c5623cc7944848391671cce",
-  "integrationBranch": "candidate/weapon-enchant-integration-20261107",
+  "genericFixCommit": "bf71b21cbeba2b32f4e22b22912522945cb2f544",
+  "integrationBranch": "candidate/storage-trade-integration-20261107",
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
   "viewer": {
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "sourceCommit": "368d3c7ae266882e941e64fdf77daa1b6620f60f",
+  "sourceCommit": "9226d0d38c97403dc07cc98ab0a86ec9df77a7a5",
   "sourcePushed": true,
-  "inheritedMaidFix": "c02e95f1db6cce5751b92899a0263ab13c277b2c"
+  "inheritedMaidFix": "c02e95f1db6cce5751b92899a0263ab13c277b2c",
+  "inheritedWeaponFix": "d0c46a6a778e4e8d9c5623cc7944848391671cce"
 }
