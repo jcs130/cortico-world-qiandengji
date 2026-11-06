@@ -11,10 +11,10 @@ describe('千灯纪服务端快捷抵达', () => {
     expect(routeViaServerCommand(args)).toEqual({ args, note: null });
     expect(routeViaServerCommand(args, false).args).toBe(args);
   });
-  it('个人奖励箱单独打开改查待入箱奖励，并说明不是箱内清单；组合取物仍打开 GUI', () => {
+  it('保留开个人箱意图，不改成另一份待领奖励清单；组合取物仍打开 GUI', () => {
     const standalone = routeViaServerCommand({ steps: [{ skill: 'chat', text: '/mycli arena rewards' }] });
-    expect(standalone.args.steps).toEqual([{ skill: 'chat', text: '/mycli arena rewards list' }]);
-    expect(standalone.note).toContain('不反映个人箱内物品或空位');
+    expect(standalone.args.steps).toEqual([{ skill: 'chat', text: '/mycli arena rewards' }]);
+    expect(standalone.note).toBeNull();
     const combined = [
       { skill: 'chat', text: '/mycli arena rewards' },
       { skill: 'take', item: 'emerald', count: 1, from: 'open' },

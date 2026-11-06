@@ -1,3 +1,9 @@
+## 0.4.1-rc.71-preview.20
+
+- Add bounded read-only queries for all ten personal storage pages, inventory slots, shop/recycling catalogues and player market. Preserve page/stream identity, names, enchantments, durability and currency; omit serialized item bytes from model context.
+- Preserve explicit open-store commands instead of rewriting them as pending-reward queries. Replace obsolete storage restrictions with current remote transfer and trade contracts.
+- Consume core multipart query completion and exact failed-action documentation. Mutations still use the single body queue; no automatic transfers or purchases.
+
 ## 0.4.1-rc.71-preview.19
 
 - Consume core preview.24: trident/mace melee recognition, explicit weapon choice, persisted weapon preference and equipment/mobility discovery.

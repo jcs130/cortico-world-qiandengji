@@ -3,6 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from '../src/server-guide.ts';
 
 describe('服务器玩法按需资料', () => {
+  it('discovers current storage and trade without retaining obsolete reward-only restrictions', () => {
+    const storage = readServerGuide('storage').text, trade = readServerGuide('trade').text;
+    for (const entry of ['storage.inventory', 'storage.stash', '540', '0–35', '487–540', 'putslot',
+      '/minepacks:backpack open', '"from":"open"', 'partialReply']) expect(storage).toContain(entry);
+    expect(storage).not.toContain('不要把普通战利品再存回个人奖励箱当长期仓库');
+    for (const entry of ['trade.shop.list', 'trade.recycle.list', 'quoteId', 'trade.auction', '金币', '绿宝石']) expect(trade).toContain(entry);
+    expect(serverGuideIndex()).toContain('trade：');
+    expect(readServerGuide().text).not.toContain('stash putslot');
+  });
   it('discovers special features without treating a historical guide as current eligibility or spending character points',()=>{
     expect(serverGuideIndex()).toContain('features：拍照、写书与职业');
     const text=readServerGuide('features').text;
@@ -53,6 +62,14 @@ describe('服务器玩法按需资料', () => {
     const paragraphs = original.split(/\r?\n/).filter((line) => line.trim());
     const manuals = MYMC_GUIDE_TOPICS.map(({ id }) => readServerGuide(id).text);
     for (const paragraph of paragraphs) {
+      if (['`take` 不写', '你在自主生存直播。服务器在线', '若随身和已有箱子都满了', '背包满时先存放',
+        '`mymc_bag` 的“工具物品名”', '交易或制作缺材料时', '`/mycli arena rewards list`',
+        '试炼奖励箱的存取规则', '从个人奖励箱取下一批前', '`take from:"open"` 回执',
+        '个人奖励箱界面里的附魔书图标', '个人奖励箱窗口的中文“发光浆果”', '千灯纪的随身背包使用 Minepacks'].some(prefix => paragraph.startsWith(prefix))) {
+        // Historical instructions mixed a one-page reward chest with the current
+        // 540-slot writable store. Keep the fixture as history, not current policy.
+        continue;
+      }
       if (paragraph.startsWith('服务器快照“服务器上还有')) {
         const current = readServerGuide('social').text;
         for (const entry of ['当前收到的在线名单', '聊天可以与行路和准备并行', '不遍历名单群发', '队友传送', '恢复条件']) expect(current).toContain(entry);
