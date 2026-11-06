@@ -82,8 +82,9 @@ protected tryAutoCombatSpell(bot: Bot): void {
     const underThreat = (this.combat?.active ?? false) || fighting;
     if (underThreat && this.selfHealAvailable
       && (this.combatSpells.wantsHeal(bot.health ?? 0) || (bot.health ?? 0) <= 6)) {
-      this.tryAutoSelfHeal(bot);
-      return;
+      // A desired heal must not starve every other authored spell while the
+      // heal is cooling down, lacks mana, or failed to send.
+      if (this.tryAutoSelfHeal(bot)) return;
     }
     const spell = this.combatSpells.next(bot, fighting);
     if (!spell) return;

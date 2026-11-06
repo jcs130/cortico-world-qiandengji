@@ -1,6 +1,6 @@
 /** Cortico supplies cognition; shared core owns practice, evidence and game-memory semantics. */
 import {join} from 'node:path';
-import {HARNESS2_PRACTICE_TOOL,Harness2PracticeService,createPhysicsMethodPractice,createPracticeGameMemory,createPracticeCandidateStager,parseHarness2ModelReply} from 'agent-mc-world/learning';
+import {HARNESS2_PRACTICE_TOOL,Harness2PracticeService,practiceExecution,createPhysicsMethodPractice,createPracticeGameMemory,createPracticeCandidateStager,parseHarness2ModelReply} from 'agent-mc-world/learning';
 import {harness2WorkerPath,type Harness2Options} from 'agent-mc-world/decisions';
 import type {ToolDef,World,WorldHost,WorldRequestFacts} from 'agent-mc-world/contracts';
 import type {CognitionHost,WorldHost as CorticoWorldHost} from 'cortico/core/types.ts';
@@ -35,9 +35,10 @@ export class CorticoMethodCognition {
     signal.throwIfAborted();if('error'in reply)throw Error(reply.error);return parseHarness2ModelReply(reply.text);
   }
 }
-const capability='Java 1.21.1 flat-ground collision physics; mc.state() gives snapshot.position and target. '
+const capability='Default fixtures (when start.caseIds is omitted): Java 1.21.1 flat-ground collision physics; mc.state() gives snapshot.position and target. '
   +'Use await bot.look(yaw,pitch), bot.setControlState(key,boolean), bot.waitForTicks(1..100), bot.clearControlStates(). '
-  +'At most 32 SDK calls and 1000 ticks per trial. No combat, oxygen, inventory operations or live scene clone. Release keys in finally.';
+  +'At most 32 SDK calls and 1000 ticks per trial. Use cases to discover scene captures, then start.caseIds to select recorded local geometry with a distinct held-out case. '
+  +'Neither environment models combat, oxygen depletion, inventory operations or Paper plugin rules. Recording is a snapshot, not a full live server clone. Release keys in finally.';
 
 export function withCorticoPractice<T extends World>(world:T,cfg:()=>CorticoPracticeConfig|undefined,dataDir:string):T {
   const tools=world.tools.bind(world),start=world.start.bind(world),stop=world.stop.bind(world),console=world.console?.bind(world);
@@ -75,11 +76,17 @@ export function withCorticoPractice<T extends World>(world:T,cfg:()=>CorticoPrac
         model:{id:config.modelId||'cortico-minecraft-method/v1',generate:async(request,signal)=>{
           return model.generate(request,signal);
         }},practice:practice.executor,fixtures:practice.fixtures,capability,budget:config.budget,
+        cases:()=>call('mymc_script',{scene:{op:'list'}},new AbortController().signal),
+        prepareCases:async(ids,signal)=>{
+          const scenarios=[];for(const id of ids)scenarios.push(await call('mymc_script',{scene:{op:'read',id}},signal));
+          const recorded=createPhysicsMethodPractice({directory:join(root,'recorded-methods'),scenarios,binding:{instanceId:'isolated-recorded-physics',realm:'isolated-recorded-physics',account:'practice',agent:'practice',isolated:true}});
+          return {practice:recorded.executor,fixtures:recorded.fixtures,capability:'Recorded Java 1.21.1 local geometry, collision/controls and explicit external terrain events. Unknown cells abort the trial. No combat damage, oxygen depletion, inventory effects, opponent policy or Paper plugin rules; initial health stays fixed. Evidence measures reachability only.'};
+        },
         source:()=>{const scope=facts()?.experience?.scope;return scope?{scope,instanceId:`${scope.realm}/${scope.account}/${scope.agent}`}:null;},
         readMethod:(id,revision,signal)=>call('mymc_script',{library:{op:'read',id,revision}},signal),stageCandidate,...memory,
         settled:async event=>{await h.pushEvent({source:world.id,type:`${world.id}.practice`,ts:new Date().toISOString(),
           text:`Harness² ${event.id}: ${event.status}; eligible=${event.eligible??'unknown'}, adopted=false. 用 mymc_practice status/result 查看原始试跑与适用范围。`,
-          meta:{...event,adopted:false}},{trigger:'piggyback'});}});
+          execution:practiceExecution(event.id,event.status),meta:{...event,adopted:false}},{trigger:'flush'});}});
     }catch(error){await stop();host=null;throw error;}
   };
   world.stop=async()=>{try{await service?.close();}finally{service=null;host=null;cognitionAdapter=null;await stop();}};

@@ -1,3 +1,19 @@
+## 0.4.1-rc.71-preview.16
+
+- Consume shared report/wait contracts, healing-aware fast decisions and expiring search clues. A priority heal only defers offensive selection when sent; cooldown does not starve other authored rules.
+
+## 0.4.1-rc.71-preview.15
+
+- Consume the shared body-control capability: nearby speech remains independent while a host worker controls the body. Preserve the original voice queue, request identity and transmission receipts.
+
+## 0.4.1-rc.71-preview.14
+
+- Consume shared position-dependent collision replay correction for recorded dripstone and bamboo. Clarify default flat fixtures versus explicitly selected recorded cases.
+
+## 0.4.1-rc.71-preview.13
+
+- Consume shared background method validation and recorded-scene replay. Route explicitly selected cases to the isolated physics adapter and wake the original practice execution on settlement.
+
 ## 0.4.1-rc.71-preview.12
 
 - Consume shared combat rule radius evaluation without arbitrary RPG numeric ceilings, with exact validation diagnostics.
