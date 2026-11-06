@@ -5,6 +5,7 @@ export { NativeRpgState, nativeRpgMessage, readNativeRpgStatus, readNativeRpgPac
   readNativeSkillDetail, readNativeSkillInvocations,
   type NativeRpgProfile, type NativeRpgGuidance, type NativeSkills, type NativeSkillNode, type NativeSkillDetail } from './native-rpg.ts';
 export {ChatPolicyState} from './chat-policy.ts';
+export {MaidState,QIANDENGJI_MAIDS_TOOL,maidArguments,maidSystemReply} from './maids.ts';
 
 export { QIANDENGJI_CAST_TOOL, createQiandengjiCastTool, invokeQiandengjiCast, type QiandengjiCastToolPort } from './cast-tool.ts';
 export { CombatSpells } from './combat-spells.ts';
