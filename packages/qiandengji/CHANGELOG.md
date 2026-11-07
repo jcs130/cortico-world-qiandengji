@@ -1,3 +1,8 @@
+## 0.5.0-rc.50-preview.19
+
+- Consume the deployed 0.1.8-life maid contract: retain server-observed survival, persisted recovery and historical deaths in bounded companion summaries, keeping unloaded state unknown.
+- Accept original native death events before the tombstone arrives, preserving episode identity and ownership checks. Update on-demand guidance without new autonomous actions.
+
 ## 0.5.0-rc.50-preview.18
 
 - Declare maid query branches for read-only workers; writes retain the existing body queue and receipt checks.

@@ -9,7 +9,7 @@ export const maidReadAction=(action:unknown)=>typeof action==='string'&&reads.ha
 const parameters=structuredClone(MAID_TOOL.parameters) as {properties:Record<string,unknown>};
 delete parameters.properties.playerSlot;
 parameters.properties.playerWindowSlot={type:'integer',minimum:9,maximum:44,
-  description:'Actual self inventory window slot from the core inventory readout: 9–35 main inventory, 36–44 hotbar. Converted to Bukkit 0–35 by this adapter; do not pass a Bukkit slot here. Required for transfer put.'};
+  description:'Actual self inventory window slot: 9–35 main inventory, 36–44 hotbar. Read mc_script api:inventory.items, then await bot.inventory.items() for exact slots; mc_bag totals do not identify a slot. Converted to Bukkit 0–35 by this adapter; do not pass a Bukkit slot here. Required for transfer put.'};
 export const QIANDENGJI_MAIDS_TOOL:Omit<ToolDef,'handler'>={...MAID_TOOL,parameters,
   readOnlyCall: args => maidReadAction(args.action),
   description:'Optional server-owned maid NPC operations, distinct from real players. Start with action:list, then context/inventory/tasks for an observed maidId. '
@@ -37,10 +37,21 @@ export function maidSystemReply(line:string,selfUuid:string|undefined):MaidReply
 
 type MaidRecord={maidId:string;ownerId:string;name:string;sampledAt:string;lifeState:string;loaded:boolean|null;
   health:number|null;maxHealth:number|null;taskId:string|null;dialogueMode:string|null;death:Record<string,unknown>|null;
-  lastAliveAt:string|null;historicalDeath:Record<string,unknown>|null;
+  lastAliveAt:string|null;historicalDeath:Record<string,unknown>|null;recovery:Record<string,unknown>|null;
   sitting:boolean|null;canMove:boolean|null;dimension:string|null;position:number[]|null;
   equipment:Record<string,unknown>|null;equipmentAt:string|null};
 type MaidNotice={text:string;urgent:boolean;meta:Record<string,unknown>};
+const observedTime=(value:unknown,sampledAt:string)=>typeof value==='string'&&Number.isFinite(Date.parse(value))
+  &&Date.parse(value)<=Date.parse(sampledAt)?value:null;
+const laterTime=(...values:(string|null|undefined)[])=>values.filter((v):v is string=>!!v)
+  .sort((a,b)=>Date.parse(b)-Date.parse(a))[0]??null;
+const ownedEvidence=(value:unknown,row:Record<string,unknown>)=>object(value)&&value.maidId===row.maidId
+  &&value.ownerId===row.ownerId&&typeof value.eventId==='string'&&/^[A-Za-z0-9_-]{1,48}$/.test(value.eventId)?value:null;
+function deathEvidence(value:unknown,row:Record<string,unknown>,sampledAt:string){
+  const d=ownedEvidence(value,row);
+  return d&&['original_tlm_tombstone','original_tlm_death_event'].includes(String(d.evidence))
+    &&observedTime(d.diedAt,sampledAt)?d:null;
+}
 /** Bounded current-connection observations, not a second personal-memory store. */
 export class MaidState {
   private rows=new Map<string,MaidRecord>();
@@ -51,6 +62,8 @@ export class MaidState {
     observedAt:row.sampledAt,lifeState:row.lifeState,loaded:row.loaded,health:row.health,taskId:row.taskId,
     sitting:row.sitting,canMove:row.canMove,dimension:row.dimension,position:row.position,
     lastAliveAt:row.lastAliveAt,
+    recovery:row.recovery?{eventId:row.recovery.eventId,observedAt:row.recovery.observedAt,
+      resolvedDeathEventId:row.recovery.resolvedDeathEventId,actualRevivalTimeKnown:false,persisted:row.recovery.persisted}:null,
     historicalDeath:row.historicalDeath?{eventId:row.historicalDeath.eventId,diedAt:row.historicalDeath.diedAt}:null,
     death:row.death?{eventId:row.death.eventId,diedAt:row.death.diedAt,dimension:row.death.dimension,position:row.death.position}:null,
     equipment:row.equipment?Object.fromEntries(['main','off','head','chest','legs','feet'].map(slot=>{
@@ -70,14 +83,25 @@ export class MaidState {
         ||typeof row.ownerId!=='string'||row.ownerId.toLowerCase()!==reply.recipientUuid.toLowerCase())continue;
       const previous=this.rows.get(row.maidId);
       if(previous&&Date.parse(previous.sampledAt)>Date.parse(reply.sampledAt))continue;
-      const reportedDeath=row.lifeState==='dead'&&object(row.death)&&row.death.maidId===row.maidId&&row.death.ownerId===row.ownerId
-        &&row.death.evidence==='original_tlm_tombstone'?row.death:null;
+      const reportedDeath=row.lifeState==='dead'?deathEvidence(row.death,row,reply.sampledAt):null;
+      const candidateRecovery=ownedEvidence(row.recovery,row);
+      const recovery=candidateRecovery&&candidateRecovery.evidence==='original_tlm_alive_entity'
+        &&candidateRecovery.actualRevivalTimeKnown===false&&typeof candidateRecovery.persisted==='boolean'
+        &&observedTime(candidateRecovery.observedAt,reply.sampledAt)?candidateRecovery:previous?.recovery??null;
+      const lastAliveAt=laterTime(previous?.lastAliveAt,row.lifeState==='alive'?reply.sampledAt:null,
+        object(row.lastSeenAlive)?observedTime(row.lastSeenAlive.observedAt,reply.sampledAt):null,
+        recovery?.persisted===true?observedTime(recovery.observedAt,reply.sampledAt):null);
       // A new transport timestamp does not make an old tombstone a new death.
       // If the same UUID was alive afterwards, unloaded now remains unknown.
-      const superseded=!!(reportedDeath&&previous?.lastAliveAt
-        &&Date.parse(String(reportedDeath.diedAt))<Date.parse(previous.lastAliveAt));
+      const superseded=!!(reportedDeath&&lastAliveAt
+        &&(Date.parse(String(reportedDeath.diedAt))<Date.parse(lastAliveAt)
+          ||recovery?.persisted===true&&recovery.resolvedDeathEventId===reportedDeath.eventId
+            &&Date.parse(String(reportedDeath.diedAt))<=Date.parse(String(recovery.observedAt))));
       const death=superseded?null:reportedDeath;
       const lifeState=row.lifeState==='dead'&&death?'dead':row.lifeState==='alive'?'alive':'unknown';
+      const historicalDeath=[deathEvidence(row.historicalDeath,row,reply.sampledAt),previous?.historicalDeath,
+        superseded?reportedDeath:null,lifeState==='alive'?previous?.death:null]
+        .filter((d):d is Record<string,unknown>=>!!d).sort((a,b)=>Date.parse(String(b.diedAt))-Date.parse(String(a.diedAt)))[0]??null;
       const equipmentInvalidated=lifeState==='dead'||previous?.lifeState==='dead'&&lifeState==='alive';
       const next:MaidRecord={maidId:row.maidId,ownerId:row.ownerId,name:text(row.name)||previous?.name||row.maidId,
         sampledAt:reply.sampledAt,lifeState,loaded:typeof row.loaded==='boolean'?row.loaded:null,
@@ -87,8 +111,7 @@ export class MaidState {
         sitting:typeof row.sitting==='boolean'?row.sitting:null,canMove:typeof row.canMove==='boolean'?row.canMove:null,
         dimension:typeof row.dimension==='string'?text(row.dimension,128):null,
         position:Array.isArray(row.position)&&row.position.length===3&&row.position.every(Number.isFinite)?[...row.position] as number[]:null,
-        death,lastAliveAt:lifeState==='alive'?reply.sampledAt:previous?.lastAliveAt??null,
-        historicalDeath:superseded?reportedDeath:lifeState==='alive'?(previous?.death??previous?.historicalDeath??null):null,
+        death,lastAliveAt,historicalDeath,recovery,
         equipment:equipmentInvalidated?null:previous?.equipment??null,equipmentAt:equipmentInvalidated?null:previous?.equipmentAt??null};
       this.rows.set(row.maidId,next);
       const changed=previous?.lifeState!==lifeState||previous?.death?.eventId!==death?.eventId;
@@ -127,7 +150,7 @@ export class MaidState {
       const key=`death:${row.maidId}:${row.death?.eventId}`;
       if(this.notices.has(key))return null;
       this.notices.add(key);while(this.notices.size>128)this.notices.delete(this.notices.values().next().value!);
-      return {text:`[女仆同伴死亡] ${row.name}（maidId=${row.maidId}）的服务端原生墓碑记录确认死亡。${this.deathText(row)} `
+      return {text:`[女仆同伴死亡] ${row.name}（maidId=${row.maidId}）的服务端原生死亡证据确认死亡。${this.deathText(row)} `
         +'用 mc_maids context 核对最新状态；这是同伴死亡，不是普通怪物击杀，也不能据此声称已复活。',
         urgent:true,meta:{maidObservation:{kind:'death',maidId:row.maidId,ownerId:row.ownerId,
           eventId:row.death?.eventId,sampledAt:reply.sampledAt,death:row.death}}};
@@ -151,7 +174,8 @@ export class MaidState {
       const state=row.lifeState==='dead'?'已确认死亡，复活未验证':row.lifeState==='alive'?`当时存活，生命${row.health??'未知'}/${row.maxHealth??'未知'}`:'存活状态未知，未加载不等于死亡';
       return `${row.name} maidId=${row.maidId}，${row.sampledAt}：${state}，工作=${row.taskId??'未知'}，对话=${row.dialogueMode??'未知'}。`
         +` 坐下=${row.sitting??'未知'}，可移动=${row.canMove??'未知'}，位置=${row.dimension??'未知'} ${row.position?JSON.stringify(row.position):'未知'}。`
-        +(row.historicalDeath?` 历史死亡 ${text(row.historicalDeath.diedAt)} 早于确认存活 ${row.lastAliveAt}，不能当成再次死亡；遗物另查。`:'')
+        +(row.historicalDeath?` 历史死亡 ${text(row.historicalDeath.diedAt)}${row.lastAliveAt?`；最近确认存活 ${row.lastAliveAt}`:''}，不能当成再次死亡；遗物另查。`:'')
+        +(row.recovery?` 恢复见证 ${text(row.recovery.observedAt)}（不是实际复活时间；持久保存=${row.recovery.persisted}）。`:'')
         +(row.death?this.deathText(row):'')+(row.equipment?` 装备记录 ${row.equipmentAt}：${JSON.stringify(row.equipment).slice(0,850)}`:' 装备未查询，不能当作已给她武器/护甲。');
     }).join('\n')+`\n共已观察${this.rows.size}位；mc_maids 的 list/context/inventory/tasks/receipt 按需读，mc_guide maids 查操作。`;
   }
