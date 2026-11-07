@@ -1,3 +1,8 @@
+## 0.5.0-rc.50-preview.21
+
+- Bind server-confirmed maid UUIDs to the shared semantic identity port. Snapshot, proximity, attention and SDK observations consistently name the companion while preserving the raw protocol type. Release identity mappings on reconnect, without overriding players or unrelated entities.
+- Preserve equipment names from the native maid inventory response in compact observations.
+
 ## 0.5.0-rc.50-preview.20
 
 - Correlate visible companion UUIDs with the current server-owned maid identity using the shared core observation note. Keep raw entity types, visibility and targeting unchanged; distinguish native maid identity from a compatibility appearance.

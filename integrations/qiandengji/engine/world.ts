@@ -1,7 +1,7 @@
 import { QIANDENGJI_CAST_TOOL, invokeQiandengjiCast } from './cast-tool.ts';
 import { portableStorageMisuseNote } from './portable-storage.ts';
 import type { SkillCall } from 'agent-mc-world/extension';
-import {ObservedCommandCatalog, serverQueryTool} from 'agent-mc-world/extension';
+import {ObservedCommandCatalog, serverQueryTool, bindEntityIdentityResolver} from 'agent-mc-world/extension';
 import { observedCommandRoot, observedCommandUsage } from './command-usage.ts';
 import { QIANDENGJI_SERVER_QUERIES } from './server-query.ts';
 import { QIANDENGJI_MAIDS_TOOL, MaidState, maidArguments, maidReadAction, maidSystemReply } from './maids.ts';
@@ -36,16 +36,7 @@ protected readonly nativeRpg = new NativeRpgState();
 protected readonly chatPolicy = new ChatPolicyState();
 protected readonly maids = new MaidState();
 protected maidPort: MaidPort | null = null;
-  protected override snapshot(options?:{scanBlocks?:boolean}):ReturnType<TacticalMinecraftWorld['snapshot']> {
-    const snapshot=super.snapshot(options);
-    if(snapshot)for(const entity of snapshot.entities){
-      // Reuse the core's public observation note. Raw type, visibility, UUID,
-      // targeting and relation semantics remain protocol observations.
-      const identity=entity.visible?this.maids.identityNote(entity.uuid):null;
-      if(identity)entity.note=[identity,entity.note].filter(Boolean).join('，');
-    }
-    return snapshot;
-  }
+protected releaseMaidIdentity: (()=>void) | null = null;
   constructor(options: MinecraftWorldOptions) { const tactics = new CombatSpells(new CombatTacticBook(options.dataDir ? join(options.dataDir,'minecraft-combat-tactics.json') : null)); super(options, tactics); this.combatSpells = tactics; }
   protected override battlefieldChannel() { return BATTLEFIELD_CHANNEL; }
   protected override serverQueryDefinitions() { return QIANDENGJI_SERVER_QUERIES; }
@@ -216,6 +207,9 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
   protected override extensionRespawn() { this.nativeRpg.reset(); this.chatPolicy.reset(); const mana=this.bridge?.agentManaState; if(mana!==undefined)this.combatSpells.noteMana(mana?.current??null); }
   protected override attachExtension(bot: Bot) {
     this.maidPort?.close();this.maidPort=null;this.maids.reset();
+    this.releaseMaidIdentity?.();
+    const releaseIdentity=bindEntityIdentityResolver(bot,entity=>this.maids.identity(entity.uuid));
+    this.releaseMaidIdentity=releaseIdentity;
     try { this.maidPort=createMaidPort(bot); } catch(error) {
       this.diag.write({lane:'link',event:'maid-port-unavailable',msg:String(error)});
     }
@@ -225,8 +219,8 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
       const reply=decodeMaidReply(packet,bot.player?.uuid??bot._client?.uuid);if(reply)this.observeMaidReply(reply);
     };
     bot._client.on('custom_payload',onMaid);
-    bot._client.once('end',()=>{bot._client.off('custom_payload',onMaid);port?.close();
-      if(this.maidPort===port){this.maidPort=null;this.maids.reset();}});
+    bot._client.once('end',()=>{bot._client.off('custom_payload',onMaid);port?.close();releaseIdentity();
+      if(this.releaseMaidIdentity===releaseIdentity){this.releaseMaidIdentity=null;this.maidPort=null;this.maids.reset();}});
     this.nativeRpg.reset();
     this.chatPolicy.reset();
     this.observedCommands.clear();
