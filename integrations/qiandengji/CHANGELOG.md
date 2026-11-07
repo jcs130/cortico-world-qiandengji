@@ -1,3 +1,8 @@
+## 0.4.1-rc.71-preview.28
+
+- Declare optional fact capabilities independently of current observations, preserving missing values as unknown.
+- Require core preview.30 for stable worker fact scopes and explicit absolute short-step orientation.
+
 ## 0.4.1-rc.71-preview.27
 
 - Preserve server-attested role and ownership beside personal names in full, nearby and quiet perception.

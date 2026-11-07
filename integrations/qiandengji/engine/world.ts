@@ -162,9 +162,10 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
   override requestFacts() {
     const facts = super.requestFacts(), companionParts=[{key:'companions',text:this.maids.brief()}].filter(p=>p.text),
       parts = [{key:'nativeRpg',text:this.nativeRpg.brief()},{key:'communication',text:this.chatPolicy.brief()}].filter(p=>p.text);
-    if (!facts || !parts.length&&!companionParts.length) return facts;
+    if (!facts) return facts;
     const companions=this.maids.summary();
-    return { ...facts, text: [...companionParts.map(p=>p.text),facts.text,...parts.map(p=>p.text)].join('\n'),
+    return { ...facts, partKeys:[...new Set([...(facts.partKeys??facts.parts?.map(p=>p.key)??[]),'companions','nativeRpg','communication'])],
+      text: [...companionParts.map(p=>p.text),facts.text,...parts.map(p=>p.text)].join('\n'),
       ...(facts.parts ? { parts: [...companionParts, ...facts.parts, ...parts] } : {}),
       // Delegated execution uses the compact decision state on the supervisor.
       // Preserve ownership and lifecycle there, without expanding the NPC's inventory/history.

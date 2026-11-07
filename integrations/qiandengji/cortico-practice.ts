@@ -93,7 +93,8 @@ export function withCorticoPractice<T extends World>(world:T,cfg:()=>CorticoPrac
   if(originalFacts)(world as T & {requestFacts():WorldRequestFacts|null}).requestFacts=()=>{
     const base=facts();if(!base||!service||!cfg()?.enabled)return base;
     const text='[Minecraft 方法改进索引] '+JSON.stringify(service.context()).replaceAll('mc_script','mymc_script').replaceAll('mc_practice','mymc_practice');
-    return {...base,text:base.text+'\n'+text,parts:[...(base.parts??[{key:'snapshot',text:base.text}]),{key:'practice',text}]};
+    return {...base,text:base.text+'\n'+text,partKeys:[...new Set([...(base.partKeys??base.parts?.map(p=>p.key)??['snapshot']),'practice'])],
+      parts:[...(base.parts??[{key:'snapshot',text:base.text}]),{key:'practice',text}]};
   };
   world.console=()=>{const base=console?.();return {...base,panels:[...(base?.panels??[]),
     {id:'practice',title:'Harness² 方法练习',description:'隔离试跑、对照及记忆投递；候选尚未在线采用。',getMethods:['state']}],
