@@ -10,6 +10,7 @@ import {MYMC_DEFAULTS} from '../integrations/qiandengji/config.ts';
 import {readServerGuide} from '../integrations/qiandengji/server-guide.ts';
 import {TacticalMinecraftWorld} from 'agent-mc-world/tactics';
 import {inspectToolCall} from 'agent-mc-world/contracts';
+import {nullLogger} from 'agent-mc-world/client';
 const owner='11111111-1111-4111-8111-111111111111',id='22222222-2222-4222-8222-222222222222';
 const at='2026-11-06T14:25:34Z';
 const context={maidId:id,ownerId:owner,name:'同行者',lifeState:'alive',loaded:true,health:20,maxHealth:20,taskId:'touhou_little_maid:idle',dialogueMode:'native_model'};
@@ -20,6 +21,14 @@ it('pins the unchanged public server client and exposes optional tools and on-de
   expect(createHash('sha256').update(readFileSync(new URL('../integrations/qiandengji/engine/maid-port.mjs',import.meta.url))).digest('hex')).toBe(source.sha256);
   expect(SERVER_TOOLS.find(t=>t.name==='mc_maids')).toBeDefined();
   expect(readServerGuide('maids').text).toContain('playerWindowSlot');
+});
+it('resolves the maid transfer slot guide against the actual public script API',async()=>{
+  const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
+  const guide=readServerGuide('maids').text;
+  const api=JSON.parse(guide.match(/mymc_script (\{"api":"[^"]+"\})/)![1]);
+  const result=await engine.tools().find(t=>t.name==='mc_script')!.handler(api,{role:'test',log:nullLogger()});
+  expect(JSON.stringify(result)).toContain('including slot and instance identity');
+  expect(result).not.toHaveProperty('failed',true);
 });
 it('requires exact protocol, recipient and real server framing before using observations',()=>{
   const line='QD_MAID '+JSON.stringify(reply());

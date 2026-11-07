@@ -8,7 +8,7 @@
 
 武器和护甲需要真实物品。先检查本人和女仆背包，再 `transfer`，最后 `equip` 并查询 `inventory` 的 equipment 读回。转交参数是 direction:"put"、女仆 slot、count 和 **playerWindowSlot**：本人主背包窗口槽 9–35、快捷栏窗口槽 36–44。适配层转换成服务器 Bukkit 槽，不要手工混用 0–8。装备使用 hand:"main"|"off"|"head"|"chest"|"legs"|"feet" 和已观察的女仆背包 slot；用空槽交换可卸下装备，绑定诅咒仍由原生机制处理。
 
-`mymc_bag` 汇总数量不等于精确槽位。转交前可按需读 `mymc_script {"api":"inventory"}` 的公开契约，再运行只读 `return await bot.inventory.items()` 取得当前 slot 与物品身份；装备槽用 `await bot.read("inventory.slots")`。执行者需要同时获得该只读入口，不能按汇总列表顺序猜槽号。本人背包满时先核对可用堆叠或合理的交出物品，不能直接宣称无法交接，也不要丢东西腾位。
+`mymc_bag` 汇总数量不等于精确槽位。转交前可按需读 `mymc_script {"api":"inventory.items"}` 的公开契约，再运行只读 `return await bot.inventory.items()` 取得当前 slot 与物品身份；装备槽用 `await bot.read("inventory.slots")`。执行者需要同时获得该只读入口，不能按汇总列表顺序猜槽号。本人背包满时先核对可用堆叠或合理的交出物品，不能直接宣称无法交接，也不要丢东西腾位。
 
 每个不同写操作使用独立 requestId（1–48 位字母、数字、下划线或连字符），先保留 ID 再调用。写操作进入已有身体队列，不打断当前动作。队列受理与命令发送都不是成功：发送后用 `{"action":"receipt","maidId":"实际 UUID","operationId":"原 requestId"}` 对账。超时和断线不换 ID 重放，相同 ID 不用于不同参数。applied 是设置或交换生效，不代表工作任务完成。
 

@@ -9,7 +9,7 @@ export const maidReadAction=(action:unknown)=>typeof action==='string'&&reads.ha
 const parameters=structuredClone(MAID_TOOL.parameters) as {properties:Record<string,unknown>};
 delete parameters.properties.playerSlot;
 parameters.properties.playerWindowSlot={type:'integer',minimum:9,maximum:44,
-  description:'Actual self inventory window slot: 9–35 main inventory, 36–44 hotbar. Read mc_script api:inventory, then await bot.inventory.items() for exact slots; mc_bag totals do not identify a slot. Converted to Bukkit 0–35 by this adapter; do not pass a Bukkit slot here. Required for transfer put.'};
+  description:'Actual self inventory window slot: 9–35 main inventory, 36–44 hotbar. Read mc_script api:inventory.items, then await bot.inventory.items() for exact slots; mc_bag totals do not identify a slot. Converted to Bukkit 0–35 by this adapter; do not pass a Bukkit slot here. Required for transfer put.'};
 export const QIANDENGJI_MAIDS_TOOL:Omit<ToolDef,'handler'>={...MAID_TOOL,parameters,
   readOnlyCall: args => maidReadAction(args.action),
   description:'Optional server-owned maid NPC operations, distinct from real players. Start with action:list, then context/inventory/tasks for an observed maidId. '
