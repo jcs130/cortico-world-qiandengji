@@ -36,6 +36,7 @@ export function maidSystemReply(line:string,selfUuid:string|undefined):MaidReply
 }
 
 type MaidRecord={maidId:string;ownerId:string;name:string;sampledAt:string;lifeState:string;loaded:boolean|null;
+  originalEntity:boolean;viewerAppearance:string|null;
   health:number|null;maxHealth:number|null;taskId:string|null;dialogueMode:string|null;death:Record<string,unknown>|null;
   lastAliveAt:string|null;historicalDeath:Record<string,unknown>|null;recovery:Record<string,unknown>|null;
   sitting:boolean|null;canMove:boolean|null;dimension:string|null;position:number[]|null;
@@ -59,6 +60,8 @@ export class MaidState {
   reset(){this.rows.clear();this.notices.clear();}
   /** Source-owned supervisor summary; full inventory and task lists stay on demand. */
   summary(){return [...this.rows.values()].slice(0,4).map(row=>({maidId:row.maidId,ownerId:row.ownerId,name:row.name,
+    entityIdentity:{uuid:row.maidId,kind:'maid',source:'qiandengji-maids/v1',
+      originalEntity:row.originalEntity,viewerAppearance:row.viewerAppearance},
     observedAt:row.sampledAt,lifeState:row.lifeState,loaded:row.loaded,health:row.health,taskId:row.taskId,
     sitting:row.sitting,canMove:row.canMove,dimension:row.dimension,position:row.position,
     lastAliveAt:row.lastAliveAt,
@@ -67,9 +70,19 @@ export class MaidState {
     historicalDeath:row.historicalDeath?{eventId:row.historicalDeath.eventId,diedAt:row.historicalDeath.diedAt}:null,
     death:row.death?{eventId:row.death.eventId,diedAt:row.death.diedAt,dimension:row.death.dimension,position:row.death.position}:null,
     equipment:row.equipment?Object.fromEntries(['main','off','head','chest','legs','feet'].map(slot=>{
-      const item=row.equipment?.[slot];return [slot,object(item)?{id:text(item.id,128),count:typeof item.count==='number'?item.count:null}:null];
+      const item=row.equipment?.[slot];return [slot,object(item)?{id:text(item.id,128),
+        ...(text(item.displayName)?{displayName:text(item.displayName)}:{}),count:typeof item.count==='number'?item.count:null}:null];
     })):null,
     equipmentObservedAt:row.equipmentAt,read:{tool:'mc_maids',action:'context',maidId:row.maidId}}));}
+  /** Join only a server-owned UUID from this connection, never a custom-name guess. */
+  identityNote(entityUuid:string|undefined):string|null {
+    if(!entityUuid)return null;
+    const row=[...this.rows.values()].find(row=>row.maidId.toLowerCase()===entityUuid.toLowerCase());
+    if(!row)return null;
+    return `服务端确认身份：本人女仆「${row.name}」（不是独立玩家）`
+      +(row.originalEntity&&row.viewerAppearance==='vanilla_compat_projection'
+        ? '；当前实体种类仅为原版兼容外观，不是她的真实种类' : '');
+  }
   observe(reply:MaidReply):MaidNotice|null {
     const d=reply.data;
     if(!reply.ok||!object(d))return null;
@@ -104,6 +117,8 @@ export class MaidState {
         .filter((d):d is Record<string,unknown>=>!!d).sort((a,b)=>Date.parse(String(b.diedAt))-Date.parse(String(a.diedAt)))[0]??null;
       const equipmentInvalidated=lifeState==='dead'||previous?.lifeState==='dead'&&lifeState==='alive';
       const next:MaidRecord={maidId:row.maidId,ownerId:row.ownerId,name:text(row.name)||previous?.name||row.maidId,
+        originalEntity:typeof row.fullOriginalEntityMaid==='boolean'?row.fullOriginalEntityMaid:previous?.originalEntity??false,
+        viewerAppearance:typeof row.viewerAppearance==='string'?text(row.viewerAppearance,80):previous?.viewerAppearance??null,
         sampledAt:reply.sampledAt,lifeState,loaded:typeof row.loaded==='boolean'?row.loaded:null,
         health:typeof row.health==='number'&&Number.isFinite(row.health)?row.health:null,
         maxHealth:typeof row.maxHealth==='number'&&Number.isFinite(row.maxHealth)?row.maxHealth:null,

@@ -36,6 +36,16 @@ protected readonly nativeRpg = new NativeRpgState();
 protected readonly chatPolicy = new ChatPolicyState();
 protected readonly maids = new MaidState();
 protected maidPort: MaidPort | null = null;
+  protected override snapshot(options?:{scanBlocks?:boolean}):ReturnType<TacticalMinecraftWorld['snapshot']> {
+    const snapshot=super.snapshot(options);
+    if(snapshot)for(const entity of snapshot.entities){
+      // Reuse the core's public observation note. Raw type, visibility, UUID,
+      // targeting and relation semantics remain protocol observations.
+      const identity=entity.visible?this.maids.identityNote(entity.uuid):null;
+      if(identity)entity.note=[identity,entity.note].filter(Boolean).join('，');
+    }
+    return snapshot;
+  }
   constructor(options: MinecraftWorldOptions) { const tactics = new CombatSpells(new CombatTacticBook(options.dataDir ? join(options.dataDir,'minecraft-combat-tactics.json') : null)); super(options, tactics); this.combatSpells = tactics; }
   protected override battlefieldChannel() { return BATTLEFIELD_CHANNEL; }
   protected override serverQueryDefinitions() { return QIANDENGJI_SERVER_QUERIES; }

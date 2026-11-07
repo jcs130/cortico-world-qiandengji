@@ -1,3 +1,8 @@
+## 0.5.0-rc.50-preview.20
+
+- Correlate visible companion UUIDs with the current server-owned maid identity using the shared core observation note. Keep raw entity types, visibility and targeting unchanged; distinguish native maid identity from a compatibility appearance.
+- Retain native identity and item display names in compact companion observations so a custom weapon is not mistaken for a different registry item.
+
 ## 0.5.0-rc.50-preview.19
 
 - Consume the deployed 0.1.8-life maid contract: retain server-observed survival, persisted recovery and historical deaths in bounded companion summaries, keeping unloaded state unknown.
