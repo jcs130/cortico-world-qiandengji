@@ -1,3 +1,8 @@
+## 0.5.0-rc.50-preview.23
+
+- Preserve server-attested role and ownership beside personal names in full, nearby and quiet perception.
+- Require core preview.29: distinguish current failed replies from normal RPG snapshots and historical skill restrictions.
+
 ## 0.5.0-rc.50-preview.22
 
 - Use server-confirmed personal names directly in perception while retaining structured NPC identity and ownership.
