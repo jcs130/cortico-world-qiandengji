@@ -8,14 +8,18 @@
 
 武器和护甲需要真实物品。先检查本人和女仆背包，再 `transfer`，最后 `equip` 并查询 `inventory` 的 equipment 读回。转交参数是 direction:"put"、女仆 slot、count 和 **playerWindowSlot**：本人主背包窗口槽 9–35、快捷栏窗口槽 36–44。适配层转换成服务器 Bukkit 槽，不要手工混用 0–8。装备使用 hand:"main"|"off"|"head"|"chest"|"legs"|"feet" 和已观察的女仆背包 slot；用空槽交换可卸下装备，绑定诅咒仍由原生机制处理。
 
+`mymc_bag` 汇总数量不等于精确槽位。转交前可按需读 `mymc_script {"api":"inventory"}` 的公开契约，再运行只读 `return await bot.inventory.items()` 取得当前 slot 与物品身份；装备槽用 `await bot.read("inventory.slots")`。执行者需要同时获得该只读入口，不能按汇总列表顺序猜槽号。本人背包满时先核对可用堆叠或合理的交出物品，不能直接宣称无法交接，也不要丢东西腾位。
+
 每个不同写操作使用独立 requestId（1–48 位字母、数字、下划线或连字符），先保留 ID 再调用。写操作进入已有身体队列，不打断当前动作。队列受理与命令发送都不是成功：发送后用 `{"action":"receipt","maidId":"实际 UUID","operationId":"原 requestId"}` 对账。超时和断线不换 ID 重放，相同 ID 不用于不同参数。applied 是设置或交换生效，不代表工作任务完成。
 
 工作用 tasks 返回的 taskId 与条件决定。follow/stay/sit、task/schedule/pickup、声音和外观入口按工具参数与当次 context.capabilities 选择。只因女仆在身边，不能假设她有武器、护甲或已切战斗工作；同行前可以核对装备、生命与工作能力，再决定准备、留守或共同出发。
 
 `sitting:true`、`canMove:false` 与空装备可以同时存在，不能用“已复活”替代这些准备。`enabled` 表示模式可选，conditions 是原生条件说明，不保证现在有工具或环境可实际开工；选择模式、装备成功与实际工作结果分别核验。
 
-`lifeState:dead` 要保留原 UUID 与 `death.evidence:"original_tlm_tombstone"`。按 context 给出的维度、墓碑位置和 nextStep 查询遗物及复活胶片。墓碑记录消失不证明已复活；当前桥接不承诺 Agent 能完成原模组祭坛复活，不自动新建替代角色或补发装备。
+`lifeState:dead` 要保留原 UUID 与 `death` 的事件 ID。证据可为原生死亡事件 `original_tlm_death_event`，或墓碑 `original_tlm_tombstone`；墓碑晚到补充同一事件，不是又死一次。按 context 给出的维度、墓碑位置和 nextStep 查询遗物及复活胶片。墓碑记录消失不证明已复活；当前桥接不承诺 Agent 能完成原模组祭坛复活，不自动新建替代角色或补发装备。
 
 若同一 UUID 有晚于 `death.diedAt` 的原生存活记录，旧墓碑仍在也不代表再次死亡。客户端保留该历史证据；随后未加载时标为未知，按需查询。遗物取回是独立事项，不能因生命恢复就宣称遗物已取回，也不能继续把旧死亡当当前复活任务。
 
-来源：Minecraft AI Friend `paper/integrations/touhou-maids/agent/CONTRACT.md` 的 0.1.7 契约。具体支持以已部署服务器为准；客户端包更新不代表服务端已部署。
+0.1.8-life 返回的 `historicalDeath` 只表示历史，`lastSeenAlive.observedAt` 是最近存活见证；`recovery.observedAt` 是再次观察到原 UUID 存活的时间，不是实际复活时间。`recovery.persisted` 表示服务端是否已保存该见证。重连或女仆卸载后仍可按需读取，不能把这些历史字段当作当前加载或当前生命，也不据此重放复活操作。
+
+来源：Minecraft AI Friend `paper/integrations/touhou-maids/agent/CONTRACT.md` 的 0.1.8-life 契约。具体支持以已部署服务器为准；客户端包更新不代表服务端已部署。

@@ -152,3 +152,41 @@ it('treats a late old tombstone after confirmed survival as history, then accept
   expect(state.observe(reply('lifecycle',{...context,loaded:false,lifeState:'dead',death:newDeath},'death-456','2026-11-06T14:28:01Z'))?.meta)
     .toMatchObject({maidObservation:{kind:'death',eventId:'death-456'}});
 });
+
+it('projects server-persisted recovery and historical death after a fresh client start without claiming currently loaded',()=>{
+  const state=new MaidState();
+  const observedAt='2026-11-06T14:26:00Z';
+  const recovery={eventId:'recovery-1',maidId:id,ownerId:owner,observedAt,resolvedDeathEventId:death.eventId,
+    evidence:'original_tlm_alive_entity',actualRevivalTimeKnown:false,persisted:true};
+  state.observe(reply('context',{...context,loaded:false,lifeState:'unloaded_or_unavailable',health:undefined,
+    lastSeenAlive:{name:context.name,observedAt,dimension:'minecraft:overworld',position:[1,64,2]},historicalDeath:death,recovery},'fresh','2026-11-06T14:27:00Z'));
+  expect(state.summary()).toMatchObject([{lifeState:'unknown',death:null,lastAliveAt:observedAt,
+    historicalDeath:{eventId:death.eventId},recovery:{eventId:'recovery-1',observedAt,actualRevivalTimeKnown:false,persisted:true}}]);
+  expect(state.brief()).toContain('不是实际复活时间');
+  expect(state.brief()).toContain('遗物另查');
+  state.observe(reply('context',{...context,loaded:false,lifeState:'unloaded_or_unavailable'},'sparse','2026-11-06T14:28:00Z'));
+  expect(state.summary()[0].historicalDeath?.eventId).toBe(death.eventId);
+  expect(state.summary()[0].lifeState).toBe('unknown');
+});
+
+it('accepts a newer original death event before its tombstone exists and retains the same episode',()=>{
+  const state=new MaidState();state.observe(reply());
+  const native={...death,eventId:'native-death-2',diedAt:'2026-11-06T14:26:00Z',evidence:'original_tlm_death_event'};
+  const event=reply('lifecycle',{...context,loaded:false,lifeState:'dead',death:native},native.eventId,native.diedAt);
+  const notice=state.observe(event);
+  expect(notice?.meta).toMatchObject({maidObservation:{kind:'death',eventId:native.eventId}});
+  expect(notice?.text).not.toContain('墓碑记录确认');
+  expect(state.summary()).toMatchObject([{lifeState:'dead',death:{eventId:native.eventId}}]);
+  expect(state.observe(reply('lifecycle',{...event.data,death:{...native,evidence:'original_tlm_tombstone',tombstoneId:'later'}},native.eventId,'2026-11-06T14:26:01Z'))).toBeNull();
+});
+
+it('does not trust foreign, future or invalid recovery evidence or promote historical death to current',()=>{
+  const state=new MaidState();const sampledAt='2026-11-06T14:27:00Z';
+  state.observe(reply('context',{...context,loaded:false,lifeState:'unloaded_or_unavailable',historicalDeath:{...death,ownerId:id},
+    lastSeenAlive:{observedAt:'2099-01-01T00:00:00Z'},recovery:{eventId:'bad-recovery',maidId:id,ownerId:id,
+      observedAt:'2026-11-06T14:26:00Z',evidence:'original_tlm_alive_entity',actualRevivalTimeKnown:false,persisted:true}},'bad-evidence',sampledAt));
+  expect(state.summary()).toMatchObject([{lifeState:'unknown',lastAliveAt:null,historicalDeath:null,recovery:null}]);
+  const historical=new MaidState();historical.observe(reply('context',{...context,lifeState:'unloaded_or_unavailable',loaded:false,historicalDeath:death},'legacy',sampledAt));
+  expect(historical.summary()).toMatchObject([{lifeState:'unknown',death:null,historicalDeath:{eventId:death.eventId}}]);
+  expect(historical.brief()).not.toContain('早于确认存活 null');
+});

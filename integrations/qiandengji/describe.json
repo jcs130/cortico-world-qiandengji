@@ -5158,7 +5158,7 @@
             "type": "integer",
             "minimum": 9,
             "maximum": 44,
-            "description": "Actual self inventory window slot from the core inventory readout: 9–35 main inventory, 36–44 hotbar. Converted to Bukkit 0–35 by this adapter; do not pass a Bukkit slot here. Required for transfer put."
+            "description": "Actual self inventory window slot: 9–35 main inventory, 36–44 hotbar. Read mymc_script api:inventory, then await bot.inventory.items() for exact slots; mymc_bag totals do not identify a slot. Converted to Bukkit 0–35 by this adapter; do not pass a Bukkit slot here. Required for transfer put."
           }
         },
         "required": [
