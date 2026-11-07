@@ -11,6 +11,7 @@ delete parameters.properties.playerSlot;
 parameters.properties.playerWindowSlot={type:'integer',minimum:9,maximum:44,
   description:'Actual self inventory window slot from the core inventory readout: 9–35 main inventory, 36–44 hotbar. Converted to Bukkit 0–35 by this adapter; do not pass a Bukkit slot here. Required for transfer put.'};
 export const QIANDENGJI_MAIDS_TOOL:Omit<ToolDef,'handler'>={...MAID_TOOL,parameters,
+  readOnlyCall: args => maidReadAction(args.action),
   description:'Optional server-owned maid NPC operations, distinct from real players. Start with action:list, then context/inventory/tasks for an observed maidId. '
     +'Read results are native observations. Writes require a saved requestId and enter the existing body queue; queue acceptance is not application. '
     +'Use receipt with the original operationId after the body command is sent. chat invokes the native maid model; pending/queued/unknown are not replies. '
@@ -36,7 +37,10 @@ export function maidSystemReply(line:string,selfUuid:string|undefined):MaidReply
 
 type MaidRecord={maidId:string;ownerId:string;name:string;sampledAt:string;lifeState:string;loaded:boolean|null;
   health:number|null;maxHealth:number|null;taskId:string|null;dialogueMode:string|null;death:Record<string,unknown>|null;
+  lastAliveAt:string|null;historicalDeath:Record<string,unknown>|null;
+  sitting:boolean|null;canMove:boolean|null;dimension:string|null;position:number[]|null;
   equipment:Record<string,unknown>|null;equipmentAt:string|null};
+type MaidNotice={text:string;urgent:boolean;meta:Record<string,unknown>};
 /** Bounded current-connection observations, not a second personal-memory store. */
 export class MaidState {
   private rows=new Map<string,MaidRecord>();
@@ -45,42 +49,70 @@ export class MaidState {
   /** Source-owned supervisor summary; full inventory and task lists stay on demand. */
   summary(){return [...this.rows.values()].slice(0,4).map(row=>({maidId:row.maidId,ownerId:row.ownerId,name:row.name,
     observedAt:row.sampledAt,lifeState:row.lifeState,loaded:row.loaded,health:row.health,taskId:row.taskId,
+    sitting:row.sitting,canMove:row.canMove,dimension:row.dimension,position:row.position,
+    lastAliveAt:row.lastAliveAt,
+    historicalDeath:row.historicalDeath?{eventId:row.historicalDeath.eventId,diedAt:row.historicalDeath.diedAt}:null,
     death:row.death?{eventId:row.death.eventId,diedAt:row.death.diedAt,dimension:row.death.dimension,position:row.death.position}:null,
+    equipment:row.equipment?Object.fromEntries(['main','off','head','chest','legs','feet'].map(slot=>{
+      const item=row.equipment?.[slot];return [slot,object(item)?{id:text(item.id,128),count:typeof item.count==='number'?item.count:null}:null];
+    })):null,
     equipmentObservedAt:row.equipmentAt,read:{tool:'mc_maids',action:'context',maidId:row.maidId}}));}
-  observe(reply:MaidReply):{text:string;urgent:boolean;meta:Record<string,unknown>}|null {
+  observe(reply:MaidReply):MaidNotice|null {
     const d=reply.data;
     if(!reply.ok||!object(d))return null;
-    const candidates=reply.action==='list'&&Array.isArray(d.maids)?d.maids.slice(0,8):[d];
+    // Operation receipts and inventory packets are partial observations. They
+    // must not refresh the lifecycle timestamp or erase health with nulls.
+    const candidates=reply.action==='list'&&Array.isArray(d.maids)?d.maids.slice(0,8)
+      :['context','lifecycle'].includes(reply.action)?[d]:[];
+    const changes:MaidNotice[]=[];
     for(const row of candidates){
       if(!object(row)||typeof row.maidId!=='string'||!uuid.test(row.maidId)
         ||typeof row.ownerId!=='string'||row.ownerId.toLowerCase()!==reply.recipientUuid.toLowerCase())continue;
       const previous=this.rows.get(row.maidId);
       if(previous&&Date.parse(previous.sampledAt)>Date.parse(reply.sampledAt))continue;
-      const death=object(row.death)&&row.death.maidId===row.maidId&&row.death.ownerId===row.ownerId
+      const reportedDeath=row.lifeState==='dead'&&object(row.death)&&row.death.maidId===row.maidId&&row.death.ownerId===row.ownerId
         &&row.death.evidence==='original_tlm_tombstone'?row.death:null;
+      // A new transport timestamp does not make an old tombstone a new death.
+      // If the same UUID was alive afterwards, unloaded now remains unknown.
+      const superseded=!!(reportedDeath&&previous?.lastAliveAt
+        &&Date.parse(String(reportedDeath.diedAt))<Date.parse(previous.lastAliveAt));
+      const death=superseded?null:reportedDeath;
       const lifeState=row.lifeState==='dead'&&death?'dead':row.lifeState==='alive'?'alive':'unknown';
-      this.rows.set(row.maidId,{maidId:row.maidId,ownerId:row.ownerId,name:text(row.name)||previous?.name||row.maidId,
+      const equipmentInvalidated=lifeState==='dead'||previous?.lifeState==='dead'&&lifeState==='alive';
+      const next:MaidRecord={maidId:row.maidId,ownerId:row.ownerId,name:text(row.name)||previous?.name||row.maidId,
         sampledAt:reply.sampledAt,lifeState,loaded:typeof row.loaded==='boolean'?row.loaded:null,
         health:typeof row.health==='number'&&Number.isFinite(row.health)?row.health:null,
         maxHealth:typeof row.maxHealth==='number'&&Number.isFinite(row.maxHealth)?row.maxHealth:null,
         taskId:typeof row.taskId==='string'?row.taskId:null,dialogueMode:typeof row.dialogueMode==='string'?row.dialogueMode:null,
-        death,equipment:previous?.equipment??null,equipmentAt:previous?.equipmentAt??null});
+        sitting:typeof row.sitting==='boolean'?row.sitting:null,canMove:typeof row.canMove==='boolean'?row.canMove:null,
+        dimension:typeof row.dimension==='string'?text(row.dimension,128):null,
+        position:Array.isArray(row.position)&&row.position.length===3&&row.position.every(Number.isFinite)?[...row.position] as number[]:null,
+        death,lastAliveAt:lifeState==='alive'?reply.sampledAt:previous?.lastAliveAt??null,
+        historicalDeath:superseded?reportedDeath:lifeState==='alive'?(previous?.death??previous?.historicalDeath??null):null,
+        equipment:equipmentInvalidated?null:previous?.equipment??null,equipmentAt:equipmentInvalidated?null:previous?.equipmentAt??null};
+      this.rows.set(row.maidId,next);
+      const changed=previous?.lifeState!==lifeState||previous?.death?.eventId!==death?.eventId;
+      if(changed){
+        const notice=this.lifeNotice(next,previous,reply);
+        if(notice)changes.push(notice);
+      }
     }
     if(reply.action==='inventory'&&typeof d.maidId==='string'&&object(d.equipment)){
       const row=this.rows.get(d.maidId);
-      if(row&&(!row.equipmentAt||Date.parse(reply.sampledAt)>=Date.parse(row.equipmentAt))){row.equipment=d.equipment;row.equipmentAt=reply.sampledAt;}
+      if(row&&row.ownerId.toLowerCase()===reply.recipientUuid.toLowerCase()
+        &&(d.ownerId===undefined||d.ownerId===row.ownerId)
+        &&(!row.equipmentAt||Date.parse(reply.sampledAt)>=Date.parse(row.equipmentAt))){row.equipment=d.equipment;row.equipmentAt=reply.sampledAt;}
     }
     while(this.rows.size>32)this.rows.delete(this.rows.keys().next().value!);
-    if(!['lifecycle','chat-result'].includes(reply.action)||typeof d.maidId!=='string')return null;
+    if(changes.length)return changes.length===1?changes[0]:{
+      text:changes.map(n=>n.text).join('\n'),urgent:changes.some(n=>n.urgent),
+      meta:{maidObservations:changes.map(n=>n.meta.maidObservation)}};
+    if(reply.action!=='chat-result'||typeof d.maidId!=='string')return null;
     const row=this.rows.get(d.maidId);
-    if(!row)return null;
+    if(!row||row.ownerId.toLowerCase()!==reply.recipientUuid.toLowerCase())return null;
     const key=`${reply.action}:${reply.requestId}:${d.status??d.lifeState??''}`;
     if(this.notices.has(key))return null;
     this.notices.add(key);while(this.notices.size>128)this.notices.delete(this.notices.values().next().value!);
-    if(reply.action==='lifecycle'&&row.lifeState==='dead')return{
-      text:`[女仆同伴死亡] ${row.name}（maidId=${row.maidId}）的服务端原生墓碑记录确认死亡。${this.deathText(row)} `
-        +'用 mc_maids context 核对最新状态；这是同伴死亡，不是普通怪物击杀，也不能据此声称已复活。',
-      urgent:true,meta:{maidObservation:{kind:'death',maidId:row.maidId,ownerId:row.ownerId,eventId:reply.requestId,sampledAt:reply.sampledAt,death:row.death}}};
     if(reply.action==='chat-result'&&['replied','unknown'].includes(String(d.status))){
       const observation=object(d.observation)?d.observation:{};
       return {text:d.status==='replied'
@@ -89,6 +121,24 @@ export class MaidState {
         urgent:false,meta:{maidObservation:{kind:'dialogue-result',maidId:row.maidId,ownerId:row.ownerId,operationId:reply.requestId,status:d.status,sampledAt:reply.sampledAt}}};
     }
     return null;
+  }
+  private lifeNotice(row:MaidRecord,previous:MaidRecord|undefined,reply:MaidReply):MaidNotice|null {
+    if(row.lifeState==='dead'){
+      const key=`death:${row.maidId}:${row.death?.eventId}`;
+      if(this.notices.has(key))return null;
+      this.notices.add(key);while(this.notices.size>128)this.notices.delete(this.notices.values().next().value!);
+      return {text:`[女仆同伴死亡] ${row.name}（maidId=${row.maidId}）的服务端原生墓碑记录确认死亡。${this.deathText(row)} `
+        +'用 mc_maids context 核对最新状态；这是同伴死亡，不是普通怪物击杀，也不能据此声称已复活。',
+        urgent:true,meta:{maidObservation:{kind:'death',maidId:row.maidId,ownerId:row.ownerId,
+          eventId:row.death?.eventId,sampledAt:reply.sampledAt,death:row.death}}};
+    }
+    if(row.lifeState==='unknown'&&!previous)return null;
+    const state=row.lifeState==='alive'?`原 UUID 当时存活，生命 ${row.health??'未知'}/${row.maxHealth??'未知'}`:'当前未确认存活状态；未加载不等于死亡';
+    return {text:`[女仆状态更新] ${row.name}（maidId=${row.maidId}），${reply.sampledAt}：${state}。`
+      +(row.lifeState==='alive'?'旧死亡记录不能当作当前死亡；遗物取回、装备和工作完成仍须分别核验。':'用 mc_maids context 按需核对。'),
+      urgent:previous?.lifeState==='dead'&&row.lifeState==='alive',
+      meta:{maidObservation:{kind:'life-state',maidId:row.maidId,ownerId:row.ownerId,
+        previousLifeState:previous?.lifeState??null,lifeState:row.lifeState,sampledAt:reply.sampledAt,requestId:reply.requestId}}};
   }
   private deathText(row:MaidRecord):string {
     const d=row.death;if(!d)return '';
@@ -100,6 +150,8 @@ export class MaidState {
     return '[本人女仆的最近服务端记录；不是普通悦灵或独立玩家；后续变化须查询]\n'+[...this.rows.values()].slice(0,4).map(row=>{
       const state=row.lifeState==='dead'?'已确认死亡，复活未验证':row.lifeState==='alive'?`当时存活，生命${row.health??'未知'}/${row.maxHealth??'未知'}`:'存活状态未知，未加载不等于死亡';
       return `${row.name} maidId=${row.maidId}，${row.sampledAt}：${state}，工作=${row.taskId??'未知'}，对话=${row.dialogueMode??'未知'}。`
+        +` 坐下=${row.sitting??'未知'}，可移动=${row.canMove??'未知'}，位置=${row.dimension??'未知'} ${row.position?JSON.stringify(row.position):'未知'}。`
+        +(row.historicalDeath?` 历史死亡 ${text(row.historicalDeath.diedAt)} 早于确认存活 ${row.lastAliveAt}，不能当成再次死亡；遗物另查。`:'')
         +(row.death?this.deathText(row):'')+(row.equipment?` 装备记录 ${row.equipmentAt}：${JSON.stringify(row.equipment).slice(0,850)}`:' 装备未查询，不能当作已给她武器/护甲。');
     }).join('\n')+`\n共已观察${this.rows.size}位；mc_maids 的 list/context/inventory/tasks/receipt 按需读，mc_guide maids 查操作。`;
   }

@@ -2,6 +2,8 @@
 
 先用 `mymc_maids {"action":"list"}` 取得本人女仆 UUID；分页从 page=0 开始，hasMore 为真时按需读下一页。随后用 `context`、`inventory`、`tasks` 加上 maidId，读当前生命、装备、原生工作要求与实际对话模式。旧服务器缺字段时保持未知，不能把未加载当死亡，也不能把菜单里的剑图标当作背包物品。
 
+这些查询与 `receipt` 已声明为只读分支，可交给只读 worker，不占用身体控制。执行 worker 的范围需包含 `mymc_maids`；普通玩家聊天工具不代替女仆接口。`companions` 事实摘要保留观察时间、坐下/移动状态及已查询的装备，完整背包和工作清单按需读取。
+
 对话用 `action:"chat"`、maidId、已保存的 requestId 和 text（1–140 字，完整命令仍受 256 字符限制）。它使用女仆已配置的原生模型。`talk` 是旧外部宿主收件箱；`speak` 是指定台词，二者都不是女仆模型回复。pending 只表示已交给模型，等 chat-result 或用 `receipt` 的 operationId 查询原请求；replied 才是本次原生回复，回复内容也不是动作完成证明。
 
 武器和护甲需要真实物品。先检查本人和女仆背包，再 `transfer`，最后 `equip` 并查询 `inventory` 的 equipment 读回。转交参数是 direction:"put"、女仆 slot、count 和 **playerWindowSlot**：本人主背包窗口槽 9–35、快捷栏窗口槽 36–44。适配层转换成服务器 Bukkit 槽，不要手工混用 0–8。装备使用 hand:"main"|"off"|"head"|"chest"|"legs"|"feet" 和已观察的女仆背包 slot；用空槽交换可卸下装备，绑定诅咒仍由原生机制处理。
@@ -10,6 +12,10 @@
 
 工作用 tasks 返回的 taskId 与条件决定。follow/stay/sit、task/schedule/pickup、声音和外观入口按工具参数与当次 context.capabilities 选择。只因女仆在身边，不能假设她有武器、护甲或已切战斗工作；同行前可以核对装备、生命与工作能力，再决定准备、留守或共同出发。
 
+`sitting:true`、`canMove:false` 与空装备可以同时存在，不能用“已复活”替代这些准备。`enabled` 表示模式可选，conditions 是原生条件说明，不保证现在有工具或环境可实际开工；选择模式、装备成功与实际工作结果分别核验。
+
 `lifeState:dead` 要保留原 UUID 与 `death.evidence:"original_tlm_tombstone"`。按 context 给出的维度、墓碑位置和 nextStep 查询遗物及复活胶片。墓碑记录消失不证明已复活；当前桥接不承诺 Agent 能完成原模组祭坛复活，不自动新建替代角色或补发装备。
+
+若同一 UUID 有晚于 `death.diedAt` 的原生存活记录，旧墓碑仍在也不代表再次死亡。客户端保留该历史证据；随后未加载时标为未知，按需查询。遗物取回是独立事项，不能因生命恢复就宣称遗物已取回，也不能继续把旧死亡当当前复活任务。
 
 来源：Minecraft AI Friend `paper/integrations/touhou-maids/agent/CONTRACT.md` 的 0.1.7 契约。具体支持以已部署服务器为准；客户端包更新不代表服务端已部署。

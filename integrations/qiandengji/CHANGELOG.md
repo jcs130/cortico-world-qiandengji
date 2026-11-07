@@ -1,3 +1,9 @@
+## 0.4.1-rc.71-preview.22
+
+- Declare maid query branches for read-only workers; writes retain the existing body queue and receipt checks.
+- Keep life, equipment and operation timestamps separate. Deliver actual life-state changes once; old tombstone episodes cannot override later survival of the same UUID.
+- Include compact sitting, movement and equipment observations in companion summaries; full inventory and task catalog remain on demand.
+
 ## 0.4.1-rc.71-preview.21
 
 - Pin the shared combat scene-change fix and explicit automatic-rule/program ownership readout in core preview.26. Retain the optional server pack and existing external viewer assets.

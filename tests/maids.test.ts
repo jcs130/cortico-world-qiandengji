@@ -9,6 +9,7 @@ import {QiandengjiEngine,SERVER_TOOLS} from '../integrations/qiandengji/engine/w
 import {MYMC_DEFAULTS} from '../integrations/qiandengji/config.ts';
 import {readServerGuide} from '../integrations/qiandengji/server-guide.ts';
 import {TacticalMinecraftWorld} from 'agent-mc-world/tactics';
+import {inspectToolCall} from 'agent-mc-world/contracts';
 const owner='11111111-1111-4111-8111-111111111111',id='22222222-2222-4222-8222-222222222222';
 const at='2026-11-06T14:25:34Z';
 const context={maidId:id,ownerId:owner,name:'同行者',lifeState:'alive',loaded:true,health:20,maxHealth:20,taskId:'touhou_little_maid:idle',dialogueMode:'native_model'};
@@ -90,4 +91,64 @@ it('routes inventory writes through the original body queue and never starts a s
   const result=await tool.handler({action:'equip',maidId:id,requestId:'equip-1',hand:'main',slot:2},{role:'task-worker',log:{} as never});
   expect(native).not.toHaveBeenCalled();expect(enqueue).toHaveBeenCalledWith('mc_do',expect.objectContaining({queue:'append',steps:[{skill:'chat',text:`/qdmaid equip ${id} equip-1 main 2`}]}),expect.any(Function),undefined,'task-worker',undefined,expect.any(Object));
   expect(result).toMatchObject({data:{taskId:42,maidOperation:{operationId:'equip-1',goalCompleted:false}}});
+});
+
+it('declares the actual read branches for independent SDK and worker scheduling',()=>{
+  const tool={...SERVER_TOOLS.find(t=>t.name==='mc_maids')!,handler:vi.fn()};
+  for(const action of ['context','inventory','tasks','inbox','resources'])
+    expect(inspectToolCall(tool,tool.name,{action,maidId:id})).toMatchObject({valid:true,readOnly:true,requiresBody:false,dispatched:false});
+  expect(inspectToolCall(tool,tool.name,{action:'receipt',maidId:id,operationId:'gear-1'})).toMatchObject({readOnly:true,requiresBody:false});
+  expect(inspectToolCall(tool,tool.name,{action:'equip',maidId:id,requestId:'gear-1',hand:'main',slot:0})).toMatchObject({readOnly:false,requiresBody:true});
+  expect(tool.handler).not.toHaveBeenCalled();
+});
+
+it('does not turn an inventory or operation receipt into a newer life observation',()=>{
+  const state=new MaidState();state.observe(reply());
+  state.observe(reply('inventory',{maidId:id,ownerId:owner,equipment:{main:{id:'minecraft:iron_sword',count:1}}},'inventory-1','2026-11-06T14:25:40Z'));
+  state.observe(reply('receipt',{maidId:id,ownerId:owner,status:'applied',observation:{taskId:'touhou_little_maid:attack'}},'receipt-1','2026-11-06T14:25:41Z'));
+  expect(state.summary()).toMatchObject([{lifeState:'alive',health:20,observedAt:at,equipmentObservedAt:'2026-11-06T14:25:40Z'}]);
+  expect(state.brief()).toContain('minecraft:iron_sword');
+});
+
+it('delivers fresh life observations and restoration once without replaying old death',()=>{
+  const state=new MaidState();
+  const initial=state.observe(reply('list',{maids:[context]}));
+  expect(initial?.text).toContain('存活');
+  expect(state.observe(reply('context',context,'same-life','2026-11-06T14:25:35Z'))).toBeNull();
+  const lost=reply('lifecycle',{...context,lifeState:'dead',loaded:false,death:{...death,diedAt:'2026-11-06T14:25:36Z'}},'death-123','2026-11-06T14:25:36Z');
+  expect(state.observe(lost)?.meta).toMatchObject({maidObservation:{kind:'death',maidId:id}});
+  const restored=state.observe(reply('context',context,'alive-2','2026-11-06T14:25:40Z'));
+  expect(restored?.meta).toMatchObject({maidObservation:{kind:'life-state',previousLifeState:'dead',lifeState:'alive'}});
+  expect(restored?.text).toContain('遗物');
+  expect(state.summary()).toMatchObject([{lifeState:'alive',death:null}]);
+  expect(state.observe(lost)).toBeNull();
+  expect(state.observe(reply('context',context,'alive-3','2026-11-06T14:25:41Z'))).toBeNull();
+});
+
+it('cannot publish a stale or mismatched lifecycle event using a different cached observation',()=>{
+  const state=new MaidState();
+  state.observe(reply('context',{...context,lifeState:'dead',death},'new-death','2026-11-06T14:25:40Z'));
+  expect(state.observe(reply('lifecycle',{...context,lifeState:'dead',death},'old-death',at))).toBeNull();
+  expect(state.observe(reply('lifecycle',{...context,ownerId:id,lifeState:'dead',death},'wrong-owner','2026-11-06T14:25:41Z'))).toBeNull();
+});
+
+it('keeps actual sitting and empty equipment visible to the supervisor without loading full inventories',()=>{
+  const state=new MaidState();
+  state.observe(reply('context',{...context,sitting:true,canMove:false,dimension:'minecraft:overworld',position:[1,64,2]}));
+  state.observe(reply('inventory',{maidId:id,slots:[{slot:0,id:'minecraft:book',privateDetails:'not-a-summary'}],equipment:{main:{id:'minecraft:air',count:0},head:{id:'minecraft:air',count:0}}},'inventory-1','2026-11-06T14:25:35Z'));
+  expect(state.summary()).toMatchObject([{sitting:true,canMove:false,position:[1,64,2],equipment:{main:{id:'minecraft:air',count:0}}}]);
+  expect(JSON.stringify(state.summary())).not.toContain('not-a-summary');
+  state.observe(reply('context',{...context,loaded:false,lifeState:'unloaded_or_unavailable'},'unloaded','2026-11-06T14:25:36Z'));
+  expect(state.summary()).toMatchObject([{lifeState:'unknown',sitting:null,canMove:null,position:null}]);
+});
+
+it('treats a late old tombstone after confirmed survival as history, then accepts a genuinely newer death',()=>{
+  const state=new MaidState();state.observe(reply('context',context,'alive','2026-11-06T14:26:00Z'));
+  const stale=state.observe(reply('lifecycle',{...context,loaded:false,lifeState:'dead',death},'death-123','2026-11-06T14:27:00Z'));
+  expect(stale?.urgent).toBe(false);
+  expect(state.summary()).toMatchObject([{lifeState:'unknown',death:null,lastAliveAt:'2026-11-06T14:26:00Z',historicalDeath:{eventId:'death-123'}}]);
+  expect(state.brief()).toContain('不能当成再次死亡');
+  const newDeath={...death,eventId:'death-456',diedAt:'2026-11-06T14:28:00Z'};
+  expect(state.observe(reply('lifecycle',{...context,loaded:false,lifeState:'dead',death:newDeath},'death-456','2026-11-06T14:28:01Z'))?.meta)
+    .toMatchObject({maidObservation:{kind:'death',eventId:'death-456'}});
 });
