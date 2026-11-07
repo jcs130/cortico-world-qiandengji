@@ -11,40 +11,48 @@ import {readServerGuide} from '../integrations/qiandengji/server-guide.ts';
 import {TacticalMinecraftWorld} from 'agent-mc-world/tactics';
 import {inspectToolCall} from 'agent-mc-world/contracts';
 import {nullLogger} from 'agent-mc-world/client';
+import {observedEntityIdentity,observedEntityLabel} from 'agent-mc-world/extension';
+import {Vec3} from 'vec3';
 const owner='11111111-1111-4111-8111-111111111111',id='22222222-2222-4222-8222-222222222222';
 const at='2026-11-06T14:25:34Z';
 const context={maidId:id,ownerId:owner,name:'同行者',lifeState:'alive',loaded:true,health:20,maxHealth:20,taskId:'touhou_little_maid:idle',dialogueMode:'native_model'};
 const reply=(action='context',data:Record<string,unknown>=context,requestId='query-1',sampledAt=at)=>({schema:1 as const,protocol:'qiandengji-maids/v1' as const,recipientUuid:owner,action,requestId,ok:true,sampledAt,data});
 const death={maidId:id,ownerId:owner,name:'同行者',eventId:'death-123',diedAt:at,dimension:'minecraft:overworld',position:[-591,69,-304],evidence:'original_tlm_tombstone',nextStep:'检查墓碑与胶片；祭坛复活尚未实现'};
 
-it('joins native maid identity to a visible compatibility entity without changing raw type or inferring from names',()=>{
-  const rows=[{entityId:780,uuid:id,name:'allay',kind:'other',visible:true,note:'名字「[女仆] 同行者」'},
-    {entityId:781,uuid:owner,name:'allay',kind:'other',visible:true,note:'名字「[女仆] 同行者」'},
-    {entityId:782,uuid:id,name:'allay',kind:'other',visible:false}];
-  const snapshot=vi.spyOn(TacticalMinecraftWorld.prototype as any,'snapshot').mockImplementation(()=>({entities:structuredClone(rows)}));
-  try{
-    const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
-    (engine as any).observeMaidReply(reply('context',{...context,fullOriginalEntityMaid:true,viewerAppearance:'vanilla_compat_projection'}));
-    const observed=(engine as any).snapshot().entities;
-    expect(observed[0]).toMatchObject({name:'allay',uuid:id,entityId:780,visible:true,kind:'other'});
-    expect(observed[0].note).toContain('本人女仆「同行者」');
-    expect(observed[0].note).toContain('原版兼容外观');
-    expect(observed[1]).toEqual(rows[1]);
-    expect(observed[2]).toEqual(rows[2]);
-    expect(rows[0].note).not.toContain('服务端确认');
-  }finally{snapshot.mockRestore();}
+it('binds native maid identity to core observations and proximity, while reconnect cleanup cannot erase the new connection',()=>{
+  const makeBot=()=>Object.assign(new EventEmitter(),{
+    _client:Object.assign(new EventEmitter(),{uuid:owner,write:vi.fn()}),
+    entity:{id:1,position:new Vec3(0,64,0)},entities:{},players:{},
+    world:{raycast:()=>null},inventory:{items:()=>[]},chat:vi.fn(),game:{dimension:'overworld'},
+  });
+  const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
+  const first=makeBot(),second=makeBot(),e={id:780,uuid:id,name:'allay',type:'mob',position:new Vec3(1,64,0)};
+  const emit=vi.spyOn(engine as any,'emit').mockImplementation(()=>undefined);
+  (engine as any).attachExtension(first);
+  (engine as any).observeMaidReply(reply('context',{...context,fullOriginalEntityMaid:true,viewerAppearance:'vanilla_compat_projection'}));
+  expect(observedEntityIdentity(first,e)).toMatchObject({kind:'maid',name:'同行者',source:'qiandengji-maids/v1'});
+  expect(observedEntityLabel(first,e)).toBe('女仆「同行者」');expect(e.name).toBe('allay');
+  expect(observedEntityIdentity(first,{...e,uuid:owner})).toBeNull();
+  expect(observedEntityLabel(first,{...e,type:'player',username:'live'})).toBe('live');
+  first.entities[780]=e;(engine as any).proximityTick(first);
+  expect(emit.mock.calls.some(c=>String(c[1]).includes('看见女仆「同行者」'))).toBe(true);
+  (engine as any).attachExtension(second);
+  (engine as any).observeMaidReply(reply());first._client.emit('end');
+  expect(observedEntityIdentity(first,e)).toBeNull();
+  expect(observedEntityLabel(second,e)).toBe('女仆「同行者」');
+  second._client.emit('end');expect(observedEntityIdentity(second,e)).toBeNull();
 });
 it('clears connection-scoped identity and keeps missing projection evidence unknown',()=>{
   const state=new MaidState();state.observe(reply());
-  expect(state.identityNote(id.toUpperCase())).toContain('本人女仆');
-  expect(state.identityNote(id)).not.toContain('兼容外观');
-  expect(state.identityNote(owner)).toBeNull();
-  expect(state.identityNote(undefined)).toBeNull();
-  state.reset();expect(state.identityNote(id)).toBeNull();
+  expect(state.identity(id.toUpperCase())).toMatchObject({label:'女仆「同行者」',ownerUuid:owner,observedAt:at});
+  expect(state.identityNote(id)).toContain('本人女仆「同行者」');
+  expect(state.identity(owner)).toBeNull();
+  expect(state.identity(undefined)).toBeNull();
+  state.reset();expect(state.identity(id)).toBeNull();
 });
 it('retains compact native identity and equipment instance names alongside registry IDs',()=>{
   const state=new MaidState();state.observe(reply('context',{...context,fullOriginalEntityMaid:true,viewerAppearance:'vanilla_compat_projection'}));
-  state.observe(reply('inventory',{maidId:id,equipment:{main:{id:'minecraft:iron_sword',displayName:'赤铜柄·闪现匕首',count:1}}}));
+  state.observe(reply('inventory',{maidId:id,equipment:{main:{id:'minecraft:iron_sword',name:'赤铜柄·闪现匕首',count:1}}}));
   expect(state.summary()[0]).toMatchObject({entityIdentity:{uuid:id,kind:'maid',source:'qiandengji-maids/v1',originalEntity:true,viewerAppearance:'vanilla_compat_projection'},
     equipment:{main:{id:'minecraft:iron_sword',displayName:'赤铜柄·闪现匕首',count:1}}});
 });

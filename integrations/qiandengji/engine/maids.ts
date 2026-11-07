@@ -1,4 +1,5 @@
 import type { ToolDef } from 'agent-mc-world/contracts';
+import type { EntityIdentity } from 'agent-mc-world/extension';
 import { MAID_TOOL, MAID_CHANNEL, decodeMaidReply, maidCommand, type MaidReply } from './maid-port.mjs';
 
 const uuid=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
@@ -71,15 +72,22 @@ export class MaidState {
     death:row.death?{eventId:row.death.eventId,diedAt:row.death.diedAt,dimension:row.death.dimension,position:row.death.position}:null,
     equipment:row.equipment?Object.fromEntries(['main','off','head','chest','legs','feet'].map(slot=>{
       const item=row.equipment?.[slot];return [slot,object(item)?{id:text(item.id,128),
-        ...(text(item.displayName)?{displayName:text(item.displayName)}:{}),count:typeof item.count==='number'?item.count:null}:null];
+        ...(text(item.displayName??item.name)?{displayName:text(item.displayName??item.name)}:{}),count:typeof item.count==='number'?item.count:null}:null];
     })):null,
     equipmentObservedAt:row.equipmentAt,read:{tool:'mc_maids',action:'context',maidId:row.maidId}}));}
   /** Join only a server-owned UUID from this connection, never a custom-name guess. */
-  identityNote(entityUuid:string|undefined):string|null {
+  identity(entityUuid:string|undefined):EntityIdentity|null {
     if(!entityUuid)return null;
     const row=[...this.rows.values()].find(row=>row.maidId.toLowerCase()===entityUuid.toLowerCase());
     if(!row)return null;
-    return `服务端确认身份：本人女仆「${row.name}」（不是独立玩家）`
+    return {uuid:row.maidId,kind:'maid',name:row.name,label:`女仆「${row.name}」`,
+      ownerUuid:row.ownerId,source:'qiandengji-maids/v1',observedAt:row.sampledAt};
+  }
+  /** Legacy additive note; new consumers should carry identity() as the primary label. */
+  identityNote(entityUuid:string|undefined):string|null {
+    const identity=this.identity(entityUuid);if(!identity)return null;
+    const row=[...this.rows.values()].find(row=>row.maidId===identity.uuid)!;
+    return `服务端确认身份：本人${identity.label}（不是独立玩家）`
       +(row.originalEntity&&row.viewerAppearance==='vanilla_compat_projection'
         ? '；当前实体种类仅为原版兼容外观，不是她的真实种类' : '');
   }
