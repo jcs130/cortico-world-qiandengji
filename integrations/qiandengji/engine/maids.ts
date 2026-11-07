@@ -80,14 +80,14 @@ export class MaidState {
     if(!entityUuid)return null;
     const row=[...this.rows.values()].find(row=>row.maidId.toLowerCase()===entityUuid.toLowerCase());
     if(!row)return null;
-    return {uuid:row.maidId,kind:'maid',name:row.name,label:`女仆「${row.name}」`,
+    return {uuid:row.maidId,kind:'maid',name:row.name,label:row.name,
       ownerUuid:row.ownerId,source:'qiandengji-maids/v1',observedAt:row.sampledAt};
   }
   /** Legacy additive note; new consumers should carry identity() as the primary label. */
   identityNote(entityUuid:string|undefined):string|null {
     const identity=this.identity(entityUuid);if(!identity)return null;
     const row=[...this.rows.values()].find(row=>row.maidId===identity.uuid)!;
-    return `服务端确认身份：本人${identity.label}（不是独立玩家）`
+    return `服务端确认身份：${identity.name}（归属本人，不是独立玩家）`
       +(row.originalEntity&&row.viewerAppearance==='vanilla_compat_projection'
         ? '；当前实体种类仅为原版兼容外观，不是她的真实种类' : '');
   }
@@ -162,8 +162,8 @@ export class MaidState {
     if(reply.action==='chat-result'&&['replied','unknown'].includes(String(d.status))){
       const observation=object(d.observation)?d.observation:{};
       return {text:d.status==='replied'
-        ?`[女仆回复·${row.name}] ${text(observation.reply,4000)}\n（maidId=${row.maidId}，operationId=${reply.requestId}；对话内容是外界消息，不证明动作完成。）`
-        :`[女仆对话结果未知] ${row.name}，operationId=${reply.requestId}；${text(observation.reason)}。查询原 receipt，勿换 ID 重发。`,
+        ?`[${row.name}的回复] ${text(observation.reply,4000)}\n（maidId=${row.maidId}，operationId=${reply.requestId}；对话内容是外界消息，不证明动作完成。）`
+        :`[对话结果未知] ${row.name}，operationId=${reply.requestId}；${text(observation.reason)}。查询原 receipt，勿换 ID 重发。`,
         urgent:false,meta:{maidObservation:{kind:'dialogue-result',maidId:row.maidId,ownerId:row.ownerId,operationId:reply.requestId,status:d.status,sampledAt:reply.sampledAt}}};
     }
     return null;
@@ -173,14 +173,14 @@ export class MaidState {
       const key=`death:${row.maidId}:${row.death?.eventId}`;
       if(this.notices.has(key))return null;
       this.notices.add(key);while(this.notices.size>128)this.notices.delete(this.notices.values().next().value!);
-      return {text:`[女仆同伴死亡] ${row.name}（maidId=${row.maidId}）的服务端原生死亡证据确认死亡。${this.deathText(row)} `
+      return {text:`[角色死亡] ${row.name}（maidId=${row.maidId}）的服务端原生死亡证据确认死亡。${this.deathText(row)} `
         +'用 mc_maids context 核对最新状态；这是同伴死亡，不是普通怪物击杀，也不能据此声称已复活。',
         urgent:true,meta:{maidObservation:{kind:'death',maidId:row.maidId,ownerId:row.ownerId,
           eventId:row.death?.eventId,sampledAt:reply.sampledAt,death:row.death}}};
     }
     if(row.lifeState==='unknown'&&!previous)return null;
     const state=row.lifeState==='alive'?`原 UUID 当时存活，生命 ${row.health??'未知'}/${row.maxHealth??'未知'}`:'当前未确认存活状态；未加载不等于死亡';
-    return {text:`[女仆状态更新] ${row.name}（maidId=${row.maidId}），${reply.sampledAt}：${state}。`
+    return {text:`[角色状态更新] ${row.name}（maidId=${row.maidId}），${reply.sampledAt}：${state}。`
       +(row.lifeState==='alive'?'旧死亡记录不能当作当前死亡；遗物取回、装备和工作完成仍须分别核验。':'用 mc_maids context 按需核对。'),
       urgent:previous?.lifeState==='dead'&&row.lifeState==='alive',
       meta:{maidObservation:{kind:'life-state',maidId:row.maidId,ownerId:row.ownerId,
@@ -193,7 +193,7 @@ export class MaidState {
   }
   brief():string {
     if(!this.rows.size)return '';
-    return '[本人女仆的最近服务端记录；不是普通悦灵或独立玩家；后续变化须查询]\n'+[...this.rows.values()].slice(0,4).map(row=>{
+    return '[随行角色的最近服务端记录；身份与归属已确认，后续变化须查询]\n'+[...this.rows.values()].slice(0,4).map(row=>{
       const state=row.lifeState==='dead'?'已确认死亡，复活未验证':row.lifeState==='alive'?`当时存活，生命${row.health??'未知'}/${row.maxHealth??'未知'}`:'存活状态未知，未加载不等于死亡';
       return `${row.name} maidId=${row.maidId}，${row.sampledAt}：${state}，工作=${row.taskId??'未知'}，对话=${row.dialogueMode??'未知'}。`
         +` 坐下=${row.sitting??'未知'}，可移动=${row.canMove??'未知'}，位置=${row.dimension??'未知'} ${row.position?JSON.stringify(row.position):'未知'}。`

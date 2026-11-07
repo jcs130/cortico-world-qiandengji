@@ -1,3 +1,8 @@
+## 0.4.1-rc.71-preview.26
+
+- Use server-confirmed personal names directly in perception while retaining structured NPC identity and ownership.
+- Require core preview.28: pair nearby game speech with authored text, retain separate durable receipts and remove fixed per-packet upload waits.
+
 ## 0.4.1-rc.71-preview.25
 
 - Bind server-confirmed maid UUIDs to the shared semantic identity port. Snapshot, proximity, attention and SDK observations consistently name the companion while preserving the raw protocol type. Release identity mappings on reconnect, without overriding players or unrelated entities.
