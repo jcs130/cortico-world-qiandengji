@@ -318,17 +318,18 @@ export class MymcWorld implements World {
       this.guildProgress.facts()].filter(Boolean).join('\n') || null;
   }
 
-  requestFacts() {
+  requestFacts(): WorldRequestFacts | null {
     const engine = this.engine as MinecraftWorldProxy & {
       requestFacts?: () => WorldRequestFacts | null;
     };
     const facts = engine.requestFacts?.();
     const clear = this.trialProgress.clear;
-    const additions = [{ key:'trialHistory',text:clear
+    const declared = [{ key:'trialHistory',text:clear
       ? `服务端回执 ${clear.at}：试炼已通关第 ${clear.floor}/${clear.maxFloor} 层。` : '' },
       { key: 'skillCatalog', text: facts?.options ? this.catalog.discoveryIndex() : this.catalog.compactIndex() },
       { key: 'guildState', text: this.guildProgress.facts() },
-      { key: 'messages', text: this.messages.index() }].filter(part => part.text);
+      { key: 'messages', text: this.messages.index() }];
+    const additions=declared.filter(part=>part.text);
     if (!facts) {
       const text = this.messages.index();
       return text ? { text, parts: [{ key: 'messages', text }], snapshotTypes: [] } : null;
@@ -339,6 +340,7 @@ export class MymcWorld implements World {
     const baseText = parts?.length ? parts.map(p => p.text).filter(Boolean).join('\n') : toMymcText(facts.text);
     return {
       ...facts,
+      partKeys:[...new Set([...(facts.partKeys??facts.parts?.map(p=>p.key)??[]),...declared.map(p=>p.key)])],
       ...(facts.experience?.scope ? { workStates: this.guildProgress.workStates(facts.experience.scope), workBindings: this.activities.bindings(facts.experience.scope) } : {}),
       ...(options ? { options } : {}),
       text: [baseText, ...additions.map(part => part.text)].join('\n'),

@@ -97,6 +97,8 @@ it('keeps owned lifecycle in the supervisor summary and exposes detail as an ind
   const facts=vi.spyOn(TacticalMinecraftWorld.prototype,'requestFacts').mockReturnValue({text:'body',parts:[{key:'body',text:'body'}],snapshotTypes:[],decision:{sampledAtMs:100,state:{ready:true}}});
   try{
     const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
+    expect(engine.requestFacts()?.partKeys).toEqual(expect.arrayContaining(['body','companions','nativeRpg','communication']));
+    expect(engine.requestFacts()?.parts?.some(p=>p.key==='companions')).toBe(false);
     (engine as any).observeMaidReply(reply('context',{...context,lifeState:'dead',loaded:false,death}));
     const reading=engine.requestFacts();
     expect(reading?.decision?.state).toMatchObject({ready:true,companionObservations:[{maidId:id,observedAt:at,lifeState:'dead',death:{position:death.position}}]});
