@@ -31,21 +31,22 @@ it('binds native maid identity to core observations and proximity, while reconne
   (engine as any).attachExtension(first);
   (engine as any).observeMaidReply(reply('context',{...context,fullOriginalEntityMaid:true,viewerAppearance:'vanilla_compat_projection'}));
   expect(observedEntityIdentity(first,e)).toMatchObject({kind:'maid',name:'同行者',source:'qiandengji-maids/v1'});
-  expect(observedEntityLabel(first,e)).toBe('女仆「同行者」');expect(e.name).toBe('allay');
+  expect(observedEntityLabel(first,e)).toBe('同行者');expect(e.name).toBe('allay');
   expect(observedEntityIdentity(first,{...e,uuid:owner})).toBeNull();
   expect(observedEntityLabel(first,{...e,type:'player',username:'live'})).toBe('live');
   first.entities[780]=e;(engine as any).proximityTick(first);
-  expect(emit.mock.calls.some(c=>String(c[1]).includes('看见女仆「同行者」'))).toBe(true);
+  expect(emit.mock.calls.some(c=>String(c[1]).includes('看见同行者'))).toBe(true);
   (engine as any).attachExtension(second);
   (engine as any).observeMaidReply(reply());first._client.emit('end');
   expect(observedEntityIdentity(first,e)).toBeNull();
-  expect(observedEntityLabel(second,e)).toBe('女仆「同行者」');
+  expect(observedEntityLabel(second,e)).toBe('同行者');
   second._client.emit('end');expect(observedEntityIdentity(second,e)).toBeNull();
 });
 it('clears connection-scoped identity and keeps missing projection evidence unknown',()=>{
   const state=new MaidState();state.observe(reply());
-  expect(state.identity(id.toUpperCase())).toMatchObject({label:'女仆「同行者」',ownerUuid:owner,observedAt:at});
-  expect(state.identityNote(id)).toContain('本人女仆「同行者」');
+  expect(state.identity(id.toUpperCase())).toMatchObject({label:'同行者',kind:'maid',ownerUuid:owner,observedAt:at});
+  expect(state.identityNote(id)).toContain('同行者（归属本人');
+  expect(state.brief()).toContain('同行者');expect(state.brief()).not.toMatch(/本人女仆|普通悦灵/);
   expect(state.identity(owner)).toBeNull();
   expect(state.identity(undefined)).toBeNull();
   state.reset();expect(state.identity(id)).toBeNull();
