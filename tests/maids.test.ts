@@ -19,6 +19,34 @@ const context={maidId:id,ownerId:owner,name:'同行者',lifeState:'alive',loaded
 const reply=(action='context',data:Record<string,unknown>=context,requestId='query-1',sampledAt=at)=>({schema:1 as const,protocol:'qiandengji-maids/v1' as const,recipientUuid:owner,action,requestId,ok:true,sampledAt,data});
 const death={maidId:id,ownerId:owner,name:'同行者',eventId:'death-123',diedAt:at,dimension:'minecraft:overworld',position:[-591,69,-304],evidence:'original_tlm_tombstone',nextStep:'检查墓碑与胶片；祭坛复活尚未实现'};
 
+it('delivers only authenticated public companion replies as replyable chat, retaining identity and deduplicating the operation',()=>{
+  const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
+  const emit=vi.spyOn(engine as any,'emit').mockImplementation(()=>undefined);
+  (engine as any).observeMaidReply(reply());emit.mockClear();
+  const publicReply=reply('chat-result',{maidId:id,operationId:'near-1',status:'replied',
+    observation:{maidId:id,conversation:'nearby_visitor',reply:'我很好，可以一起走走。'}},'near-1');
+  (engine as any).observeMaidReply(publicReply);
+  expect(emit).toHaveBeenCalledTimes(1);
+  expect(emit.mock.calls[0]).toEqual(['minecraft.chat','[MC 同伴] 同行者: 我很好，可以一起走走。',false,
+    {meta:expect.objectContaining({from:'同行者',body:'我很好，可以一起走走。',senderUuid:id,senderKind:'companion',channel:'public',
+      identityEvidence:'qiandengji-maids/v1',chatChannel:'nearby',maidOperationId:'near-1'})},`maid:${id}`]);
+  expect((emit.mock.calls[0][3] as any).meta).not.toHaveProperty('uname');
+  (engine as any).observeMaidReply(publicReply);expect(emit).toHaveBeenCalledTimes(1);
+  (engine as any).observeMaidReply(reply('chat-result',{maidId:id,operationId:'owner-1',status:'replied',observation:{reply:'主人的私聊内容'}},'owner-1'));
+  expect(emit.mock.calls[1][0]).toBe('minecraft.event');
+  (engine as any).observeMaidReply({...publicReply,recipientUuid:id,requestId:'other-1'});
+  expect(emit).toHaveBeenCalledTimes(2);
+});
+
+it.each(['pending','unknown'])('does not promote %s, incomplete, or unbound dialogue into public chat',status=>{
+  const state=new MaidState();state.observe(reply());
+  const result=state.observe(reply('chat-result',{maidId:id,operationId:'near-1',status,
+    observation:{maidId:id,conversation:'nearby_visitor',reply:'not a completed reply'}},'near-1'));
+  expect(result?.publicDialogue).toBeUndefined();
+  expect(state.observe(reply('chat-result',{maidId:id,operationId:'wrong-operation',status:'replied',
+    observation:{maidId:id,conversation:'nearby_visitor',reply:'unbound'}},'unbound'))?.publicDialogue).toBeUndefined();
+});
+
 it('binds native maid identity to core observations and proximity, while reconnect cleanup cannot erase the new connection',()=>{
   const makeBot=()=>Object.assign(new EventEmitter(),{
     _client:Object.assign(new EventEmitter(),{uuid:owner,write:vi.fn()}),
@@ -270,4 +298,40 @@ it('does not trust foreign, future or invalid recovery evidence or promote histo
   const historical=new MaidState();historical.observe(reply('context',{...context,lifeState:'unloaded_or_unavailable',loaded:false,historicalDeath:death},'legacy',sampledAt));
   expect(historical.summary()).toMatchObject([{lifeState:'unknown',death:null,historicalDeath:{eventId:death.eventId}}]);
   expect(historical.brief()).not.toContain('早于确认存活 null');
+});
+
+it('delivers a newly observed recovery ID after list already established life, with its exact receipt',()=>{
+  const state=new MaidState();state.observe(reply('list',{maids:[context]},'list-first'));
+  const recovery={eventId:'recovery-late',maidId:id,ownerId:owner,observedAt:'2026-11-06T14:26:00Z',
+    evidence:'original_tlm_alive_entity',actualRevivalTimeKnown:false,persisted:true,resolvedDeathEventId:death.eventId};
+  const observed=reply('context',{...context,recovery,historicalDeath:death},'context-later','2026-11-06T14:27:00Z');
+  const notice=state.observe(observed);
+  expect(notice?.meta).toMatchObject({maidObservation:{kind:'life-state',eventId:recovery.eventId,
+    lifecycleEventKind:'recovery-observation',lifeState:'alive',recovery,
+    sourceReceipt:{protocol:observed.protocol,recipientUuid:owner,requestId:'context-later',action:'context',sampledAt:observed.sampledAt}}});
+  expect(notice?.text).toContain('不是实际复活时间');
+  expect(state.observe({...observed,requestId:'duplicate',sampledAt:'2026-11-06T14:28:00Z'})).toBeNull();
+  expect(state.summary()[0].sourceReceipt.requestId).toBe('duplicate');
+  state.observe(reply('inventory',{maidId:id,equipment:{}},'inventory-new','2026-11-06T14:29:00Z'));
+  expect(state.summary()[0].sourceReceipt.requestId).toBe('duplicate');
+});
+
+it('retains recovery-event attribution on a fresh unloaded reading without announcing a present revival',()=>{
+  const state=new MaidState(),recovery={eventId:'recovery-unloaded',maidId:id,ownerId:owner,observedAt:at,
+    evidence:'original_tlm_alive_entity',actualRevivalTimeKnown:false,persisted:true};
+  const notice=state.observe(reply('context',{...context,loaded:false,lifeState:'unloaded_or_unavailable',recovery}));
+  expect(notice?.meta).toMatchObject({maidObservation:{eventId:recovery.eventId,lifeState:'unknown'}});
+  expect(notice?.text).toContain('未加载不等于死亡');
+  expect(notice?.urgent).toBe(false);
+  expect(state.observe(reply('context',{...context,loaded:false,lifeState:'unloaded_or_unavailable',recovery},'again'))).toBeNull();
+});
+
+it('keeps death receipt IDs distinct from stable lifecycle IDs and ignores a foreign recovery',()=>{
+  const state=new MaidState();
+  const notice=state.observe(reply('lifecycle',{...context,lifeState:'dead',death},'transport-query'));
+  expect(notice?.meta).toMatchObject({maidObservation:{eventId:death.eventId,
+    sourceReceipt:{requestId:'transport-query',action:'lifecycle',recipientUuid:owner}}});
+  state.observe(reply('context',context,'alive','2026-11-06T14:26:00Z'));
+  expect(state.observe(reply('context',{...context,recovery:{eventId:'foreign',maidId:id,ownerId:id,
+    evidence:'original_tlm_alive_entity',actualRevivalTimeKnown:false,persisted:true,observedAt:at}},'foreign','2026-11-06T14:27:00Z'))).toBeNull();
 });

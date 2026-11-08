@@ -38,14 +38,18 @@ export function maidSystemReply(line:string,selfUuid:string|undefined):MaidReply
     ?decodeMaidReply({channel:MAID_CHANNEL,data:Buffer.from(line.slice(8),'utf8')},selfUuid):null;
 }
 
-type MaidRecord={maidId:string;ownerId:string;name:string;sampledAt:string;lifeState:string;loaded:boolean|null;
+type MaidReceipt=Pick<MaidReply,'protocol'|'recipientUuid'|'action'|'requestId'|'sampledAt'>;
+const receiptOf=(reply:MaidReply):MaidReceipt=>({protocol:reply.protocol,recipientUuid:reply.recipientUuid,
+  action:reply.action,requestId:reply.requestId,sampledAt:reply.sampledAt});
+type MaidRecord={maidId:string;ownerId:string;name:string;sampledAt:string;sourceReceipt:MaidReceipt;lifeState:string;loaded:boolean|null;
   originalEntity:boolean;viewerAppearance:string|null;
   health:number|null;maxHealth:number|null;taskId:string|null;dialogueMode:string|null;death:Record<string,unknown>|null;
   lastAliveAt:string|null;historicalDeath:Record<string,unknown>|null;recovery:Record<string,unknown>|null;
   sitting:boolean|null;canMove:boolean|null;dimension:string|null;position:number[]|null;
   equipment:Record<string,unknown>|null;equipmentAt:string|null;
   conversation:{observedAt:string;nearbyRange:number|null;addressExample:string;ownerWorkCommand:string}|null};
-type MaidNotice={text:string;urgent:boolean;meta:Record<string,unknown>};
+type MaidNotice={text:string;urgent:boolean;meta:Record<string,unknown>;
+  publicDialogue?:{text:string;senderKey:string;meta:Record<string,unknown>}};
 const observedTime=(value:unknown,sampledAt:string)=>typeof value==='string'&&Number.isFinite(Date.parse(value))
   &&Date.parse(value)<=Date.parse(sampledAt)?value:null;
 const laterTime=(...values:(string|null|undefined)[])=>values.filter((v):v is string=>!!v)
@@ -66,7 +70,7 @@ export class MaidState {
   summary(){return [...this.rows.values()].slice(0,4).map(row=>({maidId:row.maidId,ownerId:row.ownerId,name:row.name,
     entityIdentity:{uuid:row.maidId,kind:'maid',source:'qiandengji-maids/v1',
       originalEntity:row.originalEntity,viewerAppearance:row.viewerAppearance},
-    observedAt:row.sampledAt,lifeState:row.lifeState,loaded:row.loaded,health:row.health,taskId:row.taskId,
+    observedAt:row.sampledAt,sourceReceipt:{...row.sourceReceipt},lifeState:row.lifeState,loaded:row.loaded,health:row.health,taskId:row.taskId,
     sitting:row.sitting,canMove:row.canMove,dimension:row.dimension,position:row.position,
     lastAliveAt:row.lastAliveAt,
     recovery:row.recovery?{eventId:row.recovery.eventId,observedAt:row.recovery.observedAt,
@@ -131,7 +135,7 @@ export class MaidState {
       const next:MaidRecord={maidId:row.maidId,ownerId:row.ownerId,name:text(row.name)||previous?.name||row.maidId,
         originalEntity:typeof row.fullOriginalEntityMaid==='boolean'?row.fullOriginalEntityMaid:previous?.originalEntity??false,
         viewerAppearance:typeof row.viewerAppearance==='string'?text(row.viewerAppearance,80):previous?.viewerAppearance??null,
-        sampledAt:reply.sampledAt,lifeState,loaded:typeof row.loaded==='boolean'?row.loaded:null,
+        sampledAt:reply.sampledAt,sourceReceipt:receiptOf(reply),lifeState,loaded:typeof row.loaded==='boolean'?row.loaded:null,
         health:typeof row.health==='number'&&Number.isFinite(row.health)?row.health:null,
         maxHealth:typeof row.maxHealth==='number'&&Number.isFinite(row.maxHealth)?row.maxHealth:null,
         taskId:typeof row.taskId==='string'?row.taskId:null,dialogueMode:typeof row.dialogueMode==='string'?row.dialogueMode:null,
@@ -147,7 +151,10 @@ export class MaidState {
         }:null):previous?.conversation??null,
         equipment:equipmentInvalidated?null:previous?.equipment??null,equipmentAt:equipmentInvalidated?null:previous?.equipmentAt??null};
       this.rows.set(row.maidId,next);
-      const changed=previous?.lifeState!==lifeState||previous?.death?.eventId!==death?.eventId;
+      // A list may establish life before context returns the persisted recovery.
+      // The recovery's stable ID must still reach the ordinary event path once.
+      const changed=previous?.lifeState!==lifeState||previous?.death?.eventId!==death?.eventId
+        ||previous?.recovery?.eventId!==recovery?.eventId;
       if(changed){
         const notice=this.lifeNotice(next,previous,reply);
         if(notice)changes.push(notice);
@@ -171,10 +178,19 @@ export class MaidState {
     this.notices.add(key);while(this.notices.size>128)this.notices.delete(this.notices.values().next().value!);
     if(reply.action==='chat-result'&&['replied','unknown'].includes(String(d.status))){
       const observation=object(d.observation)?d.observation:{};
+      const spoken=text(observation.reply,4000);
+      const publicDialogue=d.status==='replied'&&spoken.trim()&&observation.conversation==='nearby_visitor'
+        &&d.operationId===reply.requestId&&observation.maidId===row.maidId
+        ?{text:`[MC 同伴] ${row.name}: ${spoken}`,senderKey:`maid:${row.maidId}`,
+          meta:{from:row.name,body:spoken,senderUuid:row.maidId,senderKind:'companion',channel:'public',
+            socialScope:'minecraft-server',identityEvidence:'qiandengji-maids/v1',
+            chatChannel:'nearby',chatScope:'same-world-range',chatRadius:8,
+            chatRoutingSource:'native-maid-reply',maidOperationId:reply.requestId}}:undefined;
       return {text:d.status==='replied'
         ?`[${row.name}的回复] ${text(observation.reply,4000)}\n（maidId=${row.maidId}，operationId=${reply.requestId}；对话内容是外界消息，不证明动作完成。）`
         :`[对话结果未知] ${row.name}，operationId=${reply.requestId}；${text(observation.reason)}。查询原 receipt，勿换 ID 重发。`,
-        urgent:false,meta:{maidObservation:{kind:'dialogue-result',maidId:row.maidId,ownerId:row.ownerId,operationId:reply.requestId,status:d.status,sampledAt:reply.sampledAt}}};
+        urgent:false,meta:{maidObservation:{kind:'dialogue-result',maidId:row.maidId,ownerId:row.ownerId,operationId:reply.requestId,status:d.status,sampledAt:reply.sampledAt}},
+        ...(publicDialogue?{publicDialogue}:{})};
     }
     return null;
   }
@@ -186,15 +202,23 @@ export class MaidState {
       return {text:`[角色死亡] ${row.name}（maidId=${row.maidId}）的服务端原生死亡证据确认死亡。${this.deathText(row)} `
         +'用 mc_maids context 核对最新状态；这是同伴死亡，不是普通怪物击杀，也不能据此声称已复活。',
         urgent:true,meta:{maidObservation:{kind:'death',maidId:row.maidId,ownerId:row.ownerId,
-          eventId:row.death?.eventId,sampledAt:reply.sampledAt,death:row.death}}};
+          eventId:row.death?.eventId,sampledAt:reply.sampledAt,death:row.death,sourceReceipt:receiptOf(reply)}}};
     }
-    if(row.lifeState==='unknown'&&!previous)return null;
+    const recoveryChanged=!!row.recovery&&previous?.recovery?.eventId!==row.recovery.eventId;
+    const recoveryKey=recoveryChanged?`recovery:${row.maidId}:${row.recovery!.eventId}`:null;
+    const reportRecovery=!!recoveryKey&&!this.notices.has(recoveryKey);
+    if(reportRecovery){this.notices.add(recoveryKey!);while(this.notices.size>128)this.notices.delete(this.notices.values().next().value!);}
+    if(row.lifeState==='unknown'&&!previous&&!reportRecovery)return null;
+    if(previous?.lifeState===row.lifeState&&!reportRecovery)return null;
     const state=row.lifeState==='alive'?`原 UUID 当时存活，生命 ${row.health??'未知'}/${row.maxHealth??'未知'}`:'当前未确认存活状态；未加载不等于死亡';
     return {text:`[角色状态更新] ${row.name}（maidId=${row.maidId}），${reply.sampledAt}：${state}。`
+      +(reportRecovery?` 服务端恢复见证 eventId=${row.recovery!.eventId}，观察 ${row.recovery!.observedAt}；不是实际复活时间，也不证明当前实体已加载。`:'')
       +(row.lifeState==='alive'?'旧死亡记录不能当作当前死亡；遗物取回、装备和工作完成仍须分别核验。':'用 mc_maids context 按需核对。'),
       urgent:previous?.lifeState==='dead'&&row.lifeState==='alive',
       meta:{maidObservation:{kind:'life-state',maidId:row.maidId,ownerId:row.ownerId,
-        previousLifeState:previous?.lifeState??null,lifeState:row.lifeState,sampledAt:reply.sampledAt,requestId:reply.requestId}}};
+        previousLifeState:previous?.lifeState??null,lifeState:row.lifeState,sampledAt:reply.sampledAt,requestId:reply.requestId,
+        sourceReceipt:receiptOf(reply),...(reportRecovery?{eventId:row.recovery!.eventId,lifecycleEventKind:'recovery-observation',
+          recovery:{...row.recovery}}:{})}}};
   }
   private deathText(row:MaidRecord):string {
     const d=row.death;if(!d)return '';
