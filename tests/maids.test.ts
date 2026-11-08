@@ -271,3 +271,39 @@ it('does not trust foreign, future or invalid recovery evidence or promote histo
   expect(historical.summary()).toMatchObject([{lifeState:'unknown',death:null,historicalDeath:{eventId:death.eventId}}]);
   expect(historical.brief()).not.toContain('早于确认存活 null');
 });
+
+it('delivers a newly observed recovery ID after list already established life, with its exact receipt',()=>{
+  const state=new MaidState();state.observe(reply('list',{maids:[context]},'list-first'));
+  const recovery={eventId:'recovery-late',maidId:id,ownerId:owner,observedAt:'2026-11-06T14:26:00Z',
+    evidence:'original_tlm_alive_entity',actualRevivalTimeKnown:false,persisted:true,resolvedDeathEventId:death.eventId};
+  const observed=reply('context',{...context,recovery,historicalDeath:death},'context-later','2026-11-06T14:27:00Z');
+  const notice=state.observe(observed);
+  expect(notice?.meta).toMatchObject({maidObservation:{kind:'life-state',eventId:recovery.eventId,
+    lifecycleEventKind:'recovery-observation',lifeState:'alive',recovery,
+    sourceReceipt:{protocol:observed.protocol,recipientUuid:owner,requestId:'context-later',action:'context',sampledAt:observed.sampledAt}}});
+  expect(notice?.text).toContain('不是实际复活时间');
+  expect(state.observe({...observed,requestId:'duplicate',sampledAt:'2026-11-06T14:28:00Z'})).toBeNull();
+  expect(state.summary()[0].sourceReceipt.requestId).toBe('duplicate');
+  state.observe(reply('inventory',{maidId:id,equipment:{}},'inventory-new','2026-11-06T14:29:00Z'));
+  expect(state.summary()[0].sourceReceipt.requestId).toBe('duplicate');
+});
+
+it('retains recovery-event attribution on a fresh unloaded reading without announcing a present revival',()=>{
+  const state=new MaidState(),recovery={eventId:'recovery-unloaded',maidId:id,ownerId:owner,observedAt:at,
+    evidence:'original_tlm_alive_entity',actualRevivalTimeKnown:false,persisted:true};
+  const notice=state.observe(reply('context',{...context,loaded:false,lifeState:'unloaded_or_unavailable',recovery}));
+  expect(notice?.meta).toMatchObject({maidObservation:{eventId:recovery.eventId,lifeState:'unknown'}});
+  expect(notice?.text).toContain('未加载不等于死亡');
+  expect(notice?.urgent).toBe(false);
+  expect(state.observe(reply('context',{...context,loaded:false,lifeState:'unloaded_or_unavailable',recovery},'again'))).toBeNull();
+});
+
+it('keeps death receipt IDs distinct from stable lifecycle IDs and ignores a foreign recovery',()=>{
+  const state=new MaidState();
+  const notice=state.observe(reply('lifecycle',{...context,lifeState:'dead',death},'transport-query'));
+  expect(notice?.meta).toMatchObject({maidObservation:{eventId:death.eventId,
+    sourceReceipt:{requestId:'transport-query',action:'lifecycle',recipientUuid:owner}}});
+  state.observe(reply('context',context,'alive','2026-11-06T14:26:00Z'));
+  expect(state.observe(reply('context',{...context,recovery:{eventId:'foreign',maidId:id,ownerId:id,
+    evidence:'original_tlm_alive_entity',actualRevivalTimeKnown:false,persisted:true,observedAt:at}},'foreign','2026-11-06T14:27:00Z'))).toBeNull();
+});

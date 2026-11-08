@@ -1,0 +1,16 @@
+{
+  "schema": "qiandengji-original-evidence-index/v1",
+  "expected": {
+    "recipientUuid": "REPLACE_WITH_ORIGINAL_CORMY_UUID",
+    "maidId": "REPLACE_WITH_ORIGINAL_MAID_UUID"
+  },
+  "probe": {"file": "original-probe.json"},
+  "components": [
+    {"component": "world", "manifest": "REPLACE_WITH_LOADED_WORLD/package.json", "artifact": "REPLACE_WITH_ORIGINAL_WORLD_ARTIFACT", "loadedReceipt": {"file": "original-loader-receipts.json", "pointer": "/world"}},
+    {"component": "core", "manifest": "REPLACE_WITH_LOADED_CORE/package.json", "artifact": "REPLACE_WITH_ORIGINAL_CORE_ARTIFACT", "loadedReceipt": {"file": "original-loader-receipts.json", "pointer": "/core"}},
+    {"component": "server-pack", "manifest": "REPLACE_WITH_LOADED_PACK/package.json", "artifact": "REPLACE_WITH_ORIGINAL_PACK_ARTIFACT", "loadedReceipt": {"file": "original-loader-receipts.json", "pointer": "/serverPack"}}
+  ],
+  "observe": null,
+  "overview": null,
+  "lifecycle": []
+}
