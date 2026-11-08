@@ -51,7 +51,7 @@ protected releaseMaidIdentity: (()=>void) | null = null;
       let native:Record<string,unknown>;
       try { native=maidArguments(args); } catch(error) { return {text:String(error),failed:true}; }
       if(!this.maidPort||!this.bridge?.bot)return {text:'女仆接口未连接；先确认当前游戏认证与连接，未发送操作。',failed:true};
-      if(maidReadAction(args.action)){
+      if(maidReadAction(args.action,args)){
         const result=await this.maidPort.request(native);
         const reply=maidSystemReply('QD_MAID '+JSON.stringify(result),this.bridge?.bot?.player?.uuid??this.bridge?.bot?._client?.uuid);
         if(reply)this.observeMaidReply(reply);
