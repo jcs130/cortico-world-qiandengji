@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.33
+
+- Consume the shared bounded server-query reply window through one pinned core archive in the World, optional server package and API 5 adapter.
+
 ## 0.4.1-rc.71-preview.32
 
 - Consume the shared exact-goal diagnosis fix through one pinned core archive in the World, optional server peer and API 5 adapter.

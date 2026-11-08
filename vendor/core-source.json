@@ -1,20 +1,21 @@
 {
-  "version": "0.5.7-rc.160-preview.32",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.32-3736f8ff.tgz",
-  "sha256": "3736f8ff287ebead6185e684ab78526762078ccaaea211484c7560fd87b875bd",
+  "version": "0.5.7-rc.160-preview.33",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.33-06061f66.tgz",
+  "sha256": "06061f66bb4b464076de2203b0ed71e4391d78f00c050d361c31c51045dbfd79",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
   "parent": "7f49f3a6f046c168a773c25803ff937a560a3944",
-  "genericFixCommit": "1a07684cc85fd92f0209d9d9b7159ca5a98e450b",
-  "integrationBranch": "codex/nav-kill-evidence-20261108",
+  "genericFixCommit": "ed1c89efa0cac202fd859b7f78dc780f528ecba5",
+  "integrationBranch": "codex/query-completion-window-20261108",
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
   "viewer": {
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "sourceCommit": "1a07684cc85fd92f0209d9d9b7159ca5a98e450b",
+  "sourceCommit": "ed1c89efa0cac202fd859b7f78dc780f528ecba5",
   "sourcePushed": true,
   "inheritedMaidFix": "c02e95f1db6cce5751b92899a0263ab13c277b2c",
-  "inheritedWeaponFix": "d0c46a6a778e4e8d9c5623cc7944848391671cce"
+  "inheritedWeaponFix": "d0c46a6a778e4e8d9c5623cc7944848391671cce",
+  "parentCoreCommit": "1a07684cc85fd92f0209d9d9b7159ca5a98e450b"
 }
