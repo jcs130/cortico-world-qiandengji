@@ -57,6 +57,19 @@ it('retains compact native identity and equipment instance names alongside regis
   expect(state.summary()[0]).toMatchObject({entityIdentity:{uuid:id,kind:'maid',source:'qiandengji-maids/v1',originalEntity:true,viewerAppearance:'vanilla_compat_projection'},
     equipment:{main:{id:'minecraft:iron_sword',displayName:'赤铜柄·闪现匕首',count:1}}});
 });
+it('projects the observed conversation route with its own timestamp without inventing absent capabilities',()=>{
+  const state=new MaidState();state.observe(reply());
+  expect(state.summary()[0].conversation).toBeNull();
+  const conversation={nearbyRange:8,addressExample:'同行者，你好',ownerWorkCommand:`/qdmaid chat ${id} <requestId> <工作要求>`,privateHistory:'DO_NOT_PROJECT'};
+  state.observe(reply('context',{...context,conversation},'new','2026-11-08T02:55:24Z'));
+  expect(state.summary()[0].conversation).toEqual({observedAt:'2026-11-08T02:55:24Z',nearbyRange:8,addressExample:conversation.addressExample,ownerWorkCommand:conversation.ownerWorkCommand});
+  expect(state.brief()).toContain('范围=8格');expect(state.brief()).toContain('主人工作仍用 mc_maids chat');
+  expect(JSON.stringify(state.summary())).not.toContain('DO_NOT_PROJECT');
+  state.observe(reply('list',{maids:[context]},'list-new','2026-11-08T02:56:24Z'));
+  expect(state.summary()[0].conversation?.observedAt).toBe('2026-11-08T02:55:24Z');
+  state.observe(reply('context',context,'older-server','2026-11-08T02:57:24Z'));
+  expect(state.summary()[0].conversation).toBeNull();expect(state.brief()).not.toContain('范围=8格');
+});
 
 it('pins the unchanged public server client and exposes optional tools and on-demand guidance',()=>{
   expect(createHash('sha256').update(readFileSync(new URL('../integrations/qiandengji/engine/maid-port.mjs',import.meta.url))).digest('hex')).toBe(source.sha256);
@@ -151,7 +164,23 @@ it('declares the actual read branches for independent SDK and worker scheduling'
     expect(inspectToolCall(tool,tool.name,{action,maidId:id})).toMatchObject({valid:true,readOnly:true,requiresBody:false,dispatched:false});
   expect(inspectToolCall(tool,tool.name,{action:'receipt',maidId:id,operationId:'gear-1'})).toMatchObject({readOnly:true,requiresBody:false});
   expect(inspectToolCall(tool,tool.name,{action:'equip',maidId:id,requestId:'gear-1',hand:'main',slot:0})).toMatchObject({readOnly:false,requiresBody:true});
+  expect(inspectToolCall(tool,tool.name,{action:'nearby'})).toMatchObject({valid:true,readOnly:true,requiresBody:false});
+  expect(inspectToolCall(tool,tool.name,{action:'brain',maidId:id})).toMatchObject({valid:true,readOnly:true,requiresBody:false});
+  expect(inspectToolCall(tool,tool.name,{action:'brain',maidId:id,choice:'native',requestId:'mode-1'})).toMatchObject({valid:true,readOnly:false,requiresBody:true});
   expect(tool.handler).not.toHaveBeenCalled();
+});
+it('uses the independent query port for nearby and brain reads, while keeping brain selection in the body queue',async()=>{
+  const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
+  const request=vi.fn(async args=>reply(args.action,args.action==='nearby'?{maids:[]}:{maidId:id,choices:[]}));
+  (engine as any).maidPort={request};
+  (engine as any).bridge={bot:{player:{uuid:owner}}};
+  const queue=vi.spyOn(engine as any,'enqueueTool').mockReturnValue({text:'accepted',data:{goal_completed:false}});
+  const tool=engine.tools().find(t=>t.name==='mc_maids')!,ctx={role:'test',log:nullLogger()};
+  await tool.handler({action:'nearby'},ctx);await tool.handler({action:'brain',maidId:id},ctx);
+  expect(request).toHaveBeenCalledTimes(2);expect(queue).not.toHaveBeenCalled();
+  await tool.handler({action:'brain',maidId:id,choice:'native',requestId:'mode-1'},ctx);
+  expect(request).toHaveBeenCalledTimes(2);expect(queue).toHaveBeenCalledTimes(1);
+  expect(maidCommand({action:'nearby',requestId:'nearby-1'}).command).toBe('/qdmaid nearby nearby-1');
 });
 
 it('does not turn an inventory or operation receipt into a newer life observation',()=>{

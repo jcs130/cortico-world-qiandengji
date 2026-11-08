@@ -5,19 +5,21 @@ import { MAID_TOOL, MAID_CHANNEL, decodeMaidReply, maidCommand, type MaidReply }
 const uuid=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const object=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const text=(v:unknown,max=160)=>typeof v==='string'?v.replace(/[\r\n\u0000-\u001f]/g,' ').slice(0,max):'';
-const reads=new Set(['list','context','inventory','tasks','receipt','inbox','skins','voices','resources']);
-export const maidReadAction=(action:unknown)=>typeof action==='string'&&reads.has(action);
+const reads=new Set(['nearby','list','context','inventory','tasks','receipt','inbox','skins','voices','resources']);
+export const maidReadAction=(action:unknown,args:Record<string,unknown>={})=>typeof action==='string'
+  &&(reads.has(action)||action==='brain'&&args.choice===undefined);
 const parameters=structuredClone(MAID_TOOL.parameters) as {properties:Record<string,unknown>};
 delete parameters.properties.playerSlot;
 parameters.properties.playerWindowSlot={type:'integer',minimum:9,maximum:44,
   description:'Actual self inventory window slot: 9–35 main inventory, 36–44 hotbar. Read mc_script api:inventory.items, then await bot.inventory.items() for exact slots; mc_bag totals do not identify a slot. Converted to Bukkit 0–35 by this adapter; do not pass a Bukkit slot here. Required for transfer put.'};
 export const QIANDENGJI_MAIDS_TOOL:Omit<ToolDef,'handler'>={...MAID_TOOL,parameters,
-  readOnlyCall: args => maidReadAction(args.action),
-  description:'Optional server-owned maid NPC operations, distinct from real players. Start with action:list, then context/inventory/tasks for an observed maidId. '
+  readOnlyCall: args => maidReadAction(args.action,args),
+  description:'Optional server-owned companion NPC operations, distinct from real players. list finds owned companions; nearby discovers public conversation targets. Read context/inventory/tasks for an observed maidId. '
     +'Read results are native observations. Writes require a saved requestId and enter the existing body queue; queue acceptance is not application. '
     +'Use receipt with the original operationId after the body command is sent. chat invokes the native maid model; pending/queued/unknown are not replies. '
     +'transfer uses playerWindowSlot (Mineflayer 9–44), not Bukkit slots; equip swaps an observed maid slot with main/off/head/chest/legs/feet. '
     +'Observe actual equipment afterwards. Death/unloaded are separate; context gives original tombstone evidence. No automatic recreation or retry. '
+    +'When context.conversation is present, ordinary nearby name-addressed chat uses its observed range and channel; private owner work still uses chat and receipt. brain without choice only reads configured modes; selecting a returned choice is a separate write. '
     +'Full task, voice, menu and recovery semantics are in mc_guide topic:maids. Mutation commands are not ordinary public chat or mc_cast spells.'};
 
 export function maidArguments(args:Record<string,unknown>):Record<string,unknown> {
@@ -41,7 +43,8 @@ type MaidRecord={maidId:string;ownerId:string;name:string;sampledAt:string;lifeS
   health:number|null;maxHealth:number|null;taskId:string|null;dialogueMode:string|null;death:Record<string,unknown>|null;
   lastAliveAt:string|null;historicalDeath:Record<string,unknown>|null;recovery:Record<string,unknown>|null;
   sitting:boolean|null;canMove:boolean|null;dimension:string|null;position:number[]|null;
-  equipment:Record<string,unknown>|null;equipmentAt:string|null};
+  equipment:Record<string,unknown>|null;equipmentAt:string|null;
+  conversation:{observedAt:string;nearbyRange:number|null;addressExample:string;ownerWorkCommand:string}|null};
 type MaidNotice={text:string;urgent:boolean;meta:Record<string,unknown>};
 const observedTime=(value:unknown,sampledAt:string)=>typeof value==='string'&&Number.isFinite(Date.parse(value))
   &&Date.parse(value)<=Date.parse(sampledAt)?value:null;
@@ -74,7 +77,8 @@ export class MaidState {
       const item=row.equipment?.[slot];return [slot,object(item)?{id:text(item.id,128),
         ...(text(item.displayName??item.name)?{displayName:text(item.displayName??item.name)}:{}),count:typeof item.count==='number'?item.count:null}:null];
     })):null,
-    equipmentObservedAt:row.equipmentAt,read:{tool:'mc_maids',action:'context',maidId:row.maidId}}));}
+    equipmentObservedAt:row.equipmentAt,conversation:row.conversation,
+    read:{tool:'mc_maids',action:'context',maidId:row.maidId}}));}
   /** Join only a server-owned UUID from this connection, never a custom-name guess. */
   identity(entityUuid:string|undefined):EntityIdentity|null {
     if(!entityUuid)return null;
@@ -135,6 +139,12 @@ export class MaidState {
         dimension:typeof row.dimension==='string'?text(row.dimension,128):null,
         position:Array.isArray(row.position)&&row.position.length===3&&row.position.every(Number.isFinite)?[...row.position] as number[]:null,
         death,lastAliveAt,historicalDeath,recovery,
+        conversation:reply.action==='context'?(object(row.conversation)?{
+          observedAt:reply.sampledAt,
+          nearbyRange:typeof row.conversation.nearbyRange==='number'&&Number.isFinite(row.conversation.nearbyRange)
+            &&row.conversation.nearbyRange>=0&&row.conversation.nearbyRange<=128?row.conversation.nearbyRange:null,
+          addressExample:text(row.conversation.addressExample,140),ownerWorkCommand:text(row.conversation.ownerWorkCommand,256),
+        }:null):previous?.conversation??null,
         equipment:equipmentInvalidated?null:previous?.equipment??null,equipmentAt:equipmentInvalidated?null:previous?.equipmentAt??null};
       this.rows.set(row.maidId,next);
       const changed=previous?.lifeState!==lifeState||previous?.death?.eventId!==death?.eventId;
@@ -197,6 +207,7 @@ export class MaidState {
       const state=row.lifeState==='dead'?'已确认死亡，复活未验证':row.lifeState==='alive'?`当时存活，生命${row.health??'未知'}/${row.maxHealth??'未知'}`:'存活状态未知，未加载不等于死亡';
       return `${row.name} maidId=${row.maidId}，${row.sampledAt}：${state}，工作=${row.taskId??'未知'}，对话=${row.dialogueMode??'未知'}。`
         +` 坐下=${row.sitting??'未知'}，可移动=${row.canMove??'未知'}，位置=${row.dimension??'未知'} ${row.position?JSON.stringify(row.position):'未知'}。`
+        +(row.conversation?` 交谈契约（${row.conversation.observedAt}）：同世界附近点名“${row.conversation.addressExample}”，范围=${row.conversation.nearbyRange??'未知'}格；这是公开聊天。主人工作仍用 mc_maids chat → receipt，发送不等于回复或完成。`:'')
         +(row.historicalDeath?` 历史死亡 ${text(row.historicalDeath.diedAt)}${row.lastAliveAt?`；最近确认存活 ${row.lastAliveAt}`:''}，不能当成再次死亡；遗物另查。`:'')
         +(row.recovery?` 恢复见证 ${text(row.recovery.observedAt)}（不是实际复活时间；持久保存=${row.recovery.persisted}）。`:'')
         +(row.death?this.deathText(row):'')+(row.equipment?` 装备记录 ${row.equipmentAt}：${JSON.stringify(row.equipment).slice(0,850)}`:' 装备未查询，不能当作已给她武器/护甲。');

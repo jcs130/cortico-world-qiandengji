@@ -1,3 +1,8 @@
+## 0.4.1-rc.71-preview.29
+
+- Update the pinned server companion client for nearby conversation discovery and native/Harness mode queries. Keep queries independent of the body queue and mode selection as an explicit write.
+- Preserve the server-observed conversation route and timestamp in compact companion facts. Correct the on-demand guide to separate public nearby name-addressed conversation from private owner work requests.
+
 ## 0.4.1-rc.71-preview.28
 
 - Declare optional fact capabilities independently of current observations, preserving missing values as unknown.

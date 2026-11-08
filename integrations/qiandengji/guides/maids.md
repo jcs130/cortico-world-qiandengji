@@ -2,9 +2,15 @@
 
 先用 `mymc_maids {"action":"list"}` 取得本人女仆 UUID；分页从 page=0 开始，hasMore 为真时按需读下一页。随后用 `context`、`inventory`、`tasks` 加上 maidId，读当前生命、装备、原生工作要求与实际对话模式。旧服务器缺字段时保持未知，不能把未加载当死亡，也不能把菜单里的剑图标当作背包物品。
 
-这些查询与 `receipt` 已声明为只读分支，可交给只读 worker，不占用身体控制。执行 worker 的范围需包含 `mymc_maids`；普通玩家聊天工具不代替女仆接口。`companions` 事实摘要保留观察时间、坐下/移动状态及已查询的装备，完整背包和工作清单按需读取。
+这些查询与 `nearby`、`receipt`、不带 choice 的 `brain` 已声明为只读分支，可交给只读 worker，不占用身体控制。执行 worker 的范围需包含 `mymc_maids`。`companions` 事实摘要保留观察时间、坐下/移动状态、已查询装备和交谈入口；完整背包与工作清单按需读取。
 
-对话用 `action:"chat"`、maidId、已保存的 requestId 和 text（1–140 字，完整命令仍受 256 字符限制）。它使用女仆已配置的原生模型。`talk` 是旧外部宿主收件箱；`speak` 是指定台词，二者都不是女仆模型回复。pending 只表示已交给模型，等 chat-result 或用 `receipt` 的 operationId 查询原请求；replied 才是本次原生回复，回复内容也不是动作完成证明。
+日常交谈和主人安排工作是两个入口。先 `nearby` 或最新 `context.conversation` 确认真实对象、距离和频道；服务端 0.1.12-conversation 支持在同世界附近点名，例如“肥鱼，你好”或“@肥鱼 你好”。用普通附近文字发送，或现有附近语音链路；全服喊话、私聊和语音小组不会触发附近点名。范围以当前返回的 nearbyRange 为准（该版为 8 格），在线或旧位置不代表现在就在附近。收到带真实来源的回复才算对方回应，不因发送成功就说聊完了。
+
+附近点名是公开聊天，不读取主人私聊或给访客工作工具。可米安排工作、装备和跟随仍用下面的主人接口；不要把同一句话同时通过附近点名和 chat 重复发给她。语音的 sent 只表示发送，不能当作真人听见；context.speech 可查音色、传输及失败原因。名字是称呼，maidId 是协议身份，不能用旧原版投影识别真实人物。
+
+主人交谈及工作要求用 `action:"chat"`、maidId、已保存的 requestId 和 text（1–140 字，完整命令仍受 256 字符限制）。它使用当前配置的原生/Harness 运行方式。`talk` 是旧外部宿主收件箱；`speak` 是指定台词，二者都不是她的模型回复。pending 只表示已交给模型，等 chat-result 或用 `receipt` 的 operationId 查询原请求；replied 才是本次回复，回复内容也不是动作完成证明。`brain` 不带 choice 查询当前模型及可选方式；确需切换时使用实际返回的 choice 与独立 requestId，忙碌时不切换，不重建角色或清空记忆。
+
+外观以 `context.appearance` 的实际 YSM/原生模型为准，顶层 modelId 可能只是备用模型。`damageProtected` 是原生伤害保护，不表示所有删除或虚空情况都安全。旧服务器缺这些字段时保持未知，不臆造能力或自动修改她的设置。
 
 武器和护甲需要真实物品。先检查本人和女仆背包，再 `transfer`，最后 `equip` 并查询 `inventory` 的 equipment 读回。转交参数是 direction:"put"、女仆 slot、count 和 **playerWindowSlot**：本人主背包窗口槽 9–35、快捷栏窗口槽 36–44。适配层转换成服务器 Bukkit 槽，不要手工混用 0–8。装备使用 hand:"main"|"off"|"head"|"chest"|"legs"|"feet" 和已观察的女仆背包 slot；用空槽交换可卸下装备，绑定诅咒仍由原生机制处理。
 
@@ -22,4 +28,4 @@
 
 0.1.8-life 返回的 `historicalDeath` 只表示历史，`lastSeenAlive.observedAt` 是最近存活见证；`recovery.observedAt` 是再次观察到原 UUID 存活的时间，不是实际复活时间。`recovery.persisted` 表示服务端是否已保存该见证。重连或女仆卸载后仍可按需读取，不能把这些历史字段当作当前加载或当前生命，也不据此重放复活操作。
 
-来源：Minecraft AI Friend `paper/integrations/touhou-maids/agent/CONTRACT.md` 的 0.1.8-life 契约。具体支持以已部署服务器为准；客户端包更新不代表服务端已部署。
+来源：Minecraft AI Friend `paper/integrations/touhou-maids/agent/CONTRACT.md` 和 `paper/docs/MAID_CONVERSATION_20261108.md`（0.1.12-conversation）。字段和实际支持以当前服务器回执为准；客户端包更新不代表服务端已部署。
