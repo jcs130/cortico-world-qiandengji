@@ -1,19 +1,19 @@
 {
-  "version": "0.5.7-rc.160-preview.30",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.30-6c24a31c.tgz",
-  "sha256": "6c24a31ce4685d9a3c7833e44392be5335fcf9d62acf75a148bd36a05019247a",
+  "version": "0.5.7-rc.160-preview.31",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.31-ab61c6e4.tgz",
+  "sha256": "ab61c6e4d1adb0f0946287921bc71951ec6949d0d992aff4304f42d562b000b9",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "parent": "937a012da85cfb7b2b32be0144a2e2eb3a86a6c4",
-  "genericFixCommit": "eb1be40b157a19760b5c9d595eab45746a8ce142",
-  "integrationBranch": "codex/action-flow-20261107",
+  "parent": "200aeaa91264e38fadd08f7b868c3790dc2e9e2d",
+  "genericFixCommit": "7323192c501b617a7d50cc74d24469760b32bb4a",
+  "integrationBranch": "codex/trial-message-flow-20261108",
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
   "viewer": {
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "sourceCommit": "eb1be40b157a19760b5c9d595eab45746a8ce142",
+  "sourceCommit": "7323192c501b617a7d50cc74d24469760b32bb4a",
   "sourcePushed": true,
   "inheritedMaidFix": "c02e95f1db6cce5751b92899a0263ab13c277b2c",
   "inheritedWeaponFix": "d0c46a6a778e4e8d9c5623cc7944848391671cce"
