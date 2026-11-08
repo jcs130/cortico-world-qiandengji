@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.31
+
+- Consume the core short-notice projection fix through the pinned archive in the World and optional server package.
+
 ## 0.4.1-rc.71-preview.30
 
 - Consume server pack preview.26 so verified nearby companion replies reach the Persona's existing conversation index. Owner-private replies remain separate.
