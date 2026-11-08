@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.30
+
+- Consume server pack preview.26 so verified nearby companion replies reach the Persona's existing conversation index. Owner-private replies remain separate.
+
 ## 0.4.1-rc.71-preview.29
 
 - Update the pinned server companion client for nearby conversation discovery and native/Harness mode queries. Keep queries independent of the body queue and mode selection as an explicit write.
