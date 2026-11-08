@@ -1,19 +1,19 @@
 {
-  "version": "0.5.7-rc.160-preview.31",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.31-ab61c6e4.tgz",
-  "sha256": "ab61c6e4d1adb0f0946287921bc71951ec6949d0d992aff4304f42d562b000b9",
+  "version": "0.5.7-rc.160-preview.32",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.32-3736f8ff.tgz",
+  "sha256": "3736f8ff287ebead6185e684ab78526762078ccaaea211484c7560fd87b875bd",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "parent": "200aeaa91264e38fadd08f7b868c3790dc2e9e2d",
-  "genericFixCommit": "7323192c501b617a7d50cc74d24469760b32bb4a",
-  "integrationBranch": "codex/trial-message-flow-20261108",
+  "parent": "7f49f3a6f046c168a773c25803ff937a560a3944",
+  "genericFixCommit": "1a07684cc85fd92f0209d9d9b7159ca5a98e450b",
+  "integrationBranch": "codex/nav-kill-evidence-20261108",
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
   "viewer": {
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "sourceCommit": "7323192c501b617a7d50cc74d24469760b32bb4a",
+  "sourceCommit": "1a07684cc85fd92f0209d9d9b7159ca5a98e450b",
   "sourcePushed": true,
   "inheritedMaidFix": "c02e95f1db6cce5751b92899a0263ab13c277b2c",
   "inheritedWeaponFix": "d0c46a6a778e4e8d9c5623cc7944848391671cce"
