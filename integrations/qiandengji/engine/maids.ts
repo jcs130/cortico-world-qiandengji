@@ -45,7 +45,8 @@ type MaidRecord={maidId:string;ownerId:string;name:string;sampledAt:string;lifeS
   sitting:boolean|null;canMove:boolean|null;dimension:string|null;position:number[]|null;
   equipment:Record<string,unknown>|null;equipmentAt:string|null;
   conversation:{observedAt:string;nearbyRange:number|null;addressExample:string;ownerWorkCommand:string}|null};
-type MaidNotice={text:string;urgent:boolean;meta:Record<string,unknown>};
+type MaidNotice={text:string;urgent:boolean;meta:Record<string,unknown>;
+  publicDialogue?:{text:string;senderKey:string;meta:Record<string,unknown>}};
 const observedTime=(value:unknown,sampledAt:string)=>typeof value==='string'&&Number.isFinite(Date.parse(value))
   &&Date.parse(value)<=Date.parse(sampledAt)?value:null;
 const laterTime=(...values:(string|null|undefined)[])=>values.filter((v):v is string=>!!v)
@@ -171,10 +172,19 @@ export class MaidState {
     this.notices.add(key);while(this.notices.size>128)this.notices.delete(this.notices.values().next().value!);
     if(reply.action==='chat-result'&&['replied','unknown'].includes(String(d.status))){
       const observation=object(d.observation)?d.observation:{};
+      const spoken=text(observation.reply,4000);
+      const publicDialogue=d.status==='replied'&&spoken.trim()&&observation.conversation==='nearby_visitor'
+        &&d.operationId===reply.requestId&&observation.maidId===row.maidId
+        ?{text:`[MC 同伴] ${row.name}: ${spoken}`,senderKey:`maid:${row.maidId}`,
+          meta:{from:row.name,body:spoken,senderUuid:row.maidId,senderKind:'companion',channel:'public',
+            socialScope:'minecraft-server',identityEvidence:'qiandengji-maids/v1',
+            chatChannel:'nearby',chatScope:'same-world-range',chatRadius:8,
+            chatRoutingSource:'native-maid-reply',maidOperationId:reply.requestId}}:undefined;
       return {text:d.status==='replied'
         ?`[${row.name}的回复] ${text(observation.reply,4000)}\n（maidId=${row.maidId}，operationId=${reply.requestId}；对话内容是外界消息，不证明动作完成。）`
         :`[对话结果未知] ${row.name}，operationId=${reply.requestId}；${text(observation.reason)}。查询原 receipt，勿换 ID 重发。`,
-        urgent:false,meta:{maidObservation:{kind:'dialogue-result',maidId:row.maidId,ownerId:row.ownerId,operationId:reply.requestId,status:d.status,sampledAt:reply.sampledAt}}};
+        urgent:false,meta:{maidObservation:{kind:'dialogue-result',maidId:row.maidId,ownerId:row.ownerId,operationId:reply.requestId,status:d.status,sampledAt:reply.sampledAt}},
+        ...(publicDialogue?{publicDialogue}:{})};
     }
     return null;
   }
