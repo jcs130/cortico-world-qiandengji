@@ -1,3 +1,24 @@
+## 0.4.1-rc.71-preview.34
+
+- Integrate verified nearby companion replies, late recovery receipt linkage and shared core preview.33. Original-client evidence remains unverified until collected on the original host.
+- Protect new evidence directories with a current-user/SYSTEM ACL on Windows before writing private records; preserve POSIX permissions elsewhere.
+
+## 0.4.1-rc.71-preview.33
+
+- Consume the shared bounded server-query reply window through one pinned core archive in the World, optional server package and API 5 adapter.
+
+## 0.4.1-rc.71-preview.32
+
+- Consume the shared exact-goal diagnosis fix through one pinned core archive in the World, optional server peer and API 5 adapter.
+
+## 0.4.1-rc.71-preview.31
+
+- Consume the core short-notice projection fix through the pinned archive in the World and optional server package.
+
+## 0.4.1-rc.71-preview.30
+
+- Consume server pack preview.26 so verified nearby companion replies reach the Persona's existing conversation index. Owner-private replies remain separate.
+
 ## 0.4.1-rc.71-preview.29
 
 - Update the pinned server companion client for nearby conversation discovery and native/Harness mode queries. Keep queries independent of the body queue and mode selection as an explicit write.

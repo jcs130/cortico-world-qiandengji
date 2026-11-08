@@ -66,7 +66,10 @@ protected releaseMaidIdentity: (()=>void) | null = null;
     }}]; }
 protected observeMaidReply(reply:MaidReply):void {
     const notice=this.maids.observe(reply);
-    if(notice)this.emit('minecraft.event',notice.text,notice.urgent,{meta:notice.meta});
+    if(notice?.publicDialogue){
+      const dialogue=notice.publicDialogue;
+      this.emit('minecraft.chat',dialogue.text,false,{meta:{...dialogue.meta,...notice.meta}},dialogue.senderKey);
+    }else if(notice)this.emit('minecraft.event',notice.text,notice.urgent,{meta:notice.meta});
   }
 protected castSpell(args: Record<string, unknown>): string | ToolOutcome {
     return invokeQiandengjiCast({
