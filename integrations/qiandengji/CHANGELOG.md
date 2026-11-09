@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.37
+
+- Pin shared core preview.36: unify scaffold eligibility and expose effective movement policy in current journey facts. Preserve upstream native task and companion receipt integration.
+
 ## 0.4.1-rc.71-preview.36
 
 - Preserve correlated current-connection companion write rejections for original-ID receipt reads; accepted writes still query the server for current progress. Distinguish unlocked companion inventory capacity from empty slots, and pin shared core preview.35 for exact on-demand player inventory slot reads. Keep body execution serialized and never retry an unknown write.
