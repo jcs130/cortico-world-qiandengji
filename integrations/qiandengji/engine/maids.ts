@@ -100,6 +100,19 @@ export class MaidState {
     })):null,
     equipmentObservedAt:row.equipmentAt,conversation:row.conversation,
     read:{tool:'mc_maids',action:'context',maidId:row.maidId}}));}
+  /** A context/list reply is a dated sample, not a continuously tracked entity.
+   * Keep identity and lifecycle evidence, but never reuse old geometry as current. */
+  decisionSummary(now=Date.now()) {
+    return this.summary().map(row=>{
+      const age=now-Date.parse(row.observedAt),current=Number.isFinite(age)&&age>=0&&age<=10_000;
+      if(current)return {...row,freshness:'recent' as const,ageMs:age};
+      const {position,dimension,health,loaded,lifeState,taskId,sitting,canMove,...identityAndEvidence}=row;
+      return {...identityAndEvidence,freshness:'historical' as const,ageMs:Number.isFinite(age)?age:null,
+        position:null,dimension:null,health:null,loaded:null,lifeState:'unknown',taskId:null,sitting:null,canMove:null,
+        lastObservation:{observedAt:row.observedAt,position,dimension,health,loaded,lifeState,taskId,sitting,canMove},
+        note:'历史服务端采样，不证明当前位置、距离、掉队或当前身体状态；当前实体观察和 mc_maids context 可重新核实。'};
+    });
+  }
   /** Join only a server-owned UUID from this connection, never a custom-name guess. */
   identity(entityUuid:string|undefined):EntityIdentity|null {
     if(!entityUuid)return null;
@@ -242,12 +255,13 @@ export class MaidState {
     const pos=Array.isArray(d.position)&&d.position.length===3&&d.position.every(Number.isFinite)?JSON.stringify(d.position):'未知';
     return `死亡记录 ${text(d.diedAt)}；遗物 ${text(d.dimension)} ${pos}；${text(d.nextStep,360)}`;
   }
-  brief():string {
+  brief(now=Date.now()):string {
     if(!this.rows.size)return '';
     return '[随行角色的最近服务端记录；身份与归属已确认，后续变化须查询]\n'+[...this.rows.values()].slice(0,4).map(row=>{
+      const age=now-Date.parse(row.sampledAt),historical=!Number.isFinite(age)||age<0||age>10_000;
       const state=row.lifeState==='dead'?'已确认死亡，复活未验证':row.lifeState==='alive'?`当时存活，生命${row.health??'未知'}/${row.maxHealth??'未知'}`:'存活状态未知，未加载不等于死亡';
-      return `${row.name} maidId=${row.maidId}，${row.sampledAt}：${state}，工作=${row.taskId??'未知'}，对话=${row.dialogueMode??'未知'}。`
-        +` 坐下=${row.sitting??'未知'}，可移动=${row.canMove??'未知'}，位置=${row.dimension??'未知'} ${row.position?JSON.stringify(row.position):'未知'}。`
+      return `${row.name} maidId=${row.maidId}，${row.sampledAt}${historical?'（历史采样，当前身体/位置待重读）':''}：${state}，当时工作=${row.taskId??'未知'}，对话=${row.dialogueMode??'未知'}。`
+        +` 当时坐下=${row.sitting??'未知'}，可移动=${row.canMove??'未知'}，${historical?'历史采样位置（非当前位置）':'采样位置'}=${row.dimension??'未知'} ${row.position?JSON.stringify(row.position):'未知'}。`
         +(row.conversation?` 交谈契约（${row.conversation.observedAt}）：同世界附近点名“${row.conversation.addressExample}”，范围=${row.conversation.nearbyRange??'未知'}格；这是公开聊天。主人工作仍用 mc_maids chat → receipt，发送不等于回复或完成。`:'')
         +(row.historicalDeath?` 历史死亡 ${text(row.historicalDeath.diedAt)}${row.lastAliveAt?`；最近确认存活 ${row.lastAliveAt}`:''}，不能当成再次死亡；遗物另查。`:'')
         +(row.recovery?` 恢复见证 ${text(row.recovery.observedAt)}（不是实际复活时间；持久保存=${row.recovery.persisted}）。`:'')

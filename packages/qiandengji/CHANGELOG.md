@@ -1,3 +1,11 @@
+## 0.5.0-rc.50-preview.34
+
+- Keep dated companion geometry out of current decision fields after expiry, retaining UUID/ownership and lifecycle evidence. Pin shared core preview.37 including explicit cooldown refusal facts.
+
+## 0.5.0-rc.50-preview.33
+
+- Pin shared core preview.36: unify scaffold eligibility and expose effective movement policy in current journey facts. Preserve upstream native task and companion receipt integration.
+
 ## 0.5.0-rc.50-preview.30
 
 - Integrate verified nearby companion replies, late recovery receipt linkage and shared core preview.33. Original-client evidence remains unverified until collected on the original host.

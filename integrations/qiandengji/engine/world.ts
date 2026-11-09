@@ -181,7 +181,7 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     const facts = super.requestFacts(), companionParts=[{key:'companions',text:this.maids.brief()}].filter(p=>p.text),
       parts = [{key:'nativeRpg',text:this.nativeRpg.brief()},{key:'communication',text:this.chatPolicy.brief()}].filter(p=>p.text);
     if (!facts) return facts;
-    const companions=this.maids.summary();
+    const companions=this.maids.decisionSummary();
     return { ...facts, partKeys:[...new Set([...(facts.partKeys??facts.parts?.map(p=>p.key)??[]),'companions','nativeRpg','communication'])],
       text: [...companionParts.map(p=>p.text),facts.text,...parts.map(p=>p.text)].join('\n'),
       ...(facts.parts ? { parts: [...companionParts, ...facts.parts, ...parts] } : {}),
