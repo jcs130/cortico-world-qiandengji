@@ -235,7 +235,7 @@ it('projects actual plugin/CLI data through the engine facts and emits only a pi
 it('reads a real custom_payload event before the viewer projection can drop profession fields, and ignores a replaced bot', () => {
   const engine = Object.create(QiandengjiEngine.prototype) as any;
   const bot = Object.assign(new EventEmitter(), { _client: Object.assign(new EventEmitter(),{uuid:'11111111-1111-4111-8111-111111111111',write:vi.fn()}) });
-  engine.nativeRpg = new NativeRpgState(); engine.chatPolicy = new ChatPolicyState(); engine.maids = new MaidState(); engine.observedCommands = { clear() {} }; engine.bridge = { bot };
+  engine.nativeRpg = new NativeRpgState(); engine.chatPolicy = new ChatPolicyState(); engine.maids = new MaidState(); engine.maidWrites = new Map(); engine.observedCommands = { clear() {} }; engine.bridge = { bot };
   engine.combatSpells = { noteMana: vi.fn(), noteAbilities: vi.fn(), hasAbility: () => false };
   engine.emit = vi.fn(); engine.attachExtension(bot);
   bot._client.emit('custom_payload', { channel: 'mcagent:state', data: packet() });

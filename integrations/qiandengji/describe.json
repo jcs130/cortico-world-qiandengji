@@ -29,13 +29,21 @@
     },
     {
       "name": "mymc_bag",
-      "description": "Read your inventory right now: how many of the 36 slots are used, what is in them, what is in your hand, and what armour you are wearing. Read-only and instant — it never moves you, never touches the world and never touches the work queue. Set item to a material ID, Chinese material name, or exact custom display name to locate it in your inventory, the currently open container, and last observed chest records; closed virtual backpacks are not included, and chest records are historical until reopened. Ask this instead of re-submitting a task to find out what you are carrying. Once per turn: asking again in the same turn returns a one-line pointer to the answer above.",
+      "description": "Read your inventory right now: how many of the 36 slots are used, what is in them, what is in your hand, and what armour you are wearing. Read-only and instant — it never moves you, never touches the world and never touches the work queue. Set item to a material ID, Chinese material name, or exact custom display name to locate it in your inventory, the currently open container, and last observed chest records; closed virtual backpacks are not included, and chest records are historical until reopened. Use detail:\"slots\" for exact current self windowSlot numbers and per-stack counts before slot-based transfers; item optionally filters that table. No script or organize dryRun is needed to read slots. Ask this instead of re-submitting a task to find out what you are carrying. Once per turn: asking again in the same turn returns a one-line pointer to the answer above.",
       "parameters": {
         "type": "object",
         "properties": {
           "item": {
             "type": "string",
             "description": "Optional focused stock lookup by material ID, Chinese material name, or exact custom display name."
+          },
+          "detail": {
+            "type": "string",
+            "enum": [
+              "summary",
+              "slots"
+            ],
+            "description": "Default summary; slots reads only the current self inventory slot table (9–44), not chest slot numbers."
           }
         },
         "required": []
@@ -5049,7 +5057,7 @@
     },
     {
       "name": "mymc_maids",
-      "description": "Optional server-owned companion NPC operations, distinct from real players. list finds owned companions; nearby discovers public conversation targets. Read context/inventory/tasks for an observed maidId. Read results are native observations. Writes require a saved requestId and enter the existing body queue; queue acceptance is not application. Use receipt with the original operationId after the body command is sent. chat invokes the native maid model; pending/queued/unknown are not replies. transfer uses playerWindowSlot (Mineflayer 9–44), not Bukkit slots; equip swaps an observed maid slot with main/off/head/chest/legs/feet. Observe actual equipment afterwards. Death/unloaded are separate; context gives original tombstone evidence. No automatic recreation or retry. When context.conversation is present, ordinary nearby name-addressed chat uses its observed range and channel; private owner work still uses chat and receipt. brain without choice only reads configured modes; selecting a returned choice is a separate write. Full task, voice, menu and recovery semantics are in mymc_guide topic:maids. Mutation commands are not ordinary public chat or mymc_cast spells.",
+      "description": "Optional server-owned companion NPC operations, distinct from real players. list finds owned companions; nearby discovers public conversation targets. Read context/inventory/tasks for an observed maidId. Read results are native observations. Writes require a saved requestId and enter the existing body queue; queue acceptance is not application. Use receipt with the original operationId after the body command is sent. chat invokes the native maid model; pending/queued/unknown are not replies. transfer uses playerWindowSlot (Mineflayer 9–44), not Bukkit slots; read mymc_bag {detail:\"slots\"} for exact self slots. inventoryAccess distinguishes usable capacity from empty slots. equip swaps an observed maid slot with main/off/head/chest/legs/feet. Observe actual equipment afterwards. Death/unloaded are separate; context gives original tombstone evidence. No automatic recreation or retry. When context.conversation is present, ordinary nearby name-addressed chat uses its observed range and channel; private owner work still uses chat and receipt. brain without choice only reads configured modes; selecting a returned choice is a separate write. Full task, voice, menu and recovery semantics are in mymc_guide topic:maids. Mutation commands are not ordinary public chat or mymc_cast spells.",
       "parameters": {
         "type": "object",
         "additionalProperties": false,
