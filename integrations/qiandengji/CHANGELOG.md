@@ -1,3 +1,11 @@
+## 0.4.1-rc.71-preview.36
+
+- Preserve correlated current-connection companion write rejections for original-ID receipt reads; accepted writes still query the server for current progress. Distinguish unlocked companion inventory capacity from empty slots, and pin shared core preview.35 for exact on-demand player inventory slot reads. Keep body execution serialized and never retry an unknown write.
+
+## 0.4.1-rc.71-preview.35
+
+- Pin shared checkpoint evidence core through the World, optional server protocols and API 5 adapter; retain upstream stash tidy/query guidance updates.
+
 ## 0.4.1-rc.71-preview.34
 
 - Integrate verified nearby companion replies, late recovery receipt linkage and shared core preview.33. Original-client evidence remains unverified until collected on the original host.

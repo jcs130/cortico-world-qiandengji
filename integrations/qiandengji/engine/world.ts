@@ -4,7 +4,7 @@ import type { SkillCall } from 'agent-mc-world/extension';
 import {ObservedCommandCatalog, serverQueryTool, bindEntityIdentityResolver} from 'agent-mc-world/extension';
 import { observedCommandRoot, observedCommandUsage } from './command-usage.ts';
 import { QIANDENGJI_SERVER_QUERIES } from './server-query.ts';
-import { QIANDENGJI_MAIDS_TOOL, MaidState, maidArguments, maidReadAction, maidSystemReply } from './maids.ts';
+import { QIANDENGJI_MAIDS_TOOL, MaidState, maidArguments, maidReadAction, maidSystemReply, maidInventoryAccess } from './maids.ts';
 import { createMaidPort, decodeMaidReply, maidCommand, type MaidPort, type MaidReply } from './maid-port.mjs';
 import { type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import { join } from 'node:path';
@@ -36,6 +36,8 @@ protected readonly nativeRpg = new NativeRpgState();
 protected readonly chatPolicy = new ChatPolicyState();
 protected readonly maids = new MaidState();
 protected maidPort: MaidPort | null = null;
+/** Bounded current-connection write rejections not persisted by older servers. Accepted writes still reconcile server progress. */
+protected readonly maidWrites=new Map<string,{action:string;maidId?:string;command:string;reply?:MaidReply}>();
 protected releaseMaidIdentity: (()=>void) | null = null;
   constructor(options: MinecraftWorldOptions) { const tactics = new CombatSpells(new CombatTacticBook(options.dataDir ? join(options.dataDir,'minecraft-combat-tactics.json') : null)); super(options, tactics); this.combatSpells = tactics; }
   protected override battlefieldChannel() { return BATTLEFIELD_CHANNEL; }
@@ -52,12 +54,22 @@ protected releaseMaidIdentity: (()=>void) | null = null;
       try { native=maidArguments(args); } catch(error) { return {text:String(error),failed:true}; }
       if(!this.maidPort||!this.bridge?.bot)return {text:'女仆接口未连接；先确认当前游戏认证与连接，未发送操作。',failed:true};
       if(maidReadAction(args.action,args)){
+        const original=args.action==='receipt'&&typeof args.operationId==='string'?this.maidWrites.get(args.operationId):undefined;
+        if(original?.reply&&original.maidId===args.maidId){
+          const data={receiptSource:'current_connection_original_reply',operationId:args.operationId,reply:original.reply,goalCompleted:false};
+          return {text:JSON.stringify(data),data,...(!original.reply.ok?{failed:true}:{})};
+        }
         const result=await this.maidPort.request(native);
         const reply=maidSystemReply('QD_MAID '+JSON.stringify(result),this.bridge?.bot?.player?.uuid??this.bridge?.bot?._client?.uuid);
         if(reply)this.observeMaidReply(reply);
-        return {text:JSON.stringify(result),...(typeof result==='object'&&result!==null&&'ok' in result&&result.ok===false?{failed:true}:{})};
+        const inventoryAccess=reply?maidInventoryAccess(reply):null;
+        return {text:JSON.stringify(inventoryAccess?{...reply,inventoryAccess}:result),...(typeof result==='object'&&result!==null&&'ok' in result&&result.ok===false?{failed:true}:{})};
       }
       const entry=maidCommand(native);
+      const previous=this.maidWrites.get(entry.requestId);
+      if(previous&&previous.command!==entry.command)return {text:'requestId 已用于不同操作；未发送。先查原 operationId 的回执，不得用同一编号改写操作。',failed:true};
+      if(!previous)this.maidWrites.set(entry.requestId,{action:entry.action,maidId:entry.maidId,command:entry.command});
+      while(this.maidWrites.size>64)this.maidWrites.delete(this.maidWrites.keys().next().value!);
       const steps:SkillCall[]=[{skill:'chat',text:entry.command}];
       const result=this.enqueueTool('mc_do',{steps,queue:'append'},()=>({steps}),undefined,ctx.role,ctx.attribution?.controller,ctx);
       const outcome=typeof result==='string'?{text:result}:result;
@@ -65,6 +77,9 @@ protected releaseMaidIdentity: (()=>void) | null = null;
         data:{...outcome.data,maidOperation:{maidId:entry.maidId,operationId:entry.operationId,action:entry.action,goalCompleted:false}}};
     }}]; }
 protected observeMaidReply(reply:MaidReply):void {
+    const original=this.maidWrites.get(reply.requestId);
+    if(!reply.ok&&original&&original.action===reply.action&&(!reply.data?.maidId||reply.data.maidId===original.maidId))
+      original.reply=reply;
     const notice=this.maids.observe(reply);
     if(notice?.publicDialogue){
       const dialogue=notice.publicDialogue;
@@ -211,6 +226,7 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
   protected override extensionRespawn() { this.nativeRpg.reset(); this.chatPolicy.reset(); const mana=this.bridge?.agentManaState; if(mana!==undefined)this.combatSpells.noteMana(mana?.current??null); }
   protected override attachExtension(bot: Bot) {
     this.maidPort?.close();this.maidPort=null;this.maids.reset();
+    this.maidWrites.clear();
     this.releaseMaidIdentity?.();
     const releaseIdentity=bindEntityIdentityResolver(bot,entity=>this.maids.identity(entity.uuid));
     this.releaseMaidIdentity=releaseIdentity;
@@ -224,7 +240,7 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     };
     bot._client.on('custom_payload',onMaid);
     bot._client.once('end',()=>{bot._client.off('custom_payload',onMaid);port?.close();releaseIdentity();
-      if(this.releaseMaidIdentity===releaseIdentity){this.releaseMaidIdentity=null;this.maidPort=null;this.maids.reset();}});
+      if(this.releaseMaidIdentity===releaseIdentity){this.releaseMaidIdentity=null;this.maidPort=null;this.maids.reset();this.maidWrites.clear();}});
     this.nativeRpg.reset();
     this.chatPolicy.reset();
     this.observedCommands.clear();

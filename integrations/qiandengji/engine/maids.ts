@@ -17,7 +17,7 @@ export const QIANDENGJI_MAIDS_TOOL:Omit<ToolDef,'handler'>={...MAID_TOOL,paramet
   description:'Optional server-owned companion NPC operations, distinct from real players. list finds owned companions; nearby discovers public conversation targets. Read context/inventory/tasks for an observed maidId. '
     +'Read results are native observations. Writes require a saved requestId and enter the existing body queue; queue acceptance is not application. '
     +'Use receipt with the original operationId after the body command is sent. chat invokes the native maid model; pending/queued/unknown are not replies. '
-    +'transfer uses playerWindowSlot (Mineflayer 9–44), not Bukkit slots; equip swaps an observed maid slot with main/off/head/chest/legs/feet. '
+    +'transfer uses playerWindowSlot (Mineflayer 9–44), not Bukkit slots; read mc_bag {detail:"slots"} for exact self slots. inventoryAccess distinguishes usable capacity from empty slots. equip swaps an observed maid slot with main/off/head/chest/legs/feet. '
     +'Observe actual equipment afterwards. Death/unloaded are separate; context gives original tombstone evidence. No automatic recreation or retry. '
     +'When context.conversation is present, ordinary nearby name-addressed chat uses its observed range and channel; private owner work still uses chat and receipt. brain without choice only reads configured modes; selecting a returned choice is a separate write. '
     +'Full task, voice, menu and recovery semantics are in mc_guide topic:maids. Mutation commands are not ordinary public chat or mc_cast spells.'};
@@ -36,6 +36,23 @@ export function maidArguments(args:Record<string,unknown>):Record<string,unknown
 export function maidSystemReply(line:string,selfUuid:string|undefined):MaidReply|null {
   return line.startsWith('QD_MAID ')&&line.length<=24008
     ?decodeMaidReply({channel:MAID_CHANNEL,data:Buffer.from(line.slice(8),'utf8')},selfUuid):null;
+}
+
+/** Native availableSlots is unlocked capacity, not the number of empty slots. Keep the original packet unchanged. */
+export function maidInventoryAccess(reply:MaidReply):Record<string,unknown>|null {
+  const data=reply.data,n=data?.availableSlots,total=data?.slotCount;
+  if(!reply.ok||reply.action!=='inventory'||!Number.isSafeInteger(n)||!Number.isSafeInteger(total)
+    ||Number(n)<0||Number(n)>Number(total)||Number(total)>256||!Array.isArray(data?.slots))return null;
+  const occupied=new Set<number>();
+  for(const value of data.slots){
+    if(!object(value)||!Number.isSafeInteger(value.slot)||Number(value.slot)<0||Number(value.slot)>=Number(total)
+      ||typeof value.count!=='number'||!Number.isFinite(value.count))return null;
+    if(value.count>0&&value.id!=='minecraft:air'&&Number(value.slot)<Number(n))occupied.add(Number(value.slot));
+  }
+  const emptySlots=Array.from({length:Number(n)},(_,i)=>i).filter(i=>!occupied.has(i));
+  return {observedAt:reply.sampledAt,usableSlotCount:n,usableSlotRange:Number(n)>0?[0,Number(n)-1]:null,
+    emptySlots,freeSlotCount:emptySlots.length,lockedSlotCount:Number(total)-Number(n),
+    note:'availableSlots 是已解锁可用容量，不是空槽数。只在可用槽范围操作；空槽为本次 inventory 回执的推导，背包变化后重读。'};
 }
 
 type MaidReceipt=Pick<MaidReply,'protocol'|'recipientUuid'|'action'|'requestId'|'sampledAt'>;

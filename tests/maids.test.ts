@@ -2,7 +2,7 @@ import {expect,it,vi} from 'vitest';
 import {EventEmitter} from 'node:events';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
-import {MaidState,maidSystemReply,maidArguments} from '../integrations/qiandengji/engine/maids.ts';
+import {MaidState,maidSystemReply,maidArguments,maidInventoryAccess} from '../integrations/qiandengji/engine/maids.ts';
 import {createMaidPort,maidCommand,MAID_CHANNEL} from '../integrations/qiandengji/engine/maid-port.mjs';
 import source from '../integrations/qiandengji/engine/maid-port-source.mjs';
 import {QiandengjiEngine,SERVER_TOOLS} from '../integrations/qiandengji/engine/world.ts';
@@ -18,6 +18,40 @@ const at='2026-11-06T14:25:34Z';
 const context={maidId:id,ownerId:owner,name:'同行者',lifeState:'alive',loaded:true,health:20,maxHealth:20,taskId:'touhou_little_maid:idle',dialogueMode:'native_model'};
 const reply=(action='context',data:Record<string,unknown>=context,requestId='query-1',sampledAt=at)=>({schema:1 as const,protocol:'qiandengji-maids/v1' as const,recipientUuid:owner,action,requestId,ok:true,sampledAt,data});
 const death={maidId:id,ownerId:owner,name:'同行者',eventId:'death-123',diedAt:at,dimension:'minecraft:overworld',position:[-591,69,-304],evidence:'original_tlm_tombstone',nextStep:'检查墓碑与胶片；祭坛复活尚未实现'};
+
+it('distinguishes six unlocked maid slots from six free slots without changing native fields',()=>{
+  const packet=reply('inventory',{maidId:id,slotCount:36,availableSlots:6,slots:Array.from({length:6},(_,slot)=>({slot,id:'minecraft:bone',count:64}))});
+  expect(maidInventoryAccess(packet)).toMatchObject({usableSlotRange:[0,5],usableSlotCount:6,freeSlotCount:0,emptySlots:[],lockedSlotCount:30});
+  expect(packet.data.availableSlots).toBe(6);
+  expect(maidInventoryAccess(reply('inventory',{...packet.data,slots:[{slot:0,id:'minecraft:bone',count:1}]}))).toMatchObject({emptySlots:[1,2,3,4,5]});
+  expect(maidInventoryAccess(reply('inventory',{maidId:id,slotCount:36,slots:[]}))).toBeNull();
+});
+
+it('retains the authenticated original write rejection for receipt reads without resending or hiding it behind receipt_missing',async()=>{
+  const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
+  const request=vi.fn(async()=>({...reply('receipt',{}),ok:false,error:'receipt_missing'}));
+  const rejected={...reply('transfer',{message:'slot 6 is unavailable'},'original-write'),ok:false,error:'slot_unavailable'};
+  const enqueue=vi.fn(()=>{(engine as any).observeMaidReply(rejected);return {text:'accepted',data:{taskId:12}}});
+  Object.assign(engine,{bridge:{bot:{player:{uuid:owner}}},maidPort:{request,close(){}},enqueueTool:enqueue});
+  const tool=engine.tools().find(t=>t.name==='mc_maids')!,ctx={role:'test',log:nullLogger()};
+  await tool.handler({action:'transfer',maidId:id,requestId:'original-write',direction:'put',slot:6,count:1,playerWindowSlot:35},ctx);
+  const result=await tool.handler({action:'receipt',maidId:id,operationId:'original-write'},ctx);
+  expect(result).toMatchObject({failed:true,data:{receiptSource:'current_connection_original_reply',reply:{error:'slot_unavailable',requestId:'original-write'},goalCompleted:false}});
+  expect(request).not.toHaveBeenCalled();expect(enqueue).toHaveBeenCalledTimes(1);
+  await tool.handler({action:'receipt',maidId:owner,operationId:'original-write'},ctx);
+  expect(request).toHaveBeenCalledTimes(1);
+  // A read-only unknown ID still reconciles with the server; absence is never converted into rejection/success.
+  await tool.handler({action:'receipt',maidId:id,operationId:'older-write'},ctx);
+  expect(request).toHaveBeenCalledTimes(2);expect(enqueue).toHaveBeenCalledTimes(1);
+  const conflict=await tool.handler({action:'transfer',maidId:id,requestId:'original-write',direction:'put',slot:5,count:1,playerWindowSlot:35},ctx);
+  expect(conflict).toMatchObject({failed:true,text:expect.stringContaining('不同操作')});
+  expect(enqueue).toHaveBeenCalledTimes(1);
+  // Queued acknowledgements are not final receipts: always ask the server for their newer state.
+  (engine as any).maidWrites.set('accepted-write',{action:'transfer',maidId:id,command:'unchanged'});
+  (engine as any).observeMaidReply(reply('transfer',{maidId:id,status:'queued'},'accepted-write'));
+  await tool.handler({action:'receipt',maidId:id,operationId:'accepted-write'},ctx);
+  expect(request).toHaveBeenCalledTimes(3);
+});
 
 it('delivers only authenticated public companion replies as replyable chat, retaining identity and deduplicating the operation',()=>{
   const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
