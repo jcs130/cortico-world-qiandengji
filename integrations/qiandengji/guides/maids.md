@@ -12,7 +12,9 @@
 
 外观以 `context.appearance` 的实际 YSM/原生模型为准，顶层 modelId 可能只是备用模型。`damageProtected` 是原生伤害保护，不表示所有删除或虚空情况都安全。旧服务器缺这些字段时保持未知，不臆造能力或自动修改她的设置。
 
-武器和护甲需要真实物品。先检查本人和女仆背包，再 `transfer`，最后 `equip` 并查询 `inventory` 的 equipment 读回。转交参数是 direction:"put"、女仆 slot、count 和 **playerWindowSlot**：本人主背包窗口槽 9–35、快捷栏窗口槽 36–44。适配层转换成服务器 Bukkit 槽，不要手工混用 0–8。装备使用 hand:"main"|"off"|"head"|"chest"|"legs"|"feet" 和已观察的女仆背包 slot；用空槽交换可卸下装备，绑定诅咒仍由原生机制处理。
+武器和护甲需要真实物品。先检查本人和女仆背包，再 `transfer`，最后 `equip` 并查询 `inventory` 的 equipment 读回。转交参数是 direction:"put"、女仆 slot、count 和 **playerWindowSlot**：本人主背包窗口槽 9–35、快捷栏窗口槽 36–44，可用 `mymc_bag {"detail":"slots"}` 现读，不必编脚本或试算整理。适配层转换成服务器 Bukkit 槽，不要手工混用 0–8。装备使用 hand:"main"|"off"|"head"|"chest"|"legs"|"feet" 和已观察的女仆背包 slot；用空槽交换可卸下装备，绑定诅咒仍由原生机制处理。
+
+女仆 `inventory` 的 `availableSlots` 表示已解锁的可用容量，不是空槽数；例如 6 表示只能用 0–5 号槽。`inventoryAccess` 给出本次可用范围、空槽和锁定槽数量；不能把 `slotCount:36` 的总容量当作全部可用。当前连接收到的原始操作拒绝可通过同一 `operationId` 读取，保留错误与时间；它不证明后来重试成功。成功受理/排队的操作仍向服务器查最新回执，不把旧 queued 缓存成最终成功。重连后无本地原回执时仍按服务器结果处理，不重放未知操作。
 
 `mymc_bag` 汇总数量不等于精确槽位。转交前可按需读 `mymc_script {"api":"inventory.items"}` 的公开契约，再运行只读 `return await bot.inventory.items()` 取得当前 slot 与物品身份；装备槽用 `await bot.read("inventory.slots")`。执行者需要同时获得该只读入口，不能按汇总列表顺序猜槽号。本人背包满时先核对可用堆叠或合理的交出物品，不能直接宣称无法交接，也不要丢东西腾位。
 
