@@ -1,7 +1,7 @@
 {
   "version": "0.5.7-rc.160-preview.35",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.35-2e1c5097.tgz",
-  "sha256": "2e1c50973fe5bc37a729c330b2364cf7c98925cf4a645866bbe8e88a8e02c3d0",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.35-0d9ac77a.tgz",
+  "sha256": "0d9ac77a4a37a50bda2acf111e10841e34fe4febe14d662ee9ff040e5e220232",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
   "parent": "7f49f3a6f046c168a773c25803ff937a560a3944",
@@ -13,10 +13,11 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "sourceCommit": "b9c237855860e75ea987c88ea00ce7c8681e6351",
+  "sourceCommit": "0bf7510fdb34ed8624879c01d11aaae2bbaee4b7",
   "sourcePushed": true,
   "inheritedMaidFix": "c02e95f1db6cce5751b92899a0263ab13c277b2c",
   "inheritedWeaponFix": "d0c46a6a778e4e8d9c5623cc7944848391671cce",
   "parentCoreCommit": "479c25bf",
-  "reflexFixCommit": "b9c237855860e75ea987c88ea00ce7c8681e6351"
+  "reflexFixCommit": "b9c237855860e75ea987c88ea00ce7c8681e6351",
+  "spatialFixCommit": "0bf7510fdb34ed8624879c01d11aaae2bbaee4b7"
 }
