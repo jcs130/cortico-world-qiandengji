@@ -169,6 +169,7 @@ it('does not manufacture death from a missing entity or unmatched tombstone',()=
   expect(state.brief()).not.toContain('已确认死亡');
 });
 it('keeps owned lifecycle in the supervisor summary and exposes detail as an indexed fact partition',()=>{
+  const clock=vi.spyOn(Date,'now').mockReturnValue(Date.parse(at)+1000);
   const facts=vi.spyOn(TacticalMinecraftWorld.prototype,'requestFacts').mockReturnValue({text:'body',parts:[{key:'body',text:'body'}],snapshotTypes:[],decision:{sampledAtMs:100,state:{ready:true}}});
   try{
     const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
@@ -179,7 +180,18 @@ it('keeps owned lifecycle in the supervisor summary and exposes detail as an ind
     expect(reading?.decision?.state).toMatchObject({ready:true,companionObservations:[{maidId:id,observedAt:at,lifeState:'dead',death:{position:death.position}}]});
     expect(reading?.parts?.[0].key).toBe('companions');
     expect(reading?.text).not.toContain('slots');
-  }finally{facts.mockRestore();}
+  }finally{facts.mockRestore();clock.mockRestore();}
+});
+
+it('keeps old companion geometry out of current decision fields while retaining identity and dated evidence',()=>{
+  const observed={...context,dimension:'minecraft:overworld',position:[1,64,2]};
+  const state=new MaidState();state.observe(reply('context',observed));
+  expect(state.decisionSummary(Date.parse(at)+1000)[0]).toMatchObject({freshness:'recent',position:observed.position,lifeState:'alive'});
+  const stale=state.decisionSummary(Date.parse(at)+11_000)[0];
+  expect(stale).toMatchObject({freshness:'historical',position:null,dimension:null,health:null,lifeState:'unknown',lastObservation:{position:observed.position,lifeState:'alive',observedAt:at}});
+  expect(stale.entityIdentity.uuid).toBe(id);expect(stale.read).toMatchObject({action:'context',maidId:id});
+  expect(state.brief(Date.parse(at)+11_000)).toContain('非当前位置');
+  expect(state.summary()[0].position).toEqual(observed.position);
 });
 it('delivers attributed native replies once without treating pending or quoted actions as completed',()=>{
   const state=new MaidState();state.observe(reply());
