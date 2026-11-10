@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.39
+
+- Pin shared core preview.38 for collision-aware short grounded recovery and idle motion, retaining the existing server rules, viewer assets and host contracts.
+
 ## 0.4.1-rc.71-preview.38
 
 - Keep dated companion geometry out of current decision fields after expiry, retaining UUID/ownership and lifecycle evidence. Pin shared core preview.37 including explicit cooldown refusal facts.
