@@ -1,26 +1,26 @@
 {
-  "version": "0.5.7-rc.160-preview.37",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.37-0e5e4066.tgz",
-  "sha256": "0e5e4066d134e6f97d10ed4a3b736b3ba477806fa10a12e975e181f944ad3b28",
+  "version": "0.5.7-rc.160-preview.39",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.39-2c983bce.tgz",
+  "sha256": "2c983bce3861af1d25cdb2386f3f841819b6b367e54caf85d62503fd8a00f3cb",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "parent": "7f49f3a6f046c168a773c25803ff937a560a3944",
-  "genericFixCommit": "45c8ed74b7e28c3c363862abb0d669d2492dd090",
-  "integrationBranch": "fix/scaffold-contract-20261109",
+  "parent": "2d9b5e951f350d855dce20a2c79d28261d814d35",
+  "genericFixCommit": "79eec91c44ac6a81395a216911a2c3f4da95e2d2",
+  "integrationBranch": "fix/boat-waterway-20261110",
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
   "viewer": {
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "sourceCommit": "45c8ed74b7e28c3c363862abb0d669d2492dd090",
+  "sourceCommit": "79eec91c44ac6a81395a216911a2c3f4da95e2d2",
   "sourcePushed": true,
   "inheritedMaidFix": "c02e95f1db6cce5751b92899a0263ab13c277b2c",
   "inheritedWeaponFix": "d0c46a6a778e4e8d9c5623cc7944848391671cce",
-  "parentCoreCommit": "479c25bf",
+  "parentCoreCommit": "2d9b5e951f350d855dce20a2c79d28261d814d35",
   "reflexFixCommit": "b9c237855860e75ea987c88ea00ce7c8681e6351",
   "spatialFixCommit": "0bf7510fdb34ed8624879c01d11aaae2bbaee4b7",
-  "preparedFromMain": "2c1cba86c4477e44c543646bb2385595c769b40f",
-  "rebuildNote": "Same merged source; independently rebuilt and verified with Node22/Java21. Original cross-machine archive was not present. Engine-only; existing external graphics assets preserved.",
-  "sourceArchiveUrl": "https://qiandengji-downloads-hk-20261023.oss-cn-hongkong.aliyuncs.com/releases/0e5e4066d134e6f97d10ed4a3b736b3ba477806fa10a12e975e181f944ad3b28/agent-mc-world-0.5.7-rc.160-preview.37-0e5e4066.tgz"
+  "preparedFromMain": "2d9b5e951f350d855dce20a2c79d28261d814d35",
+  "rebuildNote": "Node 24 isolated engine-only build; existing external viewer assets preserved. Source and archive verified independently.",
+  "pendingTestedCommit": false
 }
