@@ -1,7 +1,7 @@
 {
   "version": "0.5.7-rc.160-preview.37",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.37-4cb7ff82.tgz",
-  "sha256": "4cb7ff82db07defa9bd7000e48d1eed819ecbee42126c6063fb3b55e071304e5",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.37-0e5e4066.tgz",
+  "sha256": "0e5e4066d134e6f97d10ed4a3b736b3ba477806fa10a12e975e181f944ad3b28",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
   "parent": "7f49f3a6f046c168a773c25803ff937a560a3944",
@@ -19,5 +19,8 @@
   "inheritedWeaponFix": "d0c46a6a778e4e8d9c5623cc7944848391671cce",
   "parentCoreCommit": "479c25bf",
   "reflexFixCommit": "b9c237855860e75ea987c88ea00ce7c8681e6351",
-  "spatialFixCommit": "0bf7510fdb34ed8624879c01d11aaae2bbaee4b7"
+  "spatialFixCommit": "0bf7510fdb34ed8624879c01d11aaae2bbaee4b7",
+  "preparedFromMain": "2c1cba86c4477e44c543646bb2385595c769b40f",
+  "rebuildNote": "Same merged source; independently rebuilt and verified with Node22/Java21. Original cross-machine archive was not present. Engine-only; existing external graphics assets preserved.",
+  "sourceArchiveUrl": "https://qiandengji-downloads-hk-20261023.oss-cn-hongkong.aliyuncs.com/releases/0e5e4066d134e6f97d10ed4a3b736b3ba477806fa10a12e975e181f944ad3b28/agent-mc-world-0.5.7-rc.160-preview.37-0e5e4066.tgz"
 }
