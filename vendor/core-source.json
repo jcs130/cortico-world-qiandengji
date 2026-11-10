@@ -1,27 +1,26 @@
 {
-  "version": "0.5.7-rc.160-preview.38",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.38-61c3391d.tgz",
-  "sha256": "61c3391d9aed9485ccde3506150099e5d0a423a2970ac720e2d3c70b114d2068",
+  "version": "0.5.7-rc.160-preview.39",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.39-2c983bce.tgz",
+  "sha256": "2c983bce3861af1d25cdb2386f3f841819b6b367e54caf85d62503fd8a00f3cb",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "parent": "aa7eea6873e15cd54641490e642b119429330557",
-  "genericFixCommit": "0083da1bd01fa3b591181e3fd97b4bfb033f1266",
-  "integrationBranch": "fix/fence-corridor-20261110",
+  "parent": "2d9b5e951f350d855dce20a2c79d28261d814d35",
+  "genericFixCommit": "79eec91c44ac6a81395a216911a2c3f4da95e2d2",
+  "integrationBranch": "fix/boat-waterway-20261110",
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
   "viewer": {
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "sourceCommit": "0083da1bd01fa3b591181e3fd97b4bfb033f1266",
+  "sourceCommit": "79eec91c44ac6a81395a216911a2c3f4da95e2d2",
   "sourcePushed": true,
   "inheritedMaidFix": "c02e95f1db6cce5751b92899a0263ab13c277b2c",
   "inheritedWeaponFix": "d0c46a6a778e4e8d9c5623cc7944848391671cce",
-  "parentCoreCommit": "aa7eea6873e15cd54641490e642b119429330557",
+  "parentCoreCommit": "2d9b5e951f350d855dce20a2c79d28261d814d35",
   "reflexFixCommit": "b9c237855860e75ea987c88ea00ce7c8681e6351",
   "spatialFixCommit": "0bf7510fdb34ed8624879c01d11aaae2bbaee4b7",
-  "preparedFromMain": "aa7eea6873e15cd54641490e642b119429330557",
+  "preparedFromMain": "2d9b5e951f350d855dce20a2c79d28261d814d35",
   "rebuildNote": "Node 24 isolated engine-only build; existing external viewer assets preserved. Source and archive verified independently.",
-  "pendingTestedCommit": false,
-  "parentSourceArchiveUrl": "https://qiandengji-downloads-hk-20261023.oss-cn-hongkong.aliyuncs.com/releases/0e5e4066d134e6f97d10ed4a3b736b3ba477806fa10a12e975e181f944ad3b28/agent-mc-world-0.5.7-rc.160-preview.37-0e5e4066.tgz"
+  "pendingTestedCommit": false
 }
