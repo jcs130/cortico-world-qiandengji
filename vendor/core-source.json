@@ -1,19 +1,19 @@
 {
-  "version": "0.5.7-rc.160-preview.44",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.44-803a1a0f.tgz",
-  "sha256": "803a1a0f82612f0a48a93be4d9c37f8e548b178e155b5afa6971076fef3f7323",
+  "version": "0.5.7-rc.160-preview.45",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.45-389c51f4.tgz",
+  "sha256": "389c51f4527c82d8aadc345b052bc582f7e79f0da9adbd87a28116be53755343",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "d9d657d47c51bbb1d28858929e0e55228350aaf7",
-  "genericFixCommit": "d9d657d47c51bbb1d28858929e0e55228350aaf7",
-  "parentCoreCommit": "651149db704d3f27bfcdf06daae15287121dc37a",
-  "integrationBranch": "fix/portal-entry-working-20261111",
-  "sourcePushed": true,
+  "sourceCommit": "60015f77b61065b0a95a50f2a0f7587ca82982e1",
+  "genericFixCommit": null,
+  "parentCoreCommit": "d9d657d47c51bbb1d28858929e0e55228350aaf7",
+  "integrationBranch": "fix/placement-cache-receipt-20261112",
+  "sourcePushed": false,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
   "viewer": {
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Preserve collision metadata in optimized path searches; verify real portal movement with production caching enabled. No model, role, server or viewer change."
+  "rebuildNote": "Merged current core main and deployed portal increments; preserve cached no-send placement refusal through the public action terminal. No server protocol, model, role or viewer change."
 }

@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.47
+
+- Consume shared core preview.45: preserve cached no-send placement refusal and its recovery evidence instead of reporting a generic placement failure. Keep the server package, viewer and host action ownership unchanged.
+
 ## 0.4.1-rc.71-preview.46
 
 - Consume shared core preview.44, preserving portal collision metadata in optimized searches and preventing scoped entry permission from mutating cached blocks. The server pack and viewer are unchanged.
