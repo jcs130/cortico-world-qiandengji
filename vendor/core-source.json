@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.42",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.42-d3dcd325.tgz",
-  "sha256": "d3dcd325bc4db75189e437b90813e0de8c6597e9373a6d922c8bd15ba4d35354",
+  "version": "0.5.7-rc.160-preview.43",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.43-16f76304.tgz",
+  "sha256": "16f76304855b05960d568ba6e7cbef34a881cdd6bb92778808bed3417a4f5746",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "a350fdfa09430202b249736ca2923d0734513ae9",
-  "genericFixCommit": "a350fdfa09430202b249736ca2923d0734513ae9",
-  "parentCoreCommit": "be059d69832afbbfdddd487bfbbaaff18532d68b",
-  "integrationBranch": "fix/query-context-isolation-20261111",
+  "sourceCommit": "651149db704d3f27bfcdf06daae15287121dc37a",
+  "genericFixCommit": "651149db704d3f27bfcdf06daae15287121dc37a",
+  "parentCoreCommit": "a350fdfa09430202b249736ca2923d0734513ae9",
+  "integrationBranch": "fix/portal-entry-working-20261111",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Correlated read-query rows stay in receipts, with explicit source-owned worker notices. Runtime package independently tested; existing external viewer preserved."
+  "rebuildNote": "Selected Nether portal entry through actual pathfinder/collision, scoped cancellation cleanup and measured dimension transition; full source commit recorded after validation."
 }
