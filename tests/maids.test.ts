@@ -15,6 +15,22 @@ import {observedEntityIdentity,observedEntityLabel} from 'agent-mc-world/extensi
 import {Vec3} from 'vec3';
 const owner='11111111-1111-4111-8111-111111111111',id='22222222-2222-4222-8222-222222222222';
 const at='2026-11-06T14:25:34Z';
+it('preserves server follow thresholds with their own timestamp without refreshing old distance on a later list',()=>{
+  const state=new MaidState();
+  state.observe(reply('context',{...context,ownerDistance:20,follow:{policy:'ranged_idle_companion',active:true,
+    state:'within_follow_distance',walkBeyond:32,stopWithin:16,recoveryBeyond:64,distanceUnit:'blocks',customized:true}}));
+  expect(state.decisionSummary(Date.parse(at)+1000)[0]).toMatchObject({follow:{observedAt:at,ownerDistance:20,
+    walkBeyond:32,stopWithin:16,recoveryBeyond:64,active:true,state:'within_follow_distance'}});
+  state.observe({...reply('list',{maids:[context]}),sampledAt:new Date(Date.parse(at)+20_000).toISOString()});
+  expect(state.decisionSummary(Date.parse(at)+21_000)[0]).toMatchObject({freshness:'recent',follow:{
+    observedAt:at,ownerDistance:null,active:null,state:null,walkBeyond:32,freshness:'historical',
+    lastObservation:{ownerDistance:20,state:'within_follow_distance'}}});
+  state.observe({...reply('context',{...context,follow:{walkBeyond:Infinity,stopWithin:-1,recoveryBeyond:999}}),
+    sampledAt:new Date(Date.parse(at)+22_000).toISOString()});
+  expect(state.summary()[0]?.follow).toMatchObject({walkBeyond:null,stopWithin:null,recoveryBeyond:null,ownerDistance:null});
+  state.observe({...reply('context',context),sampledAt:new Date(Date.parse(at)+23_000).toISOString()});
+  expect(state.summary()[0]?.follow).toBeNull();
+});
 const context={maidId:id,ownerId:owner,name:'同行者',lifeState:'alive',loaded:true,health:20,maxHealth:20,taskId:'touhou_little_maid:idle',dialogueMode:'native_model'};
 const reply=(action='context',data:Record<string,unknown>=context,requestId='query-1',sampledAt=at)=>({schema:1 as const,protocol:'qiandengji-maids/v1' as const,recipientUuid:owner,action,requestId,ok:true,sampledAt,data});
 const death={maidId:id,ownerId:owner,name:'同行者',eventId:'death-123',diedAt:at,dimension:'minecraft:overworld',position:[-591,69,-304],evidence:'original_tlm_tombstone',nextStep:'检查墓碑与胶片；祭坛复活尚未实现'};

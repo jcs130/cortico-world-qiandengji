@@ -1,3 +1,15 @@
+## 0.4.1-rc.71-preview.46
+
+- Consume shared core preview.44, preserving portal collision metadata in optimized searches and preventing scoped entry permission from mutating cached blocks. The server pack and viewer are unchanged.
+
+## 0.4.1-rc.71-preview.45 / server 0.5.0-rc.50-preview.41
+
+- Preserve native companion follow thresholds, pause state and owner distance in dated summaries; later identity/list samples do not refresh old geometry. Keep full server contracts on demand and document automatic following / owner-teleport semantics.
+
+## 0.4.1-rc.71-preview.44
+
+- Pin shared core preview.43 for scoped Nether portal entry, raised-sill navigation, cancellation cleanup and measured dimension-change receipts. Preserve the host's existing execution and server contracts.
+
 ## 0.4.1-rc.71-preview.42
 
 - Consume the merged core preview.41 with precise routes, configured route recovery, namespaced targets and exact food recovery IDs.
