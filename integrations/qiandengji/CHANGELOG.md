@@ -1,3 +1,11 @@
+## 0.4.1-rc.71-preview.42
+
+- Consume the merged core preview.41 with precise routes, configured route recovery, namespaced targets and exact food recovery IDs.
+
+## 0.4.1-rc.71-preview.41
+
+- Pin shared core preview.40 for exact model-selected ground waypoints, per-segment posture, declared hazards and distinct dense observation unknown reasons. No server-specific navigation or fixed activity script.
+
 ## 0.4.1-rc.71-preview.39
 
 - Pin shared core preview.38 for collision-aware short grounded recovery and idle motion, retaining the existing server rules, viewer assets and host contracts.

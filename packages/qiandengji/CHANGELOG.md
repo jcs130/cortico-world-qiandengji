@@ -1,3 +1,11 @@
+## 0.5.0-rc.50-preview.38
+
+- Pin merged core preview.41; preserve server protocol behavior.
+
+## 0.5.0-rc.50-preview.37
+
+- Update the pinned shared core contract to preview.40; server protocol behavior is unchanged.
+
 ## 0.5.0-rc.50-preview.34
 
 - Keep dated companion geometry out of current decision fields after expiry, retaining UUID/ownership and lifecycle evidence. Pin shared core preview.37 including explicit cooldown refusal facts.
