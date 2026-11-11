@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.45 / server 0.5.0-rc.50-preview.41
+
+- Preserve native companion follow thresholds, pause state and owner distance in dated summaries; later identity/list samples do not refresh old geometry. Keep full server contracts on demand and document automatic following / owner-teleport semantics.
+
 ## 0.4.1-rc.71-preview.44
 
 - Pin shared core preview.43 for scoped Nether portal entry, raised-sill navigation, cancellation cleanup and measured dimension-change receipts. Preserve the host's existing execution and server contracts.

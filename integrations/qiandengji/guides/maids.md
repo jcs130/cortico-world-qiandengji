@@ -22,6 +22,10 @@
 
 工作用 tasks 返回的 taskId 与条件决定。follow/stay/sit、task/schedule/pickup、声音和外观入口按工具参数与当次 context.capabilities 选择。只因女仆在身边，不能假设她有武器、护甲或已切战斗工作；同行前可以核对装备、生命与工作能力，再决定准备、留守或共同出发。
 
+自动同行按 `context.follow` 的实际 `walkBeyond`、`stopWithin`、`recoveryBeyond` 与 `ownerDistance` 判断。`within_follow_distance` 表示处于允许自由活动的范围，不是掉队；`walk_requested` 只表示原生导航已请求。不要把固定贴身距离、对方先走或反复发送 follow 当作前进前置。32／16／64 格是部分实体的自定义配置，其他实体和旧服务器可不同。`follow_profile_invalid`、停留、工作或跨维度暂停应读实际原因；重复设置模式不能替代排查。
+
+0.1.14-companion 的主人远传／跨维度随行是独立能力：跟随中的原同伴在主人传送前附近（该版 16 格内）时，服务端尝试带到已加载且安全的落点。它不要求同伴先踩传送门，也不保证远方、未加载或没有安全落点时成功。自己使用 `mymc_do` 的 `transit` 穿门后，以真实维度变化确认本人到达，再按需核对同伴；不要以等待她走进门替代自身穿门。任务的人类新要求优先于旧等待条件，未知能力仍按当前帮助和回执确认。
+
 `sitting:true`、`canMove:false` 与空装备可以同时存在，不能用“已复活”替代这些准备。`enabled` 表示模式可选，conditions 是原生条件说明，不保证现在有工具或环境可实际开工；选择模式、装备成功与实际工作结果分别核验。
 
 `lifeState:dead` 要保留原 UUID 与 `death` 的事件 ID。证据可为原生死亡事件 `original_tlm_death_event`，或墓碑 `original_tlm_tombstone`；墓碑晚到补充同一事件，不是又死一次。按 context 给出的维度、墓碑位置和 nextStep 查询遗物及复活胶片。墓碑记录消失不证明已复活；当前桥接不承诺 Agent 能完成原模组祭坛复活，不自动新建替代角色或补发装备。
@@ -31,3 +35,4 @@
 0.1.8-life 返回的 `historicalDeath` 只表示历史，`lastSeenAlive.observedAt` 是最近存活见证；`recovery.observedAt` 是再次观察到原 UUID 存活的时间，不是实际复活时间。`recovery.persisted` 表示服务端是否已保存该见证。重连或女仆卸载后仍可按需读取，不能把这些历史字段当作当前加载或当前生命，也不据此重放复活操作。
 
 来源：Minecraft AI Friend `paper/integrations/touhou-maids/agent/CONTRACT.md` 和 `paper/docs/MAID_CONVERSATION_20261108.md`（0.1.12-conversation）。字段和实际支持以当前服务器回执为准；客户端包更新不代表服务端已部署。
+跟随补充来源：同仓库 `paper/docs/MAID_FOLLOW_RADIUS_20261111.md` 与原生 `NativeMaidFollowSupport`／`NativeMaidCompanionSupport`；不将候选文档当作当前实体配置。

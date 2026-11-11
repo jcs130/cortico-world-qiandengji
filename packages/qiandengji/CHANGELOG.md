@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.41
+
+- Preserve native follow policy and observation age in companion summaries; document independent safe following and teleport conditions.
+
 ## 0.5.0-rc.50-preview.40
 
 - Consume shared core preview.43; server protocol behavior is unchanged.

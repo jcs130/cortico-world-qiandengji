@@ -56,6 +56,24 @@ export function maidInventoryAccess(reply:MaidReply):Record<string,unknown>|null
 }
 
 type MaidReceipt=Pick<MaidReply,'protocol'|'recipientUuid'|'action'|'requestId'|'sampledAt'>;
+type FollowObservation={observedAt:string;policy:string;active:boolean|null;state:string|null;
+  walkBeyond:number|null;stopWithin:number|null;recoveryBeyond:number|null;ownerDistance:number|null;
+  distanceUnit:string;customized:boolean|null;nextStep:string};
+const finiteDistance=(v:unknown,max:number)=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=max?v:null;
+function followObservation(row:Record<string,unknown>,observedAt:string):FollowObservation|null {
+  if(!object(row.follow))return null;
+  const f=row.follow;
+  return {observedAt,policy:text(f.policy,80),active:typeof f.active==='boolean'?f.active:null,state:text(f.state,80)||null,
+    walkBeyond:finiteDistance(f.walkBeyond,256),stopWithin:finiteDistance(f.stopWithin,256),
+    recoveryBeyond:finiteDistance(f.recoveryBeyond,256),ownerDistance:finiteDistance(row.ownerDistance,60_000_000),
+    distanceUnit:text(f.distanceUnit,16),customized:typeof f.customized==='boolean'?f.customized:null,nextStep:text(f.nextStep,240)};
+}
+function decisionFollow(f:FollowObservation|null,now:number) {
+  if(!f)return null;
+  const age=now-Date.parse(f.observedAt),recent=Number.isFinite(age)&&age>=0&&age<=10_000;
+  return recent?{...f,freshness:'recent' as const}:{...f,freshness:'historical' as const,
+    active:null,state:null,ownerDistance:null,lastObservation:{active:f.active,state:f.state,ownerDistance:f.ownerDistance}};
+}
 const receiptOf=(reply:MaidReply):MaidReceipt=>({protocol:reply.protocol,recipientUuid:reply.recipientUuid,
   action:reply.action,requestId:reply.requestId,sampledAt:reply.sampledAt});
 type MaidRecord={maidId:string;ownerId:string;name:string;sampledAt:string;sourceReceipt:MaidReceipt;lifeState:string;loaded:boolean|null;
@@ -64,6 +82,7 @@ type MaidRecord={maidId:string;ownerId:string;name:string;sampledAt:string;sourc
   lastAliveAt:string|null;historicalDeath:Record<string,unknown>|null;recovery:Record<string,unknown>|null;
   sitting:boolean|null;canMove:boolean|null;dimension:string|null;position:number[]|null;
   equipment:Record<string,unknown>|null;equipmentAt:string|null;
+  follow:FollowObservation|null;
   conversation:{observedAt:string;nearbyRange:number|null;addressExample:string;ownerWorkCommand:string}|null};
 type MaidNotice={text:string;urgent:boolean;meta:Record<string,unknown>;
   publicDialogue?:{text:string;senderKey:string;meta:Record<string,unknown>}};
@@ -98,16 +117,16 @@ export class MaidState {
       const item=row.equipment?.[slot];return [slot,object(item)?{id:text(item.id,128),
         ...(text(item.displayName??item.name)?{displayName:text(item.displayName??item.name)}:{}),count:typeof item.count==='number'?item.count:null}:null];
     })):null,
-    equipmentObservedAt:row.equipmentAt,conversation:row.conversation,
+    equipmentObservedAt:row.equipmentAt,conversation:row.conversation,follow:row.follow,
     read:{tool:'mc_maids',action:'context',maidId:row.maidId}}));}
   /** A context/list reply is a dated sample, not a continuously tracked entity.
    * Keep identity and lifecycle evidence, but never reuse old geometry as current. */
   decisionSummary(now=Date.now()) {
     return this.summary().map(row=>{
       const age=now-Date.parse(row.observedAt),current=Number.isFinite(age)&&age>=0&&age<=10_000;
-      if(current)return {...row,freshness:'recent' as const,ageMs:age};
+      if(current)return {...row,follow:decisionFollow(row.follow,now),freshness:'recent' as const,ageMs:age};
       const {position,dimension,health,loaded,lifeState,taskId,sitting,canMove,...identityAndEvidence}=row;
-      return {...identityAndEvidence,freshness:'historical' as const,ageMs:Number.isFinite(age)?age:null,
+      return {...identityAndEvidence,follow:decisionFollow(row.follow,now),freshness:'historical' as const,ageMs:Number.isFinite(age)?age:null,
         position:null,dimension:null,health:null,loaded:null,lifeState:'unknown',taskId:null,sitting:null,canMove:null,
         lastObservation:{observedAt:row.observedAt,position,dimension,health,loaded,lifeState,taskId,sitting,canMove},
         note:'历史服务端采样，不证明当前位置、距离、掉队或当前身体状态；当前实体观察和 mc_maids context 可重新核实。'};
@@ -173,6 +192,7 @@ export class MaidState {
         dimension:typeof row.dimension==='string'?text(row.dimension,128):null,
         position:Array.isArray(row.position)&&row.position.length===3&&row.position.every(Number.isFinite)?[...row.position] as number[]:null,
         death,lastAliveAt,historicalDeath,recovery,
+        follow:reply.action==='context'?followObservation(row,reply.sampledAt):previous?.follow??null,
         conversation:reply.action==='context'?(object(row.conversation)?{
           observedAt:reply.sampledAt,
           nearbyRange:typeof row.conversation.nearbyRange==='number'&&Number.isFinite(row.conversation.nearbyRange)
@@ -263,6 +283,7 @@ export class MaidState {
       return `${row.name} maidId=${row.maidId}，${row.sampledAt}${historical?'（历史采样，当前身体/位置待重读）':''}：${state}，当时工作=${row.taskId??'未知'}，对话=${row.dialogueMode??'未知'}。`
         +` 当时坐下=${row.sitting??'未知'}，可移动=${row.canMove??'未知'}，${historical?'历史采样位置（非当前位置）':'采样位置'}=${row.dimension??'未知'} ${row.position?JSON.stringify(row.position):'未知'}。`
         +(row.conversation?` 交谈契约（${row.conversation.observedAt}）：同世界附近点名“${row.conversation.addressExample}”，范围=${row.conversation.nearbyRange??'未知'}格；这是公开聊天。主人工作仍用 mc_maids chat → receipt，发送不等于回复或完成。`:'')
+        +(row.follow?` 跟随采样（${row.follow.observedAt}）：${JSON.stringify(decisionFollow(row.follow,now))}；阈值来自服务端，不是需要等她贴身的任务条件；完整随行/传送条件见 mc_guide maids。`:'')
         +(row.historicalDeath?` 历史死亡 ${text(row.historicalDeath.diedAt)}${row.lastAliveAt?`；最近确认存活 ${row.lastAliveAt}`:''}，不能当成再次死亡；遗物另查。`:'')
         +(row.recovery?` 恢复见证 ${text(row.recovery.observedAt)}（不是实际复活时间；持久保存=${row.recovery.persisted}）。`:'')
         +(row.death?this.deathText(row):'')+(row.equipment?` 装备记录 ${row.equipmentAt}：${JSON.stringify(row.equipment).slice(0,850)}`:' 装备未查询，不能当作已给她武器/护甲。');
