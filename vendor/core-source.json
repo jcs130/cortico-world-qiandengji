@@ -1,27 +1,19 @@
 {
-  "version": "0.5.7-rc.160-preview.41",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.41-a29d4361.tgz",
-  "sha256": "a29d43619e8b1ff20db5abfff5320a2545309a79d6667a6ab07fcd067104a1df",
+  "version": "0.5.7-rc.160-preview.42",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.42-d3dcd325.tgz",
+  "sha256": "d3dcd325bc4db75189e437b90813e0de8c6597e9373a6d922c8bd15ba4d35354",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "parent": "fca64547b5525744407a7d91fcea8bab1ada5bee",
-  "genericFixCommit": "f657cfda5515ce02580ef091d953a22ccdf9a97e",
-  "integrationBranch": "integrate/pr-batch-20261111",
+  "sourceCommit": "a350fdfa09430202b249736ca2923d0734513ae9",
+  "genericFixCommit": "a350fdfa09430202b249736ca2923d0734513ae9",
+  "parentCoreCommit": "be059d69832afbbfdddd487bfbbaaff18532d68b",
+  "integrationBranch": "fix/query-context-isolation-20261111",
+  "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
   "viewer": {
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "sourceCommit": "f657cfda5515ce02580ef091d953a22ccdf9a97e",
-  "sourcePushed": true,
-  "inheritedMaidFix": "c02e95f1db6cce5751b92899a0263ab13c277b2c",
-  "inheritedWeaponFix": "d0c46a6a778e4e8d9c5623cc7944848391671cce",
-  "parentCoreCommit": "57c76ff954ffb751bf600ccdd18ad4cdb1ce8792",
-  "reflexFixCommit": "b9c237855860e75ea987c88ea00ce7c8681e6351",
-  "spatialFixCommit": "0bf7510fdb34ed8624879c01d11aaae2bbaee4b7",
-  "preparedFromMain": "fca64547b5525744407a7d91fcea8bab1ada5bee",
-  "rebuildNote": "Combined pending PRs preserve live precise-route implementation. Single isolated core shared by World and Bot.",
-  "pendingTestedCommit": false,
-  "sourceMergeCommit": "be059d69832afbbfdddd487bfbbaaff18532d68b"
+  "rebuildNote": "Correlated read-query rows stay in receipts, with explicit source-owned worker notices. Runtime package independently tested; existing external viewer preserved."
 }
