@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.46
+
+- Consume shared core preview.44, preserving portal collision metadata in optimized searches and preventing scoped entry permission from mutating cached blocks. The server pack and viewer are unchanged.
+
 ## 0.4.1-rc.71-preview.45 / server 0.5.0-rc.50-preview.41
 
 - Preserve native companion follow thresholds, pause state and owner distance in dated summaries; later identity/list samples do not refresh old geometry. Keep full server contracts on demand and document automatic following / owner-teleport semantics.
