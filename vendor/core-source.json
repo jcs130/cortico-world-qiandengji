@@ -14,7 +14,7 @@
   },
   "registryPublished": false,
   "sourceCommit": "f657cfda5515ce02580ef091d953a22ccdf9a97e",
-  "sourcePushed": false,
+  "sourcePushed": true,
   "inheritedMaidFix": "c02e95f1db6cce5751b92899a0263ab13c277b2c",
   "inheritedWeaponFix": "d0c46a6a778e4e8d9c5623cc7944848391671cce",
   "parentCoreCommit": "57c76ff954ffb751bf600ccdd18ad4cdb1ce8792",
@@ -22,5 +22,6 @@
   "spatialFixCommit": "0bf7510fdb34ed8624879c01d11aaae2bbaee4b7",
   "preparedFromMain": "fca64547b5525744407a7d91fcea8bab1ada5bee",
   "rebuildNote": "Combined pending PRs preserve live precise-route implementation. Single isolated core shared by World and Bot.",
-  "pendingTestedCommit": false
+  "pendingTestedCommit": false,
+  "sourceMergeCommit": "be059d69832afbbfdddd487bfbbaaff18532d68b"
 }
