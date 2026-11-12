@@ -62,7 +62,7 @@ function mapSchema(value: unknown): unknown {
 
 function toolDescription(name: string, description: string): string {
   if (name === 'mc_query') return toMymcText(description)
-    + ' With the Qiandengji server pack, query:"status" reads yourself; query:"dungeon.status" or "dungeon.info" takes arguments:["observed_dungeon_id"]. '
+    + ' With the Qiandengji server pack, query:"status" reads yourself; query:"dungeon.list" discovers site IDs. query:"dungeon.status" or "dungeon.info" takes arguments:["observed_dungeon_id"]. '
     + 'Use this while moving instead of appending read-only status chat behind travel. It does not start, join, leave or claim a dungeon.';
   if (name === 'mc_combat_tactic') return toMymcText(description)
     + ' Spell rules run while fighting. An installed program can construct fast engagement and short movement choices when combatDecision is enabled. '

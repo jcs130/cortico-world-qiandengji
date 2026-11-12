@@ -21,6 +21,31 @@ const info = { ...dungeon, name: '亡灵墓穴·三室封印', start: [-425, 4, 
   rooms: [{ enemies: 5, center: [-425, 4, 677], name: '守墓前厅', radius: 4 }] };
 
 describe('explicit Qiandengji read-only server query definitions', () => {
+  it('returns the requested server catalog page directly to the read-only caller', () => {
+    const lane = new ServerQueryLane(), send = vi.fn();
+    const context = { generation: 'current', username: 'ag_Fixture', send };
+    const catalog = { schemaVersion: 1, activityType: 'site_dungeon', commandRoot: '/mycli dungeon',
+      recipient: 'ag_Fixture', page: 1, pages: 3, total: 15,
+      items: [{ id: 'undead_crypt', active: false, nextCommand: '/mycli dungeon info undead_crypt' }] };
+    try {
+      const sent = lane.call({ query: 'dungeon.list' }, QIANDENGJI_SERVER_QUERIES, context);
+      expect(send).toHaveBeenCalledWith('/mycli dungeon list --json');
+      const marker = (value: unknown) => 'MC_SITE_DUNGEON_LIST ' + JSON.stringify(value);
+      expect(lane.receive(marker({ ...catalog, recipient: 'Other' }), 'current', 'ag_Fixture', 1)).toBe(false);
+      expect(lane.receive(marker({ ...catalog, page: 2 }), 'current', 'ag_Fixture', 2)).toBe(false);
+      expect(lane.receive(marker(catalog), 'old', 'ag_Fixture', 3)).toBe(false);
+      expect(lane.receive(marker(catalog), 'current', 'ag_Fixture', 4)).toBe(true);
+      expect(lane.call({ requestId: sent.data?.requestId }, QIANDENGJI_SERVER_QUERIES, context).data)
+        .toMatchObject({ phase: 'replied', goal_completed: false, reply: { ok: true, data: catalog } });
+      expect(send).toHaveBeenCalledTimes(1);
+      expect(query('dungeon.list').command(['2'])).toBe('/mycli dungeon list --page 2 --json');
+      expect(query('dungeon.list').matchReply(marker({ ...catalog, page: 2 }), ['2'], 'ag_Fixture')).toMatchObject({ ok: true });
+      for (const args of [['join'], ['0'], ['1;start'], ['2', 'start']])
+        expect(query('dungeon.list').command(args)).toBeNull();
+    } finally {
+      lane.reset('done');
+    }
+  });
   it('queries the trial tower directly and preserves self/global and historical boundaries', () => {
     const lane=new ServerQueryLane(),send=vi.fn(),context={generation:'current',username:'ag_Fixture',send};
     const state={schemaVersion:1,activityType:'trial_tower',recipient:'ag_Fixture',active:true,participant:false,
@@ -91,7 +116,7 @@ describe('explicit Qiandengji read-only server query definitions', () => {
   });
   it('exposes only the reviewed subset through the optional server engine hook', () => {
     expect(QIANDENGJI_SERVER_QUERIES.map(item => item.id)).toEqual(['trial.status', 'status', 'skills.status',
-      'profession.list', 'profession.status', 'profession.info', 'skills.info', 'dungeon.status', 'dungeon.info',
+      'profession.list', 'profession.status', 'profession.info', 'skills.info', 'dungeon.list', 'dungeon.status', 'dungeon.info',
       'storage.inventory', 'storage.stash', 'trade.shop.list', 'trade.recycle.list', 'trade.wallet',
       'trade.recycle.status', 'trade.auction.list', 'trade.auction.mine', 'trade.auction.info']);
     const engine = Object.create(QiandengjiEngine.prototype) as any;

@@ -4,7 +4,7 @@ import { STORAGE_TRADE_QUERIES } from './storage-trade-query.ts';
 
 /**
  * Explicit read-only subset of the optional Qiandengji protocol.
- * Sources: guides/cli.md and the MC_STATUS / MC_SITE_DUNGEON_STATE / INFO
+ * Sources: guides/cli.md and the MC_STATUS / MC_SITE_DUNGEON_LIST / STATE / INFO
  * receipts. These definitions do not authorize arbitrary commands containing
  * "status", nor follow a server-provided nextCommand automatically.
  *
@@ -67,6 +67,38 @@ function dungeonDefinition(kind: 'status' | 'info', marker: string, description:
     },
   };
 }
+
+const pagePattern = /^[1-9][0-9]{0,3}$/;
+function dungeonCatalogPage(args: readonly string[]): number | null {
+  if (args.length === 0) return 1;
+  return args.length === 1 && pagePattern.test(args[0]) ? Number(args[0]) : null;
+}
+
+const dungeonList: ServerQueryDefinition = {
+  id: 'dungeon.list',
+  description: 'Read a site dungeon catalog page. Omit arguments for page 1; arguments:["2"] reads page 2. Copy a matching items[].id for dungeon.info/status or a separate join command. Catalog IDs identify sites; a run ID or event cursor is different. An active entry does not establish that you can join it.',
+  argumentsSchema: {
+    type: 'array', minItems: 0, maxItems: 1,
+    items: { type: 'string', pattern: pagePattern.source, maxLength: 4 },
+  },
+  command: args => {
+    const page = dungeonCatalogPage(args);
+    if (page === null) return null;
+    return args.length === 0 ? '/mycli dungeon list --json' : `/mycli dungeon list --page ${page} --json`;
+  },
+  matchReply: (text, args, username) => {
+    const page = dungeonCatalogPage(args);
+    if (!username || page === null) return null;
+    const value = payload(text, 'MC_SITE_DUNGEON_LIST');
+    if (!value || value.activityType !== 'site_dungeon' || value.commandRoot !== '/mycli dungeon'
+      || value.recipient !== username || value.page !== page
+      || !Number.isSafeInteger(value.pages) || Number(value.pages) < page
+      || !Number.isSafeInteger(value.total) || !Array.isArray(value.items)
+      || value.items.length > 64 || Number(value.total) < value.items.length
+      || !value.items.every(item => object(item) && typeof item.id === 'string' && subjectId.test(item.id))) return null;
+    return { data: value, ok: true };
+  },
+};
 
 export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
   {
@@ -136,6 +168,7 @@ export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
       || object(value.definition) && value.definition.id === args[0] && typeof value.available === 'boolean'
       || object(value.skill) && value.skill.id === args[0] && value.queryOnly === true && typeof value.learned === 'boolean'
       || object(value.talent) && value.talent.id === args[0] && value.queryOnly === true && typeof value.learned === 'boolean'),
+  dungeonList,
   dungeonDefinition('status', 'MC_SITE_DUNGEON_STATE',
     'Read a site dungeon state (遗迹/墓穴), NOT the trial tower; use trial.status for 试炼塔/arena. arguments:["server_observed_id"], one lowercase ASCII ID (letters, digits, underscore or hyphen, max64). Matches the connected recipient and exact dungeon ID. Active/current room, attendance, rewards and lastOutcome remain the server response; no start, join, travel, claim or retry.'),
   dungeonDefinition('info', 'MC_SITE_DUNGEON_INFO',
