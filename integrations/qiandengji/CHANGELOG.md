@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.54
+
+- Consume shared mounted readiness and verified boat-trip scripts; preserve current scheduler, conversation and model settings.
+
 ## 0.4.1-rc.71-preview.53
 
 - Pin the shared current boat-material facts and water travel discovery; preserve scheduler and model configuration.
