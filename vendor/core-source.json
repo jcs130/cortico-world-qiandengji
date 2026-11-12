@@ -1,13 +1,13 @@
 {
   "version": "0.5.7-rc.160-preview.47",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.47-0c4725b4.tgz",
-  "sha256": "0c4725b493e9ec0c39987c8363819832d09c30f1d1be2a45653c05602502afd5",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.47-5a085385.tgz",
+  "sha256": "5a08538557b2ae917df7b868640c15aff2b76b829f9950530c18280f71abd84f",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "9a890ec6a40555c9697787a06a7c09f04340c7f0",
+  "sourceCommit": "e0618ff584cc2216be405c1f4df798e0be7091b7",
   "genericFixCommit": "9a890ec6a40555c9697787a06a7c09f04340c7f0",
-  "parentCoreCommit": "9f1c25b280750a4cf9bc8715962daf1eb247e13b",
-  "integrationBranch": "codex/worker-operational-feedback-20261112",
+  "parentCoreCommit": "08abf6f5a0d34b871e8bb344418aedf0aee44740",
+  "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Current core main plus source-owned execution facts and native server feedback."
+  "rebuildNote": "Merged native receipt qualifications and worker execution facts (core PRs #179 and #182)."
 }
