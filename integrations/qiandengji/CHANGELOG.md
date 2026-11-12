@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.53
+
+- Pin the shared current boat-material facts and water travel discovery; preserve scheduler and model configuration.
+
 ## 0.4.1-rc.71-preview.52
 
 - Pin the shared core goal-probe and game-voice recovery contracts; keep scheduling and model configuration unchanged.
