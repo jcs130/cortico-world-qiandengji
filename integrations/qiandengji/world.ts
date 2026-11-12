@@ -1,4 +1,5 @@
 import { SERVER_TOOLS, SERVER_QUERY_DECLARATION } from './engine/world.ts';
+import { TRIAL_ARENA_TRAVEL } from './engine/travel-points.ts';
 import { HostCombatDriver, validateHostCombat, type HostCombatPort } from './host/combat-driver.ts';
 /** 千灯纪的 World 契约；游戏协议与执行器沿用 Minecraft 引擎。 */
 import { readFileSync } from 'node:fs';
@@ -135,8 +136,7 @@ function mapRendered(rendered: DeferredRendered | null): DeferredRendered | null
 
 /** 千灯纪服务端已实测可用的快捷抵达点。添加新地点只需扩这张表。 */
 const FAST_TRAVEL = [
-  { name: '试炼场入口', target: { x: -594, y: 91, z: -313 }, radius: 4,
-    landing: [-590, 91, -322], command: '/mycli goto arena' },
+  TRIAL_ARENA_TRAVEL,
   { name: '出生村庄', target: { x: -544, y: 66, z: -440 }, radius: 5,
     landing: [-544, 66, -440], command: '/mycli goto village' },
 ] as const;

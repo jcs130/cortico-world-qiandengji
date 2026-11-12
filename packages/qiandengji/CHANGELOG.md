@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.43
+
+- Return the configured trial travel step when a native status directs the player to the entrance. Keep eligibility and participation in the native reply.
+
 ## 0.5.0-rc.50-preview.41
 
 - Preserve native follow policy and observation age in companion summaries; document independent safe following and teleport conditions.
