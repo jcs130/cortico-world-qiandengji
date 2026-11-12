@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.51",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.51-6ee9c198.tgz",
-  "sha256": "6ee9c19846d21fd701ea4007d841e9634e552663b63d8519a156c622290ab932",
+  "version": "0.5.7-rc.160-preview.52",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.52-ef870935.tgz",
+  "sha256": "ef8709357b87203691df5618ecd753b7ad6163a2698b2db18de533cdba2b0e6d",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "cdea07880218f6e5ba262d5f8d01ba8c4f263616",
-  "genericFixCommit": "cdea07880218f6e5ba262d5f8d01ba8c4f263616",
-  "parentCoreCommit": "d47d3ca9b747bf32fc96a17c3d3d85020db88cd9",
-  "integrationBranch": "codex/stall-contract-recovery-20261112",
+  "sourceCommit": "8e2167e0902c24f44df24972e549d4714c890c4d",
+  "genericFixCommit": "8e2167e0902c24f44df24972e549d4714c890c4d",
+  "parentCoreCommit": "27b7e3d281ae7b450f1a842e490ac8b4e5b2b0ef",
+  "integrationBranch": "codex/boat-material-readiness-20261112",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Aggregate goal probe repairs and retain measured voice failures."
+  "rebuildNote": "Expose observed boat supplies and focused water travel help without automatic actions."
 }
