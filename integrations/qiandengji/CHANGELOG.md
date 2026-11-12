@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.52
+
+- Pin the shared core goal-probe and game-voice recovery contracts; keep scheduling and model configuration unchanged.
+
 ## 0.4.1-rc.71-preview.51
 
 - Pin the core that exposes current water travel choices to the active execution context.

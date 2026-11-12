@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.50",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.50-e3c09f83.tgz",
-  "sha256": "e3c09f83e9bcd0aefccbcbfe96f51ffd6b9cf2df588a2811be9268a9e4412fa4",
+  "version": "0.5.7-rc.160-preview.51",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.51-6ee9c198.tgz",
+  "sha256": "6ee9c19846d21fd701ea4007d841e9634e552663b63d8519a156c622290ab932",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "6ab366154f294d1e9fc7d1ef6abf48115f4c2fdf",
-  "genericFixCommit": "6ab366154f294d1e9fc7d1ef6abf48115f4c2fdf",
-  "parentCoreCommit": "2413c58c0c5e86a6513b8c9e8b53978428fb5bc6",
-  "integrationBranch": "codex/water-travel-options-20261112",
+  "sourceCommit": "cdea07880218f6e5ba262d5f8d01ba8c4f263616",
+  "genericFixCommit": "cdea07880218f6e5ba262d5f8d01ba8c4f263616",
+  "parentCoreCommit": "d47d3ca9b747bf32fc96a17c3d3d85020db88cd9",
+  "integrationBranch": "codex/stall-contract-recovery-20261112",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Packed shared core with bounded water travel discovery for the active body owner."
+  "rebuildNote": "Aggregate goal probe repairs and retain measured voice failures."
 }
