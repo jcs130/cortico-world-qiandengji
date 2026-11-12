@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.52",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.52-ef870935.tgz",
-  "sha256": "ef8709357b87203691df5618ecd753b7ad6163a2698b2db18de533cdba2b0e6d",
+  "version": "0.5.7-rc.160-preview.53",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.53-f20d3dc7.tgz",
+  "sha256": "f20d3dc7a548eaf9aaed18040d156ec79868d207278c4749f9be639b597c405f",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "8e2167e0902c24f44df24972e549d4714c890c4d",
-  "genericFixCommit": "8e2167e0902c24f44df24972e549d4714c890c4d",
-  "parentCoreCommit": "27b7e3d281ae7b450f1a842e490ac8b4e5b2b0ef",
-  "integrationBranch": "codex/boat-material-readiness-20261112",
+  "sourceCommit": "eca802be5b29a4dad9910c73ce0281ca1be32fde",
+  "genericFixCommit": "eca802be5b29a4dad9910c73ce0281ca1be32fde",
+  "parentCoreCommit": "6bf255a1a052762d70beeb2c0cad1c68ede3e8c1",
+  "integrationBranch": "codex/boat-lifecycle-20261113",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Expose observed boat supplies and focused water travel help without automatic actions."
+  "rebuildNote": "Server-confirmed mounted readiness, optional verified boat trip and bounded water-travel decisions."
 }
