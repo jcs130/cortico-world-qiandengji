@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.47",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.47-5a085385.tgz",
-  "sha256": "5a08538557b2ae917df7b868640c15aff2b76b829f9950530c18280f71abd84f",
+  "version": "0.5.7-rc.160-preview.48",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.48-d8f7049a.tgz",
+  "sha256": "d8f7049a3a831527842663e05e208083264d6fa9a46e967aa7ecfbccbb30baee",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "e0618ff584cc2216be405c1f4df798e0be7091b7",
-  "genericFixCommit": "9a890ec6a40555c9697787a06a7c09f04340c7f0",
-  "parentCoreCommit": "08abf6f5a0d34b871e8bb344418aedf0aee44740",
-  "integrationBranch": "main",
+  "sourceCommit": "c54848d483eae7f4043da44bde15d0f99c21fe19",
+  "genericFixCommit": "c54848d483eae7f4043da44bde15d0f99c21fe19",
+  "parentCoreCommit": "e0618ff584cc2216be405c1f4df798e0be7091b7",
+  "integrationBranch": "codex/door-traversal-20261112",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Merged native receipt qualifications and worker execution facts (core PRs #179 and #182)."
+  "rebuildNote": "Independent core archive with server-confirmed door interactions and corrected doorway waypoints."
 }

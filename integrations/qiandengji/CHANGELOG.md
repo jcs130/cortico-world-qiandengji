@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.49
+
+- Consume core preview.48 to confirm door state and preserve walkable waypoints through doorways.
+
 ## 0.4.1-rc.71-preview.48
 
 - Consume server pack `0.5.0-rc.50-preview.42` with `dungeon.list` in the independent read-only query lane. Check the server's recipient and requested page, and expose actual site IDs separately from run IDs and event cursors.
