@@ -1,12 +1,12 @@
 {
-  "version": "0.5.7-rc.160-preview.48",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.48-d8f7049a.tgz",
-  "sha256": "d8f7049a3a831527842663e05e208083264d6fa9a46e967aa7ecfbccbb30baee",
+  "version": "0.5.7-rc.160-preview.49",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.49-95b87732.tgz",
+  "sha256": "95b8773267df5661509ce2c63ae9bbd81aaa9d01291e1be990142383f3690db4",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "c54848d483eae7f4043da44bde15d0f99c21fe19",
-  "genericFixCommit": "c54848d483eae7f4043da44bde15d0f99c21fe19",
-  "parentCoreCommit": "e0618ff584cc2216be405c1f4df798e0be7091b7",
+  "sourceCommit": "2413c58c0c5e86a6513b8c9e8b53978428fb5bc6",
+  "genericFixCommit": "2413c58c0c5e86a6513b8c9e8b53978428fb5bc6",
+  "parentCoreCommit": "c54848d483eae7f4043da44bde15d0f99c21fe19",
   "integrationBranch": "codex/door-traversal-20261112",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Independent core archive with server-confirmed door interactions and corrected doorway waypoints."
+  "rebuildNote": "Packed shared core with door traversal and position evidence for out-of-range server travel."
 }

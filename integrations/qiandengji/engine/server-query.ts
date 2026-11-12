@@ -1,6 +1,7 @@
 import type { ServerQueryDefinition } from 'agent-mc-world/extension';
 import { nativeRpgMessage, readNativeRpgStatus, readNativeSkills } from './native-rpg.ts';
 import { STORAGE_TRADE_QUERIES } from './storage-trade-query.ts';
+import { TRIAL_ARENA_TRAVEL } from './travel-points.ts';
 
 /**
  * Explicit read-only subset of the optional Qiandengji protocol.
@@ -104,7 +105,7 @@ export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
   {
     id: 'trial.status',
     argumentsSchema: noArguments,
-    description: 'Read the trial tower (试炼塔 / arena), NOT a site dungeon. arguments:[] only. Returns native MC_TRIAL_STATE with recipient, participant, current floor, remainingMobs and server guidance. Global active does not mean self participating; lastOutcome is historical. Does not start, advance, claim or trade.',
+    description: 'Read the trial tower (试炼塔 / arena), NOT a site dungeon. arguments:[] only. Returns native MC_TRIAL_STATE, including participant, floor, remainingMobs and canStart. If the server directs travel to the entrance, entryTravel.step supplies the configured landing, which differs from the button coordinates. Recheck this status after travel. canStart is current server eligibility; lastOutcome is historical. Does not start or claim.',
     command: args => args.length === 0 ? '/mycli arena status --json' : null,
     matchReply: (text, args, username) => {
       if (args.length || !username) return null;
@@ -114,6 +115,12 @@ export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
         || !Number.isSafeInteger(value.floor) || Number(value.floor) < 0
         || !Number.isSafeInteger(value.maxFloor) || Number(value.maxFloor) < 1
         || !Number.isSafeInteger(value.remainingMobs) || Number(value.remainingMobs) < 0) return null;
+      if (value.reason === 'reach_trial_entrance' && value.nextCommand === TRIAL_ARENA_TRAVEL.command
+        && value.canStart === false && value.participant === false) {
+        return { data: { ...value, entryTravel: { source: 'qiandengji-travel-profile',
+          step: { skill: 'server_travel', command: TRIAL_ARENA_TRAVEL.command,
+            at: [...TRIAL_ARENA_TRAVEL.landing], within: 3, dimension: 'overworld' }, verifyQuery: 'trial.status' } }, ok: true };
+      }
       return { data: value, ok: true };
     },
   },

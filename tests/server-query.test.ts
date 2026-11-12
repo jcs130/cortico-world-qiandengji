@@ -64,6 +64,17 @@ describe('explicit Qiandengji read-only server query definitions', () => {
       expect(send).toHaveBeenCalledTimes(1);
     } finally {lane.reset('done');}
   });
+  it('provides a profiled landing only when native trial status directs entrance travel', () => {
+    const trial = query('trial.status');
+    const state = { schemaVersion:1, activityType:'trial_tower', recipient:'ag_Fixture', active:false, participant:false,
+      floor:0, maxFloor:15, remainingMobs:0, canStart:false, reason:'reach_trial_entrance', nextCommand:'/mycli goto arena' };
+    const reply = (value:unknown) => trial.matchReply('MC_TRIAL_STATE '+JSON.stringify(value), [], 'ag_Fixture');
+    expect(reply(state)).toMatchObject({ ok:true, data:{ ...state,
+      entryTravel:{ source:'qiandengji-travel-profile', verifyQuery:'trial.status',
+        step:{skill:'server_travel',command:'/mycli goto arena',at:[-590,91,-322],within:3,dimension:'overworld'} } } });
+    expect(reply({ ...state, canStart:true, reason:'ready_to_start', nextCommand:'/mycli arena start' })?.data).not.toHaveProperty('entryTravel');
+    expect(reply({ ...state, nextCommand:'/spawn' })?.data).not.toHaveProperty('entryTravel');
+  });
   it('settles an exactly matched native query rejection instead of waiting for timeout', () => {
     const lane = new ServerQueryLane(), send = vi.fn();
     const context = { generation: 'current', username: 'ag_Fixture', send };

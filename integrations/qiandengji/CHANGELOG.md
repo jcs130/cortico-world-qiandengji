@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.50
+
+- Use core preview.49 for actual position evidence on a travel mismatch. Trial status supplies the profiled landing separately from the entrance landmark.
+
 ## 0.4.1-rc.71-preview.49
 
 - Consume core preview.48 to confirm door state and preserve walkable waypoints through doorways.
