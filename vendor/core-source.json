@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.49",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.49-95b87732.tgz",
-  "sha256": "95b8773267df5661509ce2c63ae9bbd81aaa9d01291e1be990142383f3690db4",
+  "version": "0.5.7-rc.160-preview.50",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.50-e3c09f83.tgz",
+  "sha256": "e3c09f83e9bcd0aefccbcbfe96f51ffd6b9cf2df588a2811be9268a9e4412fa4",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "2413c58c0c5e86a6513b8c9e8b53978428fb5bc6",
-  "genericFixCommit": "2413c58c0c5e86a6513b8c9e8b53978428fb5bc6",
-  "parentCoreCommit": "c54848d483eae7f4043da44bde15d0f99c21fe19",
-  "integrationBranch": "codex/door-traversal-20261112",
+  "sourceCommit": "6ab366154f294d1e9fc7d1ef6abf48115f4c2fdf",
+  "genericFixCommit": "6ab366154f294d1e9fc7d1ef6abf48115f4c2fdf",
+  "parentCoreCommit": "2413c58c0c5e86a6513b8c9e8b53978428fb5bc6",
+  "integrationBranch": "codex/water-travel-options-20261112",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Packed shared core with door traversal and position evidence for out-of-range server travel."
+  "rebuildNote": "Packed shared core with bounded water travel discovery for the active body owner."
 }

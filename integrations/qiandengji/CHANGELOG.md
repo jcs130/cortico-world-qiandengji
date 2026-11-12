@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.51
+
+- Pin the core that exposes current water travel choices to the active execution context.
+
 ## 0.4.1-rc.71-preview.50
 
 - Use core preview.49 for actual position evidence on a travel mismatch. Trial status supplies the profiled landing separately from the entrance landmark.
