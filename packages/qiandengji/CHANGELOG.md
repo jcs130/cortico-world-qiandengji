@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.50
+
+- Pin bounded search and fire ownership in core 0.5.7-rc.160-preview.64. Forward trusted unfinished-room counts as expiring search intent; reset on relocation, death and clear.
+
 ## 0.5.0-rc.50-preview.49
 
 - Pin equipment handoff and authored candidate provenance in core 0.5.7-rc.160-preview.63. Deliver unresolved decision events through declared World streams; retain existing fire-risk and identity repairs.

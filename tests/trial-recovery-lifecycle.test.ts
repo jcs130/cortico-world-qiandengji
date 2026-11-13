@@ -1,3 +1,4 @@
+import { TrialSearchState } from '../integrations/qiandengji/engine/trial-search.ts';
 import { expect, it, vi } from 'vitest';
 import { QiandengjiEngine } from '../integrations/qiandengji/engine/world.ts';
 import { TRIAL_DOWNED_REASON } from '../integrations/qiandengji/engine/trial-body-state.ts';
@@ -7,7 +8,7 @@ it('feeds team-wipe recovery through the shared body lifecycle and releases only
   const hold = { token: 'trial-hold' };
   const pause = vi.fn(() => hold), resume = vi.fn(), emit = vi.fn();
   // Exercise the actual adapter and inherited lifecycle; only external I/O is a fixture.
-  const engine = Object.assign(Object.create(QiandengjiEngine.prototype), {
+  const engine = Object.assign(Object.assign(Object.create(QiandengjiEngine.prototype), { trialSearch: new TrialSearchState() }), {
     bridge: { bot: { player: { uuid: self } }, connected: true },
     bodyInhibitReason: null, bodyInhibitHold: null, shuttingDown: false,
     executor: { pauseForExternal: pause, resumeAfterExternal: resume },
