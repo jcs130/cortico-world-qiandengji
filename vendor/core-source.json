@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.61",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.61-3799b091.tgz",
-  "sha256": "3799b09145018e2ebef239eb121782fe9af8b66ad3b1832db1f86d4580d4b4e1",
+  "version": "0.5.7-rc.160-preview.63",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.63-46b52d46.tgz",
+  "sha256": "46b52d46afd3fb5c42209fea3332d4c05b5b45da5abd1c52c04d5d4c24ba9a4c",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "4da46c4d24763c6ba5b35c1f45207d9e53560afa",
-  "genericFixCommit": "4da46c4d24763c6ba5b35c1f45207d9e53560afa",
-  "parentCoreCommit": "cbc7ab332f",
-  "integrationBranch": "codex/scene-context-20261113",
+  "sourceCommit": "2cdf41392825989f0dda6c8c27f69ad29dd15c8b",
+  "genericFixCommit": "2cdf41392825989f0dda6c8c27f69ad29dd15c8b",
+  "parentCoreCommit": "bae2d9b43d21f6384fc3a590b4afa487c733572b",
+  "integrationBranch": "codex/combat-equipment-handoff-20261113",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Consume bounded worker event views and scoped observer recovery."
+  "rebuildNote": "Consume confirmed combat equipment handoff and authored-candidate provenance."
 }
