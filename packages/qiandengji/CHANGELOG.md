@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.44
+
+- Pin the shared entity display-name repair in core 0.5.7-rc.160-preview.56. Keep the received name and raw protocol type separate across observation and fast decisions; no server-specific remapping or behavior override.
+
 ## 0.5.0-rc.50-preview.43
 
 - Return the configured trial travel step when a native status directs the player to the entrance. Keep eligibility and participation in the native reply.
