@@ -9092,7 +9092,7 @@
     },
     {
       "type": "mymc.tactic",
-      "description": "战术程序的执行或终态回执。"
+      "description": "战术程序执行、终态或快决策反复未执行的反馈；未执行证据需由任务负责人重新决策。"
     },
     {
       "type": "mymc.task",
