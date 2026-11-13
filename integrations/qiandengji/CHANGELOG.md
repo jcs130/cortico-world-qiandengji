@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.65
+
+- Pin offhand defense facts and replacement feedback in core 0.5.7-rc.160-preview.66. Keep generic equipment behavior in the shared core.
+
 ## 0.4.1-rc.71-preview.64
 
 - Pin bounded search and fire ownership in core 0.5.7-rc.160-preview.65. Project the current trial state into worker and supervisor facts; keep old victories separate.
