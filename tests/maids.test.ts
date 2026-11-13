@@ -33,6 +33,17 @@ it('preserves server follow thresholds with their own timestamp without refreshi
 });
 const context={maidId:id,ownerId:owner,name:'同行者',lifeState:'alive',loaded:true,health:20,maxHealth:20,taskId:'touhou_little_maid:idle',dialogueMode:'native_model'};
 const reply=(action='context',data:Record<string,unknown>=context,requestId='query-1',sampledAt=at)=>({schema:1 as const,protocol:'qiandengji-maids/v1' as const,recipientUuid:owner,action,requestId,ok:true,sampledAt,data});
+it('joins current companion perception by UUID and invalidates pre-teleport geometry without inferring absence',()=>{
+  const state=new MaidState();state.observe(reply('context',{...context,position:[1,64,2],dimension:'minecraft:overworld'}));
+  const now=Date.parse(at)+1000;state.decisionSummary(now,[],'old-place');
+  const presence={uuid:id,entityId:462,identitySource:'qiandengji-maids/v1',source:'entity-snapshot' as const,
+    sampledAt:new Date(now+500).toISOString(),distance:1,direction:'east' as const,dy:0,visibility:'visible' as const,lineOfSight:true};
+  const joined=state.decisionSummary(now+500,[presence],'new-place')[0];
+  expect(joined).toMatchObject({position:null,presence:'observed-here',entityObservation:{uuid:id,distance:1},lastObservation:{position:[1,64,2]}});
+  expect(state.decisionSummary(now+600,[],'new-place')[0]).toMatchObject({presence:'unknown',position:null});
+  expect(state.decisionSummary(now+600,[{...presence,uuid:owner}],'new-place')[0].presence).toBe('unknown');
+  expect(state.summary()[0].position).toEqual([1,64,2]);
+});
 const death={maidId:id,ownerId:owner,name:'同行者',eventId:'death-123',diedAt:at,dimension:'minecraft:overworld',position:[-591,69,-304],evidence:'original_tlm_tombstone',nextStep:'检查墓碑与胶片；祭坛复活尚未实现'};
 
 it('distinguishes six unlocked maid slots from six free slots without changing native fields',()=>{

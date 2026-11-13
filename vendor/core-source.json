@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.56",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.56-e2e8734f.tgz",
-  "sha256": "e2e8734f667bad025e91af335b8578b354abe615333a438fd0a8a9908d1c8c4d",
+  "version": "0.5.7-rc.160-preview.57",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.57-1a020e6d.tgz",
+  "sha256": "1a020e6dae9b6dfdc41f0a634f052d46dfaa8cf9238b31788e4c29e3b316b3f5",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "745873e8cb5ae8bac953b34f3c7fefaaeba6ce99",
-  "genericFixCommit": "745873e8cb5ae8bac953b34f3c7fefaaeba6ce99",
-  "parentCoreCommit": "eee96b4393589ceca9748bad5c64786ccc86d337",
-  "integrationBranch": "codex/entity-display-20261113",
+  "sourceCommit": "a97b8491ec4315578fee6eeadee82a1a7cfe72f2",
+  "genericFixCommit": "a97b8491ec4315578fee6eeadee82a1a7cfe72f2",
+  "parentCoreCommit": "a27434a04241ddf85b3ea708f741604a19dd199b",
+  "integrationBranch": "codex/combat-learning-20261113",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Visible received display names lead perception and compact fast-decision inputs; raw targets and relation contracts preserved."
+  "rebuildNote": "Current companion UUID observations supersede stale geometry; preserve owner direction and expose shared fire/learning contracts."
 }
