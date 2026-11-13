@@ -28,7 +28,7 @@ const events: Readonly<Record<string, string>> = {
   skill: '显式服务器资料包收到的技能或魔力回执。',
   sleep: '实际游戏睡眠状态事件。',
   'storage.migration':'旧游戏数据等待操作员审核迁移；不表示连接或动作完成。',
-  tactic: '战术程序的执行或终态回执。',
+  tactic: '战术程序执行、终态或快决策反复未执行的反馈；未执行证据需由任务负责人重新决策。',
   task: '任务执行终态；须进一步核对世界净变化。',
   'task.progress': '当前身体任务的中间进度和路线反馈。',
   'task.queue': '任务排队、启动或拒绝信息。',

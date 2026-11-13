@@ -33,6 +33,17 @@ it('preserves server follow thresholds with their own timestamp without refreshi
 });
 const context={maidId:id,ownerId:owner,name:'同行者',lifeState:'alive',loaded:true,health:20,maxHealth:20,taskId:'touhou_little_maid:idle',dialogueMode:'native_model'};
 const reply=(action='context',data:Record<string,unknown>=context,requestId='query-1',sampledAt=at)=>({schema:1 as const,protocol:'qiandengji-maids/v1' as const,recipientUuid:owner,action,requestId,ok:true,sampledAt,data});
+it('joins current companion perception by UUID and invalidates pre-teleport geometry without inferring absence',()=>{
+  const state=new MaidState();state.observe(reply('context',{...context,position:[1,64,2],dimension:'minecraft:overworld'}));
+  const now=Date.parse(at)+1000;state.decisionSummary(now,[],'old-place');
+  const presence={uuid:id,entityId:462,identitySource:'qiandengji-maids/v1',source:'entity-snapshot' as const,
+    sampledAt:new Date(now+500).toISOString(),distance:1,direction:'east' as const,dy:0,visibility:'visible' as const,lineOfSight:true};
+  const joined=state.decisionSummary(now+500,[presence],'new-place')[0];
+  expect(joined).toMatchObject({position:null,presence:'observed-here',entityObservation:{uuid:id,distance:1},lastObservation:{position:[1,64,2]}});
+  expect(state.decisionSummary(now+600,[],'new-place')[0]).toMatchObject({presence:'unknown',position:null});
+  expect(state.decisionSummary(now+600,[{...presence,uuid:owner}],'new-place')[0].presence).toBe('unknown');
+  expect(state.summary()[0].position).toEqual([1,64,2]);
+});
 const death={maidId:id,ownerId:owner,name:'同行者',eventId:'death-123',diedAt:at,dimension:'minecraft:overworld',position:[-591,69,-304],evidence:'original_tlm_tombstone',nextStep:'检查墓碑与胶片；祭坛复活尚未实现'};
 
 it('distinguishes six unlocked maid slots from six free slots without changing native fields',()=>{
@@ -45,7 +56,7 @@ it('distinguishes six unlocked maid slots from six free slots without changing n
 
 it('retains the authenticated original write rejection for receipt reads without resending or hiding it behind receipt_missing',async()=>{
   const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
-  const request=vi.fn(async()=>({...reply('receipt',{}),ok:false,error:'receipt_missing'}));
+  const request=vi.fn(async (args:Record<string,unknown>)=>({...reply('receipt',{},String(args.requestId)),ok:false,error:'receipt_missing'}));
   const rejected={...reply('transfer',{message:'slot 6 is unavailable'},'original-write'),ok:false,error:'slot_unavailable'};
   const enqueue=vi.fn(()=>{(engine as any).observeMaidReply(rejected);return {text:'accepted',data:{taskId:12}}});
   Object.assign(engine,{bridge:{bot:{player:{uuid:owner}}},maidPort:{request,close(){}},enqueueTool:enqueue});
@@ -53,20 +64,20 @@ it('retains the authenticated original write rejection for receipt reads without
   await tool.handler({action:'transfer',maidId:id,requestId:'original-write',direction:'put',slot:6,count:1,playerWindowSlot:35},ctx);
   const result=await tool.handler({action:'receipt',maidId:id,operationId:'original-write'},ctx);
   expect(result).toMatchObject({failed:true,data:{receiptSource:'current_connection_original_reply',reply:{error:'slot_unavailable',requestId:'original-write'},goalCompleted:false}});
-  expect(request).not.toHaveBeenCalled();expect(enqueue).toHaveBeenCalledTimes(1);
+  expect(request).toHaveBeenCalledTimes(1);expect(enqueue).toHaveBeenCalledTimes(1);
   await tool.handler({action:'receipt',maidId:owner,operationId:'original-write'},ctx);
-  expect(request).toHaveBeenCalledTimes(1);
+  expect(request).toHaveBeenCalledTimes(2);
   // A read-only unknown ID still reconciles with the server; absence is never converted into rejection/success.
   await tool.handler({action:'receipt',maidId:id,operationId:'older-write'},ctx);
-  expect(request).toHaveBeenCalledTimes(2);expect(enqueue).toHaveBeenCalledTimes(1);
+  expect(request).toHaveBeenCalledTimes(3);expect(enqueue).toHaveBeenCalledTimes(1);
   const conflict=await tool.handler({action:'transfer',maidId:id,requestId:'original-write',direction:'put',slot:5,count:1,playerWindowSlot:35},ctx);
   expect(conflict).toMatchObject({failed:true,text:expect.stringContaining('不同操作')});
   expect(enqueue).toHaveBeenCalledTimes(1);
   // Queued acknowledgements are not final receipts: always ask the server for their newer state.
-  (engine as any).maidWrites.set('accepted-write',{action:'transfer',maidId:id,command:'unchanged'});
+  (engine as any).maidWrites.set('accepted-write',{entry:{action:'transfer',maidId:id,requestId:'accepted-write',command:'unchanged'}});
   (engine as any).observeMaidReply(reply('transfer',{maidId:id,status:'queued'},'accepted-write'));
   await tool.handler({action:'receipt',maidId:id,operationId:'accepted-write'},ctx);
-  expect(request).toHaveBeenCalledTimes(3);
+  expect(request).toHaveBeenCalledTimes(4);
 });
 
 it('delivers only authenticated public companion replies as replyable chat, retaining identity and deduplicating the operation',()=>{
@@ -149,16 +160,16 @@ it('projects the observed conversation route with its own timestamp without inve
   expect(state.summary()[0].conversation).toBeNull();expect(state.brief()).not.toContain('范围=8格');
 });
 
-it('pins the unchanged public server client and exposes optional tools and on-demand guidance',()=>{
+it('pins the public server client and exposes optional tools and on-demand guidance',()=>{
   expect(createHash('sha256').update(readFileSync(new URL('../integrations/qiandengji/engine/maid-port.mjs',import.meta.url))).digest('hex')).toBe(source.sha256);
   expect(SERVER_TOOLS.find(t=>t.name==='mc_maids')).toBeDefined();
   expect(readServerGuide('maids').text).toContain('playerWindowSlot');
 });
 it('exposes workshop as a read and queues crafting under the original operation ID',async()=>{
   const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
-  const request=vi.fn(async()=>reply('workshop',{maidId:id,workshops:[{id:'home',recipes:['minecraft:torch']}]}));
+  const request=vi.fn(async(args:Record<string,unknown>)=>reply('workshop',{maidId:id,workshops:[{id:'home',recipes:['minecraft:torch']}]},String(args.requestId)));
   const enqueue=vi.fn(()=>({text:'queued',data:{taskId:12}}));
-  Object.assign(engine,{bridge:{bot:{player:{uuid:owner}}},maidPort:{request,close(){}},enqueueTool:enqueue});
+  Object.assign(engine,{bridge:{bot:{player:{uuid:owner}}},maidPort:{request,close(){},workshopSupported:true},enqueueTool:enqueue});
   const tool=engine.tools().find(t=>t.name==='mc_maids')!,ctx={role:'test',log:nullLogger()};
   expect(maidReadAction('workshop')).toBe(true);
   const workshop=await tool.handler({action:'workshop',maidId:id},ctx);
@@ -169,8 +180,74 @@ it('exposes workshop as a read and queues crafting under the original operation 
   expect(request).toHaveBeenCalledTimes(1);
   expect(enqueue).toHaveBeenCalledTimes(1);
   expect(JSON.stringify(enqueue.mock.calls[0])).toContain(`/qdmaid make ${id} craft-1 home minecraft:torch 4 chest`);
+  await tool.handler(make,ctx);
+  expect(enqueue).toHaveBeenCalledTimes(1);
   expect(await tool.handler({...make,quantity:8},ctx)).toMatchObject({failed:true});
   expect(enqueue).toHaveBeenCalledTimes(1);
+});
+
+const craftArgs={action:'make',maidId:id,requestId:'work-1',workshopId:'home',recipeId:'minecraft:torch',quantity:4};
+const craftQuery={action:'receipt',maidId:id,requestId:'read-work',operationId:'work-1'};
+const crafted={maidId:id,actorId:owner,operationId:'work-1',action:'make',status:'completed',goalCompleted:true,
+  observation:{operationId:'work-1',recipeId:'minecraft:torch',workshopId:'home',itemId:'minecraft:torch',
+    quantity:4,count:4,inventory:'chest',effectsApplied:true,verified:true}};
+
+function workshopEngine(request: (args:Record<string,unknown>)=>Promise<unknown>, workshopSupported=true) {
+  const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
+  const enqueue=vi.fn(()=>({text:'accepted',data:{status:'accepted',taskId:12}}));
+  const port={request:vi.fn(request),close(){},workshopSupported};
+  Object.assign(engine,{bridge:{bot:{player:{uuid:owner}}},maidPort:port,enqueueTool:enqueue});
+  const tool=engine.tools().find(t=>t.name==='mc_maids')!;
+  return {engine,enqueue,port,call:(args:Record<string,unknown>)=>tool.handler(args,{role:'test',log:nullLogger()})};
+}
+
+it.each(['unsupported_action','reply_timeout'])('does not queue make when the workshop probe returns %s',async reason=>{
+  const {call,enqueue,port}=workshopEngine(async args=>reason==='unsupported_action'
+    ? {...reply('workshop',{},String(args.requestId)),ok:false,error:reason}
+    : {ok:false,status:'unavailable',reason},false);
+  expect(await call(craftArgs)).toMatchObject({failed:true,data:{maidOperation:{status:'not_dispatched',reason,goalCompleted:false}}});
+  expect(port.request).toHaveBeenCalledWith(expect.objectContaining({action:'workshop',maidId:id}));
+  expect(enqueue).not.toHaveBeenCalled();
+});
+
+it('reserves a craft ID across concurrent capability reads and distinguishes queue admission from server completion',async()=>{
+  let answer!: (value:unknown)=>void;
+  const {call,enqueue,port}=workshopEngine(()=>new Promise(resolve=>{answer=resolve;}),false);
+  const first=call(craftArgs);
+  const duplicate=await call({...craftArgs,inventory:'chest'});
+  expect(duplicate).toMatchObject({data:{maidOperation:{status:'checking_capability',duplicate:true,goalCompleted:false}}});
+  expect(enqueue).not.toHaveBeenCalled();
+  const queryId=String(port.request.mock.calls[0][0].requestId);
+  answer(reply('workshop',{maidId:id,workshops:[]},queryId));
+  expect(await first).toMatchObject({data:{maidOperation:{status:'queued',goalCompleted:false}}});
+  expect(enqueue).toHaveBeenCalledTimes(1);
+  expect(await call(craftArgs)).toMatchObject({data:{maidOperation:{status:'queued',duplicate:true,goalCompleted:false}}});
+  expect(enqueue).toHaveBeenCalledTimes(1);
+});
+
+it('queries the original server receipt before consulting a previously received refusal',async()=>{
+  let response:unknown=reply('receipt',crafted,'read-work');
+  const {call,engine,port}=workshopEngine(async()=>response);
+  await call(craftArgs);
+  (engine as any).observeMaidReply({...reply('make',{message:'too far'},'work-1'),ok:false,error:'out_of_range'});
+  expect(await call(craftQuery)).toMatchObject({data:{data:{status:'completed',goalCompleted:true}}});
+  expect(port.request).toHaveBeenCalledOnce();
+  response={ok:false,status:'unavailable',reason:'reply_timeout'};
+  expect(await call(craftQuery)).toMatchObject({failed:true,data:{status:'unavailable',reason:'reply_timeout'}});
+  response={...reply('receipt',{},'read-work'),ok:false,error:'receipt_missing'};
+  expect(await call(craftQuery)).toMatchObject({failed:true,data:{receiptSource:'current_connection_original_reply',reply:{error:'out_of_range'},goalCompleted:false}});
+});
+
+it.each([
+  ['original operation ID',{...crafted,operationId:'another-order'}],
+  ['operation action',{...crafted,action:'follow'}],
+  ['verified completion',{...crafted,observation:{...crafted.observation,verified:false}}],
+  ['submitted quantity',{...crafted,observation:{...crafted.observation,count:8,quantity:8}}],
+  ['submitted inventory',{...crafted,observation:{...crafted.observation,inventory:'backpack'}}],
+])('does not report completion when a receipt mismatches the %s',async(_name,data)=>{
+  const {call}=workshopEngine(async()=>reply('receipt',data,'read-work'));
+  await call(craftArgs);
+  expect(await call(craftQuery)).toMatchObject({failed:true,data:{status:'unavailable',reason:'reply_mismatch',goalCompleted:false}});
 });
 it('resolves the maid transfer slot guide against the actual public script API',async()=>{
   const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});

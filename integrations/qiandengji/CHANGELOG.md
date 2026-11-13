@@ -1,3 +1,43 @@
+## 0.4.1-rc.71-preview.66
+
+- Queue each maid crafting request ID once per connection. Confirm workshop support before submission and read the original server receipt for verified delivery.
+
+## 0.4.1-rc.71-preview.65
+
+- Pin offhand defense facts and replacement feedback in core 0.5.7-rc.160-preview.66. Keep generic equipment behavior in the shared core.
+
+## 0.4.1-rc.71-preview.64
+
+- Pin bounded search and fire ownership in core 0.5.7-rc.160-preview.65. Project the current trial state into worker and supervisor facts; keep old victories separate.
+
+## 0.4.1-rc.71-preview.63
+
+- Pin bounded search and fire ownership in core 0.5.7-rc.160-preview.64. Forward trusted unfinished-room counts as expiring search intent; reset on relocation, death and clear.
+
+## 0.4.1-rc.71-preview.62
+
+- Pin equipment handoff and authored candidate provenance in core 0.5.7-rc.160-preview.63. Deliver unresolved decision events through declared World streams; retain existing fire-risk and identity repairs.
+
+## 0.4.1-rc.71-preview.61
+
+- Pin source-owned worker event views and observer recovery contracts in core 0.5.7-rc.160-preview.61. Deliver unresolved decision events through declared World streams; retain existing fire-risk and identity repairs.
+
+## 0.4.1-rc.71-preview.60
+
+- Pin shared combat abstention recovery contracts in core 0.5.7-rc.160-preview.60. Deliver unresolved decision events through declared World streams; retain existing fire-risk and identity repairs.
+
+## 0.4.1-rc.71-preview.59
+
+- Pin core 0.5.7-rc.160-preview.59, retaining the concurrent mainline update and correcting child initialization for learning tools. Preserve current companion UUID observations, scene invalidation and owner direction.
+
+## 0.4.1-rc.71-preview.58
+
+- Pin shared fire-risk and combat-learning evidence capabilities in core 0.5.7-rc.160-preview.57. Join current companion UUID observations before historical positions, invalidate geometry on scene transitions, and expose the real owner direction without assuming absence means teleport failure.
+
+## 0.4.1-rc.71-preview.57
+
+- Pin the shared entity display-name repair in core 0.5.7-rc.160-preview.56. Keep the received name and raw protocol type separate across observation and fast decisions; no server-specific remapping or behavior override.
+
 ## 0.4.1-rc.71-preview.56
 
 - Consume core preview.55 and preserve its semantic fact dependencies and critical lifecycle identity through the thin World adapter. The public context entry supplies bounded decision evidence and versioned fact updates for host-managed review. No persona, model or scheduling policy is added to this World.

@@ -22,7 +22,11 @@
 
 工作用 tasks 返回的 taskId 与条件决定。follow/stay/sit、task/schedule/pickup、声音和外观入口按工具参数与当次 context.capabilities 选择。只因女仆在身边，不能假设她有武器、护甲或已切战斗工作；同行前可以核对装备、生命与工作能力，再决定准备、留守或共同出发。
 
-主人格可根据当前目标安排一次合成、照料已有农地，或让她继续随行。需要合成时用 `workshop` 查已授权工位、`recipes`、`productsPerCraft` 和 `currentOrder`。站在同维度能看见她的工位附近，空闲时用 `make`，传 `maidId`、新 `requestId`、清单中的 `workshopId` 与 `recipeId`。可选 `quantity` 为成品总数，须是单次产出的整倍数，省略则制作一批。`inventory` 可选 `chest`（默认工位补给箱）或 `backpack`（女仆背包），材料和成品使用同一处。以原 `receipt` 的 `completed`、`goalCompleted`、`observation.itemId` 与 `observation.count` 核对实际交付。已有工单时读 `currentOrder.operationId`，缺材料时先查可用库存。
+主人格可根据当前目标安排一次合成、照料已有农地，或让她继续随行。需要合成时用 `workshop` 查已授权工位、`recipes`、`productsPerCraft` 和 `currentOrder`。空目录表示没有可选工位。`unsupported_action` 表示服务端明确不支持，`unavailable` 表示这次查询未取得有效回包。客户端须先确认工位能力才能下单。
+
+站在同维度能看见她的工位附近，空闲时用 `make`，传 `maidId`、新 `requestId`、清单中的 `workshopId` 与 `recipeId`。可选 `quantity` 为成品总数，须是单次产出的整倍数，省略则制作一批。`inventory` 可选 `chest`（默认工位补给箱）或 `backpack`（女仆背包），材料和成品使用同一处。同一连接内重复提交原编号只返回已有提交状态。
+
+`queued` 表示身体队列受理，`pending` 表示服务端接单。用 `{"action":"receipt","maidId":"实际 UUID","operationId":"原 requestId","operationAction":"make"}` 对账，重连后沿用这条查询。收到 `data.status:"completed"` 和 `goalCompleted:true` 后，核对 `observation.verified`、`itemId`、`count` 和 `inventory` 确认实际交付。已有工单时读 `currentOrder.operationId`，缺材料时先查可用库存。若原结果未知，保留编号并核对对应库存。
 
 确有需要时才安排农场工作。核对有权使用的附近耕地、种子、空位和原生工作时段，再从 `tasks` 读取 `touhou_little_maid:farm` 并用 `task` 选择。以成熟作物收取、地块补种、实物增量确认成果；`applied` 仅是模式生效。要出发时可用 `follow` 结束农场工作。野外同行前查 `context.companion` 和 `inventory`。护卫需要合用的主手武器，远程模式还需相应弹药。
 

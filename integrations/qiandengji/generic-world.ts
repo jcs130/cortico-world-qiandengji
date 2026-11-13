@@ -1,4 +1,4 @@
-import { HostCombatDriver, validateHostCombat, type HostCombatConfig } from 'agent-mc-world/decisions';
+import { HostCombatDriver, validateHostCombat, combatAttentionEvent, type HostCombatConfig } from 'agent-mc-world/decisions';
 import { fileURLToPath } from 'node:url';
 import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, mapToolRecovery, namespaceWorldHost, namespaceWorldStorage, type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import type { WorldHost } from 'agent-mc-world/contracts';
@@ -70,6 +70,7 @@ export class GenericMymcWorld extends MinecraftClientWorld {
           decisions: host.decisions,
           call: (args, signal) => tool.handler(args, {role:'host-decision', log:host.log, signal}),
           report: (event, data) => host.log.emit('info', 'host combat ' + event, {event:'host.combat.' + event, data}),
+          attention: async evidence => { await observedHost.pushEvent(combatAttentionEvent(evidence), { trigger: 'debounce' }); },
         });
         this.fastCombat.start();
       }

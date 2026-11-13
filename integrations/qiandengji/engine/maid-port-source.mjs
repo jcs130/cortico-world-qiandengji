@@ -1,7 +1,7 @@
 // Exact optional server client input, not core or host implementation.
 export default {
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
-  "commit": "2c9e35d20edf6da94ea7c7d61b40d48d27bf1d54",
+  "commit": "2284de72fba36e416cd66b599f3a0f458210315e",
   "file": "paper/integrations/touhou-maids/agent/maid-port.mjs",
-  "sha256": "19d08ab05726c417ebfe8af171796cb325394fdec4b5924645f971d92c175b65"
+  "sha256": "e40fbd608c1f8ae3b2a03200479a09f58703da1226b07bd0896391874c405748"
 };

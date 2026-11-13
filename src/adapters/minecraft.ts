@@ -1,4 +1,4 @@
-import { HostCombatDriver, validateHostCombat, type HostCombatConfig } from 'agent-mc-world/decisions';
+import { HostCombatDriver, validateHostCombat, combatAttentionEvent, type HostCombatConfig } from 'agent-mc-world/decisions';
 import type { WorldDefinition } from '../../adapters/cortico/types.ts';
 import type { ConfigGroup, WorldHost } from 'agent-mc-world/contracts';
 import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, mapToolRecovery, assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
@@ -73,6 +73,7 @@ class CorticoMinecraftWorld extends MinecraftClientWorld {
           decisions: host.decisions,
           call: (args, signal) => tool.handler(args, {role:'host-decision', log:host.log, signal}),
           report: (event, data) => host.log.emit('info', 'host combat ' + event, {event:'host.combat.' + event, data}),
+          attention: async evidence => { await observedHost.pushEvent(combatAttentionEvent(evidence, this.id), { trigger: 'debounce' }); },
         });
         this.fastCombat.start();
       }
