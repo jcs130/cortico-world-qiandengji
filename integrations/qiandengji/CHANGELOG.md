@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.57
+
+- Pin the shared entity display-name repair in core 0.5.7-rc.160-preview.56. Keep the received name and raw protocol type separate across observation and fast decisions; no server-specific remapping or behavior override.
+
 ## 0.4.1-rc.71-preview.56
 
 - Consume core preview.55 and preserve its semantic fact dependencies and critical lifecycle identity through the thin World adapter. The public context entry supplies bounded decision evidence and versioned fact updates for host-managed review. No persona, model or scheduling policy is added to this World.

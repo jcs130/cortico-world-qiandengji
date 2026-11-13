@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.55",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.55-1c4282a3.tgz",
-  "sha256": "1c4282a3587505ff2eb49965057969fe41056c3984d6268e79b47510845f9acd",
+  "version": "0.5.7-rc.160-preview.56",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.56-e2e8734f.tgz",
+  "sha256": "e2e8734f667bad025e91af335b8578b354abe615333a438fd0a8a9908d1c8c4d",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "2b44f0df1d28ee1dcfb0a688ff7da845f555cb02",
-  "genericFixCommit": "2b44f0df1d28ee1dcfb0a688ff7da845f555cb02",
-  "parentCoreCommit": "212a91e8352a54d269185659d6a1219852230095",
-  "integrationBranch": "codex/decision-context-20261113",
+  "sourceCommit": "745873e8cb5ae8bac953b34f3c7fefaaeba6ce99",
+  "genericFixCommit": "745873e8cb5ae8bac953b34f3c7fefaaeba6ce99",
+  "parentCoreCommit": "eee96b4393589ceca9748bad5c64786ccc86d337",
+  "integrationBranch": "codex/entity-display-20261113",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Semantic fact dependencies, request-only native decision evidence and critical lifecycle freshness."
+  "rebuildNote": "Visible received display names lead perception and compact fast-decision inputs; raw targets and relation contracts preserved."
 }
