@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.66",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.66-9353a3cd.tgz",
-  "sha256": "9353a3cd7a13bc0cda1e74200a4f7c8fcb0a73d58ea4901497aab28c4de6d095",
+  "version": "0.5.7-rc.160-preview.67",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.67-94bf9875.tgz",
+  "sha256": "94bf98752960da05609ec65642dda346f4de7991b85722fef5aa23b964222855",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "81d36c0de7d138e883b9fd6b962c460d3b3ebfc6",
-  "genericFixCommit": "81d36c0de7d138e883b9fd6b962c460d3b3ebfc6",
-  "parentCoreCommit": "0bc5ea5bc782c405fc4f02b9aaa8ac54ac53f923",
-  "integrationBranch": "codex/offhand-readiness-20261114",
+  "sourceCommit": "b7b56bf62fc6b5a698636acb0d1018917ee57e62",
+  "genericFixCommit": "b7b56bf62fc6b5a698636acb0d1018917ee57e62",
+  "parentCoreCommit": "9681b774b8cacf535b8948d7d9d4af464332224b",
+  "integrationBranch": "codex/idle-roaming-20261114",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Consume observed offhand defense and confirmed equipment replacement receipts."
+  "rebuildNote": "Engine-only archive rebuilt from the pinned source commit with its frozen lockfile. Includes interruptible autonomous idle strolling."
 }
