@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.58
+
+- Pin shared fire-risk and combat-learning evidence capabilities in core 0.5.7-rc.160-preview.57. Join current companion UUID observations before historical positions, invalidate geometry on scene transitions, and expose the real owner direction without assuming absence means teleport failure.
+
 ## 0.4.1-rc.71-preview.57
 
 - Pin the shared entity display-name repair in core 0.5.7-rc.160-preview.56. Keep the received name and raw protocol type separate across observation and fast decisions; no server-specific remapping or behavior override.

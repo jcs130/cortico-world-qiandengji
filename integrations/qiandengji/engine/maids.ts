@@ -1,5 +1,5 @@
 import type { ToolDef } from 'agent-mc-world/contracts';
-import type { EntityIdentity } from 'agent-mc-world/extension';
+import type { EntityIdentity, IdentityObservation } from 'agent-mc-world/extension';
 import { MAID_TOOL, MAID_CHANNEL, decodeMaidReply, maidCommand, type MaidReply } from './maid-port.mjs';
 
 const uuid=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
@@ -98,12 +98,23 @@ function deathEvidence(value:unknown,row:Record<string,unknown>,sampledAt:string
     &&observedTime(d.diedAt,sampledAt)?d:null;
 }
 /** Bounded current-connection observations, not a second personal-memory store. */
+type MaidSummary = ReturnType<MaidState['summary']>[number];
+type MaidDecision = Omit<MaidSummary,'follow'> & {
+  follow: ReturnType<typeof decisionFollow>;
+  freshness:'recent'|'historical'; ageMs:number|null;
+  entityObservation:IdentityObservation|null; presence:'observed-here'|'unknown'; presenceNote:string;
+  lastObservation?:Pick<MaidSummary,'observedAt'|'position'|'dimension'|'health'|'loaded'|'lifeState'|'taskId'|'sitting'|'canMove'>;
+  note?:string;
+};
 export class MaidState {
   private rows=new Map<string,MaidRecord>();
   private notices=new Set<string>();
-  reset(){this.rows.clear();this.notices.clear();}
+  private scene: string | undefined;
+  private sceneChangedAt=0;
+  reset(){this.rows.clear();this.notices.clear();this.scene=undefined;this.sceneChangedAt=0;}
   /** Source-owned supervisor summary; full inventory and task lists stay on demand. */
   summary(){return [...this.rows.values()].slice(0,4).map(row=>({maidId:row.maidId,ownerId:row.ownerId,name:row.name,
+    ownerRelation:'self-is-owner' as const,controlNote:'本人是此角色的服务端登记主人，可经 mc_maids chat 下工作指令并查询 receipt；公开聊天不自动等于工作指令。',
     entityIdentity:{uuid:row.maidId,kind:'maid',source:'qiandengji-maids/v1',
       originalEntity:row.originalEntity,viewerAppearance:row.viewerAppearance},
     observedAt:row.sampledAt,sourceReceipt:{...row.sourceReceipt},lifeState:row.lifeState,loaded:row.loaded,health:row.health,taskId:row.taskId,
@@ -121,15 +132,20 @@ export class MaidState {
     read:{tool:'mc_maids',action:'context',maidId:row.maidId}}));}
   /** A context/list reply is a dated sample, not a continuously tracked entity.
    * Keep identity and lifecycle evidence, but never reuse old geometry as current. */
-  decisionSummary(now=Date.now()) {
+  decisionSummary(now=Date.now(),observations:readonly IdentityObservation[]=[],boundary?:string):MaidDecision[] {
+    if(boundary!==undefined){if(this.scene!==undefined&&boundary!==this.scene)this.sceneChangedAt=now;this.scene=boundary;}
     return this.summary().map(row=>{
-      const age=now-Date.parse(row.observedAt),current=Number.isFinite(age)&&age>=0&&age<=10_000;
-      if(current)return {...row,follow:decisionFollow(row.follow,now),freshness:'recent' as const,ageMs:age};
+      const age=now-Date.parse(row.observedAt),current=Number.isFinite(age)&&age>=0&&age<=10_000&&Date.parse(row.observedAt)>=this.sceneChangedAt;
+      const entityObservation=observations.find(e=>e.uuid.toLowerCase()===row.maidId.toLowerCase()
+        &&e.identitySource==='qiandengji-maids/v1'&&now-Date.parse(e.sampledAt)>=0&&now-Date.parse(e.sampledAt)<=10_000)??null;
+      const presence={entityObservation,presence:entityObservation?'observed-here' as const:'unknown' as const,
+        presenceNote:entityObservation?'当前实体快照按服务端 UUID 匹配；这里的距离与可见性优先于旧 context 位置。不是声音或交互许可。':'本次未观察到，不证明未传送、掉队或死亡。无需为等同伴而冻结自身任务；跟随由实际配置和服务端处理。'};
+      if(current&&!entityObservation)return {...row,...presence,follow:decisionFollow(row.follow,now),freshness:'recent' as const,ageMs:age};
       const {position,dimension,health,loaded,lifeState,taskId,sitting,canMove,...identityAndEvidence}=row;
-      return {...identityAndEvidence,follow:decisionFollow(row.follow,now),freshness:'historical' as const,ageMs:Number.isFinite(age)?age:null,
+      return {...identityAndEvidence,...presence,follow:decisionFollow(row.follow,now),freshness:'historical' as const,ageMs:Number.isFinite(age)?age:null,
         position:null,dimension:null,health:null,loaded:null,lifeState:'unknown',taskId:null,sitting:null,canMove:null,
         lastObservation:{observedAt:row.observedAt,position,dimension,health,loaded,lifeState,taskId,sitting,canMove},
-        note:'历史服务端采样，不证明当前位置、距离、掉队或当前身体状态；当前实体观察和 mc_maids context 可重新核实。'};
+        note:'context 是独立时刻的服务端采样；本次实体位置来自 entityObservation。旧位置不证明掉队；无实体观察也不能推出未传送。身体详情按需 mc_maids context 核对。'};
     });
   }
   /** Join only a server-owned UUID from this connection, never a custom-name guess. */

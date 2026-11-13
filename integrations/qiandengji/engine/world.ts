@@ -6,7 +6,7 @@ import { observedCommandRoot, observedCommandUsage } from './command-usage.ts';
 import { QIANDENGJI_SERVER_QUERIES } from './server-query.ts';
 import { QIANDENGJI_MAIDS_TOOL, MaidState, maidArguments, maidReadAction, maidSystemReply, maidInventoryAccess } from './maids.ts';
 import { createMaidPort, decodeMaidReply, maidCommand, type MaidPort, type MaidReply } from './maid-port.mjs';
-import { type MinecraftWorldOptions } from 'agent-mc-world/extension';
+import { type MinecraftWorldOptions, type IdentityObservation } from 'agent-mc-world/extension';
 import { join } from 'node:path';
 import type { MinecraftBot as Bot } from 'agent-mc-world/extension';
 import type { ToolDef, ToolOutcome } from 'agent-mc-world/contracts';
@@ -178,10 +178,13 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     if (usage) this.observedCommands.note(usage);
   }
   override requestFacts() {
-    const facts = super.requestFacts(), companionParts=[{key:'companions',text:this.maids.brief()}].filter(p=>p.text),
-      parts = [{key:'nativeRpg',text:this.nativeRpg.brief()},{key:'communication',text:this.chatPolicy.brief()}].filter(p=>p.text);
+    const facts = super.requestFacts();
     if (!facts) return facts;
-    const companions=this.maids.decisionSummary();
+    const observations=facts.decision?.state?.identityObservations;
+    const companions=this.maids.decisionSummary(Date.now(),Array.isArray(observations)?observations as IdentityObservation[]:[],facts.decisionBoundary);
+    const present=companions.map(c=>`${c.name}: ${c.presenceNote}`+(c.entityObservation?` 当前 ${JSON.stringify(c.entityObservation)}`:''));
+    const companionParts=[{key:'companions',text:present.length?'[同伴当前观察；旧服务端采样不覆盖此项]\n'+present.join('\n')+'\n'+this.maids.brief():''}].filter(p=>p.text),
+      parts=[{key:'nativeRpg',text:this.nativeRpg.brief()},{key:'communication',text:this.chatPolicy.brief()}].filter(p=>p.text);
     return { ...facts, partKeys:[...new Set([...(facts.partKeys??facts.parts?.map(p=>p.key)??[]),'companions','nativeRpg','communication'])],
       text: [...companionParts.map(p=>p.text),facts.text,...parts.map(p=>p.text)].join('\n'),
       ...(facts.parts ? { parts: [...companionParts, ...facts.parts, ...parts] } : {}),
