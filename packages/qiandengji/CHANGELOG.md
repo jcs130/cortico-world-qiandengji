@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.49
+
+- Pin equipment handoff and authored candidate provenance in core 0.5.7-rc.160-preview.63. Deliver unresolved decision events through declared World streams; retain existing fire-risk and identity repairs.
+
 ## 0.5.0-rc.50-preview.48
 
 - Pin source-owned worker event views and observer recovery contracts in core 0.5.7-rc.160-preview.61. Deliver unresolved decision events through declared World streams; retain existing fire-risk and identity repairs.
