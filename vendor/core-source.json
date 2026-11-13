@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.59",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.59-8213406f.tgz",
-  "sha256": "8213406ff5846ae6855dad903f0bde7313184d927efc67e845a8f5ec4129e042",
+  "version": "0.5.7-rc.160-preview.60",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.60-1180c7fa.tgz",
+  "sha256": "1180c7fac46df5217110bba960b2c3b41ec7d3e4f34340b04a8707f3c3e285e0",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "867f9ffe1c357519a888c5dd4c4490d2c35e91b1",
-  "genericFixCommit": "867f9ffe1c357519a888c5dd4c4490d2c35e91b1",
-  "parentCoreCommit": "a532734a1494fa9d2eacff1da7aa23cb54991b1c",
-  "integrationBranch": "codex/combat-ipc-20261113",
+  "sourceCommit": "847d1c432d3105b3be642ba66398f258abd3b15d",
+  "genericFixCommit": "847d1c432d3105b3be642ba66398f258abd3b15d",
+  "parentCoreCommit": "5794fd5ce977e22c2fd64aa6fe5fb7dd6b5cc6a6",
+  "integrationBranch": "codex/fire-decision-recovery-20261113",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Current companion UUID observations supersede stale geometry; preserve owner direction and expose shared fire/learning contracts."
+  "rebuildNote": "Deliver bounded unresolved combat decisions to the owning Agent with honest non-execution evidence."
 }

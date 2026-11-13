@@ -11,6 +11,7 @@ import { MYMC_TOOL_DECLS, MymcWorld } from '../src/world.ts';
 import { SkillCatalog } from '../src/skill-catalog.ts';
 import { MinecraftWorldProxy } from 'agent-mc-world/extension';
 import { CombatSpells } from '../integrations/qiandengji/engine/combat-spells.ts';
+import { hasExecutionFeedbackContext } from 'agent-mc-world/context';
 
 function fakeEngine() {
   let bridge: WorldHost | undefined;
@@ -68,6 +69,30 @@ function fakeHost() {
   } as unknown as WorldHost;
   return { host, stored, deferred, cognitionRequests, disableCognition: () => { cognitionEnabled = false; } };
 }
+
+it('delivers repeated undecided idle combat through the real World event stream and execution feedback contract', async () => {
+  vi.useFakeTimers(); const fake=fakeEngine(), outer=fakeHost(), cfg=structuredClone(MYMC_DEFAULTS);
+  cfg.hostDecisions={combat:{enabled:true,mode:'act',connection:'host',minIntervalMs:750,minMargin:.1}};
+  const frame={battlefield:{sampledAtMs:Date.now(),connectionGeneration:1,dimension:'overworld',
+    self:{entityId:1,position:[0,64,0],health:{current:20,max:20,source:'native',updatedAtMs:Date.now()},food:20,scoreboardTeam:null},
+    action:{fighting:false,emergency:false,taskId:null,step:null},actors:[{entityId:2,uuid:'enemy',type:'blaze',relation:'hostile',
+      relationSource:'native',lineOfSight:true,health:{current:8,max:20,source:'native',updatedAtMs:Date.now()},distance:5,position:[5,64,0]}],omitted:0},
+    tacticRevision:67,mana:null,skills:[],omittedCandidates:0,candidates:[{id:'engage',kind:'engage',targetId:2,uuid:'enemy',intent:'Attack.'},
+      {id:'track',kind:'track',targetId:2,uuid:'enemy',minDistance:4,maxDistance:8,leaseMs:4000,intent:'Observe.'}]};
+  const call=vi.fn(async()=>({text:'current frame',meta:{protocol:'agent-mc-tactics/v1',frame}}));
+  Object.assign(fake.engine,{tools:()=>[{name:'mc_combat_tactic',description:'Tactic',parameters:{type:'object'},handler:call}]});
+  Object.assign(outer.host,{log:{emit:vi.fn(),warn:vi.fn()},decisions:{request:async()=>({answers:{tactic:{type:'choice',choice:'option_0',confidence:.51,
+    probabilities:{option_0:.51,option_1:.47,keep:.02}}}})}});
+  const world=new MymcWorld({cfg},fake.engine);
+  try{
+    await world.start(outer.host);await vi.advanceTimersByTimeAsync(4000);
+    const events=outer.stored.filter(e=>e.type==='mymc.tactic');expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({source:'mymc',origin:'external',meta:{combatAttention:{dispatched:false,bodyIdle:true}}});
+    expect(hasExecutionFeedbackContext(events[0].text,events[0].meta?.executionFeedback)).toBe(true);
+    expect(call.mock.calls.every(args=>!(args as any)[0]?.choice)).toBe(true);
+    await world.stop();await vi.advanceTimersByTimeAsync(3000);expect(outer.stored.filter(e=>e.type==='mymc.tactic')).toHaveLength(1);
+  }finally{await world.stop();vi.useRealTimers();}
+});
 
 describe('Mymc World contract', () => {
   it('preserves typed route identity from its engine for the host-side mymc_choose tool',async()=>{

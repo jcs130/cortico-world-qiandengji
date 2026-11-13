@@ -1,6 +1,6 @@
 import { SERVER_TOOLS, SERVER_QUERY_DECLARATION } from './engine/world.ts';
 import { TRIAL_ARENA_TRAVEL } from './engine/travel-points.ts';
-import { HostCombatDriver, validateHostCombat, type HostCombatPort } from './host/combat-driver.ts';
+import { HostCombatDriver, validateHostCombat, combatAttentionEvent, type HostCombatPort } from './host/combat-driver.ts';
 /** 千灯纪的 World 契约；游戏协议与执行器沿用 Minecraft 引擎。 */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -526,6 +526,7 @@ export class MymcWorld implements World {
           decisions: (host as typeof host & Pick<HostCombatPort, 'decisions'>).decisions,
           call: (args, signal) => tool.handler(args, { role: 'host-decision', log: host.log, signal }),
           report: (event, data) => host.log.emit('info', `host combat ${event}`, { event: 'host.combat.' + event, data }),
+          attention: async evidence => { await host.pushEvent(combatAttentionEvent(evidence, 'mymc'), { trigger: 'debounce' }); },
         });
         this.fastCombat.start();
       }
