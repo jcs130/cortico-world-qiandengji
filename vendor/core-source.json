@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.53",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.53-f20d3dc7.tgz",
-  "sha256": "f20d3dc7a548eaf9aaed18040d156ec79868d207278c4749f9be639b597c405f",
+  "version": "0.5.7-rc.160-preview.54",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.54-d5ddf609.tgz",
+  "sha256": "d5ddf609def4bef03a0d8fcf23f7562c14395b2441dabb8062331ef7a5edd7e5",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "eca802be5b29a4dad9910c73ce0281ca1be32fde",
-  "genericFixCommit": "eca802be5b29a4dad9910c73ce0281ca1be32fde",
-  "parentCoreCommit": "6bf255a1a052762d70beeb2c0cad1c68ede3e8c1",
-  "integrationBranch": "codex/boat-lifecycle-20261113",
+  "sourceCommit": "1ad5e3958434a1fb2a264fad5bde86bb1392e2ff",
+  "genericFixCommit": "1ad5e3958434a1fb2a264fad5bde86bb1392e2ff",
+  "parentCoreCommit": "7909d3515a29109778d46e3b042ee65644e80385",
+  "integrationBranch": "codex/travel-state-followup-20261113",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Server-confirmed mounted readiness, optional verified boat trip and bounded water-travel decisions."
+  "rebuildNote": "Mounted packet-order physics, complete passenger snapshots, observed boat facts, queue admission and exact vanilla food identifiers."
 }
