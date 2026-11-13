@@ -35,7 +35,7 @@
     "vec3": "0.2.0"
   },
   "peerDependencies": {
-    "agent-mc-world": "^0.5.7-rc.160-preview.58"
+    "agent-mc-world": "^0.5.7-rc.160-preview.59"
   },
   "engines": {
     "node": ">=22"
