@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.46
+
+- Pin core 0.5.7-rc.160-preview.59, retaining the concurrent mainline update and correcting child initialization for learning tools. Preserve current companion UUID observations, scene invalidation and owner direction.
+
 ## 0.5.0-rc.50-preview.45
 
 - Pin shared fire-risk and combat-learning evidence capabilities in core 0.5.7-rc.160-preview.57. Join current companion UUID observations before historical positions, invalidate geometry on scene transitions, and expose the real owner direction without assuming absence means teleport failure.
