@@ -1,7 +1,7 @@
 {
   "version": "0.5.7-rc.160-preview.67",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.67-bd702f16.tgz",
-  "sha256": "bd702f16b4db8d96410e9eea9a2fe49a4d25fe5b3a6240da4b45b1db5266df06",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.67-94bf9875.tgz",
+  "sha256": "94bf98752960da05609ec65642dda346f4de7991b85722fef5aa23b964222855",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
   "sourceCommit": "b7b56bf62fc6b5a698636acb0d1018917ee57e62",
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Consume interruptible autonomous idle strolling from the shared core."
+  "rebuildNote": "Engine-only archive rebuilt from the pinned source commit with its frozen lockfile. Includes interruptible autonomous idle strolling."
 }

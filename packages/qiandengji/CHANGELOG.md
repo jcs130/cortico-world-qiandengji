@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.54
+
+- Add the native maid workshop catalogue, crafting submission and original receipt reconciliation. Keep pending, completed and uncertain outcomes distinct.
+
 ## 0.5.0-rc.50-preview.53
 
 - Pin idle strolling and body ownership checks in core 0.5.7-rc.160-preview.67. Keep generic equipment behavior in the shared core.

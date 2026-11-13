@@ -2,7 +2,7 @@
 
 先用 `mymc_maids {"action":"list"}` 取得本人女仆 UUID；分页从 page=0 开始，hasMore 为真时按需读下一页。随后用 `context`、`inventory`、`tasks` 加上 maidId，读当前生命、装备、原生工作要求与实际对话模式。旧服务器缺字段时保持未知，不能把未加载当死亡，也不能把菜单里的剑图标当作背包物品。
 
-这些查询与 `nearby`、`receipt`、不带 choice 的 `brain` 已声明为只读分支，可交给只读 worker，不占用身体控制。执行 worker 的范围需包含 `mymc_maids`。`companions` 事实摘要保留观察时间、坐下/移动状态、已查询装备和交谈入口；完整背包与工作清单按需读取。
+这些查询与 `nearby`、`workshop`、`receipt`、不带 choice 的 `brain` 已声明为只读分支，可交给只读 worker，不占用身体控制。执行 worker 的范围需包含 `mymc_maids`。`companions` 事实摘要保留观察时间、坐下/移动状态、已查询装备和交谈入口；完整背包与工作清单按需读取。
 
 日常交谈和主人安排工作是两个入口。先 `nearby` 或最新 `context.conversation` 确认真实对象、距离和频道；服务端 0.1.12-conversation 支持在同世界附近点名，例如“肥鱼，你好”或“@肥鱼 你好”。用普通附近文字发送，或现有附近语音链路；全服喊话、私聊和语音小组不会触发附近点名。范围以当前返回的 nearbyRange 为准（该版为 8 格），在线或旧位置不代表现在就在附近。收到带真实来源的回复才算对方回应，不因发送成功就说聊完了。
 
@@ -21,6 +21,14 @@
 每个不同写操作使用独立 requestId（1–48 位字母、数字、下划线或连字符），先保留 ID 再调用。写操作进入已有身体队列，不打断当前动作。队列受理与命令发送都不是成功：发送后用 `{"action":"receipt","maidId":"实际 UUID","operationId":"原 requestId"}` 对账。超时和断线不换 ID 重放，相同 ID 不用于不同参数。applied 是设置或交换生效，不代表工作任务完成。
 
 工作用 tasks 返回的 taskId 与条件决定。follow/stay/sit、task/schedule/pickup、声音和外观入口按工具参数与当次 context.capabilities 选择。只因女仆在身边，不能假设她有武器、护甲或已切战斗工作；同行前可以核对装备、生命与工作能力，再决定准备、留守或共同出发。
+
+主人格可根据当前目标安排一次合成、照料已有农地，或让她继续随行。需要合成时用 `workshop` 查已授权工位、`recipes`、`productsPerCraft` 和 `currentOrder`。空目录表示没有可选工位。`unsupported_action` 表示服务端明确不支持，`unavailable` 表示这次查询未取得有效回包。客户端须先确认工位能力才能下单。
+
+站在同维度能看见她的工位附近，空闲时用 `make`，传 `maidId`、新 `requestId`、清单中的 `workshopId` 与 `recipeId`。可选 `quantity` 为成品总数，须是单次产出的整倍数，省略则制作一批。`inventory` 可选 `chest`（默认工位补给箱）或 `backpack`（女仆背包），材料和成品使用同一处。同一连接内重复提交原编号只返回已有提交状态。
+
+`queued` 表示身体队列受理，`pending` 表示服务端接单。用 `{"action":"receipt","maidId":"实际 UUID","operationId":"原 requestId","operationAction":"make"}` 对账，重连后沿用这条查询。收到 `data.status:"completed"` 和 `goalCompleted:true` 后，核对 `observation.verified`、`itemId`、`count` 和 `inventory` 确认实际交付。已有工单时读 `currentOrder.operationId`，缺材料时先查可用库存。若原结果未知，保留编号并核对对应库存。
+
+确有需要时才安排农场工作。核对有权使用的附近耕地、种子、空位和原生工作时段，再从 `tasks` 读取 `touhou_little_maid:farm` 并用 `task` 选择。以成熟作物收取、地块补种、实物增量确认成果；`applied` 仅是模式生效。要出发时可用 `follow` 结束农场工作。野外同行前查 `context.companion` 和 `inventory`。护卫需要合用的主手武器，远程模式还需相应弹药。
 
 自动同行按 `context.follow` 的实际 `walkBeyond`、`stopWithin`、`recoveryBeyond` 与 `ownerDistance` 判断。`within_follow_distance` 表示处于允许自由活动的范围，不是掉队；`walk_requested` 只表示原生导航已请求。不要把固定贴身距离、对方先走或反复发送 follow 当作前进前置。32／16／64 格是部分实体的自定义配置，其他实体和旧服务器可不同。`follow_profile_invalid`、停留、工作或跨维度暂停应读实际原因；重复设置模式不能替代排查。
 
