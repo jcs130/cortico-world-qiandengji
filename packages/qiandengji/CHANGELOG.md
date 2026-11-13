@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.48
+
+- Pin source-owned worker event views and observer recovery contracts in core 0.5.7-rc.160-preview.61. Deliver unresolved decision events through declared World streams; retain existing fire-risk and identity repairs.
+
 ## 0.5.0-rc.50-preview.47
 
 - Pin shared combat abstention recovery contracts in core 0.5.7-rc.160-preview.60. Deliver unresolved decision events through declared World streams; retain existing fire-risk and identity repairs.

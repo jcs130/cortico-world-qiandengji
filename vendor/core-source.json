@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.60",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.60-1180c7fa.tgz",
-  "sha256": "1180c7fac46df5217110bba960b2c3b41ec7d3e4f34340b04a8707f3c3e285e0",
+  "version": "0.5.7-rc.160-preview.61",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.61-3799b091.tgz",
+  "sha256": "3799b09145018e2ebef239eb121782fe9af8b66ad3b1832db1f86d4580d4b4e1",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "847d1c432d3105b3be642ba66398f258abd3b15d",
-  "genericFixCommit": "847d1c432d3105b3be642ba66398f258abd3b15d",
-  "parentCoreCommit": "5794fd5ce977e22c2fd64aa6fe5fb7dd6b5cc6a6",
-  "integrationBranch": "codex/fire-decision-recovery-20261113",
+  "sourceCommit": "4da46c4d24763c6ba5b35c1f45207d9e53560afa",
+  "genericFixCommit": "4da46c4d24763c6ba5b35c1f45207d9e53560afa",
+  "parentCoreCommit": "cbc7ab332f",
+  "integrationBranch": "codex/scene-context-20261113",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Deliver bounded unresolved combat decisions to the owning Agent with honest non-execution evidence."
+  "rebuildNote": "Consume bounded worker event views and scoped observer recovery."
 }
