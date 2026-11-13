@@ -186,17 +186,20 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     const facts = super.requestFacts();
     if (!facts) return facts;
     const observations=facts.decision?.state?.identityObservations;
+    const currentTrial=this.trialSearch.facts();
     const companions=this.maids.decisionSummary(Date.now(),Array.isArray(observations)?observations as IdentityObservation[]:[],facts.decisionBoundary);
     const present=companions.map(c=>`${c.name}: ${c.presenceNote}`+(c.entityObservation?` 当前 ${JSON.stringify(c.entityObservation)}`:''));
     const companionParts=[{key:'companions',text:present.length?'[同伴当前观察；旧服务端采样不覆盖此项]\n'+present.join('\n')+'\n'+this.maids.brief():''}].filter(p=>p.text),
-      parts=[{key:'nativeRpg',text:this.nativeRpg.brief()},{key:'communication',text:this.chatPolicy.brief()}].filter(p=>p.text);
-    return { ...facts, partKeys:[...new Set([...(facts.partKeys??facts.parts?.map(p=>p.key)??[]),'companions','nativeRpg','communication'])],
+      parts=[{key:'currentTrial',text:'[当前试炼；历史成绩不能当作本次通关]\n'+JSON.stringify(currentTrial)},
+        {key:'nativeRpg',text:this.nativeRpg.brief()},{key:'communication',text:this.chatPolicy.brief()}].filter(p=>p.text);
+    return { ...facts, partKeys:[...new Set([...(facts.partKeys??facts.parts?.map(p=>p.key)??[]),'companions','nativeRpg','communication','currentTrial'])],
+      ...(facts.executionPartKeys?{executionPartKeys:[...new Set([...facts.executionPartKeys,'currentTrial'])]}:{}),
       text: [...companionParts.map(p=>p.text),facts.text,...parts.map(p=>p.text)].join('\n'),
       ...(facts.parts ? { parts: [...companionParts, ...facts.parts, ...parts] } : {}),
       // Delegated execution uses the compact decision state on the supervisor.
       // Preserve ownership and lifecycle there, without expanding the NPC's inventory/history.
-      ...(facts.decision&&companions.length?{decision:{...facts.decision,state:{...facts.decision.state,
-        companionObservations:companions}}}:{}) };
+      ...(facts.decision?{decision:{...facts.decision,state:{...facts.decision.state,currentTrial,
+        ...(companions.length?{companionObservations:companions}:{})}}}:{}) };
   }
   protected override extensionChatAudience(text:string,rendered?:string,direction:'incoming'|'outgoing'='outgoing'){
     return this.chatPolicy.audience(text,rendered,direction);
