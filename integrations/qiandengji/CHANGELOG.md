@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.56
+
+- Consume core preview.55 and preserve its semantic fact dependencies and critical lifecycle identity through the thin World adapter. The public context entry supplies bounded decision evidence and versioned fact updates for host-managed review. No persona, model or scheduling policy is added to this World.
+
 ## 0.4.1-rc.71-preview.55
 
 - Consume shared mounted-state recovery, observed boats and exact food identifiers; preserve scheduler, conversation and model settings.
