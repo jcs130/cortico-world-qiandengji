@@ -5,7 +5,7 @@ import { MAID_TOOL, MAID_CHANNEL, decodeMaidReply, maidCommand, type MaidReply }
 const uuid=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const object=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const text=(v:unknown,max=160)=>typeof v==='string'?v.replace(/[\r\n\u0000-\u001f]/g,' ').slice(0,max):'';
-const reads=new Set(['nearby','list','context','inventory','tasks','receipt','inbox','skins','voices','resources']);
+const reads=new Set(['nearby','list','context','inventory','tasks','workshop','receipt','inbox','skins','voices','resources']);
 export const maidReadAction=(action:unknown,args:Record<string,unknown>={})=>typeof action==='string'
   &&(reads.has(action)||action==='brain'&&args.choice===undefined);
 const parameters=structuredClone(MAID_TOOL.parameters) as {properties:Record<string,unknown>};
@@ -14,12 +14,13 @@ parameters.properties.playerWindowSlot={type:'integer',minimum:9,maximum:44,
   description:'Actual self inventory window slot: 9–35 main inventory, 36–44 hotbar. Read mc_script api:inventory.items, then await bot.inventory.items() for exact slots; mc_bag totals do not identify a slot. Converted to Bukkit 0–35 by this adapter; do not pass a Bukkit slot here. Required for transfer put.'};
 export const QIANDENGJI_MAIDS_TOOL:Omit<ToolDef,'handler'>={...MAID_TOOL,parameters,
   readOnlyCall: args => maidReadAction(args.action,args),
-  description:'Optional server-owned companion NPC operations, distinct from real players. list finds owned companions; nearby discovers public conversation targets. Read context/inventory/tasks for an observed maidId. '
+  description:'Optional server-owned companion NPC operations, distinct from real players. list finds owned companions; nearby discovers public conversation targets. Read context/inventory/tasks for an observed maidId and choose an available task, including farming at a permitted plot. '
     +'Read results are native observations. Writes require a saved requestId and enter the existing body queue; queue acceptance is not application. '
     +'Use receipt with the original operationId after the body command is sent. chat invokes the native maid model; pending/queued/unknown are not replies. '
+    +'workshop lists authorized workstations, actual recipes, output per craft and currentOrder. make submits one crafting order; check the original receipt for completed, goalCompleted, item and count. '
     +'transfer uses playerWindowSlot (Mineflayer 9–44), not Bukkit slots; read mc_bag {detail:"slots"} for exact self slots. inventoryAccess distinguishes usable capacity from empty slots. equip swaps an observed maid slot with main/off/head/chest/legs/feet. '
     +'Observe actual equipment afterwards. Death/unloaded are separate; context gives original tombstone evidence. No automatic recreation or retry. '
-    +'When context.conversation is present, ordinary nearby name-addressed chat uses its observed range and channel; private owner work still uses chat and receipt. brain without choice only reads configured modes; selecting a returned choice is a separate write. '
+    +'When context.conversation is present, ordinary nearby name-addressed chat uses its observed range and channel. brain without choice only reads configured modes; selecting a returned choice is a separate write. '
     +'Full task, voice, menu and recovery semantics are in mc_guide topic:maids. Mutation commands are not ordinary public chat or mc_cast spells.'};
 
 export function maidArguments(args:Record<string,unknown>):Record<string,unknown> {
@@ -287,6 +288,6 @@ export class MaidState {
         +(row.historicalDeath?` 历史死亡 ${text(row.historicalDeath.diedAt)}${row.lastAliveAt?`；最近确认存活 ${row.lastAliveAt}`:''}，不能当成再次死亡；遗物另查。`:'')
         +(row.recovery?` 恢复见证 ${text(row.recovery.observedAt)}（不是实际复活时间；持久保存=${row.recovery.persisted}）。`:'')
         +(row.death?this.deathText(row):'')+(row.equipment?` 装备记录 ${row.equipmentAt}：${JSON.stringify(row.equipment).slice(0,850)}`:' 装备未查询，不能当作已给她武器/护甲。');
-    }).join('\n')+`\n共已观察${this.rows.size}位；mc_maids 的 list/context/inventory/tasks/receipt 按需读，mc_guide maids 查操作。`;
+    }).join('\n')+`\n共已观察${this.rows.size}位；mc_maids 的 list/context/inventory/tasks/workshop/receipt 按需读，mc_guide maids 查操作。`;
   }
 }

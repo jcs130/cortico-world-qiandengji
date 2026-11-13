@@ -2,7 +2,7 @@ import {expect,it,vi} from 'vitest';
 import {EventEmitter} from 'node:events';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
-import {MaidState,maidSystemReply,maidArguments,maidInventoryAccess} from '../integrations/qiandengji/engine/maids.ts';
+import {MaidState,maidSystemReply,maidArguments,maidInventoryAccess,maidReadAction} from '../integrations/qiandengji/engine/maids.ts';
 import {createMaidPort,maidCommand,MAID_CHANNEL} from '../integrations/qiandengji/engine/maid-port.mjs';
 import source from '../integrations/qiandengji/engine/maid-port-source.mjs';
 import {QiandengjiEngine,SERVER_TOOLS} from '../integrations/qiandengji/engine/world.ts';
@@ -153,6 +153,24 @@ it('pins the unchanged public server client and exposes optional tools and on-de
   expect(createHash('sha256').update(readFileSync(new URL('../integrations/qiandengji/engine/maid-port.mjs',import.meta.url))).digest('hex')).toBe(source.sha256);
   expect(SERVER_TOOLS.find(t=>t.name==='mc_maids')).toBeDefined();
   expect(readServerGuide('maids').text).toContain('playerWindowSlot');
+});
+it('exposes workshop as a read and queues crafting under the original operation ID',async()=>{
+  const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
+  const request=vi.fn(async()=>reply('workshop',{maidId:id,workshops:[{id:'home',recipes:['minecraft:torch']}]}));
+  const enqueue=vi.fn(()=>({text:'queued',data:{taskId:12}}));
+  Object.assign(engine,{bridge:{bot:{player:{uuid:owner}}},maidPort:{request,close(){}},enqueueTool:enqueue});
+  const tool=engine.tools().find(t=>t.name==='mc_maids')!,ctx={role:'test',log:nullLogger()};
+  expect(maidReadAction('workshop')).toBe(true);
+  const workshop=await tool.handler({action:'workshop',maidId:id},ctx);
+  expect(JSON.parse(workshop.text)).toMatchObject({data:{workshops:[{id:'home'}]}});
+  const make={action:'make',maidId:id,requestId:'craft-1',workshopId:'home',recipeId:'minecraft:torch',quantity:4};
+  expect(maidReadAction('make',make)).toBe(false);
+  expect(await tool.handler(make,ctx)).toMatchObject({data:{maidOperation:{operationId:'craft-1',goalCompleted:false}}});
+  expect(request).toHaveBeenCalledTimes(1);
+  expect(enqueue).toHaveBeenCalledTimes(1);
+  expect(JSON.stringify(enqueue.mock.calls[0])).toContain(`/qdmaid make ${id} craft-1 home minecraft:torch 4 chest`);
+  expect(await tool.handler({...make,quantity:8},ctx)).toMatchObject({failed:true});
+  expect(enqueue).toHaveBeenCalledTimes(1);
 });
 it('resolves the maid transfer slot guide against the actual public script API',async()=>{
   const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
