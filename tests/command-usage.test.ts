@@ -1,3 +1,4 @@
+import { TrialSearchState } from '../integrations/qiandengji/engine/trial-search.ts';
 import { describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { observedCommandRoot, observedCommandUsage } from '../integrations/qiandengji/engine/command-usage.ts';
@@ -13,7 +14,7 @@ const dungeonPayload = { schemaVersion: 1, activityType: 'site_dungeon', command
 const dungeonInfo = 'MC_SITE_DUNGEON_INFO ' + JSON.stringify(dungeonPayload);
 
 function rig() {
-  const engine = Object.create(QiandengjiEngine.prototype) as any;
+  const engine = Object.assign(Object.create(QiandengjiEngine.prototype), { trialSearch: new TrialSearchState() }) as any;
   // The constructor supplies this shared catalog; avoid starting world resources.
   return import('agent-mc-world/extension').then(({ ObservedCommandCatalog }) => {
     const chat = vi.fn();

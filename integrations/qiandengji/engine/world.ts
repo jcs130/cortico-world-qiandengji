@@ -1,5 +1,6 @@
 import { QIANDENGJI_CAST_TOOL, invokeQiandengjiCast } from './cast-tool.ts';
 import { portableStorageMisuseNote } from './portable-storage.ts';
+import { TrialSearchState } from './trial-search.ts';
 import type { SkillCall } from 'agent-mc-world/extension';
 import {ObservedCommandCatalog, serverQueryTool, bindEntityIdentityResolver} from 'agent-mc-world/extension';
 import { observedCommandRoot, observedCommandUsage } from './command-usage.ts';
@@ -31,6 +32,7 @@ export class QiandengjiEngine extends TacticalMinecraftWorld {
 protected selfHealAvailable = false;
 protected readonly combatSpells: CombatSpells;
 protected arenaFloor: { floor: number; total: number } | null = null;
+protected readonly trialSearch = new TrialSearchState();
 protected readonly observedCommands = new ObservedCommandCatalog();
 protected readonly nativeRpg = new NativeRpgState();
 protected readonly chatPolicy = new ChatPolicyState();
@@ -152,10 +154,12 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     return true;
   }
   protected override extensionCombatTuning() { return {arena:this.arenaFloor !== null}; }
+  protected override extensionCombatSearchObjective() { return this.trialSearch.read(); }
   protected override extensionLowHealth(bot: Bot) { this.tryAutoSelfHeal(bot); }
   protected override extensionMessage(text: string): boolean {
     if (parseProtectReply(text)) return true;
     const bot = this.bridge?.bot;
+    this.trialSearch.observe(text,bot?.username??'');
     const body = trialBodyState(text, bot?.player?.uuid ?? bot?._client?.uuid,
       this.bodyInhibitReason === TRIAL_DOWNED_REASON);
     if (body) {
@@ -170,6 +174,7 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     return false;
   }
   protected override extensionServerFeedback(text: string): void {
+    this.trialSearch.observe(text,this.bridge?.bot?.username??'');
     const maid=maidSystemReply(text,this.bridge?.bot?.player?.uuid??this.bridge?.bot?._client?.uuid);
     if(maid)this.observeMaidReply(maid);
     this.chatPolicy?.observe(text,this.bridge?.bot?.player?.uuid ?? this.bridge?.bot?._client?.uuid);
@@ -203,7 +208,7 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
   }
   protected override extensionImportantMessage(text: string) { return /可用咏唱|可学习|魔力|命格|探矿|selfheal|healing restores|full health/i.test(text); }
   protected override extensionSpawn(bot: Bot) {
-    super.extensionSpawn(bot); this.selfHealAvailable=false; this.arenaFloor=null;
+    super.extensionSpawn(bot); this.selfHealAvailable=false; this.arenaFloor=null; this.trialSearch.reset();
     this.extensionRespawn();
     const generation=this.connectionGeneration;
     setTimeout(()=>{
@@ -226,7 +231,7 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
       }).catch(error=>this.diag.write({lane:'link',event:'maid-discovery-failed',msg:String(error)}));
     },1500).unref();
   }
-  protected override extensionRespawn() { this.nativeRpg.reset(); this.chatPolicy.reset(); const mana=this.bridge?.agentManaState; if(mana!==undefined)this.combatSpells.noteMana(mana?.current??null); }
+  protected override extensionRespawn() { this.trialSearch.reset(); this.nativeRpg.reset(); this.chatPolicy.reset(); const mana=this.bridge?.agentManaState; if(mana!==undefined)this.combatSpells.noteMana(mana?.current??null); }
   protected override attachExtension(bot: Bot) {
     this.maidPort?.close();this.maidPort=null;this.maids.reset();
     this.maidWrites.clear();
@@ -249,7 +254,10 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     this.observedCommands.clear();
     watchAgentFriendFlight(bot);
     bot.on('physicsTick',()=>{if(!this.shuttingDown)this.tryAutoCombatSpell(bot);});
-    bot.on('death',()=>{this.arenaFloor=null;this.combatSpells.noteMana(null);});
+    bot.on('death',()=>{this.arenaFloor=null;this.trialSearch.reset();this.combatSpells.noteMana(null);});
+    // A server relocation can change rooms without changing the dimension.
+    // Wait for new room evidence instead of searching the previous room.
+    bot.on('forcedMove',()=>this.trialSearch.reset());
     bot._client.on('custom_payload',(packet:{channel?:unknown;data?:unknown})=>{
       if (this.shuttingDown || this.bridge?.bot !== bot) return;
       if (this.nativeRpg.packet(packet.channel, packet.data)) this.publishNativeRpg();

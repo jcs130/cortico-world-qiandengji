@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.63",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.63-46b52d46.tgz",
-  "sha256": "46b52d46afd3fb5c42209fea3332d4c05b5b45da5abd1c52c04d5d4c24ba9a4c",
+  "version": "0.5.7-rc.160-preview.64",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.64-295c196b.tgz",
+  "sha256": "295c196bc33a88c2277537d45cb7a17902358988c614234c93e4030c9a04002a",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "2cdf41392825989f0dda6c8c27f69ad29dd15c8b",
-  "genericFixCommit": "2cdf41392825989f0dda6c8c27f69ad29dd15c8b",
-  "parentCoreCommit": "bae2d9b43d21f6384fc3a590b4afa487c733572b",
-  "integrationBranch": "codex/combat-equipment-handoff-20261113",
+  "sourceCommit": "c5a2f6fdfaaea25afc70074b53c80cecc66c8353",
+  "genericFixCommit": "c5a2f6fdfaaea25afc70074b53c80cecc66c8353",
+  "parentCoreCommit": "d801f74a348bbc5f76eb517d6831872b7513722e",
+  "integrationBranch": "codex/floor4-control-20261113",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Consume confirmed combat equipment handoff and authored-candidate provenance."
+  "rebuildNote": "Consume bounded enemy search, fire ownership and current armor facts."
 }

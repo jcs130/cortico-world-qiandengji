@@ -1,3 +1,4 @@
+import { TrialSearchState } from '../integrations/qiandengji/engine/trial-search.ts';
 import { afterEach, expect, it, vi } from 'vitest';
 import { NativeRpgState, nativeRpgMessage, readNativeRpgPacket, readNativeRpgStatus } from '../integrations/qiandengji/engine/native-rpg.ts';
 import { QiandengjiEngine } from '../integrations/qiandengji/engine/world.ts';
@@ -178,7 +179,7 @@ it('reads the native profile before the skill list once per live spawn and ignor
   vi.useFakeTimers();
   try {
     vi.spyOn(TacticalMinecraftWorld.prototype as any, 'extensionSpawn').mockImplementation(() => {});
-    const engine = Object.create(QiandengjiEngine.prototype) as any;
+    const engine = Object.assign(Object.create(QiandengjiEngine.prototype), { trialSearch: new TrialSearchState() }) as any;
     const bot = { chat: vi.fn() };
     Object.assign(engine, { bridge: { bot }, connectionGeneration: 1, shuttingDown: false,
       extensionRespawn: vi.fn(), diag: { write: vi.fn() } });
@@ -219,7 +220,7 @@ it('adds an independent native skills query, preserves full server detail, and c
 });
 
 it('projects actual plugin/CLI data through the engine facts and emits only a piggyback observation', () => {
-  const engine = Object.create(QiandengjiEngine.prototype) as any;
+  const engine = Object.assign(Object.create(QiandengjiEngine.prototype), { trialSearch: new TrialSearchState() }) as any;
   engine.nativeRpg = new NativeRpgState(); engine.chatPolicy = new ChatPolicyState(); engine.maids = new MaidState(); engine.observedCommands = { note: vi.fn() }; engine.emit = vi.fn();
   vi.spyOn(TacticalMinecraftWorld.prototype, 'requestFacts').mockReturnValue({ text: '原版经验94级，饥饿8', parts: [{ key: 'status', text: '原版经验94级，饥饿8' }], snapshotTypes: [] });
   engine.extensionServerFeedback(line({ ...status, guide: { step: 'skills', reason: 'skill_required',
@@ -233,7 +234,7 @@ it('projects actual plugin/CLI data through the engine facts and emits only a pi
 });
 
 it('reads a real custom_payload event before the viewer projection can drop profession fields, and ignores a replaced bot', () => {
-  const engine = Object.create(QiandengjiEngine.prototype) as any;
+  const engine = Object.assign(Object.create(QiandengjiEngine.prototype), { trialSearch: new TrialSearchState() }) as any;
   const bot = Object.assign(new EventEmitter(), { _client: Object.assign(new EventEmitter(),{uuid:'11111111-1111-4111-8111-111111111111',write:vi.fn()}) });
   engine.nativeRpg = new NativeRpgState(); engine.chatPolicy = new ChatPolicyState(); engine.maids = new MaidState(); engine.maidWrites = new Map(); engine.observedCommands = { clear() {} }; engine.bridge = { bot };
   engine.combatSpells = { noteMana: vi.fn(), noteAbilities: vi.fn(), hasAbility: () => false };
