@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.46
+
+- Pin shared fire-risk and combat-learning evidence capabilities in core 0.5.7-rc.160-preview.58. Join current companion UUID observations before historical positions, invalidate geometry on scene transitions, and expose the real owner direction without assuming absence means teleport failure.
+
 ## 0.5.0-rc.50-preview.45
 
 - Pin shared fire-risk and combat-learning evidence capabilities in core 0.5.7-rc.160-preview.57. Join current companion UUID observations before historical positions, invalidate geometry on scene transitions, and expose the real owner direction without assuming absence means teleport failure.
