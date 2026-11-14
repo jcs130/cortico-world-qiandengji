@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.67",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.67-94bf9875.tgz",
-  "sha256": "94bf98752960da05609ec65642dda346f4de7991b85722fef5aa23b964222855",
+  "version": "0.5.7-rc.160-preview.69",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.69-bd236502.tgz",
+  "sha256": "bd236502d21c663049ba0e490e965b570b59081bfcc07783ba0499937cf06781",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "b7b56bf62fc6b5a698636acb0d1018917ee57e62",
-  "genericFixCommit": "b7b56bf62fc6b5a698636acb0d1018917ee57e62",
-  "parentCoreCommit": "9681b774b8cacf535b8948d7d9d4af464332224b",
-  "integrationBranch": "codex/idle-roaming-20261114",
+  "sourceCommit": "e4b5de63474fc992a57a19c2ccbfb184044f647d",
+  "genericFixCommit": "e4b5de63474fc992a57a19c2ccbfb184044f647d",
+  "parentCoreCommit": "bfacbac781088996ad5e5325d9d1bc9940de1820",
+  "integrationBranch": "codex/occluded-enemy-20261114",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Engine-only archive rebuilt from the pinned source commit with its frozen lockfile. Includes interruptible autonomous idle strolling."
+  "rebuildNote": "Consume shared last-seen contact retention, occlusion handoff and checked corner search."
 }

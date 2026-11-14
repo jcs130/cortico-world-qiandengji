@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.55
+
+- Pin lost-contact recovery and visibility consistency in core 0.5.7-rc.160-preview.69. Keep generic equipment behavior in the shared core.
+
 ## 0.5.0-rc.50-preview.54
 
 - Add the native maid workshop catalogue, crafting submission and original receipt reconciliation. Keep pending, completed and uncertain outcomes distinct.
