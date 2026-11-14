@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.64
+
+- Consume shared search continuation and observed search-history repair in core 0.5.7-rc.160-preview.76.
+
 ## 0.5.0-rc.50-preview.63
 
 - Pin surface retreat handoff in core 0.5.7-rc.160-preview.75. Retain submerged and recent-hit protection in the shared core.
