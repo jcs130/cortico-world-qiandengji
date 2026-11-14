@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.74",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.74-986ea1a4.tgz",
-  "sha256": "986ea1a4f9881f4cd79474189fb931cf52720cecb4db7994cee1512fb9cdcf3c",
+  "version": "0.5.7-rc.160-preview.75",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.75-7d95ac00.tgz",
+  "sha256": "7d95ac0051c35019e414152543590e97fa6f7c111cfc39179f71a72d43d57786",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "6c37ea5ca7be320bfdb869505692dc2731b7fdee",
-  "genericFixCommit": "6c37ea5ca7be320bfdb869505692dc2731b7fdee",
-  "parentCoreCommit": "44919ee32b63763dcb327c5d673ba55eca71e7ab",
-  "integrationBranch": "codex/idle-roam-20261114",
+  "sourceCommit": "cc6ebade9c38ec9cf1ba4d646e804db3e294d7d6",
+  "genericFixCommit": "cc6ebade9c38ec9cf1ba4d646e804db3e294d7d6",
+  "parentCoreCommit": "8ed2eb9a00c9f1f3e75d3e4bd821ae4abecadcee",
+  "integrationBranch": "codex/water-journey-recovery-20261114",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Use cancellable local navigation for idle roaming; retain collision and body ownership."
+  "rebuildNote": "Release retreat ownership after sustained threat clearance and observed breathing at the water surface."
 }

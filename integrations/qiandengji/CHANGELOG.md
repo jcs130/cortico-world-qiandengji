@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.76
+
+- Pin surface retreat handoff in core 0.5.7-rc.160-preview.75. Retain submerged and recent-hit protection in the shared core.
+
 ## 0.4.1-rc.71-preview.75
 
 - Preserve native trial guidance across compatible unversioned summary echoes without refreshing its timestamp; prevent legacy resurrection of a terminal run.
