@@ -16,9 +16,9 @@ export class TrialSearchState {
     const fresh=now>=this.progress.observedAtMs&&now-this.progress.observedAtMs<60000;
     return {...this.progress,fresh,status:fresh?'observed':'stale',
       guidance:fresh?this.progress.guidance??null:null,
-      requiresStatusRead:!!this.progress.terminal,
+      requiresStatusRead:!!this.progress.terminal||!fresh||this.progress.source!=='MC_TRIAL_STATE',
       floorCleared:fresh?this.progress.floorCleared:null,query:'trial.status',
-      meaning:'当前挑战观察；历史 lastOutcome、局部战斗 clear、没看见敌人均不是本层通关证据。过期后须重新查询。'};
+      meaning:'当前挑战观察；participant=false 只表示没有参赛身份，不证明已离开试炼建筑。历史 lastOutcome、局部战斗 clear、没看见敌人均不是本层通关证据。过期后须重新查询 trial.status 获取当前指引。'};
   }
   observe(text:string,username:string,now=Date.now()){
     // This method is only fed trusted server feedback. The server decorates
@@ -76,6 +76,15 @@ export class TrialSearchState {
     if(!Number.isSafeInteger(floor)||floor<0||!Number.isSafeInteger(remaining)||remaining<0)return;
     const run=typeof native.run==='string'?native.run:null;
     const revision=native.revision!==undefined&&Number.isSafeInteger(Number(native.revision))?Number(native.revision):null;
+    // The same status command also emits a legacy summary milliseconds later.
+    // A compatible, unversioned echo cannot erase the richer native reply or
+    // extend its freshness. Conflicting legacy facts still require a new query.
+    const previous=this.progress;
+    if(source==='MC_DUNGEON status'&&run===null&&revision===null&&previous){
+      if(previous.terminal){this.current=undefined;return;}
+      if(previous.source==='MC_TRIAL_STATE'&&previous.floor===floor&&previous.remainingMobs===remaining
+        &&previous.participant===(native.participant===true)&&previous.active===(native.active===true))return;
+    }
     if(run&&run===this.progress?.run&&revision!==null&&this.progress.revision!==null&&revision<this.progress.revision)return;
     if(run&&run!==this.progress?.run)this.epoch++;
     this.progress={source,run,revision,participant:native.participant===true,active:native.active===true,

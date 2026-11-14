@@ -20,6 +20,24 @@ const active={schemaVersion:1,activityType:'trial_tower',recipient:'me',active:t
   run:'current',revision:29,floor:15,selfFloor:15,maxFloor:15,remainingMobs:1};
 const terminal={schemaVersion:1,activityType:'trial_tower',recipient:'me',run:'current',revision:31,
   status:'completed',outcome:'won',reason:'cleared',floor:15};
+const legacy='MC_DUNGEON status participant=false selfState=not_participating globalActive=false globalState=idle activityType=trial_tower selfFloor=15 remainingMobs=0 recipient=me';
+it('keeps native guidance when the same query emits an unversioned legacy echo, without extending its lifetime',()=>{
+  const s=new TrialSearchState();
+  s.observe('MC_TRIAL_STATE '+JSON.stringify({...active,run:undefined,revision:undefined,active:false,participant:false,remainingMobs:0,
+    reason:'reach_trial_entrance',nextCommand:'/mycli goto arena',canStart:false}),'me',1000);
+  s.observe(legacy,'me',1040);
+  expect(s.facts(1040)).toMatchObject({source:'MC_TRIAL_STATE',observedAtMs:1000,guidance:{nextCommand:'/mycli goto arena'},requiresStatusRead:false});
+  s.observe(legacy,'me',61000);
+  expect(s.facts(61000)).toMatchObject({fresh:false,guidance:null,requiresStatusRead:true,observedAtMs:1000});
+  s.observe(legacy.replace('participant=false','participant=true').replace('globalActive=false','globalActive=true').replace('remainingMobs=0','remainingMobs=2'),'me',62000);
+  expect(s.facts(62000)).toMatchObject({source:'MC_DUNGEON status',participant:true,remainingMobs:2,guidance:null,requiresStatusRead:true});
+});
+it('does not resurrect a native completed run from an unversioned summary',()=>{
+  const s=new TrialSearchState();s.observe('MC_TRIAL_STATE '+JSON.stringify(active),'me',1000);
+  s.observe('MC_TRIAL_RESULT '+JSON.stringify(terminal),'me',2000);
+  s.observe(legacy.replace('participant=false','participant=true').replace('globalActive=false','globalActive=true').replace('remainingMobs=0','remainingMobs=1'),'me',2100);
+  expect(s.read(2100)).toBeUndefined();expect(s.facts(2100)).toMatchObject({source:'MC_TRIAL_RESULT',run:'current',revision:31,requiresStatusRead:true});
+});
 it('retires the matching active room on native terminal without claiming pickup or exit',()=>{
   const s=new TrialSearchState();s.observe('MC_TRIAL_STATE '+JSON.stringify(active),'me',1000);
   s.observe('MC_TRIAL_RESULT '+JSON.stringify(terminal),'me',2000);

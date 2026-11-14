@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.75
+
+- Preserve native trial guidance across compatible unversioned summary echoes without refreshing its timestamp; prevent legacy resurrection of a terminal run.
+
 ## 0.4.1-rc.71-preview.74
 
 - Retire matching trial terminals and expose bounded, fresh server guidance without executing it or claiming physical departure.

@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.62
+
+- Preserve authoritative trial status when a legacy summary follows the same response.
+
 ## 0.5.0-rc.50-preview.61
 
 - Retire matching trial terminals and expose bounded, fresh server guidance without executing it or claiming physical departure.
