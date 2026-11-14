@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.68
+
+- Pin lost-contact recovery and visibility consistency in core 0.5.7-rc.160-preview.69. Keep generic equipment behavior in the shared core.
+
 ## 0.4.1-rc.71-preview.67
 
 - Queue each maid crafting request ID once per connection. Confirm workshop support before submission and read the original server receipt for verified delivery.
