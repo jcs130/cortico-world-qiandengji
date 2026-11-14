@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.66
+
+- Consume shared current-view boat activation repair in core 0.5.7-rc.160-preview.78.
+
 ## 0.5.0-rc.50-preview.65
 
 - Consume shared boat removal/dismount lifecycle repair in core 0.5.7-rc.160-preview.77.

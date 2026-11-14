@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.77",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.77-f15f3e73.tgz",
-  "sha256": "f15f3e739e15f3fd73cfdb05227869ed97d8c7e4e06217155703c8de5a1791c5",
+  "version": "0.5.7-rc.160-preview.78",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.78-555f05ae.tgz",
+  "sha256": "555f05aee5175c0016d92636eb1f4b402d8acb83e20986bf046f3e6a285326c6",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "965042a435a90d812f2bf628172d9acaa5020f7b",
-  "genericFixCommit": "965042a435a90d812f2bf628172d9acaa5020f7b",
-  "parentCoreCommit": "b1ecd5a926ca86a658a1767d8b4e1f4c3fd00392",
-  "integrationBranch": "codex/boat-dismount-lifecycle-20261114",
+  "sourceCommit": "e22cc3e684dd64fcf533f5348c721aab6ac81bd6",
+  "genericFixCommit": "e22cc3e684dd64fcf533f5348c721aab6ac81bd6",
+  "parentCoreCommit": "e39427ef28603ce999bcfca52e9d2c1833829483",
+  "integrationBranch": "codex/boat-current-view-20261114",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Repair native boat disappearance/dismount and exact recovery prerequisites."
+  "rebuildNote": "Preserve explicitly selected view for BoatItem native liquid ray."
 }
