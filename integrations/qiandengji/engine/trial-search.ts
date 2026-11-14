@@ -6,14 +6,17 @@ import { QIANDENGJI_SERVER_QUERIES } from './server-query.ts';
 export class TrialSearchState {
   private current: {key:string;remaining:number;observedAtMs:number;expiresAtMs:number} | undefined;
   private progress: {source:string;run:string|null;revision:number|null;participant:boolean;active:boolean;
-    floor:number;remainingMobs:number|null;floorCleared:boolean;observedAtMs:number} | undefined;
+    floor:number;remainingMobs:number|null;floorCleared:boolean;observedAtMs:number;
+    guidance?:Record<string,unknown>;terminal?:{status:string;outcome:string;reason:string|null}} | undefined;
   private epoch=0;
   reset(){this.current=undefined;this.progress=undefined;this.epoch++;}
   read(now=Date.now()){return this.current&&this.current.expiresAtMs>now?{...this.current}:undefined;}
   facts(now=Date.now()){
     if(!this.progress)return {source:'server',fresh:false,status:'unverified',floorCleared:null,query:'trial.status'};
-    const fresh=now-this.progress.observedAtMs<60000;
+    const fresh=now>=this.progress.observedAtMs&&now-this.progress.observedAtMs<60000;
     return {...this.progress,fresh,status:fresh?'observed':'stale',
+      guidance:fresh?this.progress.guidance??null:null,
+      requiresStatusRead:!!this.progress.terminal,
       floorCleared:fresh?this.progress.floorCleared:null,query:'trial.status',
       meaning:'当前挑战观察；历史 lastOutcome、局部战斗 clear、没看见敌人均不是本层通关证据。过期后须重新查询。'};
   }
@@ -24,6 +27,23 @@ export class TrialSearchState {
     const native=QIANDENGJI_SERVER_QUERIES.find(q=>q.id==='trial.status')!.matchReply(text,[],username)?.data as Record<string,unknown>|undefined;
     if(native){
       this.record(native,'MC_TRIAL_STATE',now);return;
+    }
+    if(text.startsWith('MC_TRIAL_RESULT ')){
+      let result:Record<string,unknown>;
+      try {result=JSON.parse(text.slice('MC_TRIAL_RESULT '.length));}catch{return;}
+      if(!result||typeof result!=='object'||Array.isArray(result))return;
+      const previous=this.progress;
+      if(!previous||!username||result.schemaVersion!==1||result.recipient!==username||result.activityType!=='trial_tower'
+        ||typeof result.run!=='string'||result.run!==previous.run
+        ||!Number.isSafeInteger(result.revision)||Number(result.revision)<(previous.revision??0)
+        ||result.status!=='completed'||!['won','lost','aborted'].includes(String(result.outcome)))return;
+      this.current=undefined;
+      // An explicit run terminal retires active-room facts immediately. It does
+      // not prove a route, reward pickup or physical departure from the room.
+      this.progress={...previous,source:'MC_TRIAL_RESULT',revision:Number(result.revision),
+        active:false,participant:false,remainingMobs:null,floorCleared:false,observedAtMs:now,guidance:undefined,
+        terminal:{status:'completed',outcome:String(result.outcome),reason:typeof result.reason==='string'&&result.reason.length<=1024?result.reason:null}};
+      return;
     }
     if(text.startsWith('MC_DUNGEON status ')){
       const fields=Object.fromEntries(text.slice('MC_DUNGEON status '.length).split(/\s+/).map(s=>{const i=s.indexOf('=');return [s.slice(0,i),s.slice(i+1)];}));
@@ -43,11 +63,11 @@ export class TrialSearchState {
       // Preserve a verified participant; otherwise require a self query.
       const previous=this.progress;this.current=undefined;this.epoch++;
       this.progress=previous?.participant&&previous.active?{...previous,source:'server-room-transition',
-        floor:Number(entered[1]),remainingMobs:null,floorCleared:false,observedAtMs:now}:undefined;return;
+        floor:Number(entered[1]),remainingMobs:null,floorCleared:false,observedAtMs:now,guidance:undefined}:undefined;return;
     }
     const cleared=/^第\s*(\d+)\s*\/\s*\d+\s*层已通关/.exec(text);
     if(cleared&&this.progress?.active&&this.progress.participant&&this.progress.floor===Number(cleared[1])){
-      this.current=undefined;this.progress={...this.progress,source:'server-floor-clear',remainingMobs:0,floorCleared:true,observedAtMs:now};return;
+      this.current=undefined;this.progress={...this.progress,source:'server-floor-clear',remainingMobs:0,floorCleared:true,observedAtMs:now,guidance:undefined};return;
     }
     if(/^(?:进入第|已恢复第|第\s*\d+\s*\/\s*\d+\s*层已通关|本人试炼：)/.test(text))this.reset();
   }
@@ -61,9 +81,21 @@ export class TrialSearchState {
     this.progress={source,run,revision,participant:native.participant===true,active:native.active===true,
       floor,remainingMobs:remaining,floorCleared:native.participant===true&&native.active===true&&remaining===0
         &&(native.globalFloor===undefined||Number(native.globalFloor)===floor)
-        &&(native.globalState==='cleared'||native.state==='cleared'),observedAtMs:now};
+        &&(native.globalState==='cleared'||native.state==='cleared'),observedAtMs:now,
+      guidance:this.guidance(native)};
     if(native.active&&native.participant&&remaining>0)this.set(floor,remaining,now);
     else this.current=undefined;
+  }
+  private guidance(native:Record<string,unknown>){
+    const value:Record<string,unknown>={source:'server',automaticExecution:false};
+    for(const key of ['reason','nextAction','nextCommand','verifyCommand']){
+      if(typeof native[key]==='string'&&native[key].length<=1024)value[key]=native[key];
+    }
+    // This is the optional server query adapter's validated landing profile,
+    // not a fabricated path from the entrance button coordinates.
+    if(native.reason==='reach_trial_entrance'&&native.participant===false&&native.canStart===false
+      &&native.nextCommand==='/mycli goto arena'&&native.entryTravel)value.entryTravel=native.entryTravel;
+    return Object.keys(value).length>2?value:undefined;
   }
   private set(floor:number,remaining:number,now:number){
     if(!Number.isSafeInteger(floor)||floor<1||!Number.isSafeInteger(remaining)||remaining<=0){this.reset();return;}

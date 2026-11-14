@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.74
+
+- Retire matching trial terminals and expose bounded, fresh server guidance without executing it or claiming physical departure.
+
 ## 0.4.1-rc.71-preview.73
 
 - Pin bounded local idle navigation in core 0.5.7-rc.160-preview.74. Keep generic equipment behavior in the shared core.
