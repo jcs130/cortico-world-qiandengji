@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.72
+
+- Pin bounded local idle navigation in core 0.5.7-rc.160-preview.73. Keep generic equipment behavior in the shared core.
+
 ## 0.4.1-rc.71-preview.71
 
 - Pin automatic workstation hand confirmation in core 0.5.7-rc.160-preview.72. Keep generic equipment behavior in the shared core.
