@@ -1,3 +1,11 @@
+## 0.5.0-rc.50-preview.60
+
+- Pin bounded local idle navigation in core 0.5.7-rc.160-preview.74. Keep generic equipment behavior in the shared core.
+
+## 0.5.0-rc.50-preview.59
+
+- Pin bounded local idle navigation in core 0.5.7-rc.160-preview.73. Keep generic equipment behavior in the shared core.
+
 ## 0.5.0-rc.50-preview.58
 
 - Pin automatic workstation hand confirmation in core 0.5.7-rc.160-preview.72. Keep generic equipment behavior in the shared core.

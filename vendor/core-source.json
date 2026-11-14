@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.72",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.72-b993949f.tgz",
-  "sha256": "b993949ffa799c39d7e356283189f8ae617d70446f9d5fa3394773196195112d",
+  "version": "0.5.7-rc.160-preview.74",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.74-986ea1a4.tgz",
+  "sha256": "986ea1a4f9881f4cd79474189fb931cf52720cecb4db7994cee1512fb9cdcf3c",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "36b3f458181c12a73b1a313532bd7036b36c9f09",
-  "genericFixCommit": "36b3f458181c12a73b1a313532bd7036b36c9f09",
-  "parentCoreCommit": "c7c9449022b71c9caa87304d155e3db5006d6cac",
-  "integrationBranch": "codex/boat-station-20261114",
+  "sourceCommit": "6c37ea5ca7be320bfdb869505692dc2731b7fdee",
+  "genericFixCommit": "6c37ea5ca7be320bfdb869505692dc2731b7fdee",
+  "parentCoreCommit": "44919ee32b63763dcb327c5d673ba55eca71e7ab",
+  "integrationBranch": "codex/idle-roam-20261114",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Use confirmed inventory handoff before automatic workstation placement."
+  "rebuildNote": "Use cancellable local navigation for idle roaming; retain collision and body ownership."
 }
