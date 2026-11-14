@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.76",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.76-2bfc7df2.tgz",
-  "sha256": "2bfc7df23344fe8dba5333db8392f99dfea94f6685658dc7a4c12462a62cd924",
+  "version": "0.5.7-rc.160-preview.77",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.77-f15f3e73.tgz",
+  "sha256": "f15f3e739e15f3fd73cfdb05227869ed97d8c7e4e06217155703c8de5a1791c5",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "2d42f7d13079a5a2573357f45b33bdfa9c8c8b7b",
-  "genericFixCommit": "2d42f7d13079a5a2573357f45b33bdfa9c8c8b7b",
-  "parentCoreCommit": "f24e3374fa282073a707bca788f282e8d453acf4",
-  "integrationBranch": "codex/find-resume-budget-20261114",
+  "sourceCommit": "965042a435a90d812f2bf628172d9acaa5020f7b",
+  "genericFixCommit": "965042a435a90d812f2bf628172d9acaa5020f7b",
+  "parentCoreCommit": "b1ecd5a926ca86a658a1767d8b4e1f4c3fd00392",
+  "integrationBranch": "codex/boat-dismount-lifecycle-20261114",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Preserve bounded search continuation; avoid reverse oscillation for the same search clue."
+  "rebuildNote": "Repair native boat disappearance/dismount and exact recovery prerequisites."
 }

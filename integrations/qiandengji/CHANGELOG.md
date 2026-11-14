@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.78
+
+- Consume shared boat removal/dismount lifecycle repair in core 0.5.7-rc.160-preview.77.
+
 ## 0.4.1-rc.71-preview.77
 
 - Consume shared search continuation and observed search-history repair in core 0.5.7-rc.160-preview.76.
