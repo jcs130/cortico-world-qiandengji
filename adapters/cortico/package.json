@@ -1,6 +1,6 @@
 {
   "name": "cortico-world-minecraft-agent",
-  "version": "0.4.1-rc.71-preview.75",
+  "version": "0.4.1-rc.71-preview.76",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",

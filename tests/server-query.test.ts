@@ -21,6 +21,35 @@ const info = { ...dungeon, name: '亡灵墓穴·三室封印', start: [-425, 4, 
   rooms: [{ enemies: 5, center: [-425, 4, 677], name: '守墓前厅', radius: 4 }] };
 
 describe('explicit Qiandengji read-only server query definitions', () => {
+  it('reads guild promotion and exam requirements without borrowing the body action lane', () => {
+    const lane = new ServerQueryLane(), send = vi.fn();
+    const context = { generation: 'current', username: 'ag_Fixture', afterSequence: 20, send };
+    const promotion = { schemaVersion: 1, scope: 'self', subjectUuid: '00000000-0000-4000-8000-000000000001',
+      type: 'promotion', available: true, gradeIndex: 5, fame: 588, fameRemaining: 0,
+      eligibility: 'history_required', nextGrade: { fresh: ['survey_basic'] } };
+    const marker = (value: unknown) => 'MC_GUILD_EXAM ' + JSON.stringify(value);
+    try {
+      const sent = lane.call({ query: 'guild.exam.promotion' }, QIANDENGJI_SERVER_QUERIES, context);
+      expect(send).toHaveBeenCalledWith('/mycli guild exam promotion --json');
+      for (const patch of [{ type:'submitted' }, { type:'status' }, { scope:'other' }, { subjectUuid:'invalid' }, { schemaVersion:2 }])
+        expect(lane.receive(marker({ ...promotion, ...patch }), 'current', 'ag_Fixture', 21)).toBe(false);
+      expect(lane.receive(marker(promotion), 'old', 'ag_Fixture', 21)).toBe(false);
+      expect(lane.receive(marker(promotion), 'current', 'ag_Fixture', 19)).toBe(false);
+      expect(lane.receive(marker(promotion), 'current', 'ag_Fixture', 22)).toBe(true);
+      expect(lane.call({ requestId: sent.data?.requestId }, QIANDENGJI_SERVER_QUERIES, context).data)
+        .toMatchObject({ phase:'replied', goal_completed:false, requestNonce:false, reply:{ data:promotion } });
+      expect(send).toHaveBeenCalledTimes(1);
+      const status = { ...promotion, type:'status', state:'submitted', runId:'historical', nextCommand:'/mycli guild exam submit' };
+      expect(query('guild.exam.status').matchReply(marker(status), [], 'ag_Fixture')).toEqual({ ok:true, data:status });
+      const info = { ...promotion, type:'definition', id:'survey_basic', eligibility:'ready' };
+      expect(query('guild.exam.info').command(['survey_basic'])).toBe('/mycli guild exam info survey_basic --json');
+      expect(query('guild.exam.info').matchReply(marker(info), ['survey_basic'], 'ag_Fixture')).toEqual({ ok:true, data:info });
+      expect(query('guild.exam.info').matchReply(marker(info), ['flight_basic'], 'ag_Fixture')).toBeNull();
+      for (const kind of ['promotion','status','info'])
+        for (const args of [['submit','x'], ['start promotion'], ['x;submit']])
+          expect(query('guild.exam.'+kind).command(args)).toBeNull();
+    } finally { lane.reset('done'); }
+  });
   it('returns the requested server catalog page directly to the read-only caller', () => {
     const lane = new ServerQueryLane(), send = vi.fn();
     const context = { generation: 'current', username: 'ag_Fixture', send };
@@ -126,7 +155,7 @@ describe('explicit Qiandengji read-only server query definitions', () => {
     expect(send).not.toHaveBeenCalled();
   });
   it('exposes only the reviewed subset through the optional server engine hook', () => {
-    expect(QIANDENGJI_SERVER_QUERIES.map(item => item.id)).toEqual(['trial.status', 'status', 'skills.status',
+    expect(QIANDENGJI_SERVER_QUERIES.map(item => item.id)).toEqual(['guild.exam.promotion', 'guild.exam.status', 'guild.exam.info', 'trial.status', 'status', 'skills.status',
       'profession.list', 'profession.status', 'profession.info', 'skills.info', 'dungeon.list', 'dungeon.status', 'dungeon.info',
       'storage.inventory', 'storage.stash', 'trade.shop.list', 'trade.recycle.list', 'trade.wallet',
       'trade.recycle.status', 'trade.auction.list', 'trade.auction.mine', 'trade.auction.info']);
