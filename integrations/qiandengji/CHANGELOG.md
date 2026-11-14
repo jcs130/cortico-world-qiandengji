@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.80
+
+- Consume shared bounded boat detour repair in core 0.5.7-rc.160-preview.79.
+
 ## 0.4.1-rc.71-preview.79
 
 - Consume shared current-view boat activation repair in core 0.5.7-rc.160-preview.78.

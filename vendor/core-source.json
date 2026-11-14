@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.78",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.78-555f05ae.tgz",
-  "sha256": "555f05aee5175c0016d92636eb1f4b402d8acb83e20986bf046f3e6a285326c6",
+  "version": "0.5.7-rc.160-preview.79",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.79-7d90d118.tgz",
+  "sha256": "7d90d118487b9a237cae573010121ee1e9fa89fd5db13ab804cbeea7b2f1301c",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "e22cc3e684dd64fcf533f5348c721aab6ac81bd6",
-  "genericFixCommit": "e22cc3e684dd64fcf533f5348c721aab6ac81bd6",
-  "parentCoreCommit": "e39427ef28603ce999bcfca52e9d2c1833829483",
-  "integrationBranch": "codex/boat-current-view-20261114",
+  "sourceCommit": "e71345d9869ebd3c2169aaa6ad5440218095b43b",
+  "genericFixCommit": "e71345d9869ebd3c2169aaa6ad5440218095b43b",
+  "parentCoreCommit": "cd8915c5de3414b75e672ab74f46f29039baa231",
+  "integrationBranch": "codex/boat-local-detour-20261114",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Preserve explicitly selected view for BoatItem native liquid ray."
+  "rebuildNote": "Bounded collision-checked water detours around local banks."
 }
