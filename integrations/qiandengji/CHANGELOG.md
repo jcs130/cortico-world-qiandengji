@@ -1,3 +1,8 @@
+## 0.4.1-rc.71-preview.81
+
+- Expose native guild promotion, exam status and definition reads through the shared read-only query lane. Preserve server scope, subject UUID, current-connection correlation and raw eligibility; never enroll or submit.
+- Add SDK lane regression covering stale arrivals, mutation rejection and exact exam ID.
+
 ## 0.4.1-rc.71-preview.80
 
 - Consume shared bounded boat detour repair in core 0.5.7-rc.160-preview.79.

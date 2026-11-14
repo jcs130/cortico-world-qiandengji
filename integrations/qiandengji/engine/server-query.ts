@@ -48,6 +48,33 @@ function payload(text: string, marker: string): Record<string, unknown> | null {
   } catch { return null; }
 }
 
+// AgentFriend SkillAssessments query branches: no enrollment, submission or
+// transfer. The native reply identifies its self subject by UUID, not username.
+// The shared lane verifies server provenance/current connection/arrival; this
+// contract preserves subjectUuid but does not claim a separate UUID comparison
+// or unique request nonce. Never accept an unrelated mutation/error as a query.
+function guildExam(kind: 'promotion' | 'status' | 'info'): ServerQueryDefinition {
+  const valid = (args: readonly string[]) => kind === 'info'
+    ? args.length === 1 && subjectId.test(args[0]) : args.length === 0;
+  return { id: `guild.exam.${kind}`, argumentsSchema: kind === 'info' ? subjectArgument : noArguments,
+    description: `只读公会考试${kind === 'promotion' ? '下一阶资格、声望缺项、履历与本场实操要求' : kind === 'status' ? '本人当前考试与原生分步指引' : '一项服务端已列出的考题、准备条件与验收要求'}。`
+      + (kind === 'info' ? 'arguments:["实际考题ID"]。' : 'arguments:[]。')
+      + '公会段位不是职业等级；保留原生 subjectUuid、历史结果和下一步命令，查询不执行 nextCommand、不报名、不交付、不晋级。无请求 nonce，由核心校验当前连接的可信服务端回包。',
+    command: args => valid(args) ? `/mycli guild exam ${kind}${kind === 'info' ? ' ' + args[0] : ''} --json` : null,
+    matchReply: (text, args, username) => {
+      if (!username || !valid(args)) return null;
+      const value = payload(text, 'MC_GUILD_EXAM');
+      if (!value || value.scope !== 'self' || typeof value.subjectUuid !== 'string'
+        || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value.subjectUuid)) return null;
+      const matches = kind === 'info'
+        ? value.type === 'definition' && value.id === args[0] && typeof value.eligibility === 'string'
+        : value.type === kind && typeof value.available === 'boolean'
+          && Number.isSafeInteger(value.gradeIndex) && Number(value.gradeIndex) >= 0
+          && (kind !== 'promotion' || typeof value.fame === 'number' && Number.isFinite(value.fame));
+      return matches ? { ok: true, data: value } : null;
+    } };
+}
+
 function dungeonDefinition(kind: 'status' | 'info', marker: string, description: string): ServerQueryDefinition {
   return {
     id: `dungeon.${kind}`,
@@ -102,6 +129,7 @@ const dungeonList: ServerQueryDefinition = {
 };
 
 export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
+  guildExam('promotion'), guildExam('status'), guildExam('info'),
   {
     id: 'trial.status',
     argumentsSchema: noArguments,
