@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.57
+
+- Pin water travel choice and surface meal continuation in core 0.5.7-rc.160-preview.71. Keep generic equipment behavior in the shared core.
+
 ## 0.5.0-rc.50-preview.56
 
 - Pin water travel choice and surface meal continuation in core 0.5.7-rc.160-preview.70. Keep generic equipment behavior in the shared core.
