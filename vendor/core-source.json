@@ -1,13 +1,13 @@
 {
-  "version": "0.5.7-rc.160-preview.69",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.69-bd236502.tgz",
-  "sha256": "bd236502d21c663049ba0e490e965b570b59081bfcc07783ba0499937cf06781",
+  "version": "0.5.7-rc.160-preview.70",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.70-862ff5dd.tgz",
+  "sha256": "862ff5dde0165cc6e494da955ca97601415eba37ce0626771a88eb349ce1fe52",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "e4b5de63474fc992a57a19c2ccbfb184044f647d",
-  "genericFixCommit": "e4b5de63474fc992a57a19c2ccbfb184044f647d",
-  "parentCoreCommit": "bfacbac781088996ad5e5325d9d1bc9940de1820",
-  "integrationBranch": "codex/occluded-enemy-20261114",
+  "sourceCommit": "3e124ef572925d3d13cf9eac4b0fd5a6d346a247",
+  "genericFixCommit": "3e124ef572925d3d13cf9eac4b0fd5a6d346a247",
+  "parentCoreCommit": "42525df8cf60eb17af880a90b281fdc6169387a3",
+  "integrationBranch": "codex/boat-travel-20261114",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +15,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Consume shared last-seen contact retention, occlusion handoff and checked corner search."
+  "rebuildNote": "Consume observed water travel choice, full boat routine discovery and cancellable surface meal checkpoints."
 }
