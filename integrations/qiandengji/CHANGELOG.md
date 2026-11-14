@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.73
+
+- Pin bounded local idle navigation in core 0.5.7-rc.160-preview.74. Keep generic equipment behavior in the shared core.
+
 ## 0.4.1-rc.71-preview.72
 
 - Pin bounded local idle navigation in core 0.5.7-rc.160-preview.73. Keep generic equipment behavior in the shared core.
