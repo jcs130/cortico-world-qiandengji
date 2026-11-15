@@ -52,5 +52,16 @@ it.each(['server-mineflayer', 'native', 'generic-mymc', 'generic-agentmc'] as co
       expect(row).toMatchObject({ requestId: 'real-host-call', attribution: { controller: 'system2' }, execution: { phase: 'completed' },
         before: { position: { x: 0 } }, after: { position: { x: 4 } }, goalVerified: false });
       expect(sink).toHaveBeenCalledTimes(1);
+      const sameAction={steps:[{skill:'goto',at:[8,64,0]}]};
+      const tool=world.tools().find(t=>t.name.endsWith('_do'))!;
+      const blocked=await tool.handler(sameAction,{role:'main',log:nullLogger(),callId:'blocked-call'}) as ToolOutcome;
+      await bridge.pushEvent({source:'minecraft',type:'minecraft.task',text:'blocked',
+        execution:{...receipt,phase:'blocked',terminal:true}});
+      handler.mockResolvedValue({text:'accepted',execution:{...receipt,id:'generation:8'}});
+      const retry=await tool.handler(sameAction,{role:'main',log:nullLogger(),callId:'retry-call'}) as ToolOutcome;
+      expect(retry.text).toContain('[Comparable operation evidence]');
+      expect(retry.text).toContain((blocked.meta!.experience as {id:string}).id);
+      expect(retry.execution).toMatchObject({id:'generation:8',phase:'accepted',terminal:false});
+      expect(handler).toHaveBeenCalledTimes(3);
     } finally { await world.stop(); }
   });
