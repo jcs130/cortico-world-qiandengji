@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.85
+
+- Consume core 0.5.7-rc.160-preview.82 to correlate protection replies and navigation caches with native world identity. No added gameplay restriction or server policy change.
+
 ## 0.4.1-rc.71-preview.84
 
 - Observe correlated server query replies before host delivery, so activity identity, guild, trial and skill facts stay current even when duplicate chat is suppressed. Preserve the original event and avoid fabricating chat.

@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.81",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.81-ce432b96.tgz",
-  "sha256": "ce432b968b898bbc37efaf0ad45ab38533db7ef38fbd47cb0076156f944e754e",
+  "version": "0.5.7-rc.160-preview.82",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.82-1b18c9a2.tgz",
+  "sha256": "1b18c9a2314d7e701fc29a7f83cdc3eaff8fbc19a5421c0849f84065146fd4db",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "3440238617ec6aeed880023b0197c2287c83579d",
-  "integrationBranch": "codex/decision-evidence-budget-20261115",
+  "sourceCommit": "ff0c4439faeb4267c8794eb0ed76995912578de0",
+  "integrationBranch": "codex/protection-world-identity-20261115",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,7 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Complete decision evidence envelope budgets and original native YSM sync diagnostics.",
-  "builtFrom": "upstream pagination fix plus release version bump",
-  "published": false
+  "rebuildNote": "Use native world identity for exact-cell protection replies and navigation cache."
 }

@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.160-preview.81-ce432b96.tgz
+  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.160-preview.82-1b18c9a2.tgz
   vec3: 0.2.0
 
 importers:
@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       agent-mc-world:
-        specifier: file:vendor/agent-mc-world-0.5.7-rc.160-preview.81-ce432b96.tgz
-        version: file:vendor/agent-mc-world-0.5.7-rc.160-preview.81-ce432b96.tgz
+        specifier: file:vendor/agent-mc-world-0.5.7-rc.160-preview.82-1b18c9a2.tgz
+        version: file:vendor/agent-mc-world-0.5.7-rc.160-preview.82-1b18c9a2.tgz
       vec3:
         specifier: 0.2.0
         version: 0.2.0
@@ -721,9 +721,9 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.160-preview.81-ce432b96.tgz:
-    resolution: {integrity: sha512-7MVPXke+YMhNVtOFnleACIZRnKIXRfZ4Ont1w6rBoHcqBqjQcjbI8u06INdhZoX/ef97APcSiLmC7HWPvyHgYQ==, tarball: file:vendor/agent-mc-world-0.5.7-rc.160-preview.81-ce432b96.tgz}
-    version: 0.5.7-rc.160-preview.81
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.160-preview.82-1b18c9a2.tgz:
+    resolution: {integrity: sha512-8I3YZwrKSt0PN7xYoXbgIDGepS1WlFaLCAh+O93bL13CtfvyithhqQrFB1pULbQ88U0j1F1b28pMmEQlORlznw==, tarball: file:vendor/agent-mc-world-0.5.7-rc.160-preview.82-1b18c9a2.tgz}
+    version: 0.5.7-rc.160-preview.82
     engines: {node: '>=22'}
     hasBin: true
 
@@ -2417,7 +2417,7 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.160-preview.81-ce432b96.tgz:
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.160-preview.82-1b18c9a2.tgz:
     dependencies:
       '@mcap/core': 2.3.0
       '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.6)
