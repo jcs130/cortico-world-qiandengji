@@ -1,3 +1,8 @@
+## 0.4.1-rc.71-preview.84
+
+- Observe correlated server query replies before host delivery, so activity identity, guild, trial and skill facts stay current even when duplicate chat is suppressed. Preserve the original event and avoid fabricating chat.
+- Apply the same validation and observation order to Mineflayer and Java hosts; ignore partial, failed, foreign-recipient and unrelated query replies.
+
 ## 0.4.1-rc.71-preview.83
 
 - Pin core preview.81, including progress-or-error behavior at a tight evidence budget.
