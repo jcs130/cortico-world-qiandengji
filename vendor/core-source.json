@@ -1,13 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.79",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.79-7d90d118.tgz",
-  "sha256": "7d90d118487b9a237cae573010121ee1e9fa89fd5db13ab804cbeea7b2f1301c",
+  "version": "0.5.7-rc.160-preview.80",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.80-4e30a991.tgz",
+  "sha256": "4e30a991096b8987d42c708764e2f4385a327bb7682837c185b4d61726687439",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "e71345d9869ebd3c2169aaa6ad5440218095b43b",
-  "genericFixCommit": "e71345d9869ebd3c2169aaa6ad5440218095b43b",
-  "parentCoreCommit": "cd8915c5de3414b75e672ab74f46f29039baa231",
-  "integrationBranch": "codex/boat-local-detour-20261114",
+  "sourceCommit": "7e78dd3d5c8ce467f8c6ab4ef7ee21c8862ca567",
+  "integrationBranch": "codex/decision-evidence-budget-20261115",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -15,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Bounded collision-checked water detours around local banks."
+  "rebuildNote": "Complete decision evidence envelope budgets and original native YSM sync diagnostics."
 }

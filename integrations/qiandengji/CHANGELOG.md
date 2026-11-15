@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.82
+
+- Pin core preview.80 with complete serialized decision-evidence budgets, pageable original references and opt-in official YSM 2.6.5 native synchronization diagnostics. Keep the server protocol package, existing rendering assets and native container protections unchanged.
+
 ## 0.4.1-rc.71-preview.81
 
 - Expose native guild promotion, exam status and definition reads through the shared read-only query lane. Preserve server scope, subject UUID, current-connection correlation and raw eligibility; never enroll or submit.
