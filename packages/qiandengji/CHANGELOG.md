@@ -1,6 +1,6 @@
 ## 0.5.0-rc.50-preview.70
 
-- Consume core 0.5.7-rc.160-preview.82 to correlate protection replies and navigation caches with native world identity. No added gameplay restriction or server policy change.
+- Consume core 0.5.7-rc.160-preview.83 to correlate protection replies and navigation caches with native world identity. No added gameplay restriction or server policy change.
 
 ## 0.5.0-rc.50-preview.69
 

@@ -16,7 +16,7 @@ describe('one public World, explicitly selected server pack', () => {
       const value=keys.reduce((object:any,key)=>object?.[key],cfg);
       if(value===undefined)unset.push(path);
     }
-    expect(unset).toEqual([]);
+    expect(unset, `Host-visible settings without defaults: ${unset.join(', ')}`).toEqual([]);
     expect(cfg.memoryAgentId).toBe('');
     expect(cfg.localSkinEnabled).toBe(true);
     expect(cfg.knowledge?.minedojo).toEqual({indexFile:'',retrieval:'hybrid'});

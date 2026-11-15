@@ -60,7 +60,7 @@
     "node": ">=22"
   },
   "dependencies": {
-    "agent-mc-world": "^0.5.7-rc.160-preview.82",
+    "agent-mc-world": "^0.5.7-rc.160-preview.83",
     "agent-mc-qiandengji": "^0.5.0-rc.50-preview.70",
     "vec3": "0.2.0"
   },
