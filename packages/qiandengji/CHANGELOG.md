@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.69
+
+- Reuse server query contracts to recognize complete successful replies for neutral state observation without requiring a duplicate chat event.
+
 ## 0.5.0-rc.50-preview.67
 
 - Consume shared bounded boat detour repair in core 0.5.7-rc.160-preview.79.

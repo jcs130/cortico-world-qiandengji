@@ -7,6 +7,7 @@ import { createMinecraftChoiceTool, WorldOperationLearning, withToolHelp, mapWor
 import { SkillCatalog } from './skill-catalog.ts';
 import { MessageInbox, MESSAGE_TOOL, MESSAGE_PARAMETERS } from './message-inbox.ts';
 import { ActivityBindings, activitySubjects } from './activity-binding.ts';
+import { queryObservation } from './query-observation.ts';
 import { GuildProgress } from './guild-progress.ts';
 import { readServerGuide, serverGuideIndex } from './server-guide.ts';
 import { mymcLoginName, mymcCoreConfig, type MymcConfigSection } from './config.ts';
@@ -85,6 +86,14 @@ export class JavaMymcWorld implements World {
       await this.body.start(new Proxy(named,{get:(target,key)=>{if(key!=='pushEvent')return Reflect.get(target,key,target);
         return async (event:Parameters<WorldHost['pushEvent']>[0], options?:Parameters<WorldHost['pushEvent']>[1]) => {
         const mapped = mapWorldEventNamespace(event,'minecraft','mymc');
+        const queryText = this.opts.cfg.serverPack === 'qiandengji'
+          ? queryObservation(event, mymcLoginName(this.opts.cfg.username, this.opts.cfg.preserveLoginName)) : null;
+        if (queryText) {
+          this.guildProgress?.observe(queryText, event.ts);
+          this.catalog.observe(queryText, event.ts);
+          const workBindings = this.activities.observe(queryText, this.body.requestFacts()?.experience?.scope);
+          if (workBindings.length) mapped.meta = {...mapped.meta, workBindings};
+        }
         if (['minecraft.client.message', 'minecraft.chat'].includes(event.type) && this.opts.cfg.serverPack === 'qiandengji' && !event.meta?.overlay) {
           // Store a normalized observation, but deliver the original native event exactly once.
           // MessageInbox intentionally accepts only mymc.chat, not execution or HUD events.

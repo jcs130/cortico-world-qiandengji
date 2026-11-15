@@ -34,6 +34,7 @@ import { startsTrialFight, trialMeleeReadiness } from './trial-readiness.ts';
 import { TrialProgress, trialGoalLimitNote } from './trial-status.ts';
 import { ProspectEvidence } from './prospect-evidence.ts';
 import { ActivityBindings, activitySubjects } from './activity-binding.ts';
+import { queryObservation } from './query-observation.ts';
 import { GuildProgress } from './guild-progress.ts';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from './server-guide.ts';
 import { createMinecraftChoiceTool, minecraftLifeTool } from 'agent-mc-world/extension';
@@ -210,7 +211,7 @@ export function routeViaServerCommand(args: Record<string, unknown>, autoTravel 
 }
 
 function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgress,
-  prospect: ProspectEvidence, guild: GuildProgress, messages: MessageInbox, activities: ActivityBindings, scope: () => WorldRequestFacts['experience']): WorldHost {
+  prospect: ProspectEvidence, guild: GuildProgress, messages: MessageInbox, activities: ActivityBindings, scope: () => WorldRequestFacts['experience'], username: string): WorldHost {
   const bridge: WorldHost = {
     pushEvent:(event,options)=>host.pushEvent(event,options),pushDeferred:(event,options)=>host.pushDeferred(event,options),
     drainPendingEvents:filter=>host.drainPendingEvents(filter),store:host.store,blob:handle=>host.blob(handle),
@@ -231,13 +232,14 @@ function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgres
     const trigger = options?.deliver !== false && channel && ['system', 'login', 'plugin'].includes(channel)
       && options?.trigger === 'piggyback' ? 'debounce' as const : options?.trigger;
     let heading: string | null = null;
-    if (mapped.type === 'mymc.chat') {
-      prospect.observe(mapped.text, mapped.ts);
-      progress.observe(mapped.text, mapped.ts);
-      guild.observe(mapped.text, mapped.ts);
-      const workBindings = activities.observe(mapped.text, scope()?.scope);
+    const observation = mapped.type === 'mymc.chat' ? mapped.text : queryObservation(mapped, username);
+    if (observation) {
+      prospect.observe(observation, mapped.ts);
+      progress.observe(observation, mapped.ts);
+      guild.observe(observation, mapped.ts);
+      const workBindings = activities.observe(observation, scope()?.scope);
       if(workBindings.length) mapped.meta = {...mapped.meta, workBindings};
-      heading = catalog.observe(mapped.text, mapped.ts);
+      heading = catalog.observe(observation, mapped.ts);
     }
     // A host may start the next request while admitting this event. Publish facts
     // first and in receipt order; an async store must not reorder a status block.
@@ -518,7 +520,7 @@ export class MymcWorld implements World {
     host = this.learning.start(host);
     this.host = host;
     try {
-      await this.engine.start(mymcHost(host, this.catalog, this.trialProgress, this.prospect, this.guildProgress, this.messages, this.activities, () => this.engine.requestFacts?.()?.experience));
+      await this.engine.start(mymcHost(host, this.catalog, this.trialProgress, this.prospect, this.guildProgress, this.messages, this.activities, () => this.engine.requestFacts?.()?.experience, mymcLoginName(this.opts.cfg.username, this.opts.cfg.preserveLoginName)));
       if (this.opts.cfg.hostDecisions?.combat?.enabled) {
         const tool = this.learning.tools(this.engine.tools(), 'system1').find(tool => tool.name === 'mc_combat_tactic');
         if (!tool) throw new Error('Host fast combat requires the selected pack tactic port.');
