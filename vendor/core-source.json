@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.80",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.80-4e30a991.tgz",
-  "sha256": "4e30a991096b8987d42c708764e2f4385a327bb7682837c185b4d61726687439",
+  "version": "0.5.7-rc.160-preview.81",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.81-ce432b96.tgz",
+  "sha256": "ce432b968b898bbc37efaf0ad45ab38533db7ef38fbd47cb0076156f944e754e",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "7e78dd3d5c8ce467f8c6ab4ef7ee21c8862ca567",
+  "sourceCommit": "3440238617ec6aeed880023b0197c2287c83579d",
   "integrationBranch": "codex/decision-evidence-budget-20261115",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,7 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Complete decision evidence envelope budgets and original native YSM sync diagnostics."
+  "rebuildNote": "Complete decision evidence envelope budgets and original native YSM sync diagnostics.",
+  "builtFrom": "upstream pagination fix plus release version bump",
+  "published": false
 }
