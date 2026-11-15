@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.83",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.83-ef957f5a.tgz",
-  "sha256": "ef957f5ab4ebb53fdae05daa6fa4ad042493efd7a89227f5d9bdfa0bbdd5271c",
+  "version": "0.5.7-rc.160-preview.84",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.84-67d404a8.tgz",
+  "sha256": "67d404a8afd4c80e79de8bf1f9327166ef989672de7692f8ae148b5918ce02e6",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "844752c4c57f3686979b47f28f8bd2c018cf1613",
-  "integrationBranch": "codex/protection-world-identity-20261115",
+  "sourceCommit": "e9d6a7fe4cdfc15e39f042a46cd86fc3bc995ef3",
+  "integrationBranch": "codex/jitrl-memory-20261116",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Use native world identity for exact-cell protection replies and navigation cache."
+  "rebuildNote": "JitRL candidate ranking with measured action receipts; see packages/agent-mc-world/docs/jitrl.md."
 }
