@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.160-preview.81-ce432b96.tgz
+  agent-mc-world: file:vendor/agent-mc-world-0.5.7-rc.160-preview.83-ef957f5a.tgz
   vec3: 0.2.0
 
 importers:
@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       agent-mc-world:
-        specifier: file:vendor/agent-mc-world-0.5.7-rc.160-preview.81-ce432b96.tgz
-        version: file:vendor/agent-mc-world-0.5.7-rc.160-preview.81-ce432b96.tgz
+        specifier: file:vendor/agent-mc-world-0.5.7-rc.160-preview.83-ef957f5a.tgz
+        version: file:vendor/agent-mc-world-0.5.7-rc.160-preview.83-ef957f5a.tgz
       vec3:
         specifier: 0.2.0
         version: 0.2.0
@@ -721,9 +721,9 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.160-preview.81-ce432b96.tgz:
-    resolution: {integrity: sha512-7MVPXke+YMhNVtOFnleACIZRnKIXRfZ4Ont1w6rBoHcqBqjQcjbI8u06INdhZoX/ef97APcSiLmC7HWPvyHgYQ==, tarball: file:vendor/agent-mc-world-0.5.7-rc.160-preview.81-ce432b96.tgz}
-    version: 0.5.7-rc.160-preview.81
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.160-preview.83-ef957f5a.tgz:
+    resolution: {integrity: sha512-gXox2hkCp6GAraMyBhAn592lZyCcx17JeORvXDEJz9Syp+MKdwzVytLZRoIEJTyj6SyNGyikDJJ3ACbHy6TbKw==, tarball: file:vendor/agent-mc-world-0.5.7-rc.160-preview.83-ef957f5a.tgz}
+    version: 0.5.7-rc.160-preview.83
     engines: {node: '>=22'}
     hasBin: true
 
@@ -1282,6 +1282,9 @@ packages:
   minecraft-data@3.112.0:
     resolution: {integrity: sha512-U+BJ+3zFcTmi6X936sKNBRgocr17t7poNg40+yE3ng7B0wNWwqpndzqJ4cGfjBcclgFghEoOyXvcgIS4MPDRYQ==}
 
+  minecraft-data@3.119.0:
+    resolution: {integrity: sha512-RElo0o2RooEzpeQO+QEHzTmHVTgOdbbomGQYBmWIaU1pupEmAItQb+LpJyL2EDXmpKicOU4swtBVzwIWae5l5g==}
+
   minecraft-folder-path@1.2.0:
     resolution: {integrity: sha512-qaUSbKWoOsH9brn0JQuBhxNAzTDMwrOXorwuRxdJKKKDYvZhtml+6GVCUrY5HRiEsieBEjCUnhVpDuQiKsiFaw==}
 
@@ -1294,6 +1297,10 @@ packages:
 
   mineflayer@4.37.1:
     resolution: {integrity: sha512-kchZCJb1znzz8ZhE0+gLQ3e2t/9xUsqUy/IM/sGfceINxi3h6KXKY9luaUEa59vnD/x0OKwYdERY4sscm0ErNQ==}
+    engines: {node: '>=22'}
+
+  mineflayer@4.39.0:
+    resolution: {integrity: sha512-HptE++dIG55aRmT7GIj3QComS6MhEXstE3RJSuYMFhLtobsQhJJsqWmY9ObfiLp84MrS6Q4Em+wUH0rVQMXLJw==}
     engines: {node: '>=22'}
 
   mojangson@2.1.0:
@@ -2417,14 +2424,14 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.160-preview.81-ce432b96.tgz:
+  agent-mc-world@file:vendor/agent-mc-world-0.5.7-rc.160-preview.83-ef957f5a.tgz:
     dependencies:
       '@mcap/core': 2.3.0
       '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.6)
       ajv: 8.20.0
       flatbuffers: 25.9.23
-      minecraft-data: 3.112.0
-      mineflayer: 4.37.1
+      minecraft-data: 3.119.0
+      mineflayer: 4.39.0
       mineflayer-pathfinder: 2.4.5
       playwright-core: 1.63.0
       prismarine-auth: 3.1.1
@@ -3115,6 +3122,8 @@ snapshots:
 
   minecraft-data@3.112.0: {}
 
+  minecraft-data@3.119.0: {}
+
   minecraft-folder-path@1.2.0: {}
 
   minecraft-protocol@1.68.0:
@@ -3157,6 +3166,31 @@ snapshots:
   mineflayer@4.37.1:
     dependencies:
       minecraft-data: 3.112.0
+      minecraft-protocol: 1.68.0
+      mojangson: 2.1.0
+      prismarine-biome: 1.4.0(prismarine-registry@1.12.0)
+      prismarine-block: 1.23.0
+      prismarine-chat: 1.13.0
+      prismarine-chunk: 1.41.0
+      prismarine-entity: 2.6.0
+      prismarine-item: 1.18.0
+      prismarine-nbt: 2.8.0
+      prismarine-physics: 1.11.1
+      prismarine-recipe: 1.5.0(prismarine-registry@1.12.0)
+      prismarine-registry: 1.12.0
+      prismarine-windows: 2.10.0
+      prismarine-world: 3.7.0
+      protodef: 1.19.0
+      typed-emitter: 1.4.0
+      uuid-1345: 1.0.2
+      vec3: 0.2.0
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+
+  mineflayer@4.39.0:
+    dependencies:
+      minecraft-data: 3.119.0
       minecraft-protocol: 1.68.0
       mojangson: 2.1.0
       prismarine-biome: 1.4.0(prismarine-registry@1.12.0)
