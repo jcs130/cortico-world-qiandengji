@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.86
+
+- Consume shared-core JitRL memory ranking/feedback and complete choice metadata. No new model service or body scheduler.
+
 ## 0.4.1-rc.71-preview.85
 
 - Consume core 0.5.7-rc.160-preview.83 to correlate protection replies and navigation caches with native world identity. No added gameplay restriction or server policy change.

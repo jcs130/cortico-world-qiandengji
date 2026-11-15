@@ -5735,7 +5735,7 @@
     },
     {
       "name": "mymc_memory",
-      "description": "Persistent game-only notebook, isolated by server/account/agent. Search summaries, then get details. Historical observations and attributed notes never establish current facts, permissions or goal success. remember needs top-level kind/summary/content/source (your conclusion: source.kind=agent_note). capture only samples current runtime facts. Use action:help,topic:remember for exact arguments. experience/list returns paginated evidence summaries; experience/get with input:{id} expands one record. Use action:experience,operation:help for filters and evidence-linked reflection. Optional service learning uses action:service; local lessons need no remote service. No body actions; requires dataDir.",
+      "description": "Persistent game-only notebook, isolated by server/account/agent. Search summaries, then get details. Historical observations and attributed notes never establish current facts, permissions or goal success. remember needs top-level kind/summary/content/source (your conclusion: source.kind=agent_note). capture only samples current runtime facts. Use action:help,topic:remember for exact arguments. experience/list returns paginated evidence summaries; experience/get with input:{id} expands one record. Use action:experience,operation:help for filters and evidence-linked reflection. experience/policy_help explains local JitRL candidate ranking and receipt-based feedback (no model calls). Optional service learning uses action:service; local lessons need no remote service. No body actions; requires dataDir.",
       "parameters": {
         "type": "object",
         "additionalProperties": false,
@@ -5798,7 +5798,11 @@
               "list",
               "get",
               "stats",
-              "reflect"
+              "reflect",
+              "policy_help",
+              "policy_status",
+              "rank",
+              "feedback"
             ],
             "description": "Only for action:service or experience, not local capture or remember."
           },
