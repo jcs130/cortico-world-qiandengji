@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.72
+
+- Consume shared action counterexamples and corrected JitRL neutral estimates; preserve native execution and body ownership.
+
 ## 0.5.0-rc.50-preview.71
 
 - Consume shared-core JitRL memory ranking/feedback and complete choice metadata. No new model service or body scheduler.

@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.84",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.84-67d404a8.tgz",
-  "sha256": "67d404a8afd4c80e79de8bf1f9327166ef989672de7692f8ae148b5918ce02e6",
+  "version": "0.5.7-rc.160-preview.85",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.85-3647a6f0.tgz",
+  "sha256": "3647a6f0da0ddadb746430be88f463b29a0a80d4bf810f5c12e2202540c61b00",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "e9d6a7fe4cdfc15e39f042a46cd86fc3bc995ef3",
-  "integrationBranch": "codex/jitrl-memory-20261116",
+  "sourceCommit": "72507fb7266007f53133214515ba240016644e9b",
+  "integrationBranch": "codex/jitrl-counterexamples-20261116",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "JitRL candidate ranking with measured action receipts; see packages/agent-mc-world/docs/jitrl.md."
+  "rebuildNote": "Bounded exact-action counterexamples and neutral unknown Q; no new model loop or body rule."
 }

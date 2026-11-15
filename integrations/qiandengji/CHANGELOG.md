@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.87
+
+- Consume shared action counterexamples and corrected JitRL neutral estimates; preserve native execution and body ownership.
+
 ## 0.4.1-rc.71-preview.86
 
 - Consume shared-core JitRL memory ranking/feedback and complete choice metadata. No new model service or body scheduler.
