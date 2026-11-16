@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.79
+
+- Pin core preview.91 and its executable trajectory scoring schemas. No separate learning executor or server rule is added.
+
 ## 0.5.0-rc.50-preview.78
 
 - Consume completed-trajectory JitRL, multi-step returns, scoring revision review and evidence-linked reuse from the shared core.

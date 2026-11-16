@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.90",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.90-43731401.tgz",
-  "sha256": "4373140107aa85d0c20e7197d99497519a825d45cc5808848bf3a301713b0f69",
+  "version": "0.5.7-rc.160-preview.91",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.91-e14f7685.tgz",
+  "sha256": "e14f7685befa63ad5bc694af5ae4245dd9f8a57ade864c981191ae9d3a70e038",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "e9865fe9e8d68330c65e35edc576621dfe55f29e",
-  "integrationBranch": "codex/jitrl-multistep-20261116",
+  "sourceCommit": "f1a2eadddb6c4c657865afe3805bf47e3ab50a9f",
+  "integrationBranch": "codex/trajectory-tool-contract-20261117",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,6 +13,6 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Multi-step trajectory evaluation and versioned review; optional host-owned background learning, no model or body loop in core.",
-  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/275"
+  "rebuildNote": "Executable evaluation input schemas reused by scoped host tools; no game or model loop in core.",
+  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/277"
 }
