@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.89",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.89-70dc7687.tgz",
-  "sha256": "70dc7687301abb29f503bd466da84ae3ba01e24aa7529677107fab178af3138c",
+  "version": "0.5.7-rc.160-preview.90",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.90-43731401.tgz",
+  "sha256": "4373140107aa85d0c20e7197d99497519a825d45cc5808848bf3a301713b0f69",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "e26231cc912910c9349f22f3a1b3aafd44e851a1",
-  "integrationBranch": "codex/query-receipt-context-20261116",
+  "sourceCommit": "e9865fe9e8d68330c65e35edc576621dfe55f29e",
+  "integrationBranch": "codex/jitrl-multistep-20261116",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,5 +13,6 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Factor exact canonical JSON query copies in request projections; preserve all native values, notices and original journals."
+  "rebuildNote": "Multi-step trajectory evaluation and versioned review; optional host-owned background learning, no model or body loop in core.",
+  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/275"
 }

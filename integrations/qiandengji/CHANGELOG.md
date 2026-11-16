@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.93
+
+- Consume completed-trajectory JitRL, multi-step returns, scoring revision review and evidence-linked reuse from the shared core.
+
 ## 0.4.1-rc.71-preview.92
 
 - Consume versioned, source-attributed scene guidance from the shared core; preserve native capability and execution contracts.

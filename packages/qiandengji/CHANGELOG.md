@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.78
+
+- Consume completed-trajectory JitRL, multi-step returns, scoring revision review and evidence-linked reuse from the shared core.
+
 ## 0.5.0-rc.50-preview.77
 
 - Consume versioned, source-attributed scene guidance from the shared core; preserve native capability and execution contracts.
