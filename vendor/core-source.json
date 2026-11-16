@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.87",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.87-06f4d72a.tgz",
-  "sha256": "06f4d72ae0a0427cf638ee1cec42bd07a91f7e8145a1dfa302f96a9228476bbb",
+  "version": "0.5.7-rc.160-preview.88",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.88-1567ef94.tgz",
+  "sha256": "1567ef94a709b8eb75e41fdcf002fb61c93a104f1717500cf041844921b7d1f9",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "385059ad601f3878a7c9ece2e79c37722eb1e315",
-  "integrationBranch": "codex/scene-learning-20261116",
+  "sourceCommit": "47faea6e38bd9a69849260e17cca394d1d984ad0",
+  "integrationBranch": "codex/thought-context-20261116",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Model-organized scoped scene guidance; bounded task-local retrieval, original sources and versioned counterexamples. No fixed spell routing or model loop."
+  "rebuildNote": "Preserve current purpose in scene retrieval and losslessly reference identical receipt text. Native capability index remains small, versioned and available to body-owning tasks; no auto-cast or game loop in the adapter."
 }

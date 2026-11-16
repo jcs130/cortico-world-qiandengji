@@ -342,6 +342,10 @@ export class MymcWorld implements World {
     const baseText = parts?.length ? parts.map(p => p.text).filter(Boolean).join('\n') : toMymcText(facts.text);
     return {
       ...facts,
+      // This connection's small native ability index must reach the body owner
+      // even when its task selected only position and inventory. Details remain
+      // on demand; the index neither chooses a spell nor grants eligibility.
+      executionPartKeys:[...new Set([...(facts.executionPartKeys??[]),'skillCatalog'])],
       partKeys:[...new Set([...(facts.partKeys??facts.parts?.map(p=>p.key)??[]),...declared.map(p=>p.key)])],
       ...(facts.experience?.scope ? { workStates: this.guildProgress.workStates(facts.experience.scope), workBindings: this.activities.bindings(facts.experience.scope) } : {}),
       ...(options ? { options } : {}),
