@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.90
+
+- Consume versioned, source-attributed scene guidance from the shared core; preserve native capability and execution contracts.
+
 ## 0.4.1-rc.71-preview.89
 
 - Consume server pack preview.74: discover the native talent tree for the known current class and expose growth lookup without treating an empty basic learnable list as completed advancement. Preserve the generic MC core and body scheduler.

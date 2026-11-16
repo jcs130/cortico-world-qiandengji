@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.75
+
+- Consume versioned, source-attributed scene guidance from the shared core; preserve native capability and execution contracts.
+
 ## 0.5.0-rc.50-preview.74
 
 - Expose read-only native `skills.tree` over the shared server query lane and SDK/MCP. Keep talent points separate from learning points and passive nodes separate from active spells.
