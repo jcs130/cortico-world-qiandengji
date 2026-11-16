@@ -181,13 +181,16 @@ it('reads the native profile before the skill list once per live spawn and ignor
     vi.spyOn(TacticalMinecraftWorld.prototype as any, 'extensionSpawn').mockImplementation(() => {});
     const engine = Object.assign(Object.create(QiandengjiEngine.prototype), { trialSearch: new TrialSearchState() }) as any;
     const bot = { chat: vi.fn() };
-    Object.assign(engine, { bridge: { bot }, connectionGeneration: 1, shuttingDown: false,
+    Object.assign(engine, { bridge: { bot }, connectionGeneration: 1, shuttingDown: false, nativeRpg:new NativeRpgState(),
       extensionRespawn: vi.fn(), diag: { write: vi.fn() } });
     engine.extensionSpawn(bot); vi.advanceTimersByTime(1500);
     expect(bot.chat.mock.calls.map((x: unknown[]) => x[0])).toEqual(['/mycli status --json', '/mycli skills status --json']);
     vi.advanceTimersByTime(30000); expect(bot.chat).toHaveBeenCalledTimes(2);
+    engine.nativeRpg.packet('mcagent:state',packet(),at);
+    engine.extensionSpawn(bot);vi.advanceTimersByTime(1500);
+    expect(bot.chat.mock.calls.slice(-3).map((x:unknown[])=>x[0])).toEqual(['/mycli status --json','/mycli skills status --json','/mycli skills tree --json']);
     engine.extensionSpawn(bot); engine.connectionGeneration = 2; vi.advanceTimersByTime(1500);
-    expect(bot.chat).toHaveBeenCalledTimes(2);
+    expect(bot.chat).toHaveBeenCalledTimes(5);
     expect(engine.diag.write).not.toHaveBeenCalled();
   } finally { vi.useRealTimers(); }
 });

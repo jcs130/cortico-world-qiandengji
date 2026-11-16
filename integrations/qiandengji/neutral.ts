@@ -13,8 +13,8 @@ export { QIANDENGJI_SERVER_QUERIES } from './engine/server-query.ts';
 export {MaidState,QIANDENGJI_MAIDS_TOOL,maidArguments,maidSystemReply} from './engine/maids.ts';
 /** Read-only native RPG projection for hosts keeping their original body/tools. */
 export { NativeRpgState, nativeRpgMessage, readNativeSkills, readNativeRpgStatus, readNativeRpgPacket,
-  readNativeSkillDetail, readNativeSkillInvocations } from './engine/native-rpg.ts';
-export type { NativeSkills, NativeSkillNode, NativeRpgProfile, NativeSkillDetail } from './engine/native-rpg.ts';
+  readNativeSkillDetail, readNativeSkillInvocations, readNativeTalentTree } from './engine/native-rpg.ts';
+export type { NativeSkills, NativeSkillNode, NativeRpgProfile, NativeSkillDetail, NativeTalentTree } from './engine/native-rpg.ts';
 export {ChatPolicyState} from './engine/chat-policy.ts';
 export { QiandengjiPortalAccess, QIANDENGJI_WEBSITE, QIANDENGJI_GAME } from './portal-access.ts';
 export type { QiandengjiAccessState } from './portal-access.ts';

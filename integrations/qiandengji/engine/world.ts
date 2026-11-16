@@ -305,7 +305,9 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
       if(this.shuttingDown || this.bridge?.bot!==bot || generation!==this.connectionGeneration)return;
       // Bind the actual native profile before accepting its skill list as current.
       // Both are finite read-only observations; never choose/learn/prepare here.
-      for(const command of ['/mycli status --json','/mycli skills status --json']){
+      const currentClass=this.nativeRpg.identity()?.classId;
+      for(const command of ['/mycli status --json','/mycli skills status --json',
+        ...(currentClass&&currentClass!=='none'?['/mycli skills tree --json']:[])]){
         try{bot.chat(command);}catch(error){
           this.diag.write({lane:'link',event:'native-rpg-sync-send-failed',msg:String(error)});
           break; // Unknown delivery is not automatically retried.

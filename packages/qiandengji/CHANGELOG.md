@@ -1,3 +1,8 @@
+## 0.5.0-rc.50-preview.74
+
+- Expose read-only native `skills.tree` over the shared server query lane and SDK/MCP. Keep talent points separate from learning points and passive nodes separate from active spells.
+- Keep only a class-bound growth summary in normal context, with the complete native tree and profession growth/ascensions available on demand. No automatic point spending or class changes.
+
 ## 0.5.0-rc.50-preview.73
 
 - Consume shared action counterexamples and corrected JitRL neutral estimates; preserve native execution and body ownership.
