@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.77
+
+- Consume versioned, source-attributed scene guidance from the shared core; preserve native capability and execution contracts.
+
 ## 0.5.0-rc.50-preview.76
 
 - Consume versioned, source-attributed scene guidance from the shared core; preserve native capability and execution contracts.
