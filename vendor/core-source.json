@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.88",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.88-1567ef94.tgz",
-  "sha256": "1567ef94a709b8eb75e41fdcf002fb61c93a104f1717500cf041844921b7d1f9",
+  "version": "0.5.7-rc.160-preview.89",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.89-70dc7687.tgz",
+  "sha256": "70dc7687301abb29f503bd466da84ae3ba01e24aa7529677107fab178af3138c",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "47faea6e38bd9a69849260e17cca394d1d984ad0",
-  "integrationBranch": "codex/thought-context-20261116",
+  "sourceCommit": "e26231cc912910c9349f22f3a1b3aafd44e851a1",
+  "integrationBranch": "codex/query-receipt-context-20261116",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Preserve current purpose in scene retrieval and losslessly reference identical receipt text. Native capability index remains small, versioned and available to body-owning tasks; no auto-cast or game loop in the adapter."
+  "rebuildNote": "Factor exact canonical JSON query copies in request projections; preserve all native values, notices and original journals."
 }
