@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.86",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.86-788e1d13.tgz",
-  "sha256": "788e1d133dc207eca725eab4703a8f2c626d4f51ba85da97dca45e3d17251ea0",
+  "version": "0.5.7-rc.160-preview.87",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.87-06f4d72a.tgz",
+  "sha256": "06f4d72ae0a0427cf638ee1cec42bd07a91f7e8145a1dfa302f96a9228476bbb",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "81dd5775c6e4da00933a6f60e00710f31c1e7207",
-  "integrationBranch": "codex/jitrl-counterexamples-20261116",
+  "sourceCommit": "385059ad601f3878a7c9ece2e79c37722eb1e315",
+  "integrationBranch": "codex/scene-learning-20261116",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Bounded exact-action counterexamples and neutral unknown Q; no new model loop or body rule."
+  "rebuildNote": "Model-organized scoped scene guidance; bounded task-local retrieval, original sources and versioned counterexamples. No fixed spell routing or model loop."
 }

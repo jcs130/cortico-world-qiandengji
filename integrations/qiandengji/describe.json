@@ -5735,7 +5735,7 @@
     },
     {
       "name": "mymc_memory",
-      "description": "Persistent game-only notebook, isolated by server/account/agent. Search summaries, then get details. Historical observations and attributed notes never establish current facts, permissions or goal success. remember needs top-level kind/summary/content/source (your conclusion: source.kind=agent_note). capture only samples current runtime facts. Use action:help,topic:remember for exact arguments. experience/list returns paginated evidence summaries; experience/get with input:{id} expands one record. Use action:experience,operation:help for filters and evidence-linked reflection. experience/policy_help explains local JitRL candidate ranking and receipt-based feedback (no model calls). Optional service learning uses action:service; local lessons need no remote service. No body actions; requires dataDir.",
+      "description": "Persistent game-only notebook, isolated by server/account/agent. Search summaries, then get details. Historical observations and attributed notes never establish current facts, permissions or goal success. remember needs top-level kind/summary/content/source (your conclusion: source.kind=agent_note). capture only samples current runtime facts. Use action:help,topic:remember for exact arguments. scene/help exposes model-organized, source-attributed scene guides. Save classifications in background; recall only relevant guidance for this task. No fixed skill taxonomy or automatic success claims. experience/list returns paginated evidence summaries; experience/get with input:{id} expands one record. Use action:experience,operation:help for filters and evidence-linked reflection. experience/policy_help explains local JitRL candidate ranking and receipt-based feedback (no model calls). Optional service learning uses action:service; local lessons need no remote service. No body actions; requires dataDir.",
       "parameters": {
         "type": "object",
         "additionalProperties": false,
@@ -5753,7 +5753,8 @@
               "sync",
               "replication",
               "service",
-              "experience"
+              "experience",
+              "scene"
             ]
           },
           "preference": {
@@ -5802,14 +5803,17 @@
               "policy_help",
               "policy_status",
               "rank",
-              "feedback"
+              "feedback",
+              "recall",
+              "upsert",
+              "archive"
             ],
-            "description": "Only for action:service or experience, not local capture or remember."
+            "description": "Only for action:service, experience or scene, not local capture or remember."
           },
           "input": {
             "type": "object",
             "maxProperties": 12,
-            "description": "Only service/experience-operation arguments. Local note fields stay at the top level."
+            "description": "Service/experience/scene-operation arguments. Local note fields stay at the top level."
           },
           "requestId": {
             "type": "string",
