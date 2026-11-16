@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.94
+
+- Pin core preview.91 and its executable trajectory scoring schemas. No separate learning executor or server rule is added.
+
 ## 0.4.1-rc.71-preview.93
 
 - Consume completed-trajectory JitRL, multi-step returns, scoring revision review and evidence-linked reuse from the shared core.
