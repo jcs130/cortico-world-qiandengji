@@ -7,11 +7,18 @@ import { OPTIONS_TOOL, extendMinecraftOptions, readMinecraftOptions, renderMinec
 import type { MinecraftOptionsSnapshot } from 'agent-mc-world/contracts';
 import { MymcWorld } from '../integrations/qiandengji/world.ts';
 import { MYMC_DEFAULTS } from '../integrations/qiandengji/config.ts';
+import {executionFactParts} from 'agent-mc-world/context';
 
 const fixture = (): MinecraftOptionsSnapshot => ({ schema: 'minecraft-options/v1',
   context: { sampledAt: '2026-10-18T03:00:00+08:00', backend: 'mineflayer', food: 20, oxygen: null,
     inWater: false, carriedFood: 0, carriedBoats: 0, freeSlots: 2, travelling: true, bodyTask: '赶路', bodyRestriction: null }, options: [] });
 describe('server ability purpose discovery', () => {
+  it('discovers jump/slow-fall mobility from actual effect text without recognizing a fixed spell ID',()=>{
+    const c=new SkillCatalog('example.test:25565');
+    c.observe('[MC 系统] MC_SPELL_DETAIL '+JSON.stringify({schemaVersion:1,id:'arbitrary_updraft',name:'无固定名字',category:'exploration',mana:4,cooldownMs:8000,command:'/mycli cast arbitrary_updraft',effect:'高高跳起并获得缓降，越过高差。',requires:'站稳并检查上方净空'}),'2026-11-16T07:00:00Z');
+    const option=c.discoveryOptions()[0];expect(option.intents).toContain('travel');expect(option.support).toBe('unknown');
+    expect(option.checks.join(' ')).toContain('净空');expect(option.source.observedAt).toBe('2026-11-16T07:00:00Z');
+  });
   it('surfaces the real creation-food detail by need while retaining historical provenance and unknown eligibility', () => {
     const c = new SkillCatalog('example.test:25565');
     const detail = { schemaVersion: 1, id: 'give', name: '造物术', category: 'creation', mana: 4,
@@ -50,6 +57,8 @@ describe('server ability purpose discovery', () => {
     const w = new MymcWorld({ cfg, dataDir: dir }, engine);
     try {
       const facts = w.requestFacts()!;
+      expect(executionFactParts(facts,['sample'],true).map(p=>p.key)).toContain('skillCatalog');
+      expect(executionFactParts(facts,['sample'],false).map(p=>p.key)).not.toContain('skillCatalog');
       const index = facts.parts!.find(p => p.key === 'options')!.text;
       expect(index).toContain('mymc_options');
       expect(index).toContain('bread×4');

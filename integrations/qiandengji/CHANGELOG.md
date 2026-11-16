@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.91
+
+- Consume versioned, source-attributed scene guidance from the shared core; preserve native capability and execution contracts.
+
 ## 0.4.1-rc.71-preview.90
 
 - Consume versioned, source-attributed scene guidance from the shared core; preserve native capability and execution contracts.

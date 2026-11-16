@@ -297,7 +297,7 @@ export class SkillCatalog {
     const s = this.nativeSkills!;
     const available = [...new Set([...s.available, ...s.common])];
     return `[原生技能${this.nativeSkillsCurrent ? '现读' : '历史'}] 来源 MC_RPG，观测 ${s.observedAt}；`
-      + `${this.nativeSkillsCurrent ? '本次本人可用' : '旧可用记录待核验'}：${available.slice(0, 16).join('、') || '未列出'}${available.length > 16 ? `等${available.length}项` : ''}；`
+      + `${this.nativeSkillsCurrent ? '本次本人可用' : '旧可用记录待核验'}：${available.slice(0, 32).join('、') || '未列出'}${available.length > 32 ? `；另${available.length-32}项按 mymc_skills 读取` : ''}；`
       + `可学 ${s.learnable.length} 项，学习点 ${s.skillPoints}。`
       + (s.activeSpell !== undefined ? `点击技 ${s.activeSpell || '未设置'}。` : '')
       + 'mymc_skills 可查完整索引；当前详情 /mycli skills info <ID>。旧 MC_SPELL 与女神提示不代表此后端当前资格。';
@@ -310,7 +310,7 @@ export class SkillCatalog {
       ? new Set([...this.nativeSkills.common, ...this.nativeSkills.available]) : null;
     const patterns: Array<[MinecraftOptionIntent, RegExp]> = [
       ['food', /食物|口粮|饥饿|饱食|面包|\bbread\b|\bfood\b|\bhunger\b/iu],
-      ['travel', /传送|飞行|闪现|赶路|移速|移动速度|\bteleport\b|\bflight\b|\bspeed\b/iu],
+      ['travel', /传送|飞行|闪现|赶路|移速|移动速度|跳跃|跳起|高差|缓降|\bteleport\b|\bflight\b|\bspeed\b|\bjump\b|\bslow falling\b/iu],
       ['water', /潜水|水下|呼吸|水中|\bunderwater\b|\bbreath\b/iu],
       ['inventory', /背包|收纳|仓储|物品栏|\binventory\b|\bstorage\b/iu],
       ['explore', /探测|扫描|探矿|遗迹|夜视|\bdetect\b|\bscan\b/iu],
