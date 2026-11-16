@@ -1,5 +1,5 @@
 import type { ServerQueryDefinition } from 'agent-mc-world/extension';
-import { nativeRpgMessage, readNativeRpgStatus, readNativeSkills } from './native-rpg.ts';
+import { nativeRpgMessage, readNativeRpgStatus, readNativeSkills, readNativeTalentTree } from './native-rpg.ts';
 import { STORAGE_TRADE_QUERIES } from './storage-trade-query.ts';
 import { TRIAL_ARENA_TRAVEL } from './travel-points.ts';
 
@@ -182,6 +182,9 @@ export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
     'Read the native class directory. arguments:[] only; no selection or spending. No subject/nonce: trusted current-connection transport is checked, not unique request attribution.',
     '/mycli profession list', false, value => Array.isArray(value.classes) && value.classes.length <= 64
       && value.classes.every(id => typeof id === 'string' && subjectId.test(id))),
+  nativeDefinition('skills.tree',
+    'Read current self Vortex talent points, allocated passive nodes and prerequisites. Distinct from learning points/active spells; an empty skills.status learnable list does not cover talents or ascensions. arguments:[] only; never spends points. No subject/nonce: trusted current connection required.',
+    '/mycli skills tree', false, value => readNativeTalentTree(value,new Date().toISOString())!==null),
   nativeDefinition('profession.status',
     'Read the currently selected class; none means unselected, not an unavailable server. arguments:[] only. Never chooses, changes or resets a class.',
     '/mycli profession status', false, value => typeof value.class === 'string' && subjectId.test(value.class)

@@ -8,6 +8,32 @@ const nonnegative = (value: unknown): value is number => number(value) && value 
 const points = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0;
 const id = (value: unknown): value is string => typeof value === 'string' && /^[a-z][a-z0-9_:-]{0,63}$/i.test(value);
 
+export interface NativeTalentTree {
+  observedAt: string; talentPoints: number; allocated: Record<string,string[]>;
+  nodes: Record<string,{id:string;cost:number;prerequisites:string[];displayName?:string;description?:string}>;
+}
+/** Separate Vortex talent currency and passive tree. A skill-list's empty
+ * learnable array does not establish that this tree or ascensions are complete. */
+export function readNativeTalentTree(value:unknown, at:string):NativeTalentTree|null {
+  if(!object(value)||!Number.isFinite(Date.parse(at))||!points(value.talentPoints)
+    ||!object(value.allocated)||Object.keys(value.allocated).length>32
+    ||!object(value.nodes)||Object.keys(value.nodes).length>128)return null;
+  const allocated:Record<string,string[]>={},nodes:NativeTalentTree['nodes']={};
+  for(const [key,raw] of Object.entries(value.allocated)){
+    if(!id(key)||!Array.isArray(raw)||raw.length>128||!raw.every(id))return null;
+    allocated[key]=[...new Set(raw)];
+  }
+  for(const [key,raw] of Object.entries(value.nodes)){
+    if(!id(key)||!object(raw)||raw.id!==key||!points(raw.cost)
+      ||!Array.isArray(raw.prerequisites)||raw.prerequisites.length>32||!raw.prerequisites.every(id))return null;
+    const text=(v:unknown,max:number)=>typeof v==='string'&&v.length<=max&&!/[\u0000-\u001f\u007f]/.test(v)?v:undefined;
+    nodes[key]={id:key,cost:raw.cost,prerequisites:[...new Set(raw.prerequisites)],
+      ...(text(raw.displayName,80)?{displayName:text(raw.displayName,80)}:{}),
+      ...(text(raw.description,512)?{description:text(raw.description,512)}:{})};
+  }
+  return {observedAt:at,talentPoints:value.talentPoints,allocated,nodes};
+}
+
 export interface NativeSkillNode {
   id: string; requiredLevel: number; cost: number; displayName?: string; grantedSpellId?: string;
   description?: string; permanentBonuses?: Record<string, number>;
@@ -159,10 +185,11 @@ export class NativeRpgState {
   private profile: { value: NativeRpgProfile; at: string; source: string } | null = null;
   private learning: { points: number; at: string; skills?: NativeSkills } | null = null;
   private skills: NativeSkills | null = null;
+  private talents: NativeTalentTree | null = null;
   private abilitySnapshot: { ids: string[]; at: string } | null = null;
   private details = new Map<string, NativeSkillDetail>();
   private signature = '';
-  reset(): void { this.profile = null; this.learning = null; this.skills = null; this.abilitySnapshot = null; this.details.clear(); this.signature = ''; }
+  reset(): void { this.profile = null; this.learning = null; this.skills = null; this.talents = null; this.abilitySnapshot = null; this.details.clear(); this.signature = ''; }
   skillDetail(id: string): NativeSkillDetail | null { return this.details.get(id) ?? null; }
   hasInvocationInfo(id?: string): boolean { return id ? this.details.has(id) : this.details.size > 0; }
   identity(): { available: boolean; classId?: string } | null {
@@ -175,6 +202,12 @@ export class NativeRpgState {
   }
   chat(text: string, at = new Date().toISOString()): boolean {
     const value = nativeRpgMessage(text); if (!value) return false;
+    const tree=readNativeTalentTree(value,at);
+    if(tree){
+      if(!this.profile?.value.available||!this.profile.value.classId||this.profile.value.classId==='none')return false;
+      const changed=JSON.stringify(this.talents&&{...this.talents,observedAt:''})!==JSON.stringify({...tree,observedAt:''});
+      this.talents=tree;return changed;
+    }
     const invocations=readNativeSkillInvocations(value,at);
     if(invocations){
       for(const detail of invocations){this.details.delete(detail.id);this.details.set(detail.id,detail);}
@@ -207,7 +240,7 @@ export class NativeRpgState {
   }
   private update(value: NativeRpgProfile, at: string, source: string): boolean {
     const prior = this.profile?.value;
-    if (!value.available || prior?.classId !== value.classId) { this.learning = null; this.skills = null; this.abilitySnapshot = null; this.details.clear(); }
+    if (!value.available || prior?.classId !== value.classId) { this.learning = null; this.skills = null; this.talents = null; this.abilitySnapshot = null; this.details.clear(); }
     if (value.skillIds) this.abilitySnapshot = { ids: value.skillIds, at };
     if (value.skillPoints !== undefined && this.learning?.points !== value.skillPoints)
       this.learning = { points: value.skillPoints, at };
@@ -250,6 +283,8 @@ export class NativeRpgState {
         + '。mc_skills 读完整列表；mc_query {"query":"skills.info","arguments":["技能ID"]} 查目标/效果/消耗。已学不等于已编排，mc_combat_tactic 可按当前条件组合；发送不等于生效。' : '')
       + ([...this.details.values()].some(d => d.invocation === 'command') ? '\n已查专用入口（不是 /mycli cast）：'
         + [...this.details.values()].filter(d => d.invocation === 'command').slice(-4).map(d => `${d.id} → ${d.command}（${d.observedAt}）`).join('；') : '')
+      + '\n[职业成长] '+(this.talents?`天赋点 ${this.talents.talentPoints}（${this.talents.observedAt}）；已分配 ${Object.values(this.talents.allocated).reduce((n,a)=>n+a.length,0)} 项，目录 ${Object.keys(this.talents.nodes).length} 项。`:'天赋点与天赋树尚未读取。')
+      + '学习点与天赋点独立；学习候选为空不表示天赋或职业进阶已完成。mc_query skills.tree 读天赋；profession.info 加本人职业ID读成长/进阶条件；单项 skills.info。被动无需施法，按目标选择后才用服务端明确的 learn/进阶入口，回查实际点数和能力。'
       + (p.guidance ? '\n服务端建议数据（沿用本次状态观察时间，未执行）：' + JSON.stringify(p.guidance) : '');
   }
   /** Connection-local, class-bound list; no disk history, command or learned conclusion. */
@@ -268,7 +303,7 @@ export class NativeRpgState {
       : s?.common.includes(skillId) ? 'common-available' : s?.learnable.includes(skillId) ? 'learnable-in-last-list' : 'not-listed';
     return '[本人职业技能观察；可用与编排不同，未执行任何操作]\n' + JSON.stringify({ classId: this.profile.value.classId,
       available, availableObservedAt: current.at, source: current.source,
-      lastSkillsList: s, ...(skillId ? { id: skillId, category } : {}), ...(invocations.length?{invocations}:{}), cost: null, cooldownRemainingMs: null, effectVerified: null })
+      lastSkillsList: s, talents:this.talents?{observedAt:this.talents.observedAt,talentPoints:this.talents.talentPoints,allocated:this.talents.allocated,nodeCount:Object.keys(this.talents.nodes).length,detailsQuery:'skills.tree'}:null, ...(skillId ? { id: skillId, category } : {}), ...(invocations.length?{invocations}:{}), cost: null, cooldownRemainingMs: null, effectVerified: null })
       + '\n单项效果/目标/消耗用 mc_query {"query":"skills.info","arguments":["技能ID"]}；当前魔力/冷却和已选组合读 mc_combat_tactic。'
       + '先按单项 command 区分 mc_cast 施法和专用命令；被动节点无需施放。规则/程序可由 Agent 读说明后编排；未编排不自动施放，实际效果查服务端回执。';
   }

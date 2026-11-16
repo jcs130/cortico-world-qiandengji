@@ -156,7 +156,7 @@ describe('explicit Qiandengji read-only server query definitions', () => {
   });
   it('exposes only the reviewed subset through the optional server engine hook', () => {
     expect(QIANDENGJI_SERVER_QUERIES.map(item => item.id)).toEqual(['guild.exam.promotion', 'guild.exam.status', 'guild.exam.info', 'trial.status', 'status', 'skills.status',
-      'profession.list', 'profession.status', 'profession.info', 'skills.info', 'dungeon.list', 'dungeon.status', 'dungeon.info',
+      'profession.list', 'skills.tree', 'profession.status', 'profession.info', 'skills.info', 'dungeon.list', 'dungeon.status', 'dungeon.info',
       'storage.inventory', 'storage.stash', 'trade.shop.list', 'trade.recycle.list', 'trade.wallet',
       'trade.recycle.status', 'trade.auction.list', 'trade.auction.mine', 'trade.auction.info']);
     const engine = Object.create(QiandengjiEngine.prototype) as any;
