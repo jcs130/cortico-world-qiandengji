@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.100
+
+- Pin the idle navigation fix for unloaded chunks in core preview.97.
+
 ## 0.4.1-rc.71-preview.99
 
 - Pin core preview.96 health-aware descent, cumulative damage costs and arrival/reflex ownership; no server rules change.

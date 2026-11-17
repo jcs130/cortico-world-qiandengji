@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.96",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.96-8574b269.tgz",
-  "sha256": "8574b269e89c56f0dc5dc6b416359af4c35dd5481463f3c6196852388f56b53f",
+  "version": "0.5.7-rc.160-preview.97",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.97-0c9eb8de.tgz",
+  "sha256": "0c9eb8de64248812b2b3f73c8eee639183a14c9c241629ced5c67cc89905b4f6",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "f51fd9d927a161a81102600cb39ac4b5ac3997fa",
-  "integrationBranch": "codex/navigation-risk-20261117",
+  "sourceCommit": "d6cdc58982c636d536608aaf602d445525f99879",
+  "integrationBranch": "fix/idle-roam-unloaded-block-20261118",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,6 +13,6 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Health-aware cumulative descent costs and verified landing ownership; no host or model-specific rules.",
-  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/292"
+  "rebuildNote": "Exclude coordinate-less native pathfinder blocks from idle movement.",
+  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/301"
 }
