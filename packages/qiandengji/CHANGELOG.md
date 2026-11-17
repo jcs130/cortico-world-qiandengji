@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.83
+
+- Pin core preview.95 plugin merchant menu lifecycle repair; no server rules change.
+
 ## 0.5.0-rc.50-preview.82
 
 - Pin core preview.94 action evidence and neutral position-change contract. No server rules or body execution changes.

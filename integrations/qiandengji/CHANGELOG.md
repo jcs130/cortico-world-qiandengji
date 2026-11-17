@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.98
+
+- Pin core preview.95 plugin merchant menu lifecycle repair; no server rules change.
+
 ## 0.4.1-rc.71-preview.97
 
 - Pin core preview.94 action evidence and neutral position-change contract. No server rules or body execution changes.

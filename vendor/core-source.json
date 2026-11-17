@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.94",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.94-ccbba5f5.tgz",
-  "sha256": "ccbba5f57ad5982d944edf3ac0e3d603127cccffb04d5d1538289b17806fad12",
+  "version": "0.5.7-rc.160-preview.95",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.95-6b177f07.tgz",
+  "sha256": "6b177f07b31543554c76b340f50198fe6128800abd26fabcb0bf802361c6f161",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "e951f6c77b03f67be34df6e805e46293ad0e82c1",
-  "integrationBranch": "codex/action-causality-20261117",
+  "sourceCommit": "7476f8d74cba7dd12e7ce1317eb75c6ead67fcb8",
+  "integrationBranch": "codex/plugin-merchant-window-20261117",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,6 +13,6 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Native action attribution and bounded execution evidence; server-originated position changes have no inferred initiator.",
+  "rebuildNote": "Preserve plugin NPC menus, independent of vanilla merchant trade semantics; cancellation and listener ownership remain explicit.",
   "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/289"
 }
