@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.95
+
+- Consume core preview.92: retain listed combat probe inputs across asynchronous model turns and reloads, and return expired samples as recoverable domain rejections. No change to live tactic adoption, body actions or server rules.
+
 ## 0.4.1-rc.71-preview.94
 
 - Pin core preview.91 and its executable trajectory scoring schemas. No separate learning executor or server rule is added.

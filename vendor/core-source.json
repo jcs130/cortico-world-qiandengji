@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.91",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.91-e14f7685.tgz",
-  "sha256": "e14f7685befa63ad5bc694af5ae4245dd9f8a57ade864c981191ae9d3a70e038",
+  "version": "0.5.7-rc.160-preview.92",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.92-7681056d.tgz",
+  "sha256": "7681056d7f85b9f23bb3784db8b572d7d712bdf6c9a09ede60a5bda4b64cc477",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "f1a2eadddb6c4c657865afe3805bf47e3ab50a9f",
-  "integrationBranch": "codex/trajectory-tool-contract-20261117",
+  "sourceCommit": "fe53cf605f008382daf7f18e355e6ba52f81608d",
+  "integrationBranch": "codex/combat-probe-retention-20261117",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,6 +13,6 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Executable evaluation input schemas reused by scoped host tools; no game or model loop in core.",
-  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/277"
+  "rebuildNote": "Bounded historical combat probe leases and domain-specific recovery. No game or model loop added.",
+  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/281"
 }
