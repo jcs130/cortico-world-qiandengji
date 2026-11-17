@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.81
+
+- Pin core preview.93 and its public gameplay memory evidence contract. No server rules or body execution changes.
+
 ## 0.5.0-rc.50-preview.80
 
 - Consume core preview.92: retain listed combat probe inputs across asynchronous model turns and reloads, and return expired samples as recoverable domain rejections. No change to live tactic adoption, body actions or server rules.
