@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.93",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.93-0d570694.tgz",
-  "sha256": "0d57069414c0768a515b756ed6ed96a092c5786ad515f0cc5c4308cdf2c05648",
+  "version": "0.5.7-rc.160-preview.94",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.94-ccbba5f5.tgz",
+  "sha256": "ccbba5f57ad5982d944edf3ac0e3d603127cccffb04d5d1538289b17806fad12",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "e5a9b3a461a2fdf4d64d3ffa82569965add835e8",
-  "integrationBranch": "codex/game-memory-integration-20261117",
+  "sourceCommit": "e951f6c77b03f67be34df6e805e46293ad0e82c1",
+  "integrationBranch": "codex/action-causality-20261117",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,6 +13,6 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Public source-owned gameplay memory normalization. No runtime or server behavior changes.",
-  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/284"
+  "rebuildNote": "Native action attribution and bounded execution evidence; server-originated position changes have no inferred initiator.",
+  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/289"
 }

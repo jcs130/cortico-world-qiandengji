@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.82
+
+- Pin core preview.94 action evidence and neutral position-change contract. No server rules or body execution changes.
+
 ## 0.5.0-rc.50-preview.81
 
 - Pin core preview.93 and its public gameplay memory evidence contract. No server rules or body execution changes.
