@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.92",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.92-7681056d.tgz",
-  "sha256": "7681056d7f85b9f23bb3784db8b572d7d712bdf6c9a09ede60a5bda4b64cc477",
+  "version": "0.5.7-rc.160-preview.93",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.93-0d570694.tgz",
+  "sha256": "0d57069414c0768a515b756ed6ed96a092c5786ad515f0cc5c4308cdf2c05648",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "fe53cf605f008382daf7f18e355e6ba52f81608d",
-  "integrationBranch": "codex/combat-probe-retention-20261117",
+  "sourceCommit": "e5a9b3a461a2fdf4d64d3ffa82569965add835e8",
+  "integrationBranch": "codex/game-memory-integration-20261117",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,6 +13,6 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Bounded historical combat probe leases and domain-specific recovery. No game or model loop added.",
-  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/281"
+  "rebuildNote": "Public source-owned gameplay memory normalization. No runtime or server behavior changes.",
+  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/284"
 }
