@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.95",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.95-6b177f07.tgz",
-  "sha256": "6b177f07b31543554c76b340f50198fe6128800abd26fabcb0bf802361c6f161",
+  "version": "0.5.7-rc.160-preview.96",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.96-8574b269.tgz",
+  "sha256": "8574b269e89c56f0dc5dc6b416359af4c35dd5481463f3c6196852388f56b53f",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "7476f8d74cba7dd12e7ce1317eb75c6ead67fcb8",
-  "integrationBranch": "codex/plugin-merchant-window-20261117",
+  "sourceCommit": "f51fd9d927a161a81102600cb39ac4b5ac3997fa",
+  "integrationBranch": "codex/navigation-risk-20261117",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,6 +13,6 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Preserve plugin NPC menus, independent of vanilla merchant trade semantics; cancellation and listener ownership remain explicit.",
-  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/289"
+  "rebuildNote": "Health-aware cumulative descent costs and verified landing ownership; no host or model-specific rules.",
+  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/292"
 }

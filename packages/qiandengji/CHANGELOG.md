@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.84
+
+- Pin core preview.96 health-aware descent, cumulative damage costs and arrival/reflex ownership; no server rules change.
+
 ## 0.5.0-rc.50-preview.83
 
 - Pin core preview.95 plugin merchant menu lifecycle repair; no server rules change.
