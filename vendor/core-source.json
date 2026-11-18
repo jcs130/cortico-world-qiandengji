@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.98",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.98-eb93ab78.tgz",
-  "sha256": "eb93ab789265555f42da6a9c09d6f325905cc64b86dc13ce9c63dbdbfa41911c",
+  "version": "0.5.7-rc.160-preview.99",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.99-2552c0eb.tgz",
+  "sha256": "2552c0eb57e65b4cd1c162b3a231cd4749b51a571d99511a58a6315923c81754",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "019c7d9fa288a79d92b55116c8d6f0bae98114fa",
-  "integrationBranch": "fix/roam-start-corridor-20261118",
+  "sourceCommit": "ecf4c46cd2548c7175791be1ed840cf7db71c15f",
+  "integrationBranch": "fix/trajectory-draft-feedback-20261118",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,6 +13,6 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Allow verified single-cell departures from shallow water and reject invalidated inland idle routes.",
-  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/306"
+  "rebuildNote": "Reject invalid trajectory scoring pages at entry and preserve the worker’s original evidence and accepted pages.",
+  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/309"
 }
