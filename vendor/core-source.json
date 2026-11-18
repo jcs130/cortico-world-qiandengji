@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.99",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.99-2552c0eb.tgz",
-  "sha256": "2552c0eb57e65b4cd1c162b3a231cd4749b51a571d99511a58a6315923c81754",
+  "version": "0.5.7-rc.160-preview.100",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.100-2406ec41.tgz",
+  "sha256": "2406ec417d8742afa4e4e211545e757961aa586cddf48c6b9ea3b9e87f176232",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "ecf4c46cd2548c7175791be1ed840cf7db71c15f",
-  "integrationBranch": "fix/trajectory-draft-feedback-20261118",
+  "sourceCommit": "e3585e5b340160c39188d3e5ac0db8a46dba4b06",
+  "integrationBranch": "codex/decision-facts-20261118",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,6 +13,6 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Reject invalid trajectory scoring pages at entry and preserve the worker’s original evidence and accepted pages.",
-  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/309"
+  "rebuildNote": "Distinguish resource targets in compact action contracts, expose material budget evidence, and compare resource-acquisition methods in a versioned Harness2 fixture.",
+  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/310"
 }

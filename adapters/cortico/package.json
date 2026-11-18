@@ -1,6 +1,6 @@
 {
   "name": "cortico-world-minecraft-agent",
-  "version": "0.4.1-rc.71-preview.95",
+  "version": "0.4.1-rc.71-preview.96",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -43,7 +43,7 @@
     "node": ">=22"
   },
   "dependencies": {
-    "agent-mc-world": "^0.5.7-rc.160-preview.99"
+    "agent-mc-world": "^0.5.7-rc.160-preview.100"
   },
   "peerDependenciesMeta": {
     "cortico": {

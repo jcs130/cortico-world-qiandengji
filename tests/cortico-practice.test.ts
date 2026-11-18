@@ -24,6 +24,8 @@ describe('Cortico isolated learning adapter',()=>{
       const tool=world.tools().find(t=>t.name==='mymc_practice')!;
       expect(tool.learningCall?.({op:'start'})).toBe(true);expect(tool.readOnlyCall?.({op:'start'})).toBe(false);
       expect(JSON.parse((await tool.handler({op:'cases'},{role:'learning',log:host.log}) as any).text)).toMatchObject([{id:'water-edge'}]);
+      const help=JSON.parse((await tool.handler({op:'help'},{role:'learning',log:host.log}) as any).text);
+      expect(help.environments).toContainEqual({id:'resource-acquisition',capability:expect.stringContaining('inventory delta')});
       expect(reads).toBe(1);expect(calls).toBe(0);
       expect(practiceExecution('recorded-job','completed')).toMatchObject({id:'harness2:recorded-job',terminal:true,goalCompleted:false});
     }finally{await world.stop();rmSync(directory,{recursive:true,force:true});}

@@ -60,10 +60,11 @@ describe('current public Cortico World contract',()=>{
   it('uses only public cognition fields and discards a result after local cancellation',async()=>{
     let finish!:(reply:{text:string})=>void;const request=vi.fn(()=>new Promise<{text:string}>(resolve=>{finish=resolve;}));
     const model=new CorticoMethodCognition(()=>({request})),controller=new AbortController();
-    const running=model.generate({task:'isolated fixture'},controller.signal);await Promise.resolve();
+    const mission={id:'test',stage:'propose',mission:'isolated fixture',files:{}};
+    const running=model.generate(mission,controller.signal);await Promise.resolve();
     expect(Object.keys(request.mock.calls[0][0]).sort()).toEqual(['brief','hint','tools']);expect(request.mock.calls[0][0].hint).toEqual({rounds:1});
     controller.abort();await expect(running).rejects.toThrow('cancelled');expect(model.status()).toEqual({inFlight:true,cancellation:'local-wait-only'});
-    await expect(model.generate({},new AbortController().signal)).rejects.toThrow('still in flight');
+    await expect(model.generate(mission,new AbortController().signal)).rejects.toThrow('still in flight');
     finish({text:'{"notes":"late reply"}'});await Promise.resolve();await Promise.resolve();expect(model.status().inFlight).toBe(false);
   });
 });

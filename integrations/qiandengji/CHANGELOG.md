@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.103
+
+- Consume the shared resource decision contracts and current material evidence; the World provides the linked Harness2 resource practice through its existing interface.
+
 ## 0.4.1-rc.71-preview.102
 
 - Pin the shared Minecraft core with immediate, actionable trajectory scoring feedback.
