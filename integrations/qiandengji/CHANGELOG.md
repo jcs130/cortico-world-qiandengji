@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.105
+
+Consume the shared HUD event admission and unread-event fixes.
+
 ## 0.4.1-rc.71-preview.104
 
 - Consume core preview.101 for bounded, atomic multi-step input corrections.
