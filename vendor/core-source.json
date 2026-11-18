@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.101",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.101-3d034749.tgz",
-  "sha256": "3d03474904776d20acc215a2fedc1cb18473c8cf6db4eaf0a24de5d3ab29f0e3",
+  "version": "0.5.7-rc.160-preview.103",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.103-eaad12ba.tgz",
+  "sha256": "eaad12ba041f1e8bddd648b35b303fc77ca89dcdf25e0c8886496666ed217445",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "353c2e772ac7f809f9233ce573f7c705469c32bc",
-  "integrationBranch": "fix/batch-skill-corrections-20261118",
+  "sourceCommit": "4a9f5255ae4722cad8acfaacadeb13c239a1bf6d",
+  "integrationBranch": "fix/observation-attention-20261119",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Preserve the original body queue and report independent invalid skill steps in the same structured and readable receipt."
+  "rebuildNote": "Admit HUD stage, progress and deadline changes at the observation boundary."
 }

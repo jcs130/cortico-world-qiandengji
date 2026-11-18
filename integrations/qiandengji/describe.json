@@ -1370,7 +1370,7 @@
                 },
                 "pick": {
                   "type": "string",
-                  "description": "用于 enchant(同 id 的几件里挑哪一件:写清单括号里的字(「无限」「效率IV」,英文附魔 id 也认);不写 = 撞上哪件算哪件。按内容匹配,不是序号,存掉一件不影响其余几件怎么写) / anvil(同 id 的几件里挑哪一件:写清单括号里的字(「无限」「效率IV」,英文附魔 id 也认);不写 = 撞上哪件算哪件。按内容匹配,不是序号,存掉一件不影响其余几件怎么写) / grindstone / equip / toss / stow / take"
+                  "description": "用于 enchant(同 id 的几件里挑哪一件:写清单括号里的字(「无限」「效率IV」,英文附魔 id 也认);不写 = 撞上哪件算哪件。按内容匹配,不是序号,存掉一件不影响其余几件怎么写) / anvil(同 id 的几件里挑哪一件:写清单括号里的字(「无限」「效率IV」,英文附魔 id 也认);不写 = 撞上哪件算哪件。按内容匹配,不是序号,存掉一件不影响其余几件怎么写) / grindstone / equip / toss(按显示名、耐久或附魔子串筛选同 ID 的物品) / stow / take"
                 },
                 "op": {
                   "type": "string",
@@ -3969,7 +3969,8 @@
                       },
                       "pick": {
                         "type": "string",
-                        "minLength": 1
+                        "minLength": 1,
+                        "description": "按显示名、耐久或附魔子串筛选同 ID 的物品"
                       },
                       "target": {
                         "type": "string",

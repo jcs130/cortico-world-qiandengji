@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.90
+
+Consume the shared HUD event admission and unread-event fixes.
+
 ## 0.5.0-rc.50-preview.89
 
 - Consume core preview.101 for bounded, atomic multi-step input corrections.
