@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.101
+
+- Use core preview.98 for grounded shallow-water departures during idle roaming.
+
 ## 0.4.1-rc.71-preview.100
 
 - Pin the idle navigation fix for unloaded chunks in core preview.97.

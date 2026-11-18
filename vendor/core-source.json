@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.97",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.97-0c9eb8de.tgz",
-  "sha256": "0c9eb8de64248812b2b3f73c8eee639183a14c9c241629ced5c67cc89905b4f6",
+  "version": "0.5.7-rc.160-preview.98",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.98-eb93ab78.tgz",
+  "sha256": "eb93ab789265555f42da6a9c09d6f325905cc64b86dc13ce9c63dbdbfa41911c",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "d6cdc58982c636d536608aaf602d445525f99879",
-  "integrationBranch": "fix/idle-roam-unloaded-block-20261118",
+  "sourceCommit": "019c7d9fa288a79d92b55116c8d6f0bae98114fa",
+  "integrationBranch": "fix/roam-start-corridor-20261118",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,6 +13,6 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Exclude coordinate-less native pathfinder blocks from idle movement.",
-  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/301"
+  "rebuildNote": "Allow verified single-cell departures from shallow water and reject invalidated inland idle routes.",
+  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/306"
 }
