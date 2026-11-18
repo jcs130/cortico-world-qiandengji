@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.104
+
+- Consume core preview.101 for bounded, atomic multi-step input corrections.
+
 ## 0.4.1-rc.71-preview.103
 
 - Consume the shared resource decision contracts and current material evidence; the World provides the linked Harness2 resource practice through its existing interface.

@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.89
+
+- Consume core preview.101 for bounded, atomic multi-step input corrections.
+
 ## 0.5.0-rc.50-preview.88
 
 - Consume the shared resource decision contracts and current material evidence; the World provides the linked Harness2 resource practice through its existing interface.

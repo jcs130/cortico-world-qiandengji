@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.100",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.100-2406ec41.tgz",
-  "sha256": "2406ec417d8742afa4e4e211545e757961aa586cddf48c6b9ea3b9e87f176232",
+  "version": "0.5.7-rc.160-preview.101",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.101-3d034749.tgz",
+  "sha256": "3d03474904776d20acc215a2fedc1cb18473c8cf6db4eaf0a24de5d3ab29f0e3",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "e3585e5b340160c39188d3e5ac0db8a46dba4b06",
-  "integrationBranch": "codex/decision-facts-20261118",
+  "sourceCommit": "353c2e772ac7f809f9233ce573f7c705469c32bc",
+  "integrationBranch": "fix/batch-skill-corrections-20261118",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,6 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Distinguish resource targets in compact action contracts, expose material budget evidence, and compare resource-acquisition methods in a versioned Harness2 fixture.",
-  "pullRequest": "https://github.com/jcs130/minecraft-ai-friend/pull/310"
+  "rebuildNote": "Preserve the original body queue and report independent invalid skill steps in the same structured and readable receipt."
 }
