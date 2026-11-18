@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.102
+
+- Pin the shared Minecraft core with immediate, actionable trajectory scoring feedback.
+
 ## 0.4.1-rc.71-preview.101
 
 - Use core preview.98 for grounded shallow-water departures during idle roaming.
