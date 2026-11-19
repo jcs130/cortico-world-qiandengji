@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.95
+
+Mineflayer and Java expose inbox reads and review through the shared core contract. Marking messages as reviewed updates the inbox without taking game movement control.
+
 ## 0.5.0-rc.50-preview.93
 
 Expose both Java player slot identifiers. The optional server pack can read stash capacity and category pages in a single query.

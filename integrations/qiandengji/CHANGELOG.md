@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.112
+
+Audited the live game tools against their effects. Scouting leaves queued actions and ongoing methods alone. A rejected background command preserves the current interaction. Reviewing inbox messages and isolated practice can proceed without taking control of movement.
+
 ## 0.4.1-rc.71-preview.111
 
 Minecraft scripts can wait for a bounded number of ticks. Action help now explains how to turn by angle, and tunnel receipts identify the support cell when scaffold placement cannot be confirmed.
