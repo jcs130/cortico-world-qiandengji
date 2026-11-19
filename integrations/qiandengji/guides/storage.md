@@ -1,6 +1,13 @@
-来源：AgentFriend 当前 `DungeonManager.stashCommand`、`PagedPersonalStash`（2026-11-07核对）。以本次连接的服务端回执为准。整理的结果是随身空格增加、所需装备仍保留；说要整理或把物品倒回原处不算完成。
+来源：AgentFriend 的 `DungeonManager.stashCommand`、`PagedPersonalStash`，以及 2026-11-19 提交 `bdb36e357` 的 `InventoryBatch`、`InventoryTidy`。以本次连接的服务端回执为准。实际整理后看随身空格与所需装备是否保留。
 
 ## 随身背包一键腾格
+
+千灯纪支持两种批量处理。按下列示例单独传 `query` 即可发起预览；仅在已经拿到请求号、需要续读回执时单独传 `{"requestId":"返回的原ID"}`。`storage.inventory` 查询槽位清单，不接收聊天命令。
+
+- `mymc_query {"query":"storage.clean.preview"}` 预览合堆和销毁无特殊物品数据的普通杂物。看 `wouldDiscard` 的品种及数量和 `plannedFreedSlots`。普通石头或泥土也可能是建材，若还要用可选存箱。有需要时，执行 `/mycli inventory clean --json` 会立即重新检查并实际销毁当前符合条件的物品，没有金币收益。
+- `mymc_query {"query":"storage.store.preview"}` 一次预览把符合条件的多余物资放入十页个人箱。看 `wouldStore`、`plannedItems`、`plannedFreedSlots`、`quotedMana` 和剩余容量不足的件数。不用逐页翻箱。有收益且符合当前目标时，用 `/mycli inventory store --json`，按回包的 `moved`、`freedSlots`、`manaSpent` 核对实际转入量与费用。卖装备仍须单独报价，公会捐献是把物资交给其他人的独立选择。
+
+这两个预览固定带 `--dry-run`。新回执 `MC_INVENTORY_BATCH` 的预览 `freedSlots` 恒为 0；预计格数在 `plannedFreedSlots`。执行用当时的背包，预览编号不能锁定物品。普通联网角色的快捷栏 0–8、穿戴和副手受保护；服务器托管居民有不同的槽位范围。下界岩不在这版销毁白名单中。预计腾格为零时无需重复同一预览；确需处理某个受保护的快捷栏整堆时可按下文读槽并明确转存。遇到 `trade_pending`、`transfer_unverified` 或保存结果未知，应先按原操作回执核查。服务器若尚无新命令，仍可使用下面的整理入口。
 
 只想腾格时，可以直接用 `mymc_query {"query":"storage.tidy.preview","arguments":["discard-common"]}` 看服务器预计释放几格、准备销毁什么。省略 arguments 只预览合堆。预计收益为零时，重复合堆也腾不出格子。
 

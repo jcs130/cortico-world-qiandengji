@@ -82,6 +82,49 @@ const tidyPreview: ServerQueryDefinition = {
   },
 };
 
+// InventoryBatch receipts are delivered to the player, carry a UUID rather
+// than a username, and do not echo the client's query ID. A write rejection
+// has no dryRun field either: leave that message visible as a server notice.
+const playerUuidPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+const itemId = /^minecraft:[a-z0-9_]+$/;
+const slots = (n: unknown): n is number => integer(n) && Number(n) <= 36;
+
+export function inventoryBatchPreviews(playerUuid?: string): ServerQueryDefinition[] {
+  return (['clean', 'store'] as const).map(action => ({
+    id: `storage.${action}.preview`,
+    description: action === 'clean'
+      ? '一键整理本人随身背包并清理普通杂物的只读预览。看预计销毁的物品、合堆数量和预计腾格；不删除物品、不卖装备。arguments:[]。'
+      : '一次预览把随身多余物资存入十页个人箱，查看可转入的物品和数量、预计腾格、容量和远程魔力费用。arguments:[]。不转移、不捐献、不扣费。',
+    argumentsSchema: noArgs,
+    command: args => args.length ? null : `/mycli inventory ${action} --dry-run --json`,
+    matchReply(text, args, username) {
+      if (args.length || !username || !playerUuid || !playerUuidPattern.test(playerUuid)) return null;
+      const v = json(text, 'MC_INVENTORY_BATCH');
+      if (!v || v.schemaVersion !== 1 || v.action !== action || typeof v.playerUuid !== 'string'
+        || v.playerUuid.toLowerCase() !== playerUuid.toLowerCase() || v.serverOperator === true || v.changed === true || v.outcomeUnknown === true
+        || v.success !== true || v.reason !== 'preview' || v.dryRun !== true || v.freedSlots !== 0
+        || !slots(v.plannedFreedSlots)) return null;
+      const result = { action, playerUuid: v.playerUuid, dryRun: true, freedSlots: 0, plannedFreedSlots: v.plannedFreedSlots };
+      if (action === 'clean') {
+        if (v.changed !== false || v.automatic !== false || v.discardCommon !== true || v.serverOperator !== false
+          || typeof v.requestId !== 'string' || !v.requestId || !slots(v.beforeOccupied) || !slots(v.afterOccupied)
+          || v.beforeOccupied - v.afterOccupied !== v.plannedFreedSlots || !integer(v.mergedItems)
+          || !Array.isArray(v.discarded) || v.discarded.length > 36
+          || !v.discarded.every(row => object(row) && typeof row.id === 'string' && itemId.test(row.id) && integer(row.count, 1))) return null;
+        return { ok: true, data: { ...result, beforeOccupied: v.beforeOccupied, projectedOccupied: v.afterOccupied,
+          plannedMergeItems: v.mergedItems, wouldDiscard: v.discarded.map(({ id, count }) => ({ id, count })), serverRequestId: v.requestId } };
+      }
+      if (v.moved !== 0 || v.manaSpent !== 0 || !integer(v.quotedMana) || !integer(v.leftForCapacity)
+        || !integer(v.leftForUnavailableChest) || !integer(v.plannedItems) || !object(v.items)) return null;
+      const items = Object.entries(v.items);
+      if (items.length > 36 || !items.every(([id, count]) => itemId.test(id) && integer(count, 1))
+        || items.reduce((n, [, count]) => n + Number(count), 0) !== v.plannedItems || v.plannedFreedSlots > Number(v.plannedItems)) return null;
+      return { ok: true, data: { ...result, moved: 0, manaSpent: 0, plannedItems: v.plannedItems, quotedMana: v.quotedMana,
+        leftForCapacity: v.leftForCapacity, leftForUnavailableChest: v.leftForUnavailableChest, wouldStore: v.items } };
+    },
+  }));
+}
+
 function storage(kind: 'inventory' | 'stash'): ServerQueryDefinition {
   const stash = kind === 'stash';
   return { id: `storage.${kind}`, maxReplyParts: stash ? 54 : 36,

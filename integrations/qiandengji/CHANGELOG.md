@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.113
+
+Expose read-only batch clean and store previews for the connected player's inventory. The storage guide explains planned and applied slot changes, protected items, and partial transfers.
+
 ## 0.4.1-rc.71-preview.112
 
 Audited the live game tools against their effects. Scouting leaves queued actions and ongoing methods alone. A rejected background command preserves the current interaction. Reviewing inbox messages and isolated practice can proceed without taking control of movement.

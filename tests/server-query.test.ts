@@ -158,7 +158,7 @@ describe('explicit Qiandengji read-only server query definitions', () => {
     expect(QIANDENGJI_SERVER_QUERIES.map(item => item.id)).toEqual(['guild.exam.promotion', 'guild.exam.status', 'guild.exam.info', 'trial.status', 'status', 'skills.status',
       'profession.list', 'skills.tree', 'profession.status', 'profession.info', 'skills.info', 'dungeon.list', 'dungeon.status', 'dungeon.info',
       'storage.inventory', 'storage.tidy.preview', 'storage.overview', 'storage.stash', 'trade.shop.list', 'trade.recycle.list', 'trade.wallet',
-      'trade.recycle.status', 'trade.auction.list', 'trade.auction.mine', 'trade.auction.info']);
+      'trade.recycle.status', 'trade.auction.list', 'trade.auction.mine', 'trade.auction.info', 'storage.clean.preview', 'storage.store.preview']);
     const engine = Object.create(QiandengjiEngine.prototype) as any;
     expect(engine.serverQueryDefinitions()).toBe(QIANDENGJI_SERVER_QUERIES);
     expect(query('status').command([])).toBe('/mycli status --json');
