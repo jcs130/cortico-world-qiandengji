@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.110
+
+Collision rays include a compass bearing. Tunnel previews report footing and available scaffold materials. Occupied waypoints now explain how to check nearby landing sites or preview excavation.
+
 ## 0.4.1-rc.71-preview.109
 
 Expose a read-only carried inventory tidy preview. Connect the prepared profession spell to the current fast-combat rules and retain addressed adventure gatherings until their server expiry in the decision view.
