@@ -25,6 +25,8 @@ describe('current Cortico World release contract', () => {
   it('takes names, descriptions and JSON schemas from the actual configured tool declarations', () => {
     const worlds = ['none', 'qiandengji'].map(serverPack => MYMC.create(corticoContext({ ...MYMC.defaults(), serverPack } as never)));
     const metadata = describeMymcImplementations(worlds);
+    const practice = metadata.tools.find(tool => tool.name === 'mymc_practice')!;
+    expect(Object.keys(practice).sort()).toEqual(['description', 'name', 'parameters', 'tags']);
     for (const world of worlds) for (const tool of world.tools()) {
       expect(metadata.tools.find(entry => entry.name === tool.name)).toBeDefined();
     }

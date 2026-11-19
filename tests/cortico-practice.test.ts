@@ -1,7 +1,7 @@
 import {describe,it,expect} from 'vitest';
 import {withCorticoPractice,PRACTICE_DEFAULTS} from '../integrations/qiandengji/cortico-practice.ts';
 import {HARNESS2_PRACTICE_TOOL,practiceExecution} from 'agent-mc-world/learning';
-import type {World,WorldHost} from 'agent-mc-world/contracts';
+import {inspectToolCall,toolRequiresBodyControl,type World,type WorldHost} from 'agent-mc-world/contracts';
 import {nullLogger} from 'agent-mc-world/client';
 import {mymcEngineConfig,MYMC_DEFAULTS} from '../integrations/qiandengji/config.ts';
 import {mkdtempSync,rmSync} from 'node:fs';
@@ -14,6 +14,15 @@ function rig(){let started=0,stopped=0;
   return {world,counts:()=>({started,stopped})};
 }
 describe('Cortico isolated learning adapter',()=>{
+  it('reserves no game body and keeps practice mutations outside a research worker’s read-only scope',()=>{
+    const world=withCorticoPractice(rig().world,()=>({...PRACTICE_DEFAULTS,enabled:true}),'');
+    const practice=world.tools().find(tool=>tool.name==='mymc_practice')!;
+    expect(toolRequiresBodyControl(practice)).toBe(false);
+    for(const args of [{op:'start',id:'fixture',methodId:'walk',revision:'a'.repeat(64),task:'Reach the practice target.'},{op:'stage',id:'fixture'},{op:'cancel',id:'fixture'}]){
+      expect(inspectToolCall(practice,practice.name,args)).toMatchObject({valid:true,readOnly:false,backgroundLearning:true,requiresBody:false,dispatched:false});
+    }
+    expect(inspectToolCall(practice,practice.name,{op:'status'})).toMatchObject({valid:true,readOnly:true,requiresBody:false});
+  });
   it('exposes background classifiers and routes case discovery through the original script port without a model call',async()=>{
     const r=rig(),directory=mkdtempSync(join(tmpdir(),'mc-recorded-discovery-'));let calls=0,reads=0;
     r.world.tools=()=>[{name:'mymc_script',description:'fixture',parameters:{},tags:['read'],handler:async args=>{

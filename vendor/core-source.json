@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.106",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.106-ec9ca131.tgz",
-  "sha256": "ec9ca131ce4a1be36701d0c00a0e8e6bb3221d8b792e2e021cdd83a34a3ee5d3",
+  "version": "0.5.7-rc.160-preview.109",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.109-866be684.tgz",
+  "sha256": "866be68460360be2a24f9a9b0e8a3aea008e02e589ef2762aff0a4dbc75e51b9",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "6b558ed9ab95392b73847b908eb428080c725073",
-  "integrationBranch": "fix/informed-route-choice-20261119",
+  "sourceCommit": "c6fccd80969df585d9c45b69925b163128e8780b",
+  "integrationBranch": "fix/tool-body-contract-20261120",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Pin the shared navigation and excavation decision contract."
+  "rebuildNote": "Pin body control, nonintrusive observation, active interface protection and independent resource contracts."
 }

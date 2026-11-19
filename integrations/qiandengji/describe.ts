@@ -44,8 +44,8 @@ export function describeMymcImplementations(worlds: readonly { tools(): ToolDef[
     if (!tools.has(tool.name)) tools.set(tool.name, { name: tool.name, description: tool.description,
       parameters: structuredClone(tool.parameters), tags: [...(tool.tags ?? [])] });
   }
-  const practice={...HARNESS2_PRACTICE_TOOL,name:'mymc_practice',description:HARNESS2_PRACTICE_TOOL.description.replaceAll('mc_script','mymc_script')};
-  tools.set(practice.name,practice);
+  const { tags, description, parameters } = HARNESS2_PRACTICE_TOOL;
+  tools.set('mymc_practice', { name: 'mymc_practice', tags, description: description.replaceAll('mc_script', 'mymc_script'), parameters });
   return { tools: [...tools.values()].sort((a, b) => a.name.localeCompare(b.name)),
     events: [
       ...Object.entries(events).map(([suffix, description]) => ({ type: `mymc.${suffix}`, description })),
