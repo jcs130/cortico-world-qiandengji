@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.114
+
+Personal-stash withdrawals in a body task wait for both a matching server reply and the received inventory stack. Dependent equipment steps can start as soon as both observations arrive.
+
 ## 0.4.1-rc.71-preview.113
 
 Expose read-only batch clean and store previews for the connected player's inventory. The storage guide explains planned and applied slot changes, protected items, and partial transfers.

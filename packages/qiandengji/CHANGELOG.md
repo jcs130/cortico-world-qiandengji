@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.97
+
+Match personal-stash withdrawal receipts by source slot and requested count. Empty, partial and unconfirmed transfers remain distinct.
+
 ## 0.5.0-rc.50-preview.96
 
 Expose the game's batch inventory previews through the shared query catalogue. Consumers can bind the authenticated player's UUID with `qiandengjiServerQueriesForPlayer` to verify receipt ownership.

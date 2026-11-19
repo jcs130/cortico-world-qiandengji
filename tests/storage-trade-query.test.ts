@@ -1,6 +1,16 @@
 import { expect, it, vi } from 'vitest';
 import { ServerQueryLane } from 'agent-mc-world/extension';
-import { STORAGE_TRADE_QUERIES as defs } from '../integrations/qiandengji/engine/storage-trade-query.ts';
+import { STORAGE_TRADE_QUERIES as defs, stashTakeArrival } from '../integrations/qiandengji/engine/storage-trade-query.ts';
+it('matches only the issued stash transfer slot, quantity and exact server reply shape', () => {
+  const match = stashTakeArrival('/mycli arena stash take 92 2')!;
+  expect(match('MC_STASH_TAKE slot=92 id=minecraft:iron_helmet moved=1')).toEqual({ item: 'iron_helmet', moved: 1 });
+  expect(match('MC_STASH_TAKE slot=92 moved=0 reason=empty')).toHaveProperty('rejected');
+  expect(match('MC_STASH_TAKE slot=92 id=minecraft:iron_helmet moved=0')).toHaveProperty('rejected');
+  for (const wrong of ['MC_STASH_TAKE slot=93 id=minecraft:iron_helmet moved=1', 'MC_STASH_TAKE slot=92 id=minecraft:iron_helmet moved=3',
+    '<player> MC_STASH_TAKE slot=92 id=minecraft:iron_helmet moved=1', 'MC_STORAGE_MAGIC id=personal_stash mana=2']) expect(match(wrong)).toBeNull();
+  for (const command of ['hello', '/mycli arena stash list 2', '/mycli arena stash putslot 25 1',
+    '/mycli arena stash take 541', '/mycli arena stash take 92 65']) expect(stashTakeArrival(command)).toBeUndefined();
+});
 const q = (id: string) => defs.find(d => d.id === id)!;
 const setup = (id: string, args: string[] = []) => {
   const terminal = vi.fn(), lane = new ServerQueryLane({ onTerminal: terminal });

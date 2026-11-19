@@ -1,4 +1,21 @@
-import type { ServerQueryDefinition } from 'agent-mc-world/extension';
+import type { InventoryArrivalMatcher, ServerQueryDefinition } from 'agent-mc-world/extension';
+
+/** The personal-stash transfer is a write with no client nonce. Match its source slot and quantity. */
+export function stashTakeArrival(command: string): InventoryArrivalMatcher | undefined {
+  const request = /^\/mycli\s+arena\s+stash\s+take\s+([1-9]\d{0,2})(?:\s+([1-9]\d?))?$/i.exec(command.trim());
+  if (!request) return;
+  const slot = Number(request[1]);
+  const limit = Number(request[2] ?? 64);
+  if (slot > 540 || limit > 64) return;
+  return line => {
+    if (line === `MC_STASH_TAKE slot=${slot} moved=0 reason=empty`) return { rejected: `个人箱槽 ${slot} 已空，未取出物品。` };
+    const receipt = /^MC_STASH_TAKE slot=(\d{1,3}) id=minecraft:([a-z0-9_]+) moved=(\d{1,2})$/.exec(line);
+    if (!receipt || Number(receipt[1]) !== slot) return null;
+    const moved = Number(receipt[3]);
+    if (moved > limit) return null;
+    return moved ? { item: receipt[2], moved } : { rejected: `个人箱槽 ${slot} 实际转入 0 件，先检查随身容量。` };
+  };
+}
 
 // Sources: AgentFriend DungeonManager.stashCommand, ArenaEconomy.reply and
 // PlayerMarket.command. Server rows have no client nonce. The core restricts

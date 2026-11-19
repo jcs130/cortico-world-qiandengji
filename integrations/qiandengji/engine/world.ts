@@ -1,5 +1,6 @@
 import { QIANDENGJI_CAST_TOOL, invokeQiandengjiCast } from './cast-tool.ts';
 import { portableStorageMisuseNote } from './portable-storage.ts';
+import { stashTakeArrival } from './storage-trade-query.ts';
 import { TrialSearchState } from './trial-search.ts';
 import { AdventureGatherings } from './adventure-gatherings.ts';
 import type { SkillCall } from 'agent-mc-world/extension';
@@ -51,6 +52,7 @@ protected readonly maidWrites = new Map<string, MaidWrite>();
 protected releaseMaidIdentity: (()=>void) | null = null;
   constructor(options: MinecraftWorldOptions) { const tactics = new CombatSpells(new CombatTacticBook(options.dataDir ? join(options.dataDir,'minecraft-combat-tactics.json') : null)); super(options, tactics); this.combatSpells = tactics; }
   protected override battlefieldChannel() { return BATTLEFIELD_CHANNEL; }
+  protected override extensionInventoryArrival(command: string) { return stashTakeArrival(command); }
   private playerQueries?: { uuid: string; definitions: typeof QIANDENGJI_SERVER_QUERIES };
   protected override serverQueryDefinitions() {
     const bot = this.bridge?.bot;

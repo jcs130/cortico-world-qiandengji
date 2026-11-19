@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.109",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.109-866be684.tgz",
-  "sha256": "866be68460360be2a24f9a9b0e8a3aea008e02e589ef2762aff0a4dbc75e51b9",
+  "version": "0.5.7-rc.160-preview.110",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.110-497e87d0.tgz",
+  "sha256": "497e87d07f54227fb019be89b58595c2f3095ccd70c9c9cf46c49e3eb01d2be9",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "c6fccd80969df585d9c45b69925b163128e8780b",
-  "integrationBranch": "fix/tool-body-contract-20261120",
+  "sourceCommit": "621dd9f3f9ef44d8942898be195598f3451789fc",
+  "integrationBranch": "fix/confirmed-inventory-command-20261120",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Pin body control, nonintrusive observation, active interface protection and independent resource contracts."
+  "rebuildNote": "Wait for an observed server transfer receipt and the corresponding carried-inventory increment before a dependent step."
 }
