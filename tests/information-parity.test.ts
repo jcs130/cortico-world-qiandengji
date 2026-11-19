@@ -8,18 +8,19 @@ import { JavaMymcWorld } from '../integrations/qiandengji/java-world.ts';
 import { WORLD_DEFAULTS } from '../integrations/qiandengji/config.ts';
 import { MessageInbox } from '../integrations/qiandengji/message-inbox.ts';
 import { nullLogger } from 'agent-mc-world/client';
+import { inspectToolCall, toolRequiresBodyControl } from 'agent-mc-world/contracts';
 import { MC } from '../src/adapters/minecraft.ts';
 
 const dirs: string[] = [];
 const directory = () => { const dir = mkdtempSync(join(tmpdir(), 'world-information-')); dirs.push(dir); return dir; };
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
-it.each(['generic', 'server', 'java', 'compat'] as const)('discovers actual namespaced schemas without a game or host model: %s', async kind => {
+it.each(['generic', 'server', 'java', 'java-server', 'compat'] as const)('discovers actual namespaced schemas without a game or host model: %s', async kind => {
   const dataDir = directory();
   const cfg = { ...structuredClone(WORLD_DEFAULTS), host: 'fixture.test', username: 'visitor' };
   const world = kind === 'generic' ? new GenericMymcWorld({ cfg, dataDir })
     : kind === 'server' ? new MymcWorld({ cfg: { ...cfg, serverPack: 'qiandengji' }, dataDir })
-    : kind === 'java' ? new JavaMymcWorld({ cfg, dataDir })
+    : kind === 'java' || kind === 'java-server' ? new JavaMymcWorld({ cfg: { ...cfg, serverPack: kind === 'java-server' ? 'qiandengji' : 'none' }, dataDir })
     : MC.create({ cfg, dataDir } as any);
   try {
     const tools = world.tools();
@@ -27,6 +28,11 @@ it.each(['generic', 'server', 'java', 'compat'] as const)('discovers actual name
     const help = tools.find(tool => tool.name === `${prefix}_tool_help`)!;
     const messages = tools.find(tool => tool.name === `${prefix}_messages`)!;
     expect(help).toBeDefined(); expect(messages).toBeDefined();
+    expect(toolRequiresBodyControl(messages)).toBe(false);
+    expect(inspectToolCall(messages, messages.name, { id: 'message_1' })).toMatchObject({ valid: true, readOnly: true, requiresBody: false });
+    expect(inspectToolCall(messages, messages.name, { action: 'review', ids: ['message_1'] })).toMatchObject({
+      valid: true, readOnly: false, backgroundLearning: false, requiresBody: false,
+    });
     expect(tools.filter(tool => tool.name === help.name)).toHaveLength(1);
     const result = await help.handler({ name: messages.name, full: true }, { role: 'test', log: nullLogger() });
     expect(JSON.parse((result as any).text).schema).toEqual(messages.parameters);

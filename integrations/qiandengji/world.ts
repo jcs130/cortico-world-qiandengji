@@ -29,7 +29,7 @@ import {
 } from './config.ts';
 import { assertMymcReady } from './guard.ts';
 import { SkillCatalog } from './skill-catalog.ts';
-import { MessageInbox, MESSAGE_TOOL, MESSAGE_PARAMETERS, messageChannel } from './message-inbox.ts';
+import { MessageInbox, MESSAGE_TOOL, messageChannel } from './message-inbox.ts';
 import { startsTrialFight, trialMeleeReadiness } from './trial-readiness.ts';
 import { TrialProgress, trialGoalLimitNote } from './trial-status.ts';
 import { ProspectEvidence } from './prospect-evidence.ts';
@@ -117,10 +117,8 @@ export const MYMC_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [...MINE
     topic: { type: 'string', enum: ['index', ...MYMC_GUIDE_TOPICS.map(({ id }) => id)] },
   }, required: [] },
 }, {
+  ...MESSAGE_TOOL,
   name: 'mymc_messages',
-  tags: ['read', 'write'],
-  description: MESSAGE_TOOL.description,
-  parameters: MESSAGE_PARAMETERS,
 }];
 
 function toMymcEvent<T extends { source: string; type: string; text: string; senderKey?: string }>(event: T): T {
@@ -447,11 +445,7 @@ export class MymcWorld implements World {
           return toMymcText(result.text);
         return this.catalog.readout(typeof args.id === 'string' ? args.id : undefined);
       },
-    }, {
-      ...MYMC_TOOL_DECLS.find((decl) => decl.name === 'mymc_messages')!,
-      readOnlyCall: args => args.action !== 'review',
-      handler: async (args) => this.messages.readout(args),
-    }, {
+    }, this.messages.tool(), {
       ...MYMC_TOOL_DECLS.find((decl) => decl.name === 'mymc_guide')!,
       handler: async (args) => {
         const outcome = readServerGuide(args.topic);
