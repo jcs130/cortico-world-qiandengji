@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.91
+
+Pin the shared Java 1.21 movement correction and idle route observations.
+
 ## 0.5.0-rc.50-preview.90
 
 Consume the shared HUD event admission and unread-event fixes.
