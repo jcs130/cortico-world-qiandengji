@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.109
+
+Expose a read-only carried inventory tidy preview. Connect the prepared profession spell to the current fast-combat rules and retain addressed adventure gatherings until their server expiry in the decision view.
+
 ## 0.4.1-rc.71-preview.108
 
 Expose both Java player slot identifiers. The optional server pack can read stash capacity and category pages in a single query.

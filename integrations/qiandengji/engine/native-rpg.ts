@@ -240,10 +240,14 @@ export class NativeRpgState {
   private skills: NativeSkills | null = null;
   private talents: NativeTalentTree | null = null;
   private abilitySnapshot: { ids: string[]; at: string } | null = null;
+  private prepared: string | null = null;
   private details = new Map<string, NativeSkillDetail>();
   private readonly professionInfo = new NativeProfessionSkillBook();
   private signature = '';
-  reset(): void { this.profile = null; this.learning = null; this.skills = null; this.talents = null; this.abilitySnapshot = null; this.details.clear(); this.professionInfo.clear(); this.signature = ''; }
+  reset(): void { this.profile = null; this.learning = null; this.skills = null; this.talents = null; this.abilitySnapshot = null; this.prepared = null; this.details.clear(); this.professionInfo.clear(); this.signature = ''; }
+  preparedAbility(): string | null {
+    return this.prepared && this.profile?.value.available && this.currentAbilities()?.ids.includes(this.prepared) ? this.prepared : null;
+  }
   skillDetail(id: string): NativeSkillDetail | null { return this.details.get(id) ?? null; }
   hasInvocationInfo(id?: string): boolean { return id ? this.details.has(id) : this.details.size > 0; }
   hasProfessionSkillInfo(skillId: string): boolean { return this.professionInfo.has(skillId); }
@@ -279,6 +283,7 @@ export class NativeRpgState {
       this.learning = { points: skills.skillPoints, at, skills };
       // A list without a bound native identity cannot certify this class's abilities.
       this.skills = this.profile?.value.available ? skills : null;
+      if (this.skills && skills.activeSpell !== undefined) this.prepared = skills.activeSpell || null;
       return changed;
     }
     const detail = readNativeSkillDetail(value, at);
@@ -298,7 +303,8 @@ export class NativeRpgState {
   }
   private update(value: NativeRpgProfile, at: string, source: string): boolean {
     const prior = this.profile?.value;
-    if (!value.available || prior?.classId !== value.classId) { this.learning = null; this.skills = null; this.talents = null; this.abilitySnapshot = null; this.details.clear(); this.professionInfo.clear(); }
+    if (!value.available || prior?.classId !== value.classId) { this.learning = null; this.skills = null; this.talents = null; this.abilitySnapshot = null; this.prepared = null; this.details.clear(); this.professionInfo.clear(); }
+    if (value.available && value.activeSkill !== undefined) this.prepared = value.activeSkill || null;
     if (value.skillIds) this.abilitySnapshot = { ids: value.skillIds, at };
     if (value.skillPoints !== undefined && this.learning?.points !== value.skillPoints)
       this.learning = { points: value.skillPoints, at };
@@ -320,7 +326,7 @@ export class NativeRpgState {
     if (p.nextLevelXp !== undefined) fields.push(`距下级 ${p.nextLevelXp}`);
     const skillPoints = this.learning?.points ?? p.skillPoints;
     if (skillPoints !== undefined) fields.push(`学习点 ${skillPoints}`);
-    if (p.activeSkill !== undefined) fields.push(`当前准备技能 ${p.activeSkill || '未准备'}`);
+    if (this.prepared || p.activeSkill !== undefined || this.skills?.activeSpell !== undefined) fields.push(`当前准备技能 ${this.prepared || '未准备'}`);
     fields.push(p.mana ? `魔力 ${p.mana.current}/${p.mana.max}` : '魔力未知');
     fields.push(p.economy?.available && p.economy.balance !== null ? `服务端余额 ${p.economy.balance}` : '经济未就绪或余额未知');
     if (p.preview) fields.push('服务端标记预览');

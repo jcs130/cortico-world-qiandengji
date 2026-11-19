@@ -56,6 +56,32 @@ const stashOverview: ServerQueryDefinition = {
   },
 };
 
+// InventoryTidy.run emits the same marker for automatic runs and explicit writes.
+// Only a manual, unchanged preview of the requested mode belongs to this read.
+const tidyPreview: ServerQueryDefinition = {
+  id: 'storage.tidy.preview',
+  description: '一键整理本人随身背包前先看预计能腾几格。默认只合堆，arguments:["discard-common"] 同时预览普通杂物的种类和数量，两种查询都不改物品。仓库和 Minepacks 另查。',
+  argumentsSchema: { type: 'array', minItems: 0, maxItems: 1,
+    items: { type: 'string', pattern: '^discard-common$', maxLength: 14 } },
+  command: args => args.length === 0 ? '/mycli inventory tidy --dry-run --json'
+    : args.length === 1 && args[0] === 'discard-common' ? '/mycli inventory tidy --dry-run --discard-common --json' : null,
+  matchReply(text, args, username) {
+    if (!username || args.length > 1 || (args.length === 1 && args[0] !== 'discard-common')) return null;
+    const v = json(text, 'MC_INVENTORY_TIDY');
+    if (!v || v.schemaVersion !== 1 || v.action !== 'tidy' || v.success !== true || v.reason !== 'preview'
+      || v.dryRun !== true || v.automatic !== false || v.changed !== false || v.serverOperator !== false
+      || v.discardCommon !== (args.length === 1) || typeof v.requestId !== 'string' || !v.requestId
+      || typeof v.playerUuid !== 'string' || !v.playerUuid || !integer(v.beforeOccupied) || Number(v.beforeOccupied) > 36
+      || !integer(v.afterOccupied) || !integer(v.freedSlots) || Number(v.beforeOccupied) - Number(v.afterOccupied) !== v.freedSlots
+      || !integer(v.mergedItems) || !Array.isArray(v.discarded) || v.discarded.length > 27
+      || (!v.discardCommon && v.discarded.length > 0)
+      || !v.discarded.every(row => object(row) && typeof row.id === 'string' && /^minecraft:[a-z0-9_]+$/.test(row.id) && integer(row.count, 1))) return null;
+    return { ok: true, data: { source: 'inventory', dryRun: true, playerUuid: v.playerUuid, serverRequestId: v.requestId,
+      beforeOccupied: v.beforeOccupied, projectedOccupied: v.afterOccupied, projectedFreedSlots: v.freedSlots,
+      mergedItems: v.mergedItems, wouldDiscard: v.discarded.map(row => ({ id: row.id, count: row.count })) } };
+  },
+};
+
 function storage(kind: 'inventory' | 'stash'): ServerQueryDefinition {
   const stash = kind === 'stash';
   return { id: `storage.${kind}`, maxReplyParts: stash ? 54 : 36,
@@ -147,5 +173,5 @@ function market(kind: 'list' | 'mine' | 'info'): ServerQueryDefinition {
     } };
 }
 
-export const STORAGE_TRADE_QUERIES: readonly ServerQueryDefinition[] = [storage('inventory'), stashOverview, storage('stash'),
+export const STORAGE_TRADE_QUERIES: readonly ServerQueryDefinition[] = [storage('inventory'), tidyPreview, stashOverview, storage('stash'),
   economy('shop'), economy('recycle'), economy('wallet'), economy('recycle_status'), market('list'), market('mine'), market('info')];

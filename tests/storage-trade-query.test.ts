@@ -15,6 +15,27 @@ const econ = (action: string, rest = {}) => 'MC_ARENA_ECONOMY ' + JSON.stringify
 const item = { id: 'minecraft:iron_sword', quantity: 1, name: '试炼剑', remainingDurability: 123,
   enchantments: [{ id: 'minecraft:sharpness', level: 2 }], componentHash: 'observed-hash', serializedItemBase64: 'x'.repeat(12000) };
 
+it('keeps a carried-inventory cleanup preview distinct from automatic runs, stash sorting and real writes', () => {
+  const preview = { schemaVersion:1, action:'tidy', success:true, reason:'preview', serverOperator:false,
+    requestId:'server-receipt', playerUuid:'fixture-self', dryRun:true, automatic:false, changed:false, discardCommon:true,
+    beforeOccupied:36, afterOccupied:33, freedSlots:3, mergedItems:12, discarded:[{id:'minecraft:gravel',count:56}] };
+  const reply = (overrides = {}) => 'MC_INVENTORY_TIDY ' + JSON.stringify({...preview, ...overrides});
+  const r = setup('storage.tidy.preview',['discard-common']);
+  try {
+    expect(r.send).toHaveBeenCalledWith('/mycli inventory tidy --dry-run --discard-common --json');
+    expect(q('storage.tidy.preview').command([])).toBe('/mycli inventory tidy --dry-run --json');
+    expect(q('storage.tidy.preview').command(['auto','on'])).toBeNull();
+    for (const bad of [{automatic:true},{reason:'unchanged'},{dryRun:false},{changed:true},{serverOperator:true},
+      {action:'stash_tidy'},{discardCommon:false},{freedSlots:4},{afterOccupied:-1},{discarded:[{id:'?',count:-1}]}]) {
+      expect(r.receive(reply(bad))).toBe(false);
+    }
+    expect(r.receive(reply())).toBe(true);
+    expect(r.read().data?.reply).toMatchObject({data:{dryRun:true, projectedFreedSlots:3, wouldDiscard:preview.discarded}});
+    const noTrash = q('storage.tidy.preview').matchReply(reply({discardCommon:false,discarded:[],beforeOccupied:36,afterOccupied:36,freedSlots:0}), [], 'ag_fixture');
+    expect(noTrash).toMatchObject({data:{projectedFreedSlots:0,wouldDiscard:[]}});
+  } finally { r.close(); }
+});
+
 it('reads the complete stash overview in one command, including category pages and separately pending entries', () => {
   const r = setup('storage.overview');
   const overview = {schemaVersion:1, scope:'personal_stash', pageCount:10, pageSize:54, capacity:540,
