@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.106
+
+Pin the shared Java 1.21 movement correction and idle route observations.
+
 ## 0.4.1-rc.71-preview.105
 
 Consume the shared HUD event admission and unread-event fixes.
