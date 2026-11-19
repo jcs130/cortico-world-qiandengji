@@ -5,7 +5,7 @@ import { AdventureGatherings } from './adventure-gatherings.ts';
 import type { SkillCall } from 'agent-mc-world/extension';
 import {ObservedCommandCatalog, serverQueryTool, bindEntityIdentityResolver} from 'agent-mc-world/extension';
 import { observedCommandRoot, observedCommandUsage } from './command-usage.ts';
-import { QIANDENGJI_SERVER_QUERIES } from './server-query.ts';
+import { QIANDENGJI_SERVER_QUERIES, qiandengjiServerQueriesForPlayer } from './server-query.ts';
 import { QIANDENGJI_MAIDS_TOOL, MaidState, maidArguments, maidReadAction, maidSystemReply, maidInventoryAccess } from './maids.ts';
 import { createMaidPort, decodeMaidReply, maidCommand, matchesMaidReply, type MaidCommand, type MaidPort, type MaidReply } from './maid-port.mjs';
 import { type MinecraftWorldOptions, type IdentityObservation } from 'agent-mc-world/extension';
@@ -51,7 +51,14 @@ protected readonly maidWrites = new Map<string, MaidWrite>();
 protected releaseMaidIdentity: (()=>void) | null = null;
   constructor(options: MinecraftWorldOptions) { const tactics = new CombatSpells(new CombatTacticBook(options.dataDir ? join(options.dataDir,'minecraft-combat-tactics.json') : null)); super(options, tactics); this.combatSpells = tactics; }
   protected override battlefieldChannel() { return BATTLEFIELD_CHANNEL; }
-  protected override serverQueryDefinitions() { return QIANDENGJI_SERVER_QUERIES; }
+  private playerQueries?: { uuid: string; definitions: typeof QIANDENGJI_SERVER_QUERIES };
+  protected override serverQueryDefinitions() {
+    const bot = this.bridge?.bot;
+    const uuid = bot?.player?.uuid ?? bot?._client?.uuid;
+    if (!uuid) return QIANDENGJI_SERVER_QUERIES;
+    if (this.playerQueries?.uuid !== uuid) this.playerQueries = { uuid, definitions: qiandengjiServerQueriesForPlayer(uuid) };
+    return this.playerQueries.definitions;
+  }
   protected override combatHealingUrgent(bot: Bot) { return this.selfHealAvailable && this.combatSpells.wantsHeal(bot.health ?? 0); }
   protected override extensionTools(): ToolDef[] { return [...super.extensionTools(),
     {...SERVER_TOOLS[0], handler: async args => this.castSpell(args)},

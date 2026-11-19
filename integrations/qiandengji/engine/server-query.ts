@@ -1,6 +1,6 @@
 import type { ServerQueryDefinition } from 'agent-mc-world/extension';
 import { nativeRpgMessage, readNativeRpgStatus, readNativeSkills, readNativeTalentTree } from './native-rpg.ts';
-import { STORAGE_TRADE_QUERIES } from './storage-trade-query.ts';
+import { inventoryBatchPreviews, STORAGE_TRADE_QUERIES } from './storage-trade-query.ts';
 import { TRIAL_ARENA_TRAVEL } from './travel-points.ts';
 
 /**
@@ -128,7 +128,7 @@ const dungeonList: ServerQueryDefinition = {
   },
 };
 
-export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
+const sharedQueries: readonly ServerQueryDefinition[] = [
   guildExam('promotion'), guildExam('status'), guildExam('info'),
   {
     id: 'trial.status',
@@ -213,3 +213,11 @@ export const QIANDENGJI_SERVER_QUERIES: readonly ServerQueryDefinition[] = [
     'Read a site dungeon description and entry geometry. arguments:["server_observed_id"], one lowercase ASCII ID (letters, digits, underscore or hyphen, max64). Matches the connected recipient and exact dungeon ID. An info response does not establish a current run, cooldown, room clear or successful travel.'),
   ...STORAGE_TRADE_QUERIES,
 ];
+
+export function qiandengjiServerQueriesForPlayer(uuid?: string): readonly ServerQueryDefinition[] {
+  return [...sharedQueries, ...inventoryBatchPreviews(uuid)];
+}
+
+/** Static discovery has no player identity. Account-scoped batch receipts
+ * require the adapter to bind its authenticated body's UUID. */
+export const QIANDENGJI_SERVER_QUERIES = qiandengjiServerQueriesForPlayer();
