@@ -1,5 +1,13 @@
 来源：AgentFriend 当前 `DungeonManager.stashCommand`、`PagedPersonalStash`（2026-11-07核对）。以本次连接的服务端回执为准。整理的结果是随身空格增加、所需装备仍保留；说要整理或把物品倒回原处不算完成。
 
+## 随身背包一键腾格
+
+只想腾格时，可以直接用 `mymc_query {"query":"storage.tidy.preview","arguments":["discard-common"]}` 看服务器预计释放几格、准备销毁什么。省略 arguments 只预览合堆。预计收益为零时，重复合堆也腾不出格子。
+
+- 只合堆可执行 `/mycli inventory tidy --json`。快捷栏、穿戴和带特殊标记的物品受保护。
+- 确认清单里的普通材料都用不上时，`/mycli inventory tidy --discard-common --json` 一次销毁这些材料，没有金币收益。要保留的任务材料可以按整堆存进个人箱；卖装备先走回收报价。
+- 执行后查看本次手动 `MC_INVENTORY_TIDY` 的 `freedSlots` 和 `afterOccupied`。自动整理的 `automatic:true` 是另一笔操作。预览只描述当时的背包，期间有拾取时以执行回执为准。
+
 ## 区分容器
 
 - **个人试炼箱／远程个人仓库**：10页，每页54格，共540格。可以存普通物品，不只是领奖；`putslot` 会跨页找可合并或空的格子。第一页满不代表整个仓库满。

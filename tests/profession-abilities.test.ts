@@ -1,4 +1,5 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
+import { TacticalMinecraftWorld } from 'agent-mc-world/tactics';
 import { parseSkillsPayload, mergeViewerSkillState } from '../integrations/qiandengji/engine/viewer-state.ts';
 import { NativeRpgState } from '../integrations/qiandengji/engine/native-rpg.ts';
 import { CombatSpells } from '../integrations/qiandengji/engine/combat-spells.ts';
@@ -22,6 +23,32 @@ const listing = { available: ['arcane_bolt', 'nova_burst', 'mage_staff_bolt', 'e
   common: ['home', 'starbolt'], learnable: [{ id: 'astral_depth', cost: 2, requiredLevel: 6 }],
   skillPoints: 1, activeSpell: 'nova_burst' };
 const at = '2026-10-29T14:15:00Z';
+
+it('joins the current prepared spell with the actual fast-decision rules across edits and reconnect', () => {
+  const base = vi.spyOn(TacticalMinecraftWorld.prototype, 'requestFacts').mockReturnValue({
+    text:'body', parts:[], snapshotTypes:[], decision:{sampledAtMs:1, state:{ready:true}} });
+  try {
+    const engine = new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
+    const rpg = (engine as any).nativeRpg as NativeRpgState;
+    const combat = (engine as any).combatSpells as CombatSpells;
+    const chosen = 'ember_lance';
+    rpg.packet('mcagent:state', payload({...profession,activeSkill:chosen}),at);
+    const gap = () => engine.requestFacts()?.decision?.state?.preparedSkillWithoutRule;
+    expect(gap()).toMatchObject({spell:chosen, detailQuery:{query:'skills.info',arguments:[chosen]}});
+    expect(combat.getTactic()).toBeNull();
+    combat.setTactic({spells:[chosen],healAtOrBelow:8,rules:[{id:'close',spell:chosen,intent:'close target',when:{within:3}}]});
+    expect(gap()).toBeUndefined();
+    combat.setTactic({spells:[],healAtOrBelow:8,rules:[]});
+    expect(gap()).toMatchObject({spell:chosen});
+    rpg.chat('MC_RPG '+JSON.stringify({...listing,activeSpell:''}),'2026-10-29T14:15:01Z');
+    expect(gap()).toBeUndefined();
+    expect(rpg.brief()).toContain('当前准备技能 未准备');
+    rpg.packet('mcagent:state',payload({...profession,activeSkill:chosen}),'2026-10-29T14:15:02Z');
+    expect(gap()).toMatchObject({spell:chosen});
+    rpg.reset();
+    expect(gap()).toBeUndefined();
+  } finally {base.mockRestore();}
+});
 
 it('projects actual nested profession spells into the same viewer and combat contracts as common abilities', () => {
   const state = parseSkillsPayload('mcagent:state', payload())!;

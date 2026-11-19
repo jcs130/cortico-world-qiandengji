@@ -1,6 +1,7 @@
 import { QIANDENGJI_CAST_TOOL, invokeQiandengjiCast } from './cast-tool.ts';
 import { portableStorageMisuseNote } from './portable-storage.ts';
 import { TrialSearchState } from './trial-search.ts';
+import { AdventureGatherings } from './adventure-gatherings.ts';
 import type { SkillCall } from 'agent-mc-world/extension';
 import {ObservedCommandCatalog, serverQueryTool, bindEntityIdentityResolver} from 'agent-mc-world/extension';
 import { observedCommandRoot, observedCommandUsage } from './command-usage.ts';
@@ -39,6 +40,7 @@ protected selfHealAvailable = false;
 protected readonly combatSpells: CombatSpells;
 protected arenaFloor: { floor: number; total: number } | null = null;
 protected readonly trialSearch = new TrialSearchState();
+  private adventureGatherings?: AdventureGatherings;
 protected readonly observedCommands = new ObservedCommandCatalog();
 protected readonly nativeRpg = new NativeRpgState();
 protected readonly chatPolicy = new ChatPolicyState();
@@ -263,6 +265,9 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
   }
   protected override extensionServerFeedback(text: string): void {
     this.trialSearch.observe(text,this.bridge?.bot?.username??'');
+    if (text.startsWith('MC_COACH ')) {
+      (this.adventureGatherings ??= new AdventureGatherings()).observe(text,this.bridge?.bot?.player?.uuid??this.bridge?.bot?._client?.uuid);
+    }
     const maid=maidSystemReply(text,this.bridge?.bot?.player?.uuid??this.bridge?.bot?._client?.uuid);
     if(maid)this.observeMaidReply(maid);
     this.chatPolicy?.observe(text,this.bridge?.bot?.player?.uuid ?? this.bridge?.bot?._client?.uuid);
@@ -270,23 +275,41 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     const usage = observedCommandUsage(text) ?? observedCommandRoot(text, this.bridge?.bot?.username);
     if (usage) this.observedCommands.note(usage);
   }
+  private tacticReview?: { spell: string; revision: number; missing: boolean };
+  private preparedRuleGap() {
+    const spell = this.nativeRpg.preparedAbility();
+    if (!spell) { this.tacticReview = undefined; return null; }
+    const revision = this.combatSpells.tacticRevision();
+    if (this.tacticReview?.spell !== spell || this.tacticReview.revision !== revision) {
+      const rules = this.combatSpells.getTactic()?.rules ?? [];
+      this.tacticReview = { spell, revision, missing: !rules.some(rule => rule.spell === spell && rule.intent) };
+    }
+    return this.tacticReview.missing ? { spell, tacticRevision: revision,
+      detailQuery: {query:'skills.info', arguments:[spell]}, reviewTool:'mc_combat_tactic' } : null;
+  }
   override requestFacts() {
     const facts = super.requestFacts();
     if (!facts) return facts;
     const observations=facts.decision?.state?.identityObservations;
     const currentTrial=this.trialSearch.facts();
+    const preparedSkillWithoutRule=this.preparedRuleGap();
+    const gatherings=currentTrial.fresh && 'participant' in currentTrial && currentTrial.participant ? [] : this.adventureGatherings?.current() ?? [];
     const companions=this.maids.decisionSummary(Date.now(),Array.isArray(observations)?observations as IdentityObservation[]:[],facts.decisionBoundary);
     const present=companions.map(c=>`${c.name}: ${c.presenceNote}`+(c.entityObservation?` 当前 ${JSON.stringify(c.entityObservation)}`:''));
     const companionParts=[{key:'companions',text:present.length?'[同伴当前观察；旧服务端采样不覆盖此项]\n'+present.join('\n')+'\n'+this.maids.brief():''}].filter(p=>p.text),
       parts=[{key:'currentTrial',text:'[当前试炼；历史成绩不能当作本次通关]\n'+JSON.stringify(currentTrial)},
-        {key:'nativeRpg',text:this.nativeRpg.brief()},{key:'communication',text:this.chatPolicy.brief()}].filter(p=>p.text);
-    return { ...facts, partKeys:[...new Set([...(facts.partKeys??facts.parts?.map(p=>p.key)??[]),'companions','nativeRpg','communication','currentTrial'])],
+        {key:'nativeRpg',text:this.nativeRpg.brief()+(preparedSkillWithoutRule?'\n[战术待评估] 已准备 '+preparedSkillWithoutRule.spell+'，当前战术 v'+preparedSkillWithoutRule.tacticRevision+' 没有它的快决策施法规则。可读 skills.info 核对条件，再决定是否用 mc_combat_tactic 编排。':'')},
+        {key:'adventureGatherings',text:gatherings.length?'[服务器集结公告；报名状态另查] '+JSON.stringify(gatherings):''},
+        {key:'communication',text:this.chatPolicy.brief()}].filter(p=>p.text);
+    return { ...facts, partKeys:[...new Set([...(facts.partKeys??facts.parts?.map(p=>p.key)??[]),'companions','nativeRpg','communication','currentTrial','adventureGatherings'])],
       ...(facts.executionPartKeys?{executionPartKeys:[...new Set([...facts.executionPartKeys,'currentTrial'])]}:{}),
       text: [...companionParts.map(p=>p.text),facts.text,...parts.map(p=>p.text)].join('\n'),
       ...(facts.parts ? { parts: [...companionParts, ...facts.parts, ...parts] } : {}),
       // Delegated execution uses the compact decision state on the supervisor.
       // Preserve ownership and lifecycle there, without expanding the NPC's inventory/history.
       ...(facts.decision?{decision:{...facts.decision,state:{...facts.decision.state,currentTrial,
+        ...(preparedSkillWithoutRule?{preparedSkillWithoutRule}:{}),
+        ...(gatherings.length?{adventureGatherings:gatherings}:{}),
         ...(companions.length?{companionObservations:companions}:{})}}}:{}) };
   }
   protected override extensionChatAudience(text:string,rendered?:string,direction:'incoming'|'outgoing'='outgoing'){
@@ -326,6 +349,7 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
   }
   protected override extensionRespawn() { this.trialSearch.reset(); this.nativeRpg.reset(); this.chatPolicy.reset(); const mana=this.bridge?.agentManaState; if(mana!==undefined)this.combatSpells.noteMana(mana?.current??null); }
   protected override attachExtension(bot: Bot) {
+    this.adventureGatherings = undefined;
     this.maidPort?.close();this.maidPort=null;this.maids.reset();
     this.maidWrites.clear();
     this.releaseMaidIdentity?.();
@@ -341,7 +365,7 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     };
     bot._client.on('custom_payload',onMaid);
     bot._client.once('end',()=>{bot._client.off('custom_payload',onMaid);port?.close();releaseIdentity();
-      if(this.releaseMaidIdentity===releaseIdentity){this.releaseMaidIdentity=null;this.maidPort=null;this.maids.reset();this.maidWrites.clear();}});
+      if(this.releaseMaidIdentity===releaseIdentity){this.releaseMaidIdentity=null;this.maidPort=null;this.maids.reset();this.maidWrites.clear();this.adventureGatherings=undefined;}});
     this.nativeRpg.reset();
     this.chatPolicy.reset();
     this.observedCommands.clear();
