@@ -442,7 +442,8 @@ export class MymcWorld implements World {
       handler: async (args, ctx) => {
         const live = engineTools.find(tool => tool.name === 'mc_skills');
         const result = await live?.handler(args, ctx);
-          if (result && typeof result !== 'string' && (result.meta?.nativeSkillsCurrent === true||result.meta?.nativeSkillRouteObserved === true))
+          if (result && typeof result !== 'string' && (result.meta?.nativeSkillsCurrent === true
+            || result.meta?.nativeSkillRouteObserved === true || result.meta?.nativeProfessionSkillObserved === true))
           return toMymcText(result.text);
         return this.catalog.readout(typeof args.id === 'string' ? args.id : undefined);
       },

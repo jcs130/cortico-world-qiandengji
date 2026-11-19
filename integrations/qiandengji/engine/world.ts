@@ -56,6 +56,7 @@ protected releaseMaidIdentity: (()=>void) | null = null;
     {...SERVER_TOOLS[2], handler: async args => ({
       text: this.nativeRpg.skillsReadout(typeof args.id === 'string' ? args.id : undefined),
       meta: { nativeSkillsCurrent: this.nativeRpg.hasCurrentSkills(),
+        nativeProfessionSkillObserved: typeof args.id === 'string' && this.nativeRpg.hasProfessionSkillInfo(args.id),
         nativeSkillRouteObserved:this.nativeRpg.hasInvocationInfo(typeof args.id==='string'?args.id:undefined) },
     })}, {...QIANDENGJI_MAIDS_TOOL, handler: (args,ctx) => this.invokeMaidTool(args,ctx)}]; }
 

@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.92
+
+Retain Vortex profession skill details for on-demand lookup. Report dated learning and equipment access separately from invocation routes and newer ability observations.
+
 ## 0.5.0-rc.50-preview.91
 
 Pin the shared Java 1.21 movement correction and idle route observations.
