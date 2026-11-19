@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.111
+
+Minecraft scripts can wait for a bounded number of ticks. Action help now explains how to turn by angle, and tunnel receipts identify the support cell when scaffold placement cannot be confirmed.
+
 ## 0.4.1-rc.71-preview.110
 
 Collision rays include a compass bearing. Tunnel previews report footing and available scaffold materials. Occupied waypoints now explain how to check nearby landing sites or preview excavation.

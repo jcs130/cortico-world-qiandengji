@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.106",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.106-ec9ca131.tgz",
-  "sha256": "ec9ca131ce4a1be36701d0c00a0e8e6bb3221d8b792e2e021cdd83a34a3ee5d3",
+  "version": "0.5.7-rc.160-preview.108",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.108-e9f7ca6b.tgz",
+  "sha256": "e9f7ca6b8151ad926d07f482306e16ab023f9a63078a157d8d532f365f6552c7",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "6b558ed9ab95392b73847b908eb428080c725073",
-  "integrationBranch": "fix/informed-route-choice-20261119",
+  "sourceCommit": "c9b0cfea274fd405b4ee3c5d370b13ad206a0331",
+  "integrationBranch": "fix/method-timer-receipt-20261120",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Pin the shared navigation and excavation decision contract."
+  "rebuildNote": "Pin the shared action corrections, script timing and observed scaffold placement receipts."
 }
