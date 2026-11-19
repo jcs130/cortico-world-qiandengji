@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.105",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.105-1f240095.tgz",
-  "sha256": "1f2400955fbac2fc43216c974bd83a51f77377054aac09ac130496bfc7445a29",
+  "version": "0.5.7-rc.160-preview.106",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.106-ec9ca131.tgz",
+  "sha256": "ec9ca131ce4a1be36701d0c00a0e8e6bb3221d8b792e2e021cdd83a34a3ee5d3",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "eeda87e77ddc9580c4973e7761dc49fdd3a94996",
-  "integrationBranch": "fix/carried-stack-slots-20261119",
+  "sourceCommit": "6b558ed9ab95392b73847b908eb428080c725073",
+  "integrationBranch": "fix/informed-route-choice-20261119",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Use both Java slot identifiers for carried inventory and verify the number of freed slots."
+  "rebuildNote": "Pin the shared navigation and excavation decision contract."
 }

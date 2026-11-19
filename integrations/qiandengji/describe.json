@@ -832,7 +832,7 @@
                 },
                 "dryRun": {
                   "type": "boolean",
-                  "description": "用于 cross_fire / follow_route / goto / swim / flight(只试算当前已加载路线；回报预计毫秒、速度来源和当前许可) / cleanup / tunnel / build / excavate / organize(只读计划，不点击、不存放或丢弃)"
+                  "description": "用于 cross_fire / follow_route / goto / swim / flight(只试算当前已加载路线；回报预计毫秒、速度来源和当前许可) / cleanup / tunnel(试算施工材料。水平和斜向通道同时检查预定脚格的支撑、液体和未知格，有缺口时报告背包垫材。) / build / excavate / organize(只读计划，不点击、不存放或丢弃)"
                 },
                 "waypoints": {
                   "type": "array",
@@ -1246,7 +1246,7 @@
                       }
                     ]
                   },
-                  "description": "用于 observe(rays only: [relative pitch degrees,relative yaw degrees,range blocks]; default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it.)"
+                  "description": "用于 observe(rays only: [relative pitch degrees,relative yaw degrees,range blocks]; [0,0] looks ahead. Each result includes its worldBearing. Default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it.)"
                 },
                 "item": {
                   "type": "string",
@@ -2314,7 +2314,8 @@
                         "description": "正上/正下时改挖 2×2 螺旋楼梯(上下都能走)"
                       },
                       "dryRun": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "description": "试算施工材料。水平和斜向通道同时检查预定脚格的支撑、液体和未知格，有缺口时报告背包垫材。"
                       },
                       "tool": {
                         "type": "string",
@@ -3203,7 +3204,7 @@
                             }
                           ]
                         },
-                        "description": "rays only: [relative pitch degrees,relative yaw degrees,range blocks]; default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it."
+                        "description": "rays only: [relative pitch degrees,relative yaw degrees,range blocks]; [0,0] looks ahead. Each result includes its worldBearing. Default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it."
                       },
                       "needs": {
                         "type": "array",
@@ -6254,7 +6255,7 @@
                 }
               ]
             },
-            "description": "rays only: [relative pitch degrees,relative yaw degrees,range blocks]; default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it."
+            "description": "rays only: [relative pitch degrees,relative yaw degrees,range blocks]; [0,0] looks ahead. Each result includes its worldBearing. Default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it."
           }
         }
       },
@@ -6798,7 +6799,7 @@
                 },
                 "dryRun": {
                   "type": "boolean",
-                  "description": "用于 cross_fire / follow_route / goto / swim / flight(只试算当前已加载路线；回报预计毫秒、速度来源和当前许可) / cleanup / tunnel / build / excavate / organize(只读计划，不点击、不存放或丢弃)"
+                  "description": "用于 cross_fire / follow_route / goto / swim / flight(只试算当前已加载路线；回报预计毫秒、速度来源和当前许可) / cleanup / tunnel(试算施工材料。水平和斜向通道同时检查预定脚格的支撑、液体和未知格，有缺口时报告背包垫材。) / build / excavate / organize(只读计划，不点击、不存放或丢弃)"
                 },
                 "waypoints": {
                   "type": "array",
@@ -7120,7 +7121,7 @@
                       }
                     ]
                   },
-                  "description": "用于 observe(rays only: [relative pitch degrees,relative yaw degrees,range blocks]; default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it.)"
+                  "description": "用于 observe(rays only: [relative pitch degrees,relative yaw degrees,range blocks]; [0,0] looks ahead. Each result includes its worldBearing. Default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it.)"
                 },
                 "target": {
                   "type": "string",
@@ -7541,7 +7542,8 @@
                         "description": "正上/正下时改挖 2×2 螺旋楼梯(上下都能走)"
                       },
                       "dryRun": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "description": "试算施工材料。水平和斜向通道同时检查预定脚格的支撑、液体和未知格，有缺口时报告背包垫材。"
                       },
                       "tool": {
                         "type": "string",
@@ -8430,7 +8432,7 @@
                             }
                           ]
                         },
-                        "description": "rays only: [relative pitch degrees,relative yaw degrees,range blocks]; default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it."
+                        "description": "rays only: [relative pitch degrees,relative yaw degrees,range blocks]; [0,0] looks ahead. Each result includes its worldBearing. Default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it."
                       },
                       "needs": {
                         "type": "array",
