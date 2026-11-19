@@ -24,6 +24,38 @@ function itemRow(text: string, marker: string): Row | null {
     displayName: m[4] === '-' ? null : m[4], enchantments: m[5] === '-' ? null : m[5] } : null;
 }
 
+// PersonalStashOverview.json reports category totals and the pages holding each category.
+const stashOverview: ServerQueryDefinition = {
+  id: 'storage.overview',
+  description: '一次只读查询个人箱全部十页的容量、已存数量、待入箱奖励，以及各类物品在哪几页。需要具体堆时再用 storage.stash 查对应页。随身大背包另用 Minepacks。',
+  argumentsSchema: noArgs,
+  command: args => args.length ? null : '/mycli arena stash summary --json',
+  matchReply(text, args, username) {
+    if (!username || args.length) return null;
+    const value = json(text, 'MC_STASH_OVERVIEW');
+    if (!value || value.schemaVersion !== 1 || value.scope !== 'personal_stash'
+      || value.pageCount !== 10 || value.pageSize !== 54 || value.capacity !== 540
+      || !integer(value.occupiedSlots) || !integer(value.freeSlots) || value.occupiedSlots + value.freeSlots !== value.capacity
+      || !integer(value.totalItems, value.occupiedSlots) || !integer(value.pendingRewardEntries) || !object(value.categories)) return null;
+    const categories: Record<string, {items: number; occupiedSlots: number; pages: number[]}> = {};
+    let itemCount = 0;
+    let slotCount = 0;
+    for (const [key, entry] of Object.entries(value.categories)) {
+      if (!/^[a-z][a-z0-9_]*$/.test(key) || !object(entry) || !integer(entry.occupiedSlots) || !integer(entry.items, entry.occupiedSlots)
+        || !Array.isArray(entry.pages) || entry.pages.some(p => !integer(p, 1) || p > 10)
+        || new Set(entry.pages).size !== entry.pages.length || entry.pages.length > entry.occupiedSlots
+        || (entry.occupiedSlots === 0) !== (entry.pages.length === 0) || (entry.items === 0) !== (entry.occupiedSlots === 0)) return null;
+      categories[key] = { items: entry.items, occupiedSlots: entry.occupiedSlots, pages: entry.pages };
+      itemCount += entry.items;
+      slotCount += entry.occupiedSlots;
+    }
+    if (!Object.keys(categories).length || itemCount !== value.totalItems || slotCount !== value.occupiedSlots) return null;
+    return { ok: true, data: { source: 'personal_stash', scope: 'all_pages', pageCount: value.pageCount, pageSize: value.pageSize,
+      capacity: value.capacity, occupiedSlots: slotCount, freeSlots: value.freeSlots, totalItems: itemCount,
+      pendingRewardEntries: value.pendingRewardEntries, categories } };
+  },
+};
+
 function storage(kind: 'inventory' | 'stash'): ServerQueryDefinition {
   const stash = kind === 'stash';
   return { id: `storage.${kind}`, maxReplyParts: stash ? 54 : 36,
@@ -115,5 +147,5 @@ function market(kind: 'list' | 'mine' | 'info'): ServerQueryDefinition {
     } };
 }
 
-export const STORAGE_TRADE_QUERIES: readonly ServerQueryDefinition[] = [storage('inventory'), storage('stash'),
+export const STORAGE_TRADE_QUERIES: readonly ServerQueryDefinition[] = [storage('inventory'), stashOverview, storage('stash'),
   economy('shop'), economy('recycle'), economy('wallet'), economy('recycle_status'), market('list'), market('mine'), market('info')];

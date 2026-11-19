@@ -15,6 +15,26 @@ const econ = (action: string, rest = {}) => 'MC_ARENA_ECONOMY ' + JSON.stringify
 const item = { id: 'minecraft:iron_sword', quantity: 1, name: '试炼剑', remainingDurability: 123,
   enchantments: [{ id: 'minecraft:sharpness', level: 2 }], componentHash: 'observed-hash', serializedItemBase64: 'x'.repeat(12000) };
 
+it('reads the complete stash overview in one command, including category pages and separately pending entries', () => {
+  const r = setup('storage.overview');
+  const overview = {schemaVersion:1, scope:'personal_stash', pageCount:10, pageSize:54, capacity:540,
+    occupiedSlots:2, freeSlots:538, totalItems:12, pendingRewardEntries:3,
+    categories:{weapons:{items:2, occupiedSlots:1, pages:[10]}, other:{items:10, occupiedSlots:1, pages:[3]}}};
+  const reply = (value: unknown) => 'MC_STASH_OVERVIEW ' + JSON.stringify(value);
+  try {
+    expect(r.send).toHaveBeenCalledTimes(1);
+    expect(r.send).toHaveBeenCalledWith('/mycli arena stash summary --json');
+    expect(q('storage.overview').command(['1'])).toBeNull();
+    expect(r.receive('MC_STASH_SUMMARY occupied=0/54 page=1 pages=10 capacity=540')).toBe(false);
+    expect(r.receive(reply({...overview, freeSlots:540}))).toBe(false);
+    expect(r.receive(reply({...overview, totalItems:13}))).toBe(false);
+    expect(r.receive(reply({...overview, categories:{...overview.categories, weapons:{items:2, occupiedSlots:1, pages:[11]}}}))).toBe(false);
+    expect(r.receive(reply(overview))).toBe(true);
+    expect(r.read().data).toMatchObject({phase:'replied', goal_completed:false, reply:{data:{
+      scope:'all_pages', totalItems:12, freeSlots:538, pendingRewardEntries:3, categories:overview.categories}}});
+  } finally { r.close(); }
+});
+
 it.each([1, 2, 10])('reads exactly stash page %s and preserves global slots without opening a GUI', page => {
   const r = setup('storage.stash', [String(page)]);
   try {
