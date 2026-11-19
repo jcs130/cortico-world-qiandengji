@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.108
+
+Expose both Java player slot identifiers. The optional server pack can read stash capacity and category pages in a single query.
+
 ## 0.4.1-rc.71-preview.107
 
 Expose observed native profession details through the single-skill lookup, including before a full ability list arrives.

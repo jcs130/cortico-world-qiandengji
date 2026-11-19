@@ -5,7 +5,7 @@ import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from '../src/ser
 describe('服务器玩法按需资料', () => {
   it('discovers current storage and trade without retaining obsolete reward-only restrictions', () => {
     const storage = readServerGuide('storage').text, trade = readServerGuide('trade').text;
-    for (const entry of ['storage.inventory', 'storage.stash', '540', '0–35', '487–540', 'putslot',
+    for (const entry of ['storage.inventory', 'storage.overview', 'storage.stash', '540', '0–35', '487–540', 'putslot',
       '/minepacks:backpack open', '"from":"open"', 'partialReply']) expect(storage).toContain(entry);
     expect(storage).not.toContain('不要把普通战利品再存回个人奖励箱当长期仓库');
     for (const entry of ['trade.shop.list', 'trade.recycle.list', 'quoteId', 'trade.auction', '金币', '绿宝石']) expect(trade).toContain(entry);

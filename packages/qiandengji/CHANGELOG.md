@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.93
+
+Expose both Java player slot identifiers. The optional server pack can read stash capacity and category pages in a single query.
+
 ## 0.5.0-rc.50-preview.92
 
 Retain Vortex profession skill details for on-demand lookup. Report dated learning and equipment access separately from invocation routes and newer ability observations.
