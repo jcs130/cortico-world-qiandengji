@@ -2,7 +2,7 @@
 export { QiandengjiEngine as EngineWorld, createEngine, SERVER_TOOLS } from './world.ts';
 export { QiandengjiBridge as EngineBridge } from './bridge.ts';
 export { NativeRpgState, nativeRpgMessage, readNativeRpgStatus, readNativeRpgPacket, readNativeSkills,
-  readNativeSkillDetail, readNativeSkillInvocations, readNativeTalentTree, type NativeTalentTree,
+  readNativeSkillDetail, readNativeProfessionSkillInfo, type NativeProfessionSkillInfo, readNativeSkillInvocations, readNativeTalentTree, type NativeTalentTree,
   type NativeRpgProfile, type NativeRpgGuidance, type NativeSkills, type NativeSkillNode, type NativeSkillDetail } from './native-rpg.ts';
 export {ChatPolicyState} from './chat-policy.ts';
 export {MaidState,QIANDENGJI_MAIDS_TOOL,maidArguments,maidSystemReply} from './maids.ts';

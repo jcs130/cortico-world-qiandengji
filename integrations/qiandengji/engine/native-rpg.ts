@@ -81,6 +81,59 @@ export interface NativeSkillDetail {
   mana: number | null; cooldownMs: number | null; cooldownRemainingMs: number | null;
   effect: string | null; requires: string | null; available: boolean | null;
 }
+
+/** A profession node returned by skills.info. Its qualification is a dated
+ * observation; it does not declare an invocation route or certify a hit. */
+export interface NativeProfessionSkillInfo {
+  id: string; name: string; observedAt: string;
+  classId: string | null; requiredLevel: number | null; learningPointCost: number | null;
+  grantedSpellId: string | null; description: string | null; requirements: string | null;
+  mana: number | null; cooldownMs: number | null; equipmentAccess: boolean | null;
+  eligibilityAtQuery: { learned: boolean; available: boolean | null; source: string | null };
+}
+export function readNativeProfessionSkillInfo(value: unknown, at: string): NativeProfessionSkillInfo | null {
+  if (!object(value) || (value.queryOnly ?? value.queryonly) !== true || !object(value.skill)
+    || typeof value.learned !== 'boolean' || !Number.isFinite(Date.parse(at))) return null;
+  const node = value.skill;
+  if (!id(node.id) || (value.id !== undefined && value.id !== node.id)) return null;
+  const text = (v: unknown, limit: number): string | null => typeof v === 'string' && !!v.trim()
+    && v.length <= limit && !/[\u0000-\u001f\u007f-\u009f\u00a7]/.test(v) ? v : null;
+  const name = text(value.name ?? node.displayName ?? node.displayname, 80);
+  if (!name) return null;
+  const level = node.requiredLevel ?? node.requiredlevel;
+  const grants = value.grantedSpellId ?? node.grantedSpellId ?? node.grantedspellid;
+  return { id: node.id, name, observedAt: at, classId: id(node.archetype) ? node.archetype.toLowerCase() : null,
+    requiredLevel: points(level) ? level : null, learningPointCost: points(node.cost) ? node.cost : null,
+    grantedSpellId: id(grants) ? grants : null, description: text(node.description, 1024),
+    requirements: text(value.requirements, 1024), mana: nonnegative(value.mana) ? value.mana : null,
+    cooldownMs: nonnegative(value.cooldownMs) ? value.cooldownMs : null,
+    equipmentAccess: typeof value.equipmentAccess === 'boolean' ? value.equipmentAccess : null,
+    eligibilityAtQuery: { learned: value.learned, available: typeof value.available === 'boolean' ? value.available : null,
+      source: id(value.source) ? value.source : null } };
+}
+
+/** Connection-local and read on demand. Never project a learning suggestion as a cast. */
+export class NativeProfessionSkillBook {
+  private observations = new Map<string, NativeProfessionSkillInfo>();
+  clear(): void { this.observations.clear(); }
+  has(skillId: string): boolean { return this.observations.has(skillId); }
+  observe(info: NativeProfessionSkillInfo): void {
+    const previous = this.observations.get(info.id);
+    if (previous && Date.parse(previous.observedAt) > Date.parse(info.observedAt)) return;
+    this.observations.delete(info.id); this.observations.set(info.id, info);
+    if (this.observations.size > 64) this.observations.delete(this.observations.keys().next().value!);
+  }
+  readout(skillId: string, abilities: { ids: string[]; at: string; source: string } | null): string | null {
+    const info = this.observations.get(skillId);
+    if (!info) return null;
+    const newer = abilities && info.grantedSpellId && Date.parse(abilities.at) >= Date.parse(info.observedAt)
+      ? { available: abilities.ids.includes(info.grantedSpellId), observedAt: abilities.at, source: abilities.source } : null;
+    const superseded = newer && info.eligibilityAtQuery.available !== null && newer.available !== info.eligibilityAtQuery.available;
+    return '[本连接职业技能详情；学习与装备来源取自查询当时，命中效果另查服务器回执]\n' + JSON.stringify({
+      ...info, eligibilityAtQuery: superseded ? null : info.eligibilityAtQuery, latestSpellAvailability: newer, effectVerified: null,
+    });
+  }
+}
 /** A skill ID is not necessarily a /cast subcommand. Read the advertised route. */
 export function readNativeSkillDetail(value: unknown, at: string): NativeSkillDetail | null {
   const text = (v: unknown, max: number): v is string => typeof v === 'string' && !!v.trim() && v.length <= max
@@ -188,10 +241,12 @@ export class NativeRpgState {
   private talents: NativeTalentTree | null = null;
   private abilitySnapshot: { ids: string[]; at: string } | null = null;
   private details = new Map<string, NativeSkillDetail>();
+  private readonly professionInfo = new NativeProfessionSkillBook();
   private signature = '';
-  reset(): void { this.profile = null; this.learning = null; this.skills = null; this.talents = null; this.abilitySnapshot = null; this.details.clear(); this.signature = ''; }
+  reset(): void { this.profile = null; this.learning = null; this.skills = null; this.talents = null; this.abilitySnapshot = null; this.details.clear(); this.professionInfo.clear(); this.signature = ''; }
   skillDetail(id: string): NativeSkillDetail | null { return this.details.get(id) ?? null; }
   hasInvocationInfo(id?: string): boolean { return id ? this.details.has(id) : this.details.size > 0; }
+  hasProfessionSkillInfo(skillId: string): boolean { return this.professionInfo.has(skillId); }
   identity(): { available: boolean; classId?: string } | null {
     return this.profile ? { available: this.profile.value.available, classId: this.profile.value.classId } : null;
   }
@@ -233,6 +288,9 @@ export class NativeRpgState {
       while (this.details.size > 64) this.details.delete(this.details.keys().next().value!);
       return JSON.stringify(old && { ...old, observedAt: '' }) !== JSON.stringify({ ...detail, observedAt: '' });
     }
+    const professionInfo = readNativeProfessionSkillInfo(value, at);
+    if (professionInfo) this.professionInfo.observe(professionInfo);
+    // Single-skill cache updates do not change brief() or warrant another status event.
     return false;
   }
   packet(channel: unknown, data: unknown, at = new Date().toISOString()): boolean {
@@ -240,7 +298,7 @@ export class NativeRpgState {
   }
   private update(value: NativeRpgProfile, at: string, source: string): boolean {
     const prior = this.profile?.value;
-    if (!value.available || prior?.classId !== value.classId) { this.learning = null; this.skills = null; this.talents = null; this.abilitySnapshot = null; this.details.clear(); }
+    if (!value.available || prior?.classId !== value.classId) { this.learning = null; this.skills = null; this.talents = null; this.abilitySnapshot = null; this.details.clear(); this.professionInfo.clear(); }
     if (value.skillIds) this.abilitySnapshot = { ids: value.skillIds, at };
     if (value.skillPoints !== undefined && this.learning?.points !== value.skillPoints)
       this.learning = { points: value.skillPoints, at };
@@ -290,9 +348,12 @@ export class NativeRpgState {
   /** Connection-local, class-bound list; no disk history, command or learned conclusion. */
   hasCurrentSkills(): boolean { return !!this.profile?.value.available && !!(this.skills || this.abilitySnapshot); }
   skillsReadout(skillId?: string): string {
+    const profession = skillId ? this.professionInfo.readout(skillId, this.currentAbilities()) : null;
     const detail = skillId ? this.skillDetail(skillId) : null;
     if (detail) return '[本连接技能详情；按实际 command 选择工具，未执行]\n' + JSON.stringify(detail)
-      + (detail.invocation === 'command' ? '\n这是专用命令入口，不是 mc_cast 技能。用 mc_do 的 chat 步骤发送明确的 command；不要把技能 ID 或原参数塞进 /mycli cast。' : '\nmc_cast 按此 ID 和服务端参数施法；发送不证明效果。');
+      + (detail.invocation === 'command' ? '\n这是专用命令入口，不是 mc_cast 技能。用 mc_do 的 chat 步骤发送明确的 command；不要把技能 ID 或原参数塞进 /mycli cast。' : '\nmc_cast 按此 ID 和服务端参数施法；发送不证明效果。')
+      + (profession ? '\n' + profession : '');
+    if (profession) return profession;
     const invocations=[...this.details.values()].map(d=>({id:d.id,name:d.name,command:d.command,invocation:d.invocation,observedAt:d.observedAt}));
     if(!skillId&&invocations.length&&!this.hasCurrentSkills())return '[本连接命令入口观察；本人资格清单尚未同步，未执行]\n'+JSON.stringify({invocations});
     if ((!this.skills && !this.abilitySnapshot) || !this.profile?.value.available)

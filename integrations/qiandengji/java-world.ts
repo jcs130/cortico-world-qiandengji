@@ -86,6 +86,7 @@ export class JavaMymcWorld implements World {
       await this.body.start(new Proxy(named,{get:(target,key)=>{if(key!=='pushEvent')return Reflect.get(target,key,target);
         return async (event:Parameters<WorldHost['pushEvent']>[0], options?:Parameters<WorldHost['pushEvent']>[1]) => {
         const mapped = mapWorldEventNamespace(event,'minecraft','mymc');
+        if (event.type === 'minecraft.client.disconnected') this.catalog.resetConnection();
         const queryText = this.opts.cfg.serverPack === 'qiandengji'
           ? queryObservation(event, mymcLoginName(this.opts.cfg.username, this.opts.cfg.preserveLoginName)) : null;
         if (queryText) {
@@ -143,6 +144,7 @@ export class JavaMymcWorld implements World {
     } catch (error) { await this.stop().catch(() => {}); throw error; }
   }
   async stop() {
+    this.catalog.resetConnection();
     ++this.epoch; this.activities.reset(); clearInterval(this.timer); this.timer = undefined; this.host = null;
     try { await this.body.stop(); } finally { this.learning.stop(); }
   }

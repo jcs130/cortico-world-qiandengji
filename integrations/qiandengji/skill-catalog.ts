@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { MinecraftOption, MinecraftOptionIntent } from 'agent-mc-world/contracts';
-import { readNativeSkills, readNativeSkillDetail, readNativeSkillInvocations, type NativeSkills, type NativeSkillDetail } from './engine/native-rpg.ts';
+import { NativeProfessionSkillBook, readNativeProfessionSkillInfo, readNativeRpgStatus, readNativeSkills, readNativeSkillDetail, readNativeSkillInvocations, type NativeSkills, type NativeSkillDetail } from './engine/native-rpg.ts';
 
 interface CatalogFile {
   version: 1;
@@ -82,6 +82,7 @@ export class SkillCatalog {
   private nativeSkillsCurrent = false;
   private nativeIdentity: string | undefined;
   private readonly nativeDetails = new Map<string, NativeSkillDetail>();
+  private readonly professionInfo = new NativeProfessionSkillBook();
 
   constructor(server: string, dataDir?: string) {
     this.server = server;
@@ -139,6 +140,10 @@ export class SkillCatalog {
           this.liveCommands.set(detail.id, { command: detail.command, receivedAt: Date.parse(at) });
           return '原生技能详情';
         }
+        const info = readNativeProfessionSkillInfo(value, at);
+        if (info) { this.professionInfo.observe(info); return null; }
+        const profile = readNativeRpgStatus(value);
+        if (profile) { this.noteNativeProfile(profile); return null; }
         const next = readNativeSkills(value, at);
         if (!next) return null;
         const changed = !this.nativeSkillsCurrent || JSON.stringify({ ...next, observedAt: '' })
@@ -280,7 +285,7 @@ export class SkillCatalog {
     return live && Date.now() - live.receivedAt <= 300_000 ? live.command : null;
   }
 
-  resetConnection(): void { this.liveCommands.clear(); this.nativeDetails.clear(); this.nativeSkillsCurrent = false; this.nativeIdentity = undefined; }
+  resetConnection(): void { this.liveCommands.clear(); this.nativeDetails.clear(); this.professionInfo.clear(); this.nativeSkillsCurrent = false; this.nativeIdentity = undefined; }
   noteNativeProfile(profile: unknown): void {
     if (!profile || typeof profile !== 'object' || Array.isArray(profile)) return;
     const value = profile as Record<string, unknown>;
@@ -289,6 +294,7 @@ export class SkillCatalog {
     if (identity === this.nativeIdentity) return;
     this.nativeIdentity = identity;
     this.nativeDetails.clear();
+    this.professionInfo.clear();
     this.nativeSkillsCurrent = false;
     this.liveCommands.clear();
   }
@@ -367,11 +373,14 @@ export class SkillCatalog {
   }
 
   readout(id?: string): string {
-    const currentDetail = id ? this.nativeDetails.get(id) : undefined;
-    if (currentDetail) return '[本连接原生技能详情；未执行]\n' + JSON.stringify(currentDetail);
+    const key = id?.trim().toLowerCase();
+    const currentDetail = key ? this.nativeDetails.get(key) : undefined;
+    const list = this.nativeSkillsCurrent ? this.nativeSkills : null;
+    const profession = key ? this.professionInfo.readout(key, list && { ids: list.available, at: list.observedAt, source: 'MC_RPG' }) : null;
+    if (currentDetail) return '[本连接原生技能详情；未执行]\n' + JSON.stringify(currentDetail) + (profession ? '\n' + profession : '');
+    if (profession) return profession;
     if (this.nativeSkills) {
       const s = this.nativeSkills;
-      const key = id?.trim().toLowerCase();
       const indexed = key ? `\n${key}：${s.common.includes(key) || s.available.includes(key) ? this.nativeSkillsCurrent ? '本次记录列为可用' : '历史记录曾列为可用，本次资格待核验' : s.learnable.includes(key) ? this.nativeSkillsCurrent ? '本次记录列为可学习，不等于已学会' : '历史记录曾列为可学习，本次资格待核验' : '本次清单未列出，须查当前详情'}。/mycli skills info ${key}`
         : `\n通用：${s.common.join('、')}\n职业可用：${s.available.join('、')}\n可学习：${s.learnable.join('、')}`;
       const historical = key ? this.spells.get(key) : undefined;

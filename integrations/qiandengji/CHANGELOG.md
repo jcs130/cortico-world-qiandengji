@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.107
+
+Expose observed native profession details through the single-skill lookup, including before a full ability list arrives.
+
 ## 0.4.1-rc.71-preview.106
 
 Pin the shared Java 1.21 movement correction and idle route observations.
