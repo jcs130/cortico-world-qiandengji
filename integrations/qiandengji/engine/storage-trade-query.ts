@@ -24,6 +24,29 @@ function itemRow(text: string, marker: string): Row | null {
     displayName: m[4] === '-' ? null : m[4], enchantments: m[5] === '-' ? null : m[5] } : null;
 }
 
+// DungeonManager.rewardCommand lists pending rewards before they enter the personal stash.
+const pendingTrialRewards: ServerQueryDefinition = {
+  id: 'trial.rewards', argumentsSchema: noArgs, maxReplyParts: 17,
+  description: '只读本人试炼待入箱奖励与可见物品。三个计数全零即可结束本次领奖核查；已入箱的库存另查 storage.overview。查询不耗魔力、不打开窗口。',
+  command: args => args.length ? null : '/mycli arena rewards list',
+  matchReply(text, args, username, parts = []) {
+    if (!username || args.length) return null;
+    const item = itemRow(text, 'MC_REWARD');
+    if (item) {
+      const slot = item.slot;
+      if (!integer(slot) || slot === 8 || slot > 17 || parts.some(p => object(p) && p.slot === slot)) return null;
+      return { partial: true, data: item };
+    }
+    const summary = /^MC_REWARD_SUMMARY visible=(\d+) queuedBonus=(\d+) queuedPhotos=(\d+)$/.exec(text);
+    if (!summary || /[\r\n]/.test(text)) return null;
+    const [visible, queuedBonus, queuedPhotos] = summary.slice(1).map(Number);
+    if (![visible, queuedBonus, queuedPhotos].every(n => integer(n)) || visible !== parts.length
+      || Math.min(9, queuedBonus) !== parts.filter(p => object(p) && integer(p.slot, 9)).length) return null;
+    return { ok: true, data: { source: 'trial_pending_rewards', visible, queuedBonus, queuedPhotos,
+      hasPending: visible > 0 || queuedBonus > 0 || queuedPhotos > 0, items: parts } };
+  },
+};
+
 // PersonalStashOverview.json reports category totals and the pages holding each category.
 const stashOverview: ServerQueryDefinition = {
   id: 'storage.overview',
@@ -216,5 +239,5 @@ function market(kind: 'list' | 'mine' | 'info'): ServerQueryDefinition {
     } };
 }
 
-export const STORAGE_TRADE_QUERIES: readonly ServerQueryDefinition[] = [storage('inventory'), tidyPreview, stashOverview, storage('stash'),
+export const STORAGE_TRADE_QUERIES: readonly ServerQueryDefinition[] = [storage('inventory'), tidyPreview, stashOverview, storage('stash'), pendingTrialRewards,
   economy('shop'), economy('recycle'), economy('wallet'), economy('recycle_status'), market('list'), market('mine'), market('info')];
