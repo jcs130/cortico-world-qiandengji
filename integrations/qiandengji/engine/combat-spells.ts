@@ -1,8 +1,9 @@
 import type { MinecraftBot as Bot } from 'agent-mc-world/extension';
+import { HOSTILE } from 'agent-mc-world/extension';
 import { CombatAbilities, type CombatSpell, type CombatTactic } from 'agent-mc-world/tactics';
 export type { CombatSpell, CombatTactic } from 'agent-mc-world/tactics';
 import { manaSnapshotFromText } from './viewer-state.ts';
-import { viewerCastResult } from './viewer-cast.ts';
+import { starboltTargetRefusal, viewerCastResult } from './viewer-cast.ts';
 const SPELLS: ReadonlyArray<CombatSpell> = ['golem', 'frostnova', 'flamewave', 'starbolt'];
 const SPELL_COOLDOWN_MS: Readonly<Record<string, number>> = {
   golem: 75_000,
@@ -20,7 +21,8 @@ const RANGED = new Set(['skeleton', 'stray', 'bogged', 'pillager', 'witch', 'bla
 /** Qiandengji spell catalogue, reply parser and explicit server fallback profile. */
 export class CombatSpells extends CombatAbilities {
   private readonly unlockDenials = new Map<string, number>();
-  override reset(): void { super.reset(); this.unlockDenials.clear(); }
+  private starboltRange: ReturnType<typeof starboltTargetRefusal> = null;
+  override reset(): void { super.reset(); this.unlockDenials.clear(); this.starboltRange = null; }
   protected override get defaultSpells() { return SPELLS; }
   protected override get defaultCosts() { return DEFAULT_COST; }
   protected override get defaultCooldowns() { return SPELL_COOLDOWN_MS; }
@@ -40,6 +42,8 @@ export class CombatSpells extends CombatAbilities {
       + '；按当前 /mycli skills status 与单项详情核对，观察记录不增加手动施法禁令。' : '');
   }
   noteServerMessage(text: string, now = Date.now()): void {
+    // The authenticated system-message hook below handles this unnamed refusal.
+    if (starboltTargetRefusal(text)) return;
     const attempt = this.casts.at(-1);
     const result = attempt && viewerCastResult(text, attempt.spell);
     if (attempt && now - Date.parse(attempt.sentAt) >= 0
@@ -85,6 +89,40 @@ export class CombatSpells extends CombatAbilities {
       this.pending = null;
     }
     if (attempt?.replyAt === new Date(now).toISOString() && result?.phase === 'failed') this.pending = null;
+  }
+
+  noteTargetFeedback(text: string, now = Date.now()): void {
+    const range = starboltTargetRefusal(text);
+    if (!range || this.pending?.spell !== 'starbolt') return;
+    const attempt = this.casts.at(-1);
+    const age = now - this.pending.at;
+    if (!attempt || attempt.reply || age < 0 || age > 3_000) return;
+    attempt.reply = text.slice(0, 240);
+    attempt.replyAt = new Date(now).toISOString();
+    this.starboltRange = range;
+    this.noteUnspentMana(attempt);
+  }
+
+  override automaticTargetBlock(bot: Bot, spell: string): string | null {
+    const range = this.starboltRange;
+    if (spell !== 'starbolt' || !range || !bot.entity || !bot.entities) return null;
+    const origin = bot.entity.position;
+    // Use distance to the bounding box, allowing both eye and feet as the server's origin.
+    // An unknown/plugin mob can still be eligible. Server targeting remains authoritative.
+    let possibleAimedTarget = false;
+    for (const entity of Object.values(bot.entities)) {
+      if (!entity?.position || entity === bot.entity || entity.isValid === false) continue;
+      if (entity.type !== 'mob' && entity.type !== 'hostile' && !HOSTILE.has(entity.name ?? '')) continue;
+      const half = (entity.width ?? 1) / 2;
+      const dx = Math.max(0, Math.abs(entity.position.x - origin.x) - half);
+      const dz = Math.max(0, Math.abs(entity.position.z - origin.z) - half);
+      const dy = Math.max(0, entity.position.y - origin.y - (bot.entity.height ?? 2), origin.y - entity.position.y - (entity.height ?? 2));
+      const distance = Math.hypot(dx, dy, dz);
+      if (distance <= range.automatic) return null;
+      if (distance <= range.aimed) possibleAimedTarget = true;
+    }
+    if (possibleAimedTarget) return null;
+    return `星芒箭服务端报告准星 ${range.aimed} 格、自动锁定 ${range.automatic} 格；当前范围内未观察到可能目标`;
   }
 
   protected override selectFallback(_bot: Bot, foes: Bot['entity'][], ready: (spell: string) => boolean, near: (radius: number) => number): string | null {

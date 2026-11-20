@@ -273,6 +273,7 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     return false;
   }
   protected override extensionServerFeedback(text: string): void {
+    this.combatSpells.noteTargetFeedback(text);
     this.trialSearch.observe(text,this.bridge?.bot?.username??'');
     if (text.startsWith('MC_COACH ')) {
       (this.adventureGatherings ??= new AdventureGatherings()).observe(text,this.bridge?.bot?.player?.uuid??this.bridge?.bot?._client?.uuid);

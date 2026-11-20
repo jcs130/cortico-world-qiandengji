@@ -137,6 +137,12 @@ describe('explicit Qiandengji read-only server query definitions', () => {
         { query: 'dungeon.status', arguments: ['invalid;command'] }]) expect(validate(args), JSON.stringify(args)).toBe(false);
     }
     expect(mounted.parameters).toEqual(offline.parameters);
+    const read = world.tools().find(tool => tool.name === 'mymc_query_receipt')!;
+    expect(read.parameters).toEqual(MYMC_TOOL_DECLS.find(tool => tool.name === read.name)?.parameters);
+    expect(read.parameters).toMatchObject({required:['requestId'],additionalProperties:false});
+    expect(Object.keys((read.parameters as any).properties)).toEqual(['requestId']);
+    expect(mounted.parameters.properties).not.toHaveProperty('requestId');
+    expect(mounted.description).toContain('mymc_query_receipt');
     expect(mounted.barrierAfter).not.toBe(true);
     expect(mounted.endsTurn).not.toBe(true);
   });

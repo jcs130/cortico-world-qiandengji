@@ -15,7 +15,8 @@ import type {
   WorldRequestFacts,
 } from 'agent-mc-world/contracts';
 import { MINECRAFT_PANEL_DECLS, MINECRAFT_TOOL_DECLS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
-import { MinecraftWorldProxy, WorldOperationLearning, mapWorldEventNamespace } from 'agent-mc-world/extension';
+import { MinecraftWorldProxy, WorldOperationLearning, mapWorldEventNamespace, serverQueryContextNotice } from 'agent-mc-world/extension';
+import { supervisorEventView } from 'agent-mc-world/context';
 import { extendMinecraftOptions, readMinecraftOptions, renderMinecraftOptionIndex } from 'agent-mc-world/extension';
 import { renderTemplate } from 'agent-mc-world/extension';
 import {
@@ -217,6 +218,10 @@ function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgres
   };
   bridge.pushEvent = async (event, options) => {
     const mapped = toMymcEvent(event);
+    if (mapped.type === 'mymc.event' && mapped.meta?.serverQuery && mapped.meta.requestContext) {
+      const notice = serverQueryContextNotice(mapped.meta.serverQuery as Record<string, unknown>, 'mymc_query_receipt');
+      if (notice) mapped.meta = { ...mapped.meta, requestContext: supervisorEventView(mapped.text, notice, notice) };
+    }
     const connection = mapped.meta?.connection as { phase?: unknown; generation?: unknown } | undefined;
     if (mapped.type === 'mymc.event' && connection?.phase === 'spawned' && Number.isSafeInteger(connection.generation)) { catalog.resetConnection(); activities.reset(); }
     if (mapped.type === 'mymc.event' && mapped.meta?.nativeRpgObservation === true)
