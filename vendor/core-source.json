@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.114",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.114-68631ca8.tgz",
-  "sha256": "68631ca83476ab4622f8d28413e81e722e594d710b6a7ad160bc2d2e71c76a17",
+  "version": "0.5.7-rc.160-preview.115",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.115-ce793f27.tgz",
+  "sha256": "ce793f274e2cdc640f2e1d5379b1284857c717914bbea375034c9d4253f6e817",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "4fe249855429f7375b3f70085334ff988edac4e6",
-  "integrationBranch": "fix/query-receipt-lane-20261120",
+  "sourceCommit": "0fa1bc6a9fd18e2e5e8444f47b17c876f203f5d3",
+  "integrationBranch": "codex/qualified-equipment-id-20261120",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Pin dedicated query receipt reads, container transfer evidence, and automatic spell target eligibility."
+  "rebuildNote": "Accept qualified item IDs from transfer receipts when locating and equipping inventory. Confirm the equipped slot before treating a repeat as a new move."
 }
