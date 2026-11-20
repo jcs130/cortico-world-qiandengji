@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.111",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.111-33e24b85.tgz",
-  "sha256": "33e24b8503972be6c58f09e0389fdc013827e8831ce6f7b8e70715d14dc15073",
+  "version": "0.5.7-rc.160-preview.112",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.112-8be314f0.tgz",
+  "sha256": "8be314f098a9ac93a42c0fb2c615a1b6aa5b97561bc1c8491fe56c70df4028ef",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "57d3fe6e6ce63199e920ddb5a27f7fcc8c329114",
-  "integrationBranch": "fix/carried-inventory-net-change-20261120",
+  "sourceCommit": "7e7dce5fb9cadbd0d6a833c88d3d61e2a411d712",
+  "integrationBranch": "fix/action-quality-recovery-20261120",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Pin synchronized self inventory, bounded changes and on-demand detail."
+  "rebuildNote": "Pin search recovery and carried scaffold feedback."
 }

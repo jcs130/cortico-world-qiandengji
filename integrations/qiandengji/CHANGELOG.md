@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.116
+
+Yield inconclusive sound searches to pending work and report carried scaffold stock and placement refusals.
+
 ## 0.4.1-rc.71-preview.115
 
 Expose the synchronized carried inventory and its recent changes through the shared core. Full slot details are available on request.

@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.99
+
+Yield inconclusive sound searches to pending work and report carried scaffold stock and placement refusals.
+
 ## 0.5.0-rc.50-preview.98
 
 Expose the synchronized carried inventory and its recent changes through the shared core. Full slot details are available on request.
