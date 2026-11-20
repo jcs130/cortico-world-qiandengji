@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.101
+
+Accept qualified item IDs from transfer receipts when locating and equipping inventory. Confirm the equipped slot before treating a repeat as a new move.
+
 ## 0.5.0-rc.50-preview.100
 
 Separate new queries from receipt lookups and bind targeted combat spells to an observed target. Include the portable inventory transfer guide and receipt improvements.
