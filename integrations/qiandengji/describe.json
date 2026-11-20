@@ -6600,10 +6600,9 @@
     },
     {
       "name": "mymc_query",
-      "description": "{} lists registered read-only queries and their argument contracts. {query,arguments?:string[]} sends one and briefly awaits its reply; {requestId} reads the same receipt. Required subject IDs must come from observed server data. No body slot or chat wait is used. A fast matched reply returns directly; otherwise sent means awaiting a reply, not completed. Only listed queries are supported. At most one query is pending; identical requests reuse its receipt and terminal receipts for five seconds. Timeout means the result is unknown; there is no automatic retry. Replies have no request nonce and are only correlated server feedback, not proof of a uniquely identified request or completion of a gameplay goal.",
+      "description": "{} lists registered read-only queries and their argument contracts. {query,arguments?:string[]} sends one; omit requestId. Read an existing result through mymc_query_receipt. Required subject IDs must come from observed server data. No body slot or chat wait is used. A fast matched reply returns directly; otherwise sent means awaiting a reply, not completed. Only listed queries are supported. At most one query is pending; identical requests reuse its receipt and terminal receipts for five seconds. Timeout means the result is unknown; there is no automatic retry. Replies have no request nonce and are only correlated server feedback, not proof of a uniquely identified request or completion of a gameplay goal.",
       "parameters": {
         "type": "object",
-        "additionalProperties": false,
         "properties": {
           "query": {
             "type": "string",
@@ -6617,7 +6616,64 @@
               "type": "string",
               "maxLength": 256
             }
+          }
+        },
+        "anyOf": [
+          {
+            "maxProperties": 0
           },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "requestId"
+            ],
+            "properties": {
+              "requestId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "query"
+            ],
+            "properties": {
+              "query": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "arguments": {
+                "type": "array",
+                "maxItems": 16,
+                "items": {
+                  "type": "string",
+                  "maxLength": 256
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
+      "name": "mymc_query_receipt",
+      "description": "Read a previously returned server query receipt by its exact requestId. Never sends a command. Unknown IDs have unknown results.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId"
+        ],
+        "properties": {
           "requestId": {
             "type": "string",
             "minLength": 1,

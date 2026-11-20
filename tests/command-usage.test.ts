@@ -19,7 +19,7 @@ function rig() {
   return import('agent-mc-world/extension').then(({ ObservedCommandCatalog }) => {
     const chat = vi.fn();
     Object.assign(engine, { observedCommands: new ObservedCommandCatalog(), bridge: { bot: { chat, username: 'ag_Fixture' } },
-      combatSpells: { hasAbility: vi.fn(() => false), manualCastBlock: vi.fn(() => null), noteManualCast: vi.fn() },
+      combatSpells: { hasAbility: vi.fn(() => false), manualCastBlock: vi.fn(() => null), noteManualCast: vi.fn(), noteTargetFeedback: vi.fn() },
       toolLog: (_name: string, _args: unknown, text: string) => text });
     return { engine, chat };
   });

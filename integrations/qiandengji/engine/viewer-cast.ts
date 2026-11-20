@@ -14,6 +14,14 @@ const SPELL_NAMES: Readonly<Record<string, string>> = {
 export interface ViewerCastCommand { id: string; name: string }
 export type ViewerCastResult = { phase: 'succeeded' | 'failed'; detail: string };
 
+/** The targeting refusal reports both server ranges and explicitly confirms no mana was spent. */
+export function starboltTargetRefusal(text: string): { aimed: number; automatic: number } | null {
+  const match = /^(?:\[RPG\]\s*)?(\d+(?:\.\d+)?)\s*格准星和\s*(\d+(?:\.\d+)?)\s*格自动锁定都没找到怪物[；;]\s*未消耗魔力[。.!！]?$/u.exec(text.trim());
+  if (!match) return null;
+  const aimed = Number(match[1]), automatic = Number(match[2]);
+  return aimed > 0 && automatic > 0 && Number.isFinite(aimed) && Number.isFinite(automatic) ? { aimed, automatic } : null;
+}
+
 export function viewerCastCommand(text: unknown): ViewerCastCommand | null {
   if (typeof text !== 'string') return null;
   const match = /^\s*\/mycli\s+cast\s+([a-z0-9_:-]{1,64})(?=\s|$)/i.exec(text);
@@ -24,6 +32,7 @@ export function viewerCastCommand(text: unknown): ViewerCastCommand | null {
 
 export function viewerCastResult(text: unknown, spellId: string): ViewerCastResult | null {
   if (typeof text !== 'string' || text.length > 1_024) return null;
+  if (spellId === 'starbolt' && starboltTargetRefusal(text)) return { phase: 'failed', detail: '未锁定目标，未消耗魔力' };
   const locked = /\bSpell\s+([a-z0-9_:-]+)\s+is not unlocked\b/i.exec(text);
   if (locked) return locked[1].toLowerCase() === spellId.toLowerCase()
     ? { phase: 'failed', detail: '技能未解锁' } : null;

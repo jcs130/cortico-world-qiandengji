@@ -13,7 +13,7 @@ export const MYMC_GUIDE_TOPICS = [
   { id: 'travel', title: '传送与抵达', description: '归乡、村庄路标、实际高度与脱困' },
   { id: 'guild', title: '公会委托与共享', description: '看板、接单交付、公共箱与分享装备' },
   { id: 'trial', title: '试炼塔', description: '入场、楼层进度、第七层与通关核验' },
-  { id: 'storage', title: '仓库与背包', description: '十页查询、远程存取' },
+  { id: 'storage', title: '仓库与背包', description: '54格随身大背包同单开窗取存，十页个人箱远程存取' },
   { id: 'trade', title: '交易', description: '金币商城、回收与挂单' },
   { id: 'tasks', title: '任务与受阻', description: '队列、依赖、终态与恢复' },
   { id: 'skills', title: '技能学习与施法', description: '命令目录、技能说明、魔力、冷却与罗盘' },
