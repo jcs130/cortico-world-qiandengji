@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.98
+
+Expose the synchronized carried inventory and its recent changes through the shared core. Full slot details are available on request.
+
 ## 0.5.0-rc.50-preview.97
 
 Match personal-stash withdrawal receipts by source slot and requested count. Empty, partial and unconfirmed transfers remain distinct.

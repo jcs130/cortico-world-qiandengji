@@ -21,7 +21,7 @@ describe('trial melee readiness', () => {
   it('reports equipment evidence without imposing a host-only sword requirement', async () => {
     let accepted = 0;
     let bagReads = 0;
-    let bag = '工具物品名:iron_pickaxe、bow。';
+    let bag = '工具物品名:iron_pickaxe、bow。\n来自当前背包的其他物品';
     const engine = {
       tools: () => [
         { name: 'mc_do', description: '', parameters: {}, handler: async () => { accepted++; return '[mc_do] 已受理'; } },
@@ -39,6 +39,8 @@ describe('trial melee readiness', () => {
     expect(denied).toContain('战备读数提示');
     expect(denied).toContain('已受理');
     expect(denied).toContain('职业法器');
+    expect(denied).toContain('mymc_bag');
+    expect(denied).not.toContain('来自当前背包的其他物品');
     expect(accepted).toBe(1);
     expect(bagReads).toBe(1);
     expect(await action.handler({ steps: [{ skill: 'chat', text: '/mycli guild status' }] }, ctx)).toContain('已受理');

@@ -1,11 +1,11 @@
 {
-  "version": "0.5.7-rc.160-preview.110",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.110-497e87d0.tgz",
-  "sha256": "497e87d07f54227fb019be89b58595c2f3095ccd70c9c9cf46c49e3eb01d2be9",
+  "version": "0.5.7-rc.160-preview.111",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.111-33e24b85.tgz",
+  "sha256": "33e24b8503972be6c58f09e0389fdc013827e8831ce6f7b8e70715d14dc15073",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "621dd9f3f9ef44d8942898be195598f3451789fc",
-  "integrationBranch": "fix/confirmed-inventory-command-20261120",
+  "sourceCommit": "57d3fe6e6ce63199e920ddb5a27f7fcc8c329114",
+  "integrationBranch": "fix/carried-inventory-net-change-20261120",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
@@ -13,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Wait for an observed server transfer receipt and the corresponding carried-inventory increment before a dependent step."
+  "rebuildNote": "Pin synchronized self inventory, bounded changes and on-demand detail."
 }
