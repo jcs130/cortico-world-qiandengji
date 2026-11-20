@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.102
+
+Consume the core that verifies modeled dry-drop landings and keeps runtime collision checks authoritative.
+
 ## 0.5.0-rc.50-preview.101
 
 Accept qualified item IDs from transfer receipts when locating and equipping inventory. Confirm the equipped slot before treating a repeat as a new move.
