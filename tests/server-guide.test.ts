@@ -12,6 +12,20 @@ describe('服务器玩法按需资料', () => {
     expect(serverGuideIndex()).toContain('trade：');
     expect(readServerGuide().text).not.toContain('stash putslot');
   });
+  it('routes portable bag and paged personal stash to one guide and returns the transfer example before inventory cleanup', () => {
+    const index = readServerGuide().text;
+    const line = index.split('\n').find(row => row.startsWith('storage：'));
+    expect(line).toContain('54格随身大背包');
+    expect(line).toContain('十页个人箱');
+    expect(index).not.toContain('/minepacks:backpack open');
+    const storage = readServerGuide('storage').text;
+    const [firstSection] = storage.split('## 随身背包一键腾格');
+    expect(firstSection).toContain('"skill":"take"');
+    expect(firstSection).toContain('"from":"open"');
+    expect(firstSection).toContain('"into":"open"');
+    expect(firstSection).toContain('/minepacks:backpack open');
+    expect(firstSection).toContain('重新打开');
+  });
   it('discovers special features without treating a historical guide as current eligibility or spending character points',()=>{
     expect(serverGuideIndex()).toContain('features：拍照、写书与职业');
     const text=readServerGuide('features').text;
@@ -112,7 +126,9 @@ describe('服务器玩法按需资料', () => {
       expect(exactMatches, `未完整迁移：${paragraph.slice(0, 60)}`).toHaveLength(1);
     }
     const shortEnvironment = readFileSync(new URL('../src/ENV_PROMPT.md', import.meta.url), 'utf8');
-    expect(shortEnvironment.length + serverGuideIndex().length).toBeLessThan(original.length / 4);
+    // Measure the same text on LF release archives and Windows checkouts.
+    const promptChars = (text: string) => text.replaceAll('\r\n', '\n').length;
+    expect(promptChars(shortEnvironment) + promptChars(serverGuideIndex())).toBeLessThan(promptChars(original) / 4);
   });
 
   it('仅选取相关全文，并保留供 World 当前采样填充的模板', () => {

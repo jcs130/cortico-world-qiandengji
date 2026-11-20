@@ -1,5 +1,15 @@
 来源：AgentFriend 的 `DungeonManager.stashCommand`、`PagedPersonalStash`，以及 2026-11-19 提交 `bdb36e357` 的 `InventoryBatch`、`InventoryTidy`。以本次连接的服务端回执为准。实际整理后看随身空格与所需装备是否保留。
 
+## 随身大背包取物、存物
+
+Minepacks 大背包有 54 格，用背包里的“大背包”道具或 `/minepacks:backpack open` 打开。十页个人箱由 `/mycli arena stash` 管理，任务袋由 `/questbag` 打开。随身栏的 `mymc_bag` 读数不包含关闭的大背包。
+
+在同一单里先开大背包，再取指定物品。例如窗口里已看到圆石，以下动作取 16 块到随身栏。
+
+`mymc_do {"steps":[{"skill":"use","item":"大背包"},{"skill":"take","item":"cobblestone","count":16,"from":"open"}]}`
+
+要往里存，将第二步换成 `{"skill":"stow","item":"cobblestone","count":16,"into":"open"}`。没有快捷道具时，第一步可换成 `{"skill":"chat","text":"/minepacks:backpack open"}`。按窗口实物填写具体物品 ID 和所需数量。单独开窗查看后任务会关窗，稍后取存须在新一单重新打开。核对搬运终态与随身物品数量变化。
+
 ## 随身背包一键腾格
 
 千灯纪支持两种批量处理。按下列示例单独传 `query` 即可发起预览；仅在已经拿到请求号、需要续读回执时单独传 `{"requestId":"返回的原ID"}`。`storage.inventory` 查询槽位清单，不接收聊天命令。
@@ -22,7 +32,6 @@
 ## 区分容器
 
 - **个人试炼箱／远程个人仓库**：10页，每页54格，共540格。可以存普通物品，不只是领奖；`putslot` 会跨页找可合并或空的格子。第一页满不代表整个仓库满。
-- **Minepacks 大背包**：另一份54格随身虚拟仓库，不是上述十页。快捷头丢了仍可 `/minepacks:backpack open`；不要混用任务袋 `/questbag`。
 - **公会共享箱／自建箱**：独立容器。查当次容量和用途后决定分享或存放；旧箱账只用于找位置，不代表现货。
 - **待入箱奖励**：独立于已存物品，开个人箱时才装入。`rewards list` 的0不能证明仓库空。
 
@@ -41,8 +50,6 @@
 ## 需要窗口时，同单开窗搬运
 
 个人箱指定页用 `/mycli arena stash page 2`；`stash pages` 是选择菜单，箱子图标不是库存。可以直接用指定页命令，或上面的无窗口存取命令。
-
-Minepacks 示例：`mymc_do {"steps":[{"skill":"chat","text":"/minepacks:backpack open"},{"skill":"stow","item":"cobblestone","count":32,"into":"open"}]}`。取物时第二步例如 `{"skill":"take","item":"cobblestone","count":32,"from":"open"}`，必须明确物品和数量，不使用 `all:true`。开窗与搬运必须同一任务；任务结束自动关窗，不能跨任务沿用旧窗口。物品数量按本次实物决定。
 
 地面箱用 `stow/take at:[x,y,z]` 点名已核实的箱子。`compact` 只合并容器内完全相同且可堆叠的物品。所有储物确实不足时再选择新建箱、分享或交易；不拿扔地上再捡回来当整理。物品工具名用实际清单，不猜中文译名。
 
