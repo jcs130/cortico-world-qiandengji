@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.117
+
+Separate new queries from receipt lookups and bind targeted combat spells to an observed target. Include the portable inventory transfer guide and receipt improvements.
+
 ## 0.4.1-rc.71-preview.116
 
 Yield inconclusive sound searches to pending work and report carried scaffold stock and placement refusals.
