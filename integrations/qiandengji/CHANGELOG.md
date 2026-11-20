@@ -1,3 +1,19 @@
+## 0.4.1-rc.71-preview.117
+
+Separate new queries from receipt lookups and bind targeted combat spells to an observed target. Include the portable inventory transfer guide and receipt improvements.
+
+## 0.4.1-rc.71-preview.116
+
+Yield inconclusive sound searches to pending work and report carried scaffold stock and placement refusals.
+
+## 0.4.1-rc.71-preview.115
+
+Expose the synchronized carried inventory and its recent changes through the shared core. Full slot details are available on request.
+
+## 0.4.1-rc.71-preview.114
+
+Personal-stash withdrawals in a body task wait for both a matching server reply and the received inventory stack. Dependent equipment steps can start as soon as both observations arrive.
+
 ## 0.4.1-rc.71-preview.113
 
 Expose read-only batch clean and store previews for the connected player's inventory. The storage guide explains planned and applied slot changes, protected items, and partial transfers.

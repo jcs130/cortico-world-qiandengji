@@ -224,6 +224,7 @@ it('adds an independent native skills query, preserves full server detail, and c
 
 it('projects actual plugin/CLI data through the engine facts and emits only a piggyback observation', () => {
   const engine = Object.assign(Object.create(QiandengjiEngine.prototype), { trialSearch: new TrialSearchState() }) as any;
+  engine.combatSpells = { noteTargetFeedback: vi.fn() };
   engine.nativeRpg = new NativeRpgState(); engine.chatPolicy = new ChatPolicyState(); engine.maids = new MaidState(); engine.observedCommands = { note: vi.fn() }; engine.emit = vi.fn();
   vi.spyOn(TacticalMinecraftWorld.prototype, 'requestFacts').mockReturnValue({ text: '原版经验94级，饥饿8', parts: [{ key: 'status', text: '原版经验94级，饥饿8' }], snapshotTypes: [] });
   engine.extensionServerFeedback(line({ ...status, guide: { step: 'skills', reason: 'skill_required',

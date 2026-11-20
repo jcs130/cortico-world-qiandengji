@@ -1,6 +1,16 @@
 import { expect, it, vi } from 'vitest';
 import { ServerQueryLane } from 'agent-mc-world/extension';
-import { STORAGE_TRADE_QUERIES as defs } from '../integrations/qiandengji/engine/storage-trade-query.ts';
+import { STORAGE_TRADE_QUERIES as defs, stashTakeArrival } from '../integrations/qiandengji/engine/storage-trade-query.ts';
+it('matches only the issued stash transfer slot, quantity and exact server reply shape', () => {
+  const match = stashTakeArrival('/mycli arena stash take 92 2')!;
+  expect(match('MC_STASH_TAKE slot=92 id=minecraft:iron_helmet moved=1')).toEqual({ item: 'iron_helmet', moved: 1 });
+  expect(match('MC_STASH_TAKE slot=92 moved=0 reason=empty')).toHaveProperty('rejected');
+  expect(match('MC_STASH_TAKE slot=92 id=minecraft:iron_helmet moved=0')).toHaveProperty('rejected');
+  for (const wrong of ['MC_STASH_TAKE slot=93 id=minecraft:iron_helmet moved=1', 'MC_STASH_TAKE slot=92 id=minecraft:iron_helmet moved=3',
+    '<player> MC_STASH_TAKE slot=92 id=minecraft:iron_helmet moved=1', 'MC_STORAGE_MAGIC id=personal_stash mana=2']) expect(match(wrong)).toBeNull();
+  for (const command of ['hello', '/mycli arena stash list 2', '/mycli arena stash putslot 25 1',
+    '/mycli arena stash take 541', '/mycli arena stash take 92 65']) expect(stashTakeArrival(command)).toBeUndefined();
+});
 const q = (id: string) => defs.find(d => d.id === id)!;
 const setup = (id: string, args: string[] = []) => {
   const terminal = vi.fn(), lane = new ServerQueryLane({ onTerminal: terminal });
@@ -10,6 +20,33 @@ const setup = (id: string, args: string[] = []) => {
     read: () => lane.call({ requestId: request.data!.requestId }, defs, ctx), close: () => lane.reset('done') };
 };
 const row = (slot: number) => `MC_STASH slot=${slot} id=minecraft:iron_sword count=1 name=试炼_剑 enchants=sharpness:2`;
+it('finishes a free pending-reward check on its native zero summary', () => {
+  const r = setup('trial.rewards');
+  try {
+    expect(r.send).toHaveBeenCalledWith('/mycli arena rewards list');
+    expect(q('trial.rewards').command(['take'])).toBeNull();
+    expect(r.receive('MC_STASH_SUMMARY occupied=54/54 page=1 pages=10 capacity=540')).toBe(false);
+    expect(r.receive('MC_REWARD_SUMMARY visible=0 queuedBonus=0 queuedPhotos=0')).toBe(true);
+    expect(r.read().data).toMatchObject({phase:'replied', goal_completed:false, reply:{data:{
+      source:'trial_pending_rewards', hasPending:false, visible:0, queuedBonus:0, queuedPhotos:0, items:[],
+    }}});
+  } finally { r.close(); }
+});
+
+it('separates visible stacks from total queued bonus items and photos', () => {
+  const rewards = q('trial.rewards');
+  const match = (text:string, parts: unknown[] = []) => rewards.matchReply(text, [], 'ag_fixture', parts);
+  expect(match('MC_REWARD_SUMMARY visible=0 queuedBonus=0 queuedPhotos=2')).toMatchObject({data:{hasPending:true,items:[],queuedPhotos:2}});
+  expect(match('MC_REWARD_SUMMARY visible=1 queuedBonus=1 queuedPhotos=0')).toBeNull();
+  const bonus = (slot:number) => row(slot).replace('MC_STASH ', 'MC_REWARD ');
+  expect(match(bonus(8))).toBeNull();
+  const standard = {slot:0};
+  expect(match(bonus(0),[standard])).toBeNull();
+  const shown = [standard,...Array.from({length:9},(_,i)=>({slot:9+i}))];
+  expect(match('MC_REWARD_SUMMARY visible=10 queuedBonus=12 queuedPhotos=0',shown)).toMatchObject({
+    ok:true,data:{hasPending:true,visible:10,queuedBonus:12,items:shown},
+  });
+});
 const econ = (action: string, rest = {}) => 'MC_ARENA_ECONOMY ' + JSON.stringify({ schemaVersion: 1,
   requestId: 'server-batch-id', action, queryOnly: true, success: true, balance: 52, currency: '金币', pending: false, ...rest });
 const item = { id: 'minecraft:iron_sword', quantity: 1, name: '试炼剑', remainingDurability: 123,

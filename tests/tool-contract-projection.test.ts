@@ -16,6 +16,36 @@ it('preserves generic decision boundaries and fact dependencies through the thin
   expect(facts.snapshotTypes).toEqual(['mymc.snapshot']);
 });
 
+it('mounts the compact inventory fact and its callable detail lookup without copying the bag', async () => {
+  const data = {
+    protocol: 'agent-mc-carried-inventory/v1', kind: 'delta', usedSlots: 27, freeSlots: 9,
+    changes: [{ name: 'netherrack', before: 108, after: 64 }],
+    next_safe_read: { tool: 'mc_bag', arguments: { detail: 'slots' } },
+  };
+  const engine = {
+    requestFacts: () => ({
+      text: 'raw fallback', snapshotTypes: ['minecraft.snapshot'],
+      parts: [{ key: 'carriedInventory', text: '随身 27/36 格；明细 mc_bag' }],
+      executionPartKeys: ['carriedInventory'],
+    }),
+    tools: () => [{ name: 'mc_bag', tags: ['read'], description: 'Carried inventory', parameters: {},
+      handler: async () => ({ text: '可查 mc_bag', data }) }],
+  } as unknown as MinecraftWorldProxy;
+  const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, engine);
+  const facts = world.requestFacts()!;
+  expect(facts.parts?.filter(part => part.key === 'carriedInventory')).toEqual([
+    { key: 'carriedInventory', text: '随身 27/36 格；明细 mymc_bag' },
+  ]);
+  expect(facts.text.match(/随身 27\/36 格/g)).toHaveLength(1);
+  expect(facts.executionPartKeys).toContain('carriedInventory');
+  const bag = world.tools().find(tool => tool.name === 'mymc_bag')!;
+  const reply = await bag.handler({ detail: 'changes' }, { role: 'test', log: nullLogger() });
+  expect(reply).toMatchObject({ text: '可查 mymc_bag', data: {
+    ...data, next_safe_read: { tool: 'mymc_bag', arguments: { detail: 'slots' } },
+  } });
+  expect(data.next_safe_read.tool).toBe('mc_bag');
+});
+
 it('mounts compact parameters with full renamed help and leaves the engine catalogue unchanged', async () => {
   const schema = { type: 'object', required: ['steps'], properties: { steps: { type: 'array',
     description: 'Exact action notes: read the current skill signature', items: { type: 'object' } } } };

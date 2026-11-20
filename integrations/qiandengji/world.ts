@@ -15,7 +15,8 @@ import type {
   WorldRequestFacts,
 } from 'agent-mc-world/contracts';
 import { MINECRAFT_PANEL_DECLS, MINECRAFT_TOOL_DECLS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
-import { MinecraftWorldProxy, WorldOperationLearning, mapWorldEventNamespace } from 'agent-mc-world/extension';
+import { MinecraftWorldProxy, WorldOperationLearning, mapWorldEventNamespace, serverQueryContextNotice } from 'agent-mc-world/extension';
+import { supervisorEventView } from 'agent-mc-world/context';
 import { extendMinecraftOptions, readMinecraftOptions, renderMinecraftOptionIndex } from 'agent-mc-world/extension';
 import { renderTemplate } from 'agent-mc-world/extension';
 import {
@@ -217,6 +218,10 @@ function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgres
   };
   bridge.pushEvent = async (event, options) => {
     const mapped = toMymcEvent(event);
+    if (mapped.type === 'mymc.event' && mapped.meta?.serverQuery && mapped.meta.requestContext) {
+      const notice = serverQueryContextNotice(mapped.meta.serverQuery as Record<string, unknown>, 'mymc_query_receipt');
+      if (notice) mapped.meta = { ...mapped.meta, requestContext: supervisorEventView(mapped.text, notice, notice) };
+    }
     const connection = mapped.meta?.connection as { phase?: unknown; generation?: unknown } | undefined;
     if (mapped.type === 'mymc.event' && connection?.phase === 'spawned' && Number.isSafeInteger(connection.generation)) { catalog.resetConnection(); activities.reset(); }
     if (mapped.type === 'mymc.event' && mapped.meta?.nativeRpgObservation === true)
@@ -415,7 +420,7 @@ export class MymcWorld implements World {
             const reason = readiness === 'missing'
               ? '本次读数未发现剑或斧；仍需核对弓弩与弹药、职业法器、防具、食物及当前副本规则，不能据此单独判断没有可用武器。'
               : '无法确认当前随身武器；等物品栏同步后重试。';
-            guidance.push(`[战备读数提示] ${reason} World 不设必须带剑的入场门槛，入场资格由服务端核验。\n${toMymcText(bag)}`);
+            guidance.push(`[战备读数提示] ${reason} 入场资格由服务端核验。需要逐格核对时可查 mymc_bag {"detail":"slots"}。`);
           }
         }
         if (tool.name === 'mc_do') {

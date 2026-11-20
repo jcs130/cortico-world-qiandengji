@@ -137,6 +137,12 @@ describe('explicit Qiandengji read-only server query definitions', () => {
         { query: 'dungeon.status', arguments: ['invalid;command'] }]) expect(validate(args), JSON.stringify(args)).toBe(false);
     }
     expect(mounted.parameters).toEqual(offline.parameters);
+    const read = world.tools().find(tool => tool.name === 'mymc_query_receipt')!;
+    expect(read.parameters).toEqual(MYMC_TOOL_DECLS.find(tool => tool.name === read.name)?.parameters);
+    expect(read.parameters).toMatchObject({required:['requestId'],additionalProperties:false});
+    expect(Object.keys((read.parameters as any).properties)).toEqual(['requestId']);
+    expect(mounted.parameters.properties).not.toHaveProperty('requestId');
+    expect(mounted.description).toContain('mymc_query_receipt');
     expect(mounted.barrierAfter).not.toBe(true);
     expect(mounted.endsTurn).not.toBe(true);
   });
@@ -157,7 +163,7 @@ describe('explicit Qiandengji read-only server query definitions', () => {
   it('exposes only the reviewed subset through the optional server engine hook', () => {
     expect(QIANDENGJI_SERVER_QUERIES.map(item => item.id)).toEqual(['guild.exam.promotion', 'guild.exam.status', 'guild.exam.info', 'trial.status', 'status', 'skills.status',
       'profession.list', 'skills.tree', 'profession.status', 'profession.info', 'skills.info', 'dungeon.list', 'dungeon.status', 'dungeon.info',
-      'storage.inventory', 'storage.tidy.preview', 'storage.overview', 'storage.stash', 'trade.shop.list', 'trade.recycle.list', 'trade.wallet',
+      'storage.inventory', 'storage.tidy.preview', 'storage.overview', 'storage.stash', 'trial.rewards', 'trade.shop.list', 'trade.recycle.list', 'trade.wallet',
       'trade.recycle.status', 'trade.auction.list', 'trade.auction.mine', 'trade.auction.info', 'storage.clean.preview', 'storage.store.preview']);
     const engine = Object.create(QiandengjiEngine.prototype) as any;
     expect(engine.serverQueryDefinitions()).toBe(QIANDENGJI_SERVER_QUERIES);

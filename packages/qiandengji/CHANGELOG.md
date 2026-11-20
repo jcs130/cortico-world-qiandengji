@@ -1,3 +1,19 @@
+## 0.5.0-rc.50-preview.100
+
+Separate new queries from receipt lookups and bind targeted combat spells to an observed target. Include the portable inventory transfer guide and receipt improvements.
+
+## 0.5.0-rc.50-preview.99
+
+Yield inconclusive sound searches to pending work and report carried scaffold stock and placement refusals.
+
+## 0.5.0-rc.50-preview.98
+
+Expose the synchronized carried inventory and its recent changes through the shared core. Full slot details are available on request.
+
+## 0.5.0-rc.50-preview.97
+
+Match personal-stash withdrawal receipts by source slot and requested count. Empty, partial and unconfirmed transfers remain distinct.
+
 ## 0.5.0-rc.50-preview.96
 
 Expose the game's batch inventory previews through the shared query catalogue. Consumers can bind the authenticated player's UUID with `qiandengjiServerQueriesForPlayer` to verify receipt ownership.
