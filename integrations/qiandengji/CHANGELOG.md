@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.115
+
+Expose the synchronized carried inventory and its recent changes through the shared core. Full slot details are available on request.
+
 ## 0.4.1-rc.71-preview.114
 
 Personal-stash withdrawals in a body task wait for both a matching server reply and the received inventory stack. Dependent equipment steps can start as soon as both observations arrive.
