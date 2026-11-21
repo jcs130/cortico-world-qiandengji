@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.120
+
+Add the Numen body backend to the public Cortico World. Use the existing authorized driver, keep legacy tool calls and action receipts, and share the MC core's tool and observation contract.
+
 ## 0.4.1-rc.71-preview.119
 
 Consume the core that verifies modeled dry-drop landings and keeps runtime collision checks authoritative.

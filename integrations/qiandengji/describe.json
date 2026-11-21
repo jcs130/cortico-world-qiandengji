@@ -6085,6 +6085,40 @@
       ]
     },
     {
+      "name": "mymc_numen",
+      "description": "Numen 身体：先 catalog 查实际工具，再 observe 看当前状态，call 执行；result 查询原请求。保留当前角色和游戏数据。",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "op"
+        ],
+        "properties": {
+          "op": {
+            "enum": [
+              "catalog",
+              "observe",
+              "call",
+              "result"
+            ]
+          },
+          "tool": {
+            "type": "string"
+          },
+          "args": {
+            "type": "object"
+          },
+          "requestId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "tags": [
+        "read",
+        "act"
+      ]
+    },
+    {
       "name": "mymc_observe",
       "description": "Immediate read only: dense voxels max 512 cells, oversize returns partial; optional visible format max 512 surfaces/2048 checks; cursor pins absolute coordinates. Never replaces the action queue. mode is required: voxels/sites/rays. voxels: bounds=[xmin,ymin,zmin,xmax,ymax,zmax], inclusive integer block offsets ±16 from floor(feet) at the first read; default=[-1,-1,-1,1,2,1]. mymc_observe defaults to dense, queued observe defaults to visible surfaces. Dense reads return at most 512 cells as a contiguous rectangular prefix in y,z,x order (x fastest); oversize returns real partial data. Visible mode returns at most 512 non-air surfaces, checking at most 2048 nearby original-anchor cells. Text budget 24000 UTF-16 characters; verbose geometry reduces coverage. cursor replaces bounds and pins coordinates, connection, dimension and respawn scope; invalid scope is rejected, never reanchored. Each page has its own observed_at; not a snapshot. returned_regions/count, requested_bounds/count, remaining_count (outside this response), remaining_after_page, query_anchor, coordinate_system=absolute_block, next_cursor/next_safe_read describe coverage. Continuation is caller-selected, never automatic. Hidden/unloaded/omitted cells stay unknown, never air or safe. Vision through glass is separate from collision; sites body.clear tests clearance, not permission. Structured result is in data (also JSON text); read failure is blocked, invalid parameters are invalid_arguments. No movement or world mutation.",
       "parameters": {
@@ -9365,6 +9399,26 @@
     {
       "type": "mymc.method",
       "description": "方法运行、源码版本与执行终态证据。"
+    },
+    {
+      "type": "mymc.numen.ready",
+      "description": "绑定的 Numen 身体已完成接入。"
+    },
+    {
+      "type": "mymc.numen.chat",
+      "description": "Numen 身体收到的具名附近聊天。"
+    },
+    {
+      "type": "mymc.numen.dialogue",
+      "description": "Numen 身体收到的点名或私聊。使用原会话 ID 回复。"
+    },
+    {
+      "type": "mymc.numen.voice",
+      "description": "Numen 身体收到的附近语音转写。"
+    },
+    {
+      "type": "mymc.numen.event",
+      "description": "Numen 身体收到的游戏事件。"
     },
     {
       "type": "mymc.practice",
