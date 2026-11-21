@@ -1,17 +1,17 @@
 {
-  "version": "0.5.7-rc.160-preview.115",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.115-ce793f27.tgz",
-  "sha256": "ce793f274e2cdc640f2e1d5379b1284857c717914bbea375034c9d4253f6e817",
+  "version": "0.5.7-rc.160-preview.116",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.116-26424757.tgz",
+  "sha256": "2642475750d3a3f29bc71c27a66c2335000fbd1d4c5adeae81d41c4d390bc839",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "0fa1bc6a9fd18e2e5e8444f47b17c876f203f5d3",
-  "integrationBranch": "codex/qualified-equipment-id-20261120",
-  "sourcePushed": true,
+  "sourceCommit": "351a008a98f0bc411a55958fd3b6c6963a1aac15",
+  "integrationBranch": "fix/verified-drop-planning-20261121",
+  "sourcePushed": false,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
   "viewer": {
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Accept qualified item IDs from transfer receipts when locating and equipping inventory. Confirm the equipped slot before treating a repeat as a new move."
+  "rebuildNote": "Consume the core that verifies modeled dry-drop landings and keeps runtime collision checks authoritative."
 }
