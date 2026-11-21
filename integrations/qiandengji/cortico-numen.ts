@@ -3,7 +3,6 @@ import { isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import Ajv, { type ValidateFunction } from 'ajv';
 import { NumenClientWorld, type NumenBodyPort } from 'agent-mc-world/client';
-import { CommandRepetitionGuard } from 'agent-mc-world/command-repetition';
 import type { ConfigGroup, ToolCallContext, ToolDef, ToolOutcome, World, WorldConsoleDecl, WorldHost } from 'agent-mc-world/contracts';
 import type { WorldContext } from 'cortico/world.ts';
 import type { CorticoConfig, CorticoNumenConfig } from './public-contract.d.ts';
@@ -77,7 +76,6 @@ export function numenConfigGroup(groups: readonly ConfigGroup[]): ConfigGroup[] 
 export class CorticoNumenWorld implements World {
   readonly id = 'mymc';
   private readonly ajv = new Ajv({ strict: false });
-  private readonly repetitions = new CommandRepetitionGuard();
   private readonly core: NumenClientWorld;
   private readonly coreTool: ToolDef;
   private active?: { driver: Driver; host: WorldHost; tools: Map<string, DriverTool>; identity: NumenBodyPort['identity'] };
@@ -102,7 +100,6 @@ export class CorticoNumenWorld implements World {
         const sampledAt = typeof sample?.sampled_at === 'string' ? Date.parse(sample.sampled_at) : NaN;
         if (status.control !== 'ready' || !Number.isFinite(sampledAt)) throw Error('Numen 没有已确认的实时身体快照。');
         this.sampledAt = sampledAt;
-        this.repetitions.inspected();
         return { text: JSON.stringify(sample), sampledAt, uuid: String(status.body ?? ''), server: port.identity.server };
       },
       catalog: async () => this.catalog(),
@@ -143,7 +140,6 @@ export class CorticoNumenWorld implements World {
     const active = this.active;
     this.active = undefined;
     this.phase = 'offline';
-    this.repetitions.inspected();
     await this.core.stop();
     await Promise.all([active?.driver.stop(), this.attaching?.catch(() => undefined)]);
   }
@@ -216,7 +212,7 @@ export class CorticoNumenWorld implements World {
   }
 
   private async status(signal?: AbortSignal) {
-    const outcome = await this.invoke('numen_status', {}, { role: 'main', log: this.active!.host.log, signal }, false);
+    const outcome = await this.invoke('numen_status', {}, { role: 'main', log: this.active!.host.log, signal });
     return outcome.data ?? {};
   }
 
@@ -226,7 +222,7 @@ export class CorticoNumenWorld implements World {
     return this.invoke('numen_result', { requestId: id }, { role: 'main', log: active.host.log, signal });
   }
 
-  private async invoke(name: string, args: Row, ctx: ToolCallContext, explicit = true): Promise<ToolOutcome> {
+  private async invoke(name: string, args: Row, ctx: ToolCallContext): Promise<ToolOutcome> {
     const active = this.active, entry = active?.tools.get(name);
     if (!active || !entry) return fail('numen_tool_unavailable', '当前 Numen 驱动未提供此工具。请读取 catalog。');
     if (ctx.signal?.aborted) return fail('cancelled_before_dispatch', '调用已取消。');
@@ -235,16 +231,6 @@ export class CorticoNumenWorld implements World {
     if (!entry.validate(args)) return fail('invalid_arguments', this.ajv.errorsText(entry.validate.errors));
     if ((entry.tool.tags.includes('act') || entry.tool.tags.includes('speak')) && !ctx.callId)
       return fail('request_id_required', '需要稳定的动作请求号。');
-    if (name === 'numen_command' && typeof args.line === 'string') {
-      const line = args.line.trim();
-      const command = this.repetitions.admit('mymc_do', { steps: [{ skill: 'chat', text: line.startsWith('/') ? line : '/' + line }] },
-        ctx.callId!, 0);
-      if (command && !command.admitted) return {
-        ...fail('command_repetition_requires_inspection', '重复命令未派发。请先核对原回执、当前位置和任务条件。'),
-        data: { status: 'blocked', reason: 'command_repetition_requires_inspection', dispatched: false, retryable: false,
-          next_safe_read: { tool: 'mymc_numen', arguments: { op: 'observe' } } },
-      };
-    }
     if (entry.tool.tags.includes('act')) this.sampledAt = 0;
     const outcome = toOutcome(await entry.tool.handler(args, ctx));
     if (this.active !== active) return outcome;
@@ -255,8 +241,6 @@ export class CorticoNumenWorld implements World {
         return fail('body_identity_mismatch', 'Numen 身体身份与配置不符。');
       }
     }
-    if (explicit && !outcome.failed && ['numen_status', 'numen_result', 'numen_survey', 'numen_adventure_query'].includes(name))
-      this.repetitions.inspected();
     return outcome;
   }
 }

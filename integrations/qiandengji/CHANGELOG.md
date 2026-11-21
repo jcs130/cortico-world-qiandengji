@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.121
+
+Use the same core command repetition guard in the Cortico World for Mineflayer, Java and Numen. Require real observation before reconsidering repeated commands and run the body contract suite during packaging.
+
 ## 0.4.1-rc.71-preview.120
 
 Add the Numen body backend to the public Cortico World. Use the existing authorized driver, keep legacy tool calls and action receipts, and share the MC core's tool and observation contract.

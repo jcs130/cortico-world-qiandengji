@@ -11,13 +11,15 @@ const walk = async dir => (await Promise.all((await readdir(dir, { withFileTypes
   e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]))).flat();
 const pack = join(root, 'packages/qiandengji');
 const sourceBase = join(root, 'integrations/qiandengji');
+const corticoAdapters = (await readdir(sourceBase)).filter(name => /^cortico-[a-z-]+\.ts$/.test(name));
 await rm(join(pack, 'dist'), { recursive: true, force: true });
 await mkdir(join(pack, 'dist'), { recursive: true });
 await cp(join(root, 'LICENSE'), join(pack, 'LICENSE'));
 for (const source of await walk(sourceBase)) {
   const name = relative(sourceBase, source).replaceAll('\\', '/');
   if (name.startsWith('dist/') || name.startsWith('node_modules/') || ['index.ts', 'cortico.ts', 'original-task-observer.ts'].includes(name)
-    || /(?:^|\/)(?:package\.json|LICENSE)$/.test(name) || ['README.md', 'cortico-activity.ts', 'cortico-activity-tap.ts', 'cortico-quick-start.ts', 'cortico-practice.ts','cortico-storage.ts','cortico-decisions.ts', 'cortico-numen.ts', 'ENV_PROMPT_NUMEN.md'].includes(name)) continue;
+    || /(?:^|\/)(?:package\.json|LICENSE)$/.test(name) || ['README.md', 'ENV_PROMPT_NUMEN.md'].includes(name)
+    || corticoAdapters.includes(name)) continue;
   if(name.startsWith('data-packs/qiandengji/viewer-items/')&&/\.(?:png|json)$/.test(name)){
     const target=join(pack,'dist',name);await mkdir(dirname(target),{recursive:true});await cp(source,target);continue;
   }
@@ -69,13 +71,13 @@ console.log('Cortico World package files verified');
   let adapter = (await transform(await readFile(join(base, 'cortico.ts'), 'utf8'),
     { loader: 'ts', format: 'esm', target: 'node22' })).code;
   adapter = adapter.replace(/from (['"])\.\/([^'"\r\n]+)\1/g, (_all, _quote, source) =>
-    /^cortico-(?:activity(?:-tap)?|quick-start|practice|storage|decisions|numen)\.[jt]s$/.test(source) ? 'from "./' + source.replace(/\.ts$/, '.js') + '"' : 'from "agent-mc-qiandengji"');
-  for (const file of ['cortico-activity', 'cortico-activity-tap', 'cortico-quick-start', 'cortico-practice','cortico-storage','cortico-decisions','cortico-numen']) {
-    const activityAdapter = (await transform(await readFile(join(base, file + '.ts'), 'utf8'),
-      { loader: 'ts', format: 'esm', target: 'node22' })).code.replaceAll('./cortico-activity.ts', './cortico-activity.js')
+    corticoAdapters.includes(source.replace(/\.js$/, '.ts')) ? 'from "./' + source.replace(/\.ts$/, '.js') + '"' : 'from "agent-mc-qiandengji"');
+  for (const file of corticoAdapters) {
+    const activityAdapter = (await transform(await readFile(join(base, file), 'utf8'),
+      { loader: 'ts', format: 'esm', target: 'node22' })).code.replace(/\.\/(cortico-[a-z-]+)\.ts/g, './$1.js')
       .replaceAll('from "./config.ts"', 'from "agent-mc-qiandengji"')
       .replaceAll('from "./server-guide.ts"', 'from "agent-mc-qiandengji"');
-    await writeFile(join(base, 'dist/world/' + file + '.js'), activityAdapter.replaceAll('from "./portal-access.ts"', 'from "agent-mc-qiandengji/portal"'));
+    await writeFile(join(base, 'dist/world/' + file.replace(/\.ts$/, '.js')), activityAdapter.replaceAll('from "./portal-access.ts"', 'from "agent-mc-qiandengji/portal"'));
   }
   await cp(join(base, 'ENV_PROMPT_NUMEN.md'), join(base, 'dist/world/ENV_PROMPT_NUMEN.md'));
   await writeFile(join(base, 'dist/world/cortico.js'), adapter);

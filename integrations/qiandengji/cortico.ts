@@ -14,6 +14,7 @@ import { withCorticoPractice, PRACTICE_DEFAULTS } from './cortico-practice.ts';
 import {corticoWorldStorage,withCorticoStorage} from './cortico-storage.ts';
 import {withCorticoDecisionService,publicHostDecisions,validateDecisionService,DECISION_SERVICE_DEFAULTS} from './cortico-decisions.ts';
 import { CorticoNumenWorld, assertNumenBinding, numenConfigGroup } from './cortico-numen.ts';
+import { withCorticoCommandFeedback } from './cortico-command-feedback.ts';
 
 /** API 6 names the browser contribution webUi. Keep the API 5 method for
  * explicitly built local compatibility packages, with one implementation. */
@@ -55,6 +56,7 @@ function withWebUi<T extends World>(world: T, cfg?: CorticoConfig): T {
     return { ...declaration, config: numenConfigGroup(declaration.config ?? []) };
   };
   Object.defineProperty(world, 'webUi', { value: world.console, configurable: true });
+  withCorticoCommandFeedback(world);
   const tools = world.tools.bind(world);
   world.tools = () => tools().map(tool => ({ ...tool, tags: tool.tags ?? [],
     handler: async (args, context) => {

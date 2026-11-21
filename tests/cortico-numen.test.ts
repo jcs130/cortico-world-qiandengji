@@ -87,7 +87,10 @@ describe('Numen in the public Cortico World', () => {
     await world.start(host());
     try {
       const command = (id: string) => run(world, 'numen_command', { line: '/mycli goto arena' }, id);
-      for (const id of ['first', 'second', 'third']) expect((await command(id)).failed).toBeUndefined();
+      for (const id of ['first', 'second']) expect((await command(id)).failed).toBeUndefined();
+      expect((await run(world, 'mymc_numen', { op: 'call', tool: 'numen_command', args: { line: 'mycli goto arena' } }, 'third')).failed)
+        .toBeUndefined();
+      expect((await run(world, 'mymc_numen', { op: 'result', requestId: 'unknown-command' })).data?.status).toBe('unknown');
       expect((await command('fourth')).data).toMatchObject({
         status: 'blocked', dispatched: false, reason: 'command_repetition_requires_inspection',
         next_safe_read: { tool: 'mymc_numen', arguments: { op: 'observe' } },

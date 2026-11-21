@@ -14,6 +14,7 @@
     "build": "node scripts/build-extensions.mjs",
     "build:extensions": "node scripts/build-extensions.mjs",
     "test": "vitest run",
+    "test:body-contract": "vitest run tests/cortico-command-feedback.test.ts tests/cortico-numen.test.ts tests/cortico-standard.test.ts tests/world-description.test.ts tests/webui-panels.test.ts",
     "test:release": "vitest run --maxWorkers=4 --minWorkers=1",
     "typecheck": "tsc --noEmit -p tsconfig.integration.json && tsc --noEmit -p tsconfig.web.json",
     "release:pack": "node scripts/prepare-release.mjs",

@@ -44,6 +44,8 @@ Harness² 通过宿主的后台任务认知编辑指定的方法版本。启用�
 
 `mymc_numen` 提供 `catalog`、`observe`、`call` 和 `result`。桐人原有的 `numen_*` 工具和会话 ID 仍可使用。权限、可用操作和终态由服主提供的驱动确认。未知结果按原请求号查询。该后端采用 Numen 的原生移动、物品和语音操作；网页第一人称、Mineflayer 脚本与自动快战术需要对应的身体适配。
 
+不同身体上的通用修复可按 [World 共建说明](https://github.com/jcs130/cortico-world-qiandengji/blob/main/docs/cortico-world-co-development.md) 提交和联测。
+
 ### 服务器地址怎么填
 
 - 域名：`mc.example.com`，默认端口 25565。
