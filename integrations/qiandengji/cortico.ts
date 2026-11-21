@@ -13,6 +13,8 @@ import { withQuickStart } from './cortico-quick-start.ts';
 import { withCorticoPractice, PRACTICE_DEFAULTS } from './cortico-practice.ts';
 import {corticoWorldStorage,withCorticoStorage} from './cortico-storage.ts';
 import {withCorticoDecisionService,publicHostDecisions,validateDecisionService,DECISION_SERVICE_DEFAULTS} from './cortico-decisions.ts';
+import { CorticoNumenWorld, assertNumenBinding, numenConfigGroup } from './cortico-numen.ts';
+import { withCorticoCommandFeedback } from './cortico-command-feedback.ts';
 
 /** API 6 names the browser contribution webUi. Keep the API 5 method for
  * explicitly built local compatibility packages, with one implementation. */
@@ -49,7 +51,12 @@ function withWebUi<T extends World>(world: T, cfg?: CorticoConfig): T {
     world.stop = async () => { tap?.dispose(); tap = null; await stop(); };
   }
   const contribution = world.console?.bind(world);
-  if (contribution) Object.defineProperty(world, 'webUi', { value: contribution, configurable: true });
+  world.console = () => {
+    const declaration = contribution?.() ?? {};
+    return { ...declaration, config: numenConfigGroup(declaration.config ?? []) };
+  };
+  Object.defineProperty(world, 'webUi', { value: world.console, configurable: true });
+  withCorticoCommandFeedback(world);
   const tools = world.tools.bind(world);
   world.tools = () => tools().map(tool => ({ ...tool, tags: tool.tags ?? [],
     handler: async (args, context) => {
@@ -72,38 +79,43 @@ export const MYMC: MymcWorldDefinition = {
   label: '联机版我的世界',
   exclusiveResource: 'minecraft-client',
   defaults: () => ({ ...structuredClone(WORLD_DEFAULTS), viewerActivity: { enabled: true },
+    numen: { driverDirectory: '', python: '', bridgeConfig: '' },
     decisionService:structuredClone(DECISION_SERVICE_DEFAULTS),harness2:structuredClone(PRACTICE_DEFAULTS) }),
   preflight: ctx => {
-    validateDecisionService(ctx.cfg);
-    const coreCfg = mymcCoreConfig(ctx.cfg);
-    if (ctx.cfg.provider === 'java-client') { selectedServerPack(ctx.cfg); assertMinecraftReady(coreCfg); return; }
-    const pack = selectedServerPack(ctx.cfg);
-    if (pack === 'qiandengji') { assertMymcReady(ctx.cfg, ctx.botDir); validateHostCombat({...ctx.cfg,hostDecisions:publicHostDecisions(ctx.cfg)}); }
+    if (ctx.cfg.provider === 'numen') { selectedServerPack(ctx.cfg); assertNumenBinding(ctx.cfg.numen); return; }
+    const cfg = ctx.cfg as CorticoConfig & MymcConfigSection;
+    validateDecisionService(cfg);
+    const coreCfg = mymcCoreConfig(cfg);
+    if (cfg.provider === 'java-client') { selectedServerPack(cfg); assertMinecraftReady(coreCfg); return; }
+    const pack = selectedServerPack(cfg);
+    if (pack === 'qiandengji') { assertMymcReady(cfg, ctx.botDir); validateHostCombat({...cfg,hostDecisions:publicHostDecisions(cfg)}); }
     else {
-      validateHostCombat({...ctx.cfg,hostDecisions:publicHostDecisions(ctx.cfg)});
+      validateHostCombat({...cfg,hostDecisions:publicHostDecisions(cfg)});
       assertMinecraftReady(coreCfg);
     }
   },
   create: ctx => {
+    if (ctx.cfg.provider === 'numen') return withWebUi(new CorticoNumenWorld(ctx), ctx.cfg);
+    const clientCfg = ctx.cfg as CorticoConfig & MymcConfigSection;
     const storage=corticoWorldStorage(ctx.dataDir);
-    const scopedContext={...ctx,dataDir:storage.directory};
+    const scopedContext={...ctx,cfg:clientCfg,dataDir:storage.directory};
     let preparedViewer: string | null = null;
     const templateDir = () => ctx.cfg.viewerAssetsDir.trim() || MINECRAFT_CLIENT_DEFAULTS.viewerAssetsDir;
     // Resolve package defaults and prepared paths at runtime, never pin an installed package/cache path into user config.
-    const cfg = new Proxy(ctx.cfg, { get: (target, key, receiver) => key === 'viewerAssetsDir'
-      ? preparedViewer ?? templateDir() : key==='hostDecisions'?publicHostDecisions(ctx.cfg):Reflect.get(target, key, receiver) });
+    const cfg = new Proxy(clientCfg, { get: (target, key, receiver) => key === 'viewerAssetsDir'
+      ? preparedViewer ?? templateDir() : key==='hostDecisions'?publicHostDecisions(clientCfg):Reflect.get(target, key, receiver) });
     const setup = <T extends World>(world: T) => withCorticoStorage(withQuickStart(
-      withCorticoDecisionService(withCorticoPractice(world,()=>ctx.cfg.harness2,storage.directory),()=>ctx.cfg,name=>ctx.secret(name)),
-      scopedContext, candidate => MYMC.preflight?.({ ...ctx, cfg: candidate }),
+      withCorticoDecisionService(withCorticoPractice(world,()=>clientCfg.harness2,storage.directory),()=>clientCfg,name=>ctx.secret(name)),
+      scopedContext, candidate => MYMC.preflight?.({ ...ctx, cfg: { ...ctx.cfg, ...candidate } }),
       { templateDir, setDirectory: value => { preparedViewer = value; } }),storage,()=>ctx.restart());
-    if (ctx.cfg.provider === 'java-client') return setup(withWebUi(new JavaMymcWorld({ ...scopedContext, cfg }),ctx.cfg));
-    const World = selectedServerPack(ctx.cfg) === 'qiandengji' ? MymcWorld : GenericMymcWorld;
+    if (clientCfg.provider === 'java-client') return setup(withWebUi(new JavaMymcWorld({ ...scopedContext, cfg }),ctx.cfg));
+    const World = selectedServerPack(clientCfg) === 'qiandengji' ? MymcWorld : GenericMymcWorld;
     return setup(withWebUi(new World({ cfg, botDir: ctx.botDir,
       timezone: ctx.timezone, botName: ctx.botName, dataDir: storage.directory }), ctx.cfg));
   },
 };
 
-export function selectedServerPack(cfg: MymcConfigSection): 'none' | 'qiandengji' {
+export function selectedServerPack(cfg: Pick<MymcConfigSection, 'serverPack'>): 'none' | 'qiandengji' {
   const pack = cfg.serverPack ?? 'none';
   if (pack !== 'none' && pack !== 'qiandengji') throw new Error('Unknown serverPack; choose none or qiandengji.');
   return pack;

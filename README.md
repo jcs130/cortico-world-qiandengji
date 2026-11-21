@@ -49,6 +49,8 @@ Cortico 内置示例世界保持独立，不在这里修改。
 
 ## 构建本地候选
 
+可米和桐人的共用修复、复现记录和双后端验收见 [World 共建说明](docs/cortico-world-co-development.md)。
+
 候选版本以 `integrations/qiandengji/package.json` 为准，源码候选与 npm 发布分别记录。先在 MC AI Friend 的核心包目录完成构建并打包，将
 与根 `package.json` 和 `vendor/core-source.json` 版本、文件名、SHA 一致的核心归档放入本仓库忽略的 `vendor/` 目录；开发锁文件校验该安装包。
 公开子包依赖仍使用版本号，发布后消费者正常安装 npm 包，无需克隆主项目或本仓库。

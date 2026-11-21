@@ -8,6 +8,7 @@
 - packages/qiandengji 是中立服务器包；integrations/qiandengji/package.json 发布完整 World，integrations/qiandengji-lite/package.json 发布基于官方 Minecraft World 的最小服务器接入扩展。lite 独立构建与验证，通用能力仍只消费核心公开接口；根目录是 private 开发工作区。
 - 开发前核对远程 main 和 npm 版本。核心候选尚未发布时，显式准备与 package.json/锁文件匹配的 vendor 归档并校验 SHA；不从相邻源码目录抽取或打补丁。
 - 服务器特有能力显式启用；主模型、快模型、人格、个人记忆和学习决策属于宿主，通用游戏记忆与技能演化机制属于核心，不增加隐式模型循环。
+- 可米和桐人共用此 World 的源码、核心候选和身体契约测试。新增跨身体回归可按 [World 共建说明](docs/cortico-world-co-development.md) 复现和发布。
 - 通用画面代码仍归 jcs130/mc-visual-console；演出/TTS/歌曲仍归独立 VTuber 扩展。
 - 构建和测试使用独立副本。源码调整不授权重载；沿用线程已有明确中断范围，保留目标、记忆和账本。
 - 提交前完整运行本仓库测试、类型检查、当前 API 6 包验证和私有 API 5 兼容包验证；核心变更另在主项目验收。显式暂存、conventional commit。

@@ -9,7 +9,7 @@ import { assertCandidateCoreRange } from './core-consumer-range.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url)), output = join(root, 'dist/release');
 const npmCli = process.env.npm_execpath;
 if (!npmCli) throw new Error('Run npm run release:pack so the current npm CLI is explicit.');
-execFileSync(process.execPath, [npmCli, 'run', 'test', '--', 'tests/world-description.test.ts', 'tests/webui-panels.test.ts'], { cwd: root, stdio: 'inherit' });
+execFileSync(process.execPath, [npmCli, 'run', 'test:body-contract'], { cwd: root, stdio: 'inherit' });
 const json = async file => JSON.parse(await readFile(file, 'utf8'));
 const digest = async file => createHash('sha256').update(await readFile(file)).digest('hex');
 const source = await json(join(root, 'vendor/core-source.json'));

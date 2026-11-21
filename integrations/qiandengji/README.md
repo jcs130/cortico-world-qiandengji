@@ -19,6 +19,33 @@ Harness² 通过宿主的后台任务认知编辑指定的方法版本。启用�
 主模型沿用宿主现有配置；快决策可选配置完整服务地址，密钥从部署 `.env` 读取，不依赖私有宿主接口。默认不启用额外推理或服务器传送。普通截图与可选体素证据由本 World 提供，图片、视频和歌曲生成在独立 AIGC World 配置，人物参考由 Persona 共享记忆提供。
 公测需要 Cortico 0.2.2 或更新的 0.2.x 版本。World 默认 `latest` 仍为 0.1.2；首次下载超时可参照[公测安装说明](https://github.com/jcs130/cortico-world-qiandengji/blob/main/docs/release-quick-start.md#首次安装遇到下载超时)。
 
+### 使用服务端 Numen 身体
+
+已有服主授权的 Numen 身体时，在高级配置选择身体后端 `numen`，或在部署配置中设置：
+
+```json
+{
+  "worlds": {
+    "mymc": {
+      "enabled": true,
+      "provider": "numen",
+      "serverPack": "qiandengji",
+      "numen": {
+        "driverDirectory": "E:/approved/numen-driver/package",
+        "python": "E:/approved/venv/Scripts/python.exe",
+        "bridgeConfig": "E:/private/numen-seat.json"
+      }
+    }
+  }
+}
+```
+
+驱动目录使用现有的 `cortico-world-numen 0.2.2`，Python 环境沿用服务端的 `agent-mc-harness`。绑定文件由服主提供，通过原连接认证控制同一 UUID，并继续使用原动作账本。迁移既有角色时先停止原 `worlds.numen`，等待控制席交回，再启用这份配置。Cortico 的角色与记忆使用原部署。
+
+`mymc_numen` 提供 `catalog`、`observe`、`call` 和 `result`。桐人原有的 `numen_*` 工具和会话 ID 仍可使用。权限、可用操作和终态由服主提供的驱动确认。未知结果按原请求号查询。该后端采用 Numen 的原生移动、物品和语音操作；网页第一人称、Mineflayer 脚本与自动快战术需要对应的身体适配。
+
+不同身体上的通用修复可按 [World 共建说明](https://github.com/jcs130/cortico-world-qiandengji/blob/main/docs/cortico-world-co-development.md) 提交和联测。
+
 ### 服务器地址怎么填
 
 - 域名：`mc.example.com`，默认端口 25565。
