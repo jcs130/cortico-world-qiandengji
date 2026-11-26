@@ -1,3 +1,13 @@
+## 当前私人任务中心
+
+Mineflayer/Java 用 `mymc_query {"query":"journal"}`（别名 `tasks.overview`）；Numen 用 `numen_command {"line":"/mycli journal --json"}`。任务分公会/生活与个人技能/基础两组，每页最多七项；Numen 查询分组/分页时发送 `/mycli journal guild 2 --json`。以 `itemId`、`runId`、`state`、`nextCommand` 为准；旧 `tasks list/status` 的空输出和旧在办委托不代表当前状态。
+
+查询不会写入。统一验收用 `mymc_task_action {"action":"journal_submit","id":"本次 itemId"}`；submit 不支持 `--json`，由原领域校验。完成后重读 journal；结果未知先查原请求，同一个拒绝不重发。
+
+小屋考试：查询 `shelter_basic` → `start` → 本人完成七项施工检查 → 一次 `guild exam submit`。不再等待 `builder_home` 或额外 `guild claim`。普通传送、重连、重启保留原 runId 与截止时间；过期场次不续期。
+
+## 身体队列与受阻
+
 任务受理只表示进入队列。是否做成，以后续的 mymc.task 事件、服务器消息和现场状态为准。用 mymc_queue 看当前队列与最近结局，用 mymc_blocked 看受阻原话，用 mymc_bag 看背包；这三个入口只读。执行中的任务会自行寻路，存物时可能去另一只箱子；位置变化不代表走错，只要队列仍显示在做，就等完成或受阻回执，不要仅凭中途快照用 mymc_stop 撤单重下。
 
 准备选下一个冒险目标时，`/mycli world events --json` 可回看服务器最新发布和仍在进行的集结。公告的倒计时指活动窗口。用 `mymc_query {"query":"dungeon.list"}` 查看据点副本，按返回的 ID 用 `dungeon.info` 核对入口与准入条件；`trial.status` 单独描述试炼塔。将选中的地点、到场与本次入场回执关联，结束时核对该副本的结算。

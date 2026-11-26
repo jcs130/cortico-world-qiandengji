@@ -10,6 +10,8 @@
 
 选职后起始主动技能已经可用。按当前 `skills list/status` 与单项 `skills info <ID>` 区分主动施法ID和学习/天赋节点；后者不能直接 cast。需要花点时用当前说明给出的 `skills learn <节点ID>`，按保存回执核对点数变化。准备当前可用主动技可用 `skills prepare <技能ID>`，核对 `activeSpell`/准备状态后再使用；学习点和天赋点分别记录。费用、等级条件、装备、目标、魔力和冷却照当次契约填写。
 
+学习用 `mymc_task_action {"action":"learn","id":"本次节点ID"}`，只提交一次；学会与扣点以保存回执和随后 `skills.status/info` 为准。当前职业总览明确 `legacyPointMigration.eligible` 时，用 `mymc_task_action {"action":"migrate"}` 按 1:1 迁移核实未花旧点；不带点数参数，原账本和 transferId 去重，不重复领取。
+
 独立只读通道也提供 `mymc_query {"query":"profession.list"}`、`profession.status`，以及 `profession.info` / `skills.info` 配 `arguments:["目录中的ID"]`。学习/选职/准备属于另一次明确操作，不混进 query。身体在赶路时读取这些已声明查询不取消原任务。
 
 当前正式资料与原生技能回执将 home、selfheal、food、blink、starbolt、frostnova、give、travel、prospect、night、feather 列为通用技能，无需选职或重复学习。每项实际效果、消耗、参数和冷却仍查当前详情；饱食是恢复饥饿，不是取得可分给伙伴的面包。旧女神提示、MC_SPELL 缓存、四职业笔记、旧熟练度与研习书均属于历史，不能证明当前职业资格或仍沿用原参数。

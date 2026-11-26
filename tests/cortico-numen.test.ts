@@ -37,7 +37,10 @@ function fixture(override: Record<string, unknown> = {}) {
             if (!receipts.has(callId)) receipts.set(callId,{status:'completed',request_id:callId,terminal:true,position:args,effects:++effects,role});
             return receipts.get(callId);
           }),
-          tool('numen_command',['act'],{line:{type:'string'}},()=>({status:'completed',terminal:true})),
+          tool('numen_command',['act'],{line:{type:'string'}},({line},{callId})=>{
+            if (!receipts.has(callId)) receipts.set(callId,{status:'completed',request_id:callId,terminal:true,line});
+            return receipts.get(callId);
+          }),
           tool('numen_result',['read'],{requestId:{type:'string'}},({requestId})=>
             receipts.get(requestId)??{status:'unknown',request_id:requestId,terminal:false,retry_allowed:false}),
         ],
@@ -79,6 +82,21 @@ describe('Numen in the public Cortico World', () => {
       expect((await run(world, 'mymc_numen', { op: 'call', tool: 'numen_move', args }, 'same')).data).toEqual(action.data);
       expect((await run(world, 'mymc_numen', { op: 'result', requestId: 'same' })).data).toEqual(action.data);
       expect(world.requestFacts?.()).toBeNull();
+    } finally { await world.stop(); }
+  });
+
+  it('exposes one typed task write through the original Numen command and receipt path', async () => {
+    const world = MYMC.create(fixture());
+    await world.start(host());
+    try {
+      expect(JSON.parse((await run(world, 'mymc_numen', { op: 'catalog' })).text).map((tool: {name: string}) => tool.name))
+        .toContain('mymc_task_action');
+      const result = await run(world, 'mymc_task_action', { action: 'journal_submit', id: 'contract:tm_fixture' }, 'task-current');
+      expect(result.data).toMatchObject({ status: 'completed', terminal: true, line: '/mycli journal submit contract:tm_fixture' });
+      expect(result.text).toContain('完成与否以原回执和随后 journal 查询为准');
+      expect((await run(world, 'mymc_numen', { op: 'result', requestId: 'task-current' })).data).toEqual(result.data);
+      expect((await run(world, 'mymc_task_action', { action: 'migrate', id: '13' }, 'invalid')).data)
+        .toMatchObject({ reason: 'invalid_task_action', dispatched: false });
     } finally { await world.stop(); }
   });
 
