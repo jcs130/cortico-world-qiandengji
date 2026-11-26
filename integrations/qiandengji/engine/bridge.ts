@@ -4,8 +4,14 @@ import type { ProtectReply } from 'agent-mc-world/extension';
 import { AgentFriendProtection } from './agentfriend-protection.ts';
 import { BREAK_ACL_CHANNEL } from 'agent-mc-world/extension';
 import { parseSkillsPayload, VIEWER_STATE_CHANNEL, serverViewerProtocol } from './viewer-state.ts';
+import { advertiseAgentIdentity } from './server-identity.ts';
 export class QiandengjiBridge extends Bridge {
-  constructor(options: BridgeOptions) { super({...options, protectionChannel: BREAK_ACL_CHANNEL}); }
+  constructor(options: BridgeOptions) {
+    super({ ...options, protectionChannel: BREAK_ACL_CHANNEL, onServerReady(bot, reconnect) {
+      if (!advertiseAgentIdentity(bot._client, reconnect)) options.log.warn('Qiandengji identity announcement failed');
+      options.onServerReady?.(bot, reconnect);
+    } });
+  }
   protected override createProtectionPort(bot: Bot, reply: (reply: ProtectReply) => void) { return new AgentFriendProtection(bot,reply); }
   protected override attachServerProtocols(bot: Bot, gen: number) {     this.agentMana = undefined;
     const onAgentState = (packet: { channel?: unknown; data?: unknown }) => {

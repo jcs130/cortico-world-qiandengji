@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.121.pack.1
+
+Bind the guide, body and tool surface to the selected server profile. Announce the Qiandengji controller only through its own authenticated connection.
+
 ## 0.4.1-rc.71-preview.121
 
 Use the same core command repetition guard in the Cortico World for Mineflayer, Java and Numen. Require real observation before reconsidering repeated commands and run the body contract suite during packaging.

@@ -18,6 +18,16 @@ function options(dataDir = directory()) {
 }
 
 describe('independent game runtime', () => {
+  it('honors a named generic or RPG server through the standalone facade', () => {
+    for (const [server, profile] of [['rpg', 'qiandengji'], ['book', 'minecraft'], ['third', 'minecraft']]) {
+      const opts = options();
+      const sdk = new MymcAgentRuntime({ ...opts, cfg: { ...opts.cfg, server, serverPack: 'qiandengji', servers: {
+        rpg: {host:'rpg.invalid', serverPack:'qiandengji'}, book: {host:'book.invalid'}, third:{host:'third.invalid'}
+      } } });
+      expect(sdk.profile).toBe(profile);
+      expect(sdk.tools().some(t => t.name === 'mymc_guide')).toBe(server === 'rpg');
+    }
+  });
   it('keeps game acceptance, terminal events, provenance and returned external bodies distinct', async () => {
     let host: WorldHost;
     const tools: ToolDef[] = [{ name: 'mymc_do', description: 'Submit one action', tags: ['act'], parameters: { type: 'object' },

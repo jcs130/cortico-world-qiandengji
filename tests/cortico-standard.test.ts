@@ -21,6 +21,20 @@ describe('current public Cortico World contract',()=>{
     expect(world.tools().find(tool=>tool.name==='mymc_goal')).toMatchObject({bodyControl:'independent'});
     expect(world.tools().find(tool=>tool.name==='mymc_do')).not.toHaveProperty('bodyControl','independent');
   });
+  it('mounts only the selected server pack, including for servers sharing an account and dimension', async () => {
+    const root = await directory();
+    const cfg = { ...MYMC.defaults(), provider: 'mineflayer' as const, serverPack: 'qiandengji' as const,
+      servers: { rpg: {host:'rpg.invalid', serverPack:'qiandengji' as const}, book: {host:'book.invalid'}, third: {host:'third.invalid'} } };
+    const mounted = (server: string) => MYMC.create({id:'mymc',cfg:{...cfg, server},dataDir:root,botDir:root,repoRoot:root,
+      packageDir:root,timezone:'UTC',botName:'Fixture',secret:()=>'',storeSecret:()=>{},persist:()=>{},restart:async()=>{}});
+    const names = (server: string) => mounted(server).tools().map(t => t.name);
+    const generic = names('book');
+    expect(generic).toContain('mymc_knowledge');
+    expect(names('third')).toEqual(generic);
+    expect(generic).not.toContain('mymc_guide');
+    expect(names('rpg')).toContain('mymc_guide');
+    expect(() => mounted('missing')).toThrow(/Unknown/);
+  });
   it('uses mymc storage keys for every configured body and declares no private settings',async()=>{
     const root=await directory();const defaults=MYMC.defaults();expect(defaults.viewerActivity).toEqual({enabled:true});
     for(const [provider,serverPack]of [['mineflayer','none'],['mineflayer','qiandengji'],['java-client','none']]as const){

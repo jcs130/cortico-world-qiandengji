@@ -1,4 +1,5 @@
 import { COMBAT_EXECUTION_DEFAULTS, type CombatExecutionPolicy } from './engine/combat-decision-types.ts';
+import { mountServerProfile, selectedServerId, type MinecraftServerProfile } from 'agent-mc-world/extension';
 import type { ConfigGroup } from 'agent-mc-world/contracts';
 import { COMBAT_DECISION_DEFAULTS } from 'agent-mc-world/decisions';
 import {
@@ -18,7 +19,26 @@ type RepeatSuccessFallback = {
   windowMinutes: number;
 };
 
-export type MymcConfigSection = MinecraftConfigSection & {
+type Pack = 'none' | 'qiandengji';
+type ProfileSelection = {
+  server?: string;
+  servers?: Record<string, MinecraftServerProfile & { serverPack?: Pack }>;
+  serverPack?: Pack;
+};
+
+/** Select protocol code and connection data together, once at mount. */
+export function bindServerProfile<T extends ProfileSelection>(config: T): T {
+  const id = selectedServerId(config);
+  if (!id) return config;
+  const resolved = mountServerProfile(config);
+  const serverPack = config.servers![id].serverPack ?? 'none';
+  if (serverPack !== 'none' && serverPack !== 'qiandengji') throw new Error('Unknown serverPack for ' + id);
+  // The child process receives only this profile. Its environment cannot select another pack independently.
+  return new Proxy(resolved, { get: (target, key, receiver) =>
+    key === 'serverPack' ? serverPack : Reflect.get(target, key, receiver) });
+}
+
+export type MymcConfigSection = MinecraftConfigSection & ProfileSelection & {
   decisionService?: {enabled:boolean;endpoint:string;model:string;apiKeyEnv:string;timeoutMs:number};
   harness2?:{enabled:boolean;modelId?:string;worker:import('agent-mc-world/decisions').Harness2Options['worker'];
     budget:import('agent-mc-world/decisions').Harness2Job['budget']};
