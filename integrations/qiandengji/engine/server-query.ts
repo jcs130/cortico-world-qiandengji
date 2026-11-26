@@ -128,7 +128,52 @@ const dungeonList: ServerQueryDefinition = {
   },
 };
 
+const journalArgument: NonNullable<ServerQueryDefinition['argumentsSchema']> = {
+  type: 'array', minItems: 0, maxItems: 2,
+  items: { type: 'string', pattern: '^(?:guild|skills|[1-9][0-9]{0,2})$', maxLength: 6,
+    description: 'Optional group (guild|skills) and/or page (1-999). Omit for all groups. Copy a later page from the current journal nextCommand.' },
+};
+function journalDefinition(id: 'journal' | 'tasks.overview'): ServerQueryDefinition {
+  return {
+    id,
+    argumentsSchema: journalArgument,
+    description: 'Read the current private two-axis journal (guild/life and personal skills/foundation), at most seven rows per page. arguments:[] or ["guild"|"skills"] and optional ["page"]. Returns current itemId, sourceSystem/sourceId, runId, state, nextCommand and journalSubmitCommand. Old task-list emptiness is not evidence that no journal item exists. This query never accepts, submits, claims, learns or migrates; execute only an exact current nextCommand in a separate explicit body action, then read the journal again.',
+    command: args => {
+      if (args.length > 2 || args.some(arg => !/^(?:guild|skills|[1-9][0-9]{0,2})$/.test(arg))
+        || args.length === 2 && !['guild', 'skills'].includes(args[0])) return null;
+      const group = args.length === 2 ? ` ${args[0]}` : args.length === 1 && ['guild', 'skills'].includes(args[0]) ? ` ${args[0]}` : '';
+      const page = args.length === 2 ? ` ${args[1]}` : args.length === 1 && /^[1-9]/.test(args[0]) ? ` ${args[0]}` : '';
+      return `/mycli journal${group}${page} --json`;
+    },
+    matchReply: (text, args, username) => {
+      if (!username || args.length > 2 || args.some(arg => !/^(?:guild|skills|[1-9][0-9]{0,2})$/.test(arg))
+        || args.length === 2 && !['guild', 'skills'].includes(args[0])) return null;
+      const value = payload(text, 'MC_JOURNAL');
+      if (!value || value.type !== 'journal' || value.scope !== 'self' || value.readOnly !== true
+        || typeof value.subjectUuid !== 'string'
+        || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value.subjectUuid)
+        || !['all', 'guild', 'skills'].includes(String(value.filter))
+        || !Number.isSafeInteger(value.page) || Number(value.page) < 1
+        || !Number.isSafeInteger(value.pages) || Number(value.pages) < Number(value.page)
+        || value.pageSize !== 7 || !Array.isArray(value.items) || value.items.length > 7
+        || !Array.isArray(value.groups) || value.groups.length !== 2
+        || !value.groups.includes('guild') || !value.groups.includes('skills')) return null;
+      const filter = args[0] && ['guild', 'skills'].includes(args[0]) ? args[0] : 'all';
+      const page = args.length === 2 ? Number(args[1]) : args.length === 1 && /^[1-9]/.test(args[0]) ? Number(args[0]) : 1;
+      if (value.filter !== filter || value.page !== page) return null;
+      if (!value.items.every(item => object(item) && typeof item.itemId === 'string'
+        && /^[a-z_]{1,32}:[A-Za-z0-9_:.-]{1,100}$/.test(item.itemId)
+        && ['guild', 'skills'].includes(String(item.group))
+        && typeof item.sourceSystem === 'string' && typeof item.sourceId === 'string'
+        && typeof item.state === 'string' && typeof item.nextCommand === 'string'
+        && item.nextCommand.startsWith('/mycli '))) return null;
+      return { ok: true, data: value };
+    },
+  };
+}
+
 const sharedQueries: readonly ServerQueryDefinition[] = [
+  journalDefinition('journal'), journalDefinition('tasks.overview'),
   guildExam('promotion'), guildExam('status'), guildExam('info'),
   {
     id: 'trial.status',
@@ -186,9 +231,9 @@ const sharedQueries: readonly ServerQueryDefinition[] = [
     'Read current self Vortex talent points, allocated passive nodes and prerequisites. Distinct from learning points/active spells; an empty skills.status learnable list does not cover talents or ascensions. arguments:[] only; never spends points. No subject/nonce: trusted current connection required.',
     '/mycli skills tree', false, value => readNativeTalentTree(value,new Date().toISOString())!==null),
   nativeDefinition('profession.status',
-    'Read the currently selected class; none means unselected, not an unavailable server. arguments:[] only. Never chooses, changes or resets a class.',
+    'Read the currently selected class; none means unselected, not an unavailable server. arguments:[] only. Preserves current authority metadata when present (for example VortexRPG). Never chooses, changes or resets a class.',
     '/mycli profession status', false, value => typeof value.class === 'string' && subjectId.test(value.class)
-      && value.queryOnly === true && !Object.hasOwn(value, 'authority')),
+      && value.queryOnly === true && (!Object.hasOwn(value, 'authority') || value.authority === 'VortexRPG')),
   nativeDefinition('profession.info',
     'Read one server-listed class and its starter spell. arguments:["class_id"]. Querying a class does not choose it; only an explicit separate profession choose operation may do so.',
     '/mycli profession info', true, (value, args) => value.id === args[0] && value.queryOnly === true

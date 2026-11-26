@@ -7,6 +7,7 @@ import type { ConfigGroup, ToolCallContext, ToolDef, ToolOutcome, World, WorldCo
 import type { WorldContext } from 'cortico/world.ts';
 import type { CorticoConfig, CorticoNumenConfig } from './public-contract.d.ts';
 import { readServerGuide } from './server-guide.ts';
+import { TASK_ACTION_DECL, taskActionArgs, withTaskActionNote } from './task-actions.ts';
 
 type Row = Record<string, unknown>;
 type DriverConfig = Pick<CorticoNumenConfig, 'python' | 'bridgeConfig'> & { enabled: true };
@@ -175,11 +176,22 @@ export class CorticoNumenWorld implements World {
       },
     }));
     const tools = [shared, ...aliases];
-    if (this.context.cfg.serverPack === 'qiandengji') tools.push({
-      name: 'mymc_guide', description: '查询千灯纪玩法资料，当前状态以 Numen 和服务器的回执为准。',
-      parameters: { type: 'object', properties: { topic: { type: 'string' } } }, tags: ['read'],
-      handler: async args => readServerGuide(args.topic as string | undefined),
-    });
+    if (this.context.cfg.serverPack === 'qiandengji') {
+      tools.push({
+        name: 'mymc_guide', description: '查询千灯纪玩法资料，当前状态以 Numen 和服务器的回执为准。',
+        parameters: { type: 'object', properties: { topic: { type: 'string' } } }, tags: ['read'],
+        handler: async args => readServerGuide(args.topic as string | undefined),
+      }, {
+        ...TASK_ACTION_DECL,
+        handler: async (args, ctx) => {
+          let command: Record<string, unknown>;
+          try { command = taskActionArgs(args); }
+          catch (error) { return fail('invalid_task_action', error instanceof Error ? error.message : String(error)); }
+          const line = (command.steps as Array<{ text: string }>)[0].text;
+          return withTaskActionNote(await this.sharedCall({ op: 'call', tool: 'numen_command', args: { line } }, ctx), args.action);
+        },
+      });
+    }
     return tools;
   }
 
@@ -207,8 +219,11 @@ export class CorticoNumenWorld implements World {
   }
 
   private catalog() {
-    return [...(this.active?.tools.values() ?? [])].map(({ tool }) =>
+    const driver = [...(this.active?.tools.values() ?? [])].map(({ tool }) =>
       ({ name: tool.name, description: tool.description, parameters: tool.parameters }));
+    return this.context.cfg.serverPack === 'qiandengji'
+      ? [...driver, { name: TASK_ACTION_DECL.name, description: TASK_ACTION_DECL.description, parameters: TASK_ACTION_DECL.parameters }]
+      : driver;
   }
 
   private async status(signal?: AbortSignal) {

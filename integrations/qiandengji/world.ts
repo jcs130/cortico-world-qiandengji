@@ -41,6 +41,7 @@ import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from './server-g
 import { createMinecraftChoiceTool, minecraftLifeTool } from 'agent-mc-world/extension';
 import { observeVisual, withToolHelp, mapToolRecovery } from 'agent-mc-world/extension';
 import { combatTacticNote } from './combat-contract.ts';
+import { TASK_ACTION_DECL, taskActionArgs, withTaskActionNote } from './task-actions.ts';
 
 const ENV_PROMPT_FILE = fileURLToPath(new URL('./ENV_PROMPT.md', import.meta.url));
 const CAMERA_NOTE_FILE = fileURLToPath(new URL('./ENV_PROMPT_CAMERA.md', import.meta.url));
@@ -65,8 +66,9 @@ function mapSchema(value: unknown): unknown {
 
 function toolDescription(name: string, description: string): string {
   if (name === 'mc_query') return toMymcText(description)
-    + ' With the Qiandengji server pack, query:"status" reads yourself; query:"dungeon.list" discovers site IDs. query:"dungeon.status" or "dungeon.info" takes arguments:["observed_dungeon_id"]. '
-    + 'Use this while moving instead of appending read-only status chat behind travel. It does not start, join, leave or claim a dungeon.';
+    + ' With the Qiandengji server pack, query:"journal" (alias tasks.overview) reads the current two-axis task center, at most seven rows per page. Copy a current itemId and follow its exact nextCommand separately. '
+    + 'query:"status" reads yourself; query:"dungeon.list" discovers site IDs. query:"dungeon.status" or "dungeon.info" takes arguments:["observed_dungeon_id"]. '
+    + 'Use this while moving instead of appending read-only status chat behind travel. It does not start, join, leave or claim a dungeon. Explicit task/skill writes use mymc_task_action.';
   if (name === 'mc_combat_tactic') return toMymcText(description)
     + ' Spell rules run while fighting. An installed program can construct fast engagement and short movement choices when combatDecision is enabled. '
     + 'Use mymc_do attack for a deliberate body task; preserve an existing useful attack instead of resubmitting it. '
@@ -120,7 +122,7 @@ export const MYMC_TOOL_DECLS: ReadonlyArray<Omit<ToolDef, 'handler'>> = [...MINE
 }, {
   ...MESSAGE_TOOL,
   name: 'mymc_messages',
-}];
+}, TASK_ACTION_DECL];
 
 function toMymcEvent<T extends { source: string; type: string; text: string; senderKey?: string }>(event: T): T {
   return mapWorldEventNamespace(event,'minecraft','mymc');
@@ -363,7 +365,25 @@ export class MymcWorld implements World {
   tools(): ToolDef[] {
     const engineTools = [...this.engine.tools(), this.choice, minecraftLifeTool()];
     const bagTool = engineTools.find((tool) => tool.name === 'mc_bag');
-    return withToolHelp(this.learning.tools([...engineTools.filter((tool) => !['mc_escape', 'mc_skills'].includes(tool.name)).map((tool): ToolDef => ({
+    const extraTools = [{
+      ...MYMC_TOOL_DECLS.find((decl) => decl.name === 'mymc_skills')!,
+      handler: async (args, ctx) => {
+        const live = engineTools.find(tool => tool.name === 'mc_skills');
+        const result = await live?.handler(args, ctx);
+          if (result && typeof result !== 'string' && (result.meta?.nativeSkillsCurrent === true
+            || result.meta?.nativeSkillRouteObserved === true
+            || result.meta?.nativeProfessionSkillObserved === true))
+          return toMymcText(result.text);
+        return this.catalog.readout(typeof args.id === 'string' ? args.id : undefined);
+      },
+    }, this.messages.tool(), {
+      ...MYMC_TOOL_DECLS.find((decl) => decl.name === 'mymc_guide')!,
+      handler: async (args) => {
+        const outcome = readServerGuide(args.topic);
+        return { ...outcome, text: renderTemplate(outcome.text, this.envPromptVars()) };
+      },
+    }] satisfies ToolDef[];
+    const mapped = engineTools.filter((tool) => !['mc_escape', 'mc_skills'].includes(tool.name)).map((tool): ToolDef => ({
       ...tool,
       name: tool.name.replace(/^mc_/, 'mymc_'),
       description: toolDescription(tool.name, tool.description),
@@ -440,23 +460,21 @@ export class MymcWorld implements World {
           : { ...mapToolRecovery(result as ToolOutcome, name => toMymcText(name), toMymcText),
             text: addNote(toMymcText((result as ToolOutcome).text)) };
       },
-    })), {
-      ...MYMC_TOOL_DECLS.find((decl) => decl.name === 'mymc_skills')!,
+    }));
+    const queueTool = mapped.find((tool) => tool.name === 'mymc_do');
+    const taskAction: ToolDef = {
+      ...TASK_ACTION_DECL,
       handler: async (args, ctx) => {
-        const live = engineTools.find(tool => tool.name === 'mc_skills');
-        const result = await live?.handler(args, ctx);
-          if (result && typeof result !== 'string' && (result.meta?.nativeSkillsCurrent === true
-            || result.meta?.nativeSkillRouteObserved === true || result.meta?.nativeProfessionSkillObserved === true))
-          return toMymcText(result.text);
-        return this.catalog.readout(typeof args.id === 'string' ? args.id : undefined);
+        if (!queueTool) return { failed: true, text: '当前身体没有任务队列，未派发任务或技能写入。' };
+        try {
+          return withTaskActionNote(await queueTool.handler(taskActionArgs(args), ctx), args.action);
+        } catch (error) {
+          return { failed: true, text: error instanceof Error ? error.message : String(error) };
+        }
       },
-    }, this.messages.tool(), {
-      ...MYMC_TOOL_DECLS.find((decl) => decl.name === 'mymc_guide')!,
-      handler: async (args) => {
-        const outcome = readServerGuide(args.topic);
-        return { ...outcome, text: renderTemplate(outcome.text, this.envPromptVars()) };
-      },
-    }]), 'mymc_tool_help', { parameterDescriptions: this.opts.cfg.toolParameterDescriptions });
+    };
+    return withToolHelp(this.learning.tools([...mapped, ...extraTools, taskAction]),
+      'mymc_tool_help', { parameterDescriptions: this.opts.cfg.toolParameterDescriptions });
   }
 
   console(): WorldConsoleDecl {

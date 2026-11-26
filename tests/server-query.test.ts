@@ -161,7 +161,7 @@ describe('explicit Qiandengji read-only server query definitions', () => {
     expect(send).not.toHaveBeenCalled();
   });
   it('exposes only the reviewed subset through the optional server engine hook', () => {
-    expect(QIANDENGJI_SERVER_QUERIES.map(item => item.id)).toEqual(['guild.exam.promotion', 'guild.exam.status', 'guild.exam.info', 'trial.status', 'status', 'skills.status',
+    expect(QIANDENGJI_SERVER_QUERIES.map(item => item.id)).toEqual(['journal', 'tasks.overview', 'guild.exam.promotion', 'guild.exam.status', 'guild.exam.info', 'trial.status', 'status', 'skills.status',
       'profession.list', 'skills.tree', 'profession.status', 'profession.info', 'skills.info', 'dungeon.list', 'dungeon.status', 'dungeon.info',
       'storage.inventory', 'storage.tidy.preview', 'storage.overview', 'storage.stash', 'trial.rewards', 'trade.shop.list', 'trade.recycle.list', 'trade.wallet',
       'trade.recycle.status', 'trade.auction.list', 'trade.auction.mine', 'trade.auction.info', 'storage.clean.preview', 'storage.store.preview']);

@@ -9036,6 +9036,62 @@
       ]
     },
     {
+      "name": "mymc_task_action",
+      "description": "Execute one current server-owned task or skill write: journal_submit with an itemId from the current journal, learn with an ID from current skills.status/info, or migrate for the current character. Mineflayer/Java bodies use mymc_query journal and queue one exact chat command; Numen bodies use numen_command \"/mycli journal --json\" and the same original command/receipt path. The terminal body/server receipt and a fresh journal or skills read decide actual success. Never invent IDs or amounts, never resend an unknown request, and never use this to repeat historical claims. A sent command is not a completed task, learned skill or credited migration.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "journal_submit",
+              "learn",
+              "migrate"
+            ],
+            "description": "journal_submit dispatches the original domain validation; learn spends only current eligible points; migrate credits verified unused legacy points once."
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_:.-]{1,100}$",
+            "description": "Required only for journal_submit or learn. Copy the exact itemId or skill/node ID from a current reply. Omit for migrate."
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "action": {
+                  "const": "migrate"
+                }
+              },
+              "required": [
+                "action"
+              ]
+            },
+            "then": {
+              "not": {
+                "required": [
+                  "id"
+                ]
+              }
+            },
+            "else": {
+              "required": [
+                "id"
+              ]
+            }
+          }
+        ]
+      },
+      "tags": [
+        "act"
+      ]
+    },
+    {
       "name": "mymc_tool_help",
       "description": "Read the actual Minecraft tool catalogue or one tool description/schema. Omit name for a short index. name returns the root constraints and child JSON pointers; path expands a documented subtree. full:true returns that exact original schema node. No tool is executed and no model is called. mc_help reads action/skill manuals; this tool reads tool parameter contracts.",
       "parameters": {
