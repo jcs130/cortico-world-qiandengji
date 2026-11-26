@@ -8,6 +8,7 @@ import type { WorldContext } from 'cortico/world.ts';
 import type { CorticoConfig, CorticoNumenConfig } from './public-contract.d.ts';
 import { readServerGuide } from './server-guide.ts';
 import { TASK_ACTION_DECL, taskActionArgs, withTaskActionNote } from './task-actions.ts';
+import { NumenLifeLoop, NUMEN_LIFE_TOOL, numenLifeTool } from './life-loop.ts';
 
 type Row = Record<string, unknown>;
 type DriverConfig = Pick<CorticoNumenConfig, 'python' | 'bridgeConfig'> & { enabled: true };
@@ -79,6 +80,7 @@ export class CorticoNumenWorld implements World {
   private readonly ajv = new Ajv({ strict: false });
   private readonly core: NumenClientWorld;
   private readonly coreTool: ToolDef;
+  private lifeLoop: NumenLifeLoop;
   private active?: { driver: Driver; host: WorldHost; tools: Map<string, DriverTool>; identity: NumenBodyPort['identity'] };
   private attaching?: Promise<void>;
   private phase = 'offline';
@@ -109,11 +111,13 @@ export class CorticoNumenWorld implements World {
     };
     this.core = new NumenClientWorld(port);
     this.coreTool = this.core.tools()[0];
+    this.lifeLoop = new NumenLifeLoop(context.dataDir, context.cfg.username || 'numen');
   }
 
   async start(host: WorldHost) {
     if (this.active) throw Error('Numen World 已挂载。');
     const { main, identity, driverConfig } = assertNumenBinding(this.context.cfg.numen);
+    this.lifeLoop = new NumenLifeLoop(this.context.dataDir, identity.uuid);
     const { default: definition } = await import(pathToFileURL(main).href) as { default: DriverDefinition };
     if (definition?.id !== 'numen' || typeof definition.create !== 'function') throw Error('Numen 驱动入口不符合 World 契约。');
     const driver = definition.create({ ...this.context, id: 'numen', cfg: driverConfig });
@@ -149,6 +153,7 @@ export class CorticoNumenWorld implements World {
     return {
       ...this.core.envPromptVars(), instructions: this.core.environment().replaceAll('mc_numen', 'mymc_numen')
         .replace('Use mc_protocol to mark actual decision turns and read current facts. ', ''),
+      life: this.lifeLoop.prompt(),
     };
   }
 
@@ -181,7 +186,7 @@ export class CorticoNumenWorld implements World {
         name: 'mymc_guide', description: '查询千灯纪玩法资料，当前状态以 Numen 和服务器的回执为准。',
         parameters: { type: 'object', properties: { topic: { type: 'string' } } }, tags: ['read'],
         handler: async args => readServerGuide(args.topic as string | undefined),
-      }, {
+      }, numenLifeTool(this.lifeLoop), {
         ...TASK_ACTION_DECL,
         handler: async (args, ctx) => {
           let command: Record<string, unknown>;
@@ -212,17 +217,20 @@ export class CorticoNumenWorld implements World {
     }
     if (this.active !== active || ctx.signal?.aborted) return fail('cancelled_before_dispatch', '调用已取消。');
     if (args.op === 'observe') {
-      try { return await this.coreTool.handler(args, ctx); }
+      try { const outcome = await this.coreTool.handler(args, ctx); this.lifeLoop.observe(outcome); return outcome; }
       catch { return fail('numen_body_unavailable', '当前无法取得 Numen 身体快照。'); }
     }
-    return this.coreTool.handler(args, ctx);
+    const outcome = await this.coreTool.handler(args, ctx);
+    this.lifeLoop.observe(outcome);
+    return outcome;
   }
 
   private catalog() {
     const driver = [...(this.active?.tools.values() ?? [])].map(({ tool }) =>
       ({ name: tool.name, description: tool.description, parameters: tool.parameters }));
     return this.context.cfg.serverPack === 'qiandengji'
-      ? [...driver, { name: TASK_ACTION_DECL.name, description: TASK_ACTION_DECL.description, parameters: TASK_ACTION_DECL.parameters }]
+      ? [...driver, { name: NUMEN_LIFE_TOOL.name, description: NUMEN_LIFE_TOOL.description, parameters: NUMEN_LIFE_TOOL.parameters },
+        { name: TASK_ACTION_DECL.name, description: TASK_ACTION_DECL.description, parameters: TASK_ACTION_DECL.parameters }]
       : driver;
   }
 
@@ -248,6 +256,7 @@ export class CorticoNumenWorld implements World {
       return fail('request_id_required', '需要稳定的动作请求号。');
     if (entry.tool.tags.includes('act')) this.sampledAt = 0;
     const outcome = toOutcome(await entry.tool.handler(args, ctx));
+    this.lifeLoop.observe(outcome);
     if (this.active !== active) return outcome;
     if (name === 'numen_status' && typeof outcome.data?.control === 'string') {
       this.phase = outcome.data.body === active.identity.uuid ? outcome.data.control : 'identity_mismatch';

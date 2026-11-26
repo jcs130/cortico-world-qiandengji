@@ -62,13 +62,15 @@ describe('Numen in the public Cortico World', () => {
     await MYMC.preflight?.(ctx);
     const world = MYMC.create(ctx);
     expect(world.tools().some(tool => tool.name === 'mymc_do')).toBe(false);
+    expect(world.tools().some(tool => tool.name === 'mymc_life')).toBe(true);
+    expect(world.envPromptVars?.().life).toContain('idle');
     await world.start(runtime);
     try {
       expect(runtime.pushEvent).toHaveBeenCalledWith(expect.objectContaining({
         type: 'mymc.numen.dialogue', source: 'mymc', meta: { eventId: 'original-conversation', speakerId: 'fixture-speaker' },
       }), { trigger: 'flush' });
       expect(JSON.parse((await run(world, 'mymc_numen', { op: 'catalog' })).text).map((tool: {name: string}) => tool.name))
-        .toContain('numen_move');
+        .toEqual(expect.arrayContaining(['numen_move', 'mymc_life', 'mymc_task_action']));
       const actual = await run(world, 'mymc_numen', { op: 'observe' });
       expect(actual.meta).toMatchObject({ backend: 'numen', sampledAt: expect.any(Number) });
       expect(world.requestFacts?.()?.text).toContain('"position":{"x":7,"y":64,"z":9}');
