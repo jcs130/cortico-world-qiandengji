@@ -76,7 +76,8 @@ console.log('Cortico World package files verified');
     const activityAdapter = (await transform(await readFile(join(base, file), 'utf8'),
       { loader: 'ts', format: 'esm', target: 'node22' })).code.replace(/\.\/(cortico-[a-z-]+)\.ts/g, './$1.js')
       .replaceAll('from "./config.ts"', 'from "agent-mc-qiandengji"')
-      .replaceAll('from "./server-guide.ts"', 'from "agent-mc-qiandengji"');
+      .replaceAll('from "./server-guide.ts"', 'from "agent-mc-qiandengji"')
+      .replaceAll('from "./task-actions.ts"', 'from "agent-mc-qiandengji"');
     await writeFile(join(base, 'dist/world/' + file.replace(/\.ts$/, '.js')), activityAdapter.replaceAll('from "./portal-access.ts"', 'from "agent-mc-qiandengji/portal"'));
   }
   await cp(join(base, 'ENV_PROMPT_NUMEN.md'), join(base, 'dist/world/ENV_PROMPT_NUMEN.md'));
