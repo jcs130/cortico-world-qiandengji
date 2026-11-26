@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.127",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.127.tgz",
-  "sha256": "b2ce25919cab176480be4a8b1ff99f2b02c1c063ebdb156ea075714e6c6b0bd3",
+  "version": "0.5.7-rc.160-preview.127.pack.1",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.127.pack.1.tgz",
+  "sha256": "3561e405a2de798d0e24742723cef1d0331008eaca8602bd9493a86a7ebeb928",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "bdf60e59720143ee41b1cac058c8e008c310eeaf",
+  "sourceCommit": "78ef6df6c7dd1407bf138477b8315859d383b46c",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "existing-external-assets-preserved"
   },
   "registryPublished": false,
-  "rebuildNote": "Consume the core that verifies modeled dry-drop landings and keeps runtime collision checks authoritative."
+  "rebuildNote": "Pin the profile-scoped guide and authenticated server-ready extension hook."
 }

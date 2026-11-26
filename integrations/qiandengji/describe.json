@@ -5422,9 +5422,10 @@
             "type": "string",
             "enum": [
               "vanilla",
-              "minedojo"
+              "minedojo",
+              "server"
             ],
-            "description": "Default vanilla. MineDojo is a separately prepared historical reference index, never player memory."
+            "description": "Use server for the active server guide. Default vanilla. MineDojo is a separately prepared historical reference index, never player memory."
           },
           "query": {
             "type": "string",

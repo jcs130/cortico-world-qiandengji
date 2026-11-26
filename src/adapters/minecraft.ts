@@ -1,7 +1,7 @@
 import { HostCombatDriver, validateHostCombat, combatAttentionEvent, type HostCombatConfig } from 'agent-mc-world/decisions';
 import type { WorldDefinition } from '../../adapters/cortico/types.ts';
 import type { ConfigGroup, WorldHost } from 'agent-mc-world/contracts';
-import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, mapToolRecovery, assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
+import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, mapToolRecovery, mountServerProfile, assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS, type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import type { MinecraftClientConfig } from 'agent-mc-world/client';
 import { fileURLToPath } from 'node:url';
 
@@ -89,7 +89,7 @@ class CorticoMinecraftWorld extends MinecraftClientWorld {
 export const MC: WorldDefinition<HostConfig> & { exclusiveResource: string } = {
   id: 'mc', label: '联机版我的世界', exclusiveResource: 'minecraft-client',
   defaults: () => ({ ...structuredClone(MINECRAFT_CLIENT_DEFAULTS), hostDecisions: { choice: { decisionProvider: '' } } }),
-  preflight: ctx => { assertMinecraftReady(ctx.cfg); validateHostCombat(ctx.cfg); },
-  create: ctx => new CorticoMinecraftWorld({ cfg: ctx.cfg,
+  preflight: ctx => { const cfg = mountServerProfile(ctx.cfg); assertMinecraftReady(cfg); validateHostCombat(cfg); },
+  create: ctx => new CorticoMinecraftWorld({ cfg: mountServerProfile(ctx.cfg),
     timezone: ctx.timezone, botName: ctx.botName, dataDir: ctx.dataDir }),
 };
