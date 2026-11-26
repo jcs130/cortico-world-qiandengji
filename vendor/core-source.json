@@ -1,12 +1,12 @@
 {
-  "version": "0.5.7-rc.160-preview.116",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.116-26424757.tgz",
-  "sha256": "2642475750d3a3f29bc71c27a66c2335000fbd1d4c5adeae81d41c4d390bc839",
+  "version": "0.5.7-rc.160-preview.127",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.127.tgz",
+  "sha256": "b2ce25919cab176480be4a8b1ff99f2b02c1c063ebdb156ea075714e6c6b0bd3",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "351a008a98f0bc411a55958fd3b6c6963a1aac15",
-  "integrationBranch": "fix/verified-drop-planning-20261121",
-  "sourcePushed": false,
+  "sourceCommit": "bdf60e59720143ee41b1cac058c8e008c310eeaf",
+  "integrationBranch": "main",
+  "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
   "viewer": {
