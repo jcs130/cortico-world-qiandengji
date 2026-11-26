@@ -9036,6 +9036,38 @@
       ]
     },
     {
+      "name": "mymc_svc",
+      "description": "Native Simple Voice Chat client on the current authenticated connection. This is not mymc_voice / mcagent:voice. {} reports handshake state. {action:\"upload\",audio_handle,requestId?} sends a PCM16 WAV (0.1–30s) as official 48 kHz 20 ms Opus frames after request_secret and UDP auth. sent means frames were written to UDP, not that anyone heard them. Cancel with AbortSignal via the host; close() leaves no UDP socket. Disabled by default. Requires an Opus codec (official SVC jar Concentus, or a provided codec).",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "status",
+              "upload"
+            ]
+          },
+          "audio_handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "whisper": {
+            "type": "boolean"
+          }
+        }
+      },
+      "tags": [
+        "speak"
+      ]
+    },
+    {
       "name": "mymc_task_action",
       "description": "Execute one current server-owned task or skill write: journal_submit with an itemId from the current journal, learn with an ID from current skills.status/info, or migrate for the current character. Mineflayer/Java bodies use mymc_query journal and queue one exact chat command; Numen bodies use numen_command \"/mycli journal --json\" and the same original command/receipt path. The terminal body/server receipt and a fresh journal or skills read decide actual success. Never invent IDs or amounts, never resend an unknown request, and never use this to repeat historical claims. A sent command is not a completed task, learned skill or credited migration.",
       "parameters": {
@@ -9310,7 +9342,7 @@
     },
     {
       "name": "mymc_voice",
-      "description": "Optional speech to nearby Minecraft players, using the existing authenticated game connection. Not audience commentary, private chat or shout. {} shows availability and output mode. {action:\"speak\",text,requestId?} synthesizes ONE full line through the configured audio producer (generated audio must also fit 30s); {action:\"upload\",audio_handle,text?,requestId?} uploads a PCM16 WAV blob (0.1–30s, max4MiB); text is an optional authored caption, not verified transcription. Authored text is also sent to the confirmed nearby text channel while synthesis proceeds; no global/private fallback. Game-only mode sends game audio and nearby text; live-and-game mirrors the SAME audio to the livestream, whose own queue still applies. Ordinary audience commentary stays in the presentation World, never forwarded here. No automatic dubbing of game text. Returns immediately with separate game/nearbyText/broadcast receipts; {action:\"status\",requestId} checks the SAME request after timeout. Never change ID to replay an unknown effect. sent means server frames sent, not heard or full text generated. Nearby voice input retains real speaker UUID and utterance ID. Text transport does not prove heard/read or complete generated audio.",
+      "description": "Optional speech to nearby Minecraft players, using the existing authenticated game connection. Not audience commentary, private chat or shout. {} shows availability and output mode. {action:\"speak\",text,requestId?} speaks one line. Server speech uses the server-selected voice, supports up to 200 UTF-16 units and is game-only. Artifact speech uses the configured audio producer (generated audio must also fit 30s). {action:\"upload\",audio_handle,text?,requestId?} uploads a PCM16 WAV blob (0.1–30s, max4MiB); text is an optional authored caption, not verified transcription. Authored text is also sent to the confirmed nearby text channel while synthesis proceeds; no global/private fallback. Game-only mode sends game audio and nearby text; live-and-game mirrors the SAME audio to the livestream, whose own queue still applies. Ordinary audience commentary stays in the presentation World, never forwarded here. No automatic dubbing of game text. Returns immediately with separate game/nearbyText/broadcast receipts; {action:\"status\",requestId} checks the SAME request after timeout. Never change ID to replay an unknown effect. sent means server frames sent, not heard or full text generated. Nearby voice input retains real speaker UUID and utterance ID. Text transport does not prove heard/read or complete generated audio.",
       "parameters": {
         "type": "object",
         "additionalProperties": false,

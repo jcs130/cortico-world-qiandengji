@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "ajv": "8.20.0",
-    "agent-mc-world": "^0.5.7-rc.160-preview.116",
+    "agent-mc-world": "^0.5.7-rc.160-preview.127",
     "agent-mc-qiandengji": "^0.5.0-rc.50-preview.102",
     "vec3": "0.2.0"
   },
