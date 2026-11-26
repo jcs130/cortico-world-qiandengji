@@ -36,8 +36,9 @@ describe('Numen durable life-work state', () => {
     loop.adopt({ goal: '到达矿城入口', reviewAfterSeconds: 60 });
     const blocked = loop.blocked({ reason: 'path_blocked', alternatives: ['改走铺装中线', '先补给'], reviewAfterSeconds: 90 });
     expect(blocked).toMatchObject({ status: 'blocked', blockedReason: 'path_blocked', alternatives: ['改走铺装中线', '先补给'] });
-    loop.observe({ data: { snapshot: { lifeState: 'alive', dimension: 'minecraft:aincrad', position: { x: 12, y: 64, z: 12 }, health: 20, maxHealth: 20, food: 18, inventory: {}, entities: [] } } });
+    loop.observe({ data: { snapshot: { life_state: 'alive', dimension: 'minecraft:aincrad', position: { x: 12, y: 64, z: 12 }, health: 20, max_health: 20, food: 18, inventory: {}, entities: [] } } });
     expect(loop.status().state).toMatchObject({ status: 'active', blockedReason: '' });
+    expect(loop.status().needs).toMatchObject({ danger: 'clear', health: 'ok', hunger: 'ok' });
   });
 
   it('rejects corrupt state without overwriting it', () => {
