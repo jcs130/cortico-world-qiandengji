@@ -1,7 +1,7 @@
 import { readFile, mkdir, copyFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { dirname, join, resolve, sep } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertCandidateCoreRange } from './core-consumer-range.mjs';
 
@@ -16,7 +16,7 @@ const source = await json(join(root, 'vendor/core-source.json'));
 const archive = resolve(root, 'vendor', source.file);
 if (!archive.startsWith(resolve(root, 'vendor') + sep) || !source.file.endsWith('.tgz')) throw new Error('Invalid pinned core archive path');
 if (await digest(archive) !== source.sha256) throw new Error('Pinned core SHA-256 differs');
-const core = JSON.parse(execFileSync('tar', ['-xOf', archive, 'package/package.json'], { encoding: 'utf8' }));
+const core = JSON.parse(execFileSync('tar', ['-xOf', relative(root, archive), 'package/package.json'], { cwd: root, encoding: 'utf8' }));
 if (core.name !== 'agent-mc-world' || core.version !== source.version) throw new Error('Core version differs from source ledger');
 const serverDir = join(root, 'packages/qiandengji'), worldDir = join(root, 'integrations/qiandengji');
 const server = await json(join(serverDir, 'package.json')), world = await json(join(worldDir, 'package.json'));
