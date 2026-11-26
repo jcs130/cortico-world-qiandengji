@@ -34,11 +34,11 @@ const fingerprint = (value: unknown): string => createHash('sha256').update(JSON
 function needsFrom(data: Row | null): Record<string, string> {
   const snapshot = object(data?.snapshot);
   if (!snapshot) return { danger: 'unknown', health: 'unknown', hunger: 'unknown', sleep: 'unknown', equipment: 'unknown', social: 'unknown' };
-  const health = snapshot.health, maxHealth = snapshot.maxHealth, food = snapshot.food;
+  const health = snapshot.health, maxHealth = snapshot.maxHealth ?? snapshot.max_health, food = snapshot.food;
   const entities = Array.isArray(snapshot.entities) ? snapshot.entities : null;
   const hostile = entities?.some(entity => object(entity)?.hostile === true) ?? false;
   return {
-    danger: snapshot.lifeState === 'dead' ? 'present' : entities === null ? 'unknown' : hostile ? 'present' : 'clear',
+    danger: (snapshot.lifeState ?? snapshot.life_state) === 'dead' ? 'present' : entities === null ? 'unknown' : hostile ? 'present' : 'clear',
     health: !finite(health) || !finite(maxHealth) || maxHealth <= 0 ? 'unknown' : health <= maxHealth * .3 ? 'critical' : health <= maxHealth * .6 ? 'low' : 'ok',
     hunger: !finite(food) ? 'unknown' : food <= 6 ? 'low' : 'ok',
     sleep: 'unknown', equipment: snapshot.inventory == null ? 'unknown' : 'observed', social: 'unknown',
@@ -50,7 +50,7 @@ function progressFrom(data: Row | null): string {
   if (!snapshot) return 'unknown';
   const position = object(snapshot.position);
   const coarse = position ? [position.x, position.y, position.z].map(value => finite(value) ? Math.floor(value / 4) : null) : null;
-  return fingerprint([snapshot.lifeState, snapshot.dimension, coarse, snapshot.health, snapshot.food, snapshot.inventory,
+  return fingerprint([snapshot.lifeState ?? snapshot.life_state, snapshot.dimension, coarse, snapshot.health, snapshot.food, snapshot.inventory,
     Array.isArray(snapshot.entities) ? snapshot.entities.map(entity => object(entity)?.id ?? null) : null]);
 }
 
