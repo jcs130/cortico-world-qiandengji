@@ -38,7 +38,7 @@ import { ActivityBindings, activitySubjects } from './activity-binding.ts';
 import { queryObservation } from './query-observation.ts';
 import { GuildProgress } from './guild-progress.ts';
 import { MYMC_GUIDE_TOPICS, readServerGuide, serverGuideIndex } from './server-guide.ts';
-import { createMinecraftChoiceTool, minecraftLifeTool } from 'agent-mc-world/extension';
+import { createMinecraftChoiceTool, explorationActions, minecraftLifeTool } from 'agent-mc-world/extension';
 import { observeVisual, withToolHelp, mapToolRecovery } from 'agent-mc-world/extension';
 import { combatTacticNote } from './combat-contract.ts';
 import { TASK_ACTION_DECL, taskActionArgs, withTaskActionNote } from './task-actions.ts';
@@ -308,6 +308,8 @@ export class MymcWorld implements World {
   private fastCombat: HostCombatDriver | null = null;
   private readonly choice = createMinecraftChoiceTool(() => this.host, () => this.requestFacts(),
     () => this.opts.cfg.hostDecisions?.choice?.decisionProvider?.trim() || undefined);
+  private readonly explore = explorationActions(() => this.host, () => this.requestFacts(),
+    () => this.opts.cfg.hostDecisions?.choice?.decisionProvider?.trim() || undefined);
 
   constructor(private readonly opts: Omit<MinecraftWorldOptions, 'cfg'> & { cfg: MymcConfigSection; botDir?: string }, engine?: MinecraftWorldProxy) {
     this.requireProtectSupport = engine === undefined;
@@ -381,7 +383,8 @@ export class MymcWorld implements World {
   onTurnEnded() { return this.engine.onTurnEnded?.(); }
 
   tools(): ToolDef[] {
-    const engineTools = [...this.engine.tools(), this.choice, minecraftLifeTool()];
+    const engineTools = [...this.engine.tools().map(tool => tool.name === 'mc_do' ? this.explore(tool) : tool),
+      this.choice, minecraftLifeTool()];
     const bagTool = engineTools.find((tool) => tool.name === 'mc_bag');
     const extraTools = [{
       ...MYMC_TOOL_DECLS.find((decl) => decl.name === 'mymc_skills')!,

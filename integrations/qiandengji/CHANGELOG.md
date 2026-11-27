@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.136
+
+Use core preview.144 for fast exploration on both generic and server-profile Mineflayer connections.
+
 ## 0.4.1-rc.71-preview.135
 
 Use core preview.143 for authenticated public chat and visible gathering.

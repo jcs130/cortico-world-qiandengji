@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.143",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.143-cf602c5b.tgz",
-  "sha256": "cf602c5b9f70c315e23e67157f6d5f607f1b835a29cd5902417ca4c518317a66",
+  "version": "0.5.7-rc.160-preview.144",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.144-1b272c14.tgz",
+  "sha256": "1b272c1476b7c4478b246b1c063ac5399a0a1d97b10b9b726b285cbf2f09087b",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "202c5cf9e4a5333c61dbbb15082b768551fc9698",
+  "sourceCommit": "bfa80a691f12ddc5d579901ab593153f950c7198",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Preserve public chat senders, resolve registry find categories, prefer reachable visible resources."
+  "rebuildNote": "Expose one-call fast exploration through the normal body queue."
 }
