@@ -376,7 +376,7 @@ export class MymcWorld implements World {
       ...(options ? { options } : {}),
       text: [baseText, ...additions.map(part => part.text)].join('\n'),
       ...(parts?.length ? { parts: [...parts, ...additions] } : {}),
-      snapshotTypes: facts.snapshotTypes.map((type) => type.replace(/^minecraft\./, 'mymc.')),
+      snapshotTypes: facts.snapshotTypes.map(type => mapWorldEventNamespace({type}, 'minecraft', this.id).type),
     };
   }
 

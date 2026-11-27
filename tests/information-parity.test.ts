@@ -1,4 +1,4 @@
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -14,6 +14,30 @@ import { MC } from '../src/adapters/minecraft.ts';
 const dirs: string[] = [];
 const directory = () => { const dir = mkdtempSync(join(tmpdir(), 'world-information-')); dirs.push(dir); return dir; };
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
+
+it.each(['generic','java'] as const)('indexes snapshots by their delivered event names on the %s mount', async kind => {
+  const cfg = { ...structuredClone(WORLD_DEFAULTS), serverPack:'none' as const, host:'fixture.test', username:'visitor' };
+  const opts = {cfg, dataDir:directory()};
+  const world = kind === 'generic' ? new GenericMymcWorld(opts) : new JavaMymcWorld(opts);
+  const port = kind === 'generic' ? (world as any).engine : (world as any).body;
+  const snapshotTypes = kind === 'generic' ? ['minecraft.world.snapshot','minecraft.task.queue','minecraft.task.progress'] : ['minecraft.client.snapshot'];
+  const facts = {text:'minecraft:overworld',parts:[{key:'location',text:'minecraft:overworld'}],snapshotTypes:[...snapshotTypes,'other.snapshot']};
+  const delivered: string[] = [];
+  vi.spyOn(port,'requestFacts').mockReturnValue(facts);
+  vi.spyOn(port,'start').mockImplementation(async (...args:unknown[])=>{
+    const host = args[0] as {pushEvent(event:Record<string,unknown>):Promise<unknown>};
+    for (const type of facts.snapshotTypes) await host.pushEvent({source:'minecraft',type,text:'fixture snapshot',ts:new Date().toISOString()});
+  });
+  try {
+    await world.start({log:nullLogger(),pushEvent:async (event:any)=>{delivered.push(event.type);return event;}} as any);
+    expect(delivered).toEqual([...snapshotTypes.map(type=>type.replace(/^minecraft\./,'mymc.')),'other.snapshot']);
+    expect(world.requestFacts()?.snapshotTypes).toEqual(delivered);
+    expect(facts.snapshotTypes[0]).toBe(snapshotTypes[0]);
+    expect(world.requestFacts()?.text).toContain('minecraft:overworld');
+    vi.mocked(port.requestFacts).mockReturnValue(null);
+    expect(world.requestFacts()).toBeNull();
+  } finally {await world.stop();}
+});
 
 it.each(['generic', 'server', 'java', 'java-server', 'compat'] as const)('discovers actual namespaced schemas without a game or host model: %s', async kind => {
   const dataDir = directory();
