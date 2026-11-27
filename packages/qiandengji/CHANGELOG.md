@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.110
+
+Align the server pack with core preview.145.
+
 ## 0.5.0-rc.50-preview.109
 
 Expose the shared fast exploration action in the full profile host mapping.
