@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.137
+
+Consume core preview.145 and expose its optional goal-board admission result.
+
 ## 0.4.1-rc.71-preview.136
 
 Use core preview.144 for fast exploration on both generic and server-profile Mineflayer connections.
