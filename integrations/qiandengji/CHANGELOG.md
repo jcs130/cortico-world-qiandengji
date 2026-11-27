@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.135
+
+Use core preview.143 for authenticated public chat and visible gathering.
+
 ## 0.4.1-rc.71-preview.134
 
 Integrate profile-scoped World and runtime feedback with the shared core.
