@@ -1,10 +1,11 @@
 import { QIANDENGJI_CAST_TOOL, invokeQiandengjiCast } from './cast-tool.ts';
 import { portableStorageMisuseNote } from './portable-storage.ts';
-import { stashTakeArrival } from './storage-trade-query.ts';
+import { stashTakeAdmission, stashTakeArrival } from './storage-trade-query.ts';
 import { TrialSearchState } from './trial-search.ts';
 import { AdventureGatherings } from './adventure-gatherings.ts';
 import type { SkillCall } from 'agent-mc-world/extension';
-import {ObservedCommandCatalog, serverQueryTool, bindEntityIdentityResolver} from 'agent-mc-world/extension';
+import {ObservedCommandCatalog, serverQueryTool, bindEntityIdentityResolver, readWorldIdentity} from 'agent-mc-world/extension';
+import { hasExecutionFeedbackContext } from 'agent-mc-world/context';
 import { observedCommandRoot, observedCommandUsage } from './command-usage.ts';
 import { QIANDENGJI_SERVER_QUERIES, qiandengjiServerQueriesForPlayer } from './server-query.ts';
 import { QIANDENGJI_MAIDS_TOOL, MaidState, maidArguments, maidReadAction, maidSystemReply, maidInventoryAccess } from './maids.ts';
@@ -50,9 +51,34 @@ protected maidPort: MaidPort | null = null;
 /** Submission records for this connection; read the server for the actual effect. */
 protected readonly maidWrites = new Map<string, MaidWrite>();
 protected releaseMaidIdentity: (()=>void) | null = null;
+  private lastNearbyRelay?: { text: string; worldRevision: number; connectionGeneration: number; at: number };
   constructor(options: MinecraftWorldOptions) { const tactics = new CombatSpells(new CombatTacticBook(options.dataDir ? join(options.dataDir,'minecraft-combat-tactics.json') : null)); super(options, tactics); this.combatSpells = tactics; }
   protected override battlefieldChannel() { return BATTLEFIELD_CHANNEL; }
   protected override extensionInventoryArrival(command: string) { return stashTakeArrival(command); }
+  protected override emit(...args: Parameters<TacticalMinecraftWorld['emit']>): void {
+    const [type, text, urgent, options] = args;
+    const bot = this.bridge?.bot;
+    const feedback = options?.meta?.executionFeedback as { kind?: string; originalSha256?:string } | undefined;
+    if (type === 'minecraft.chat' && options?.deliver !== false && bot?._client?.state==='play' && this.bridge?.connected
+      && /^\[MC (?:系统|插件)\] \[附近·女仆\] /u.test(text) && feedback?.kind === 'server-message'
+      && hasExecutionFeedbackContext(text, feedback)) {
+      const world = readWorldIdentity(bot);
+      if (world.key) {
+        const current = new Set(Object.values(bot.entities).flatMap(entity =>
+          entity.isValid !== false && typeof entity.uuid === 'string' ? [entity.uuid.toLowerCase()] : []));
+        const dialogue = this.maids.nearbySceneSpeech(text, current);
+        if (dialogue && this.maids.queueSceneSpeech(JSON.stringify([world.key,world.revision]),dialogue,()=>{
+          const live = readWorldIdentity(bot);
+          if(!this.bridge?.connected || this.bridge.bot!==bot || bot._client?.state!=='play' || live.revision!==world.revision)return;
+          const {executionFeedback: _feedback,...meta}=options?.meta??{};
+          super.emit(type, dialogue.text, urgent, { ...options,
+            meta: { ...meta, ...dialogue.meta, deliveryWorld:world, deliveryWorldKey:world.key,
+              companionSpeech:{kind:'nearby-caption',originalSha256:feedback.originalSha256} } }, dialogue.senderKey);
+        }))return;
+      }
+    }
+    super.emit(...args);
+  }
   private playerQueries?: { uuid: string; definitions: typeof QIANDENGJI_SERVER_QUERIES };
   protected override serverQueryDefinitions() {
     const bot = this.bridge?.bot;
@@ -184,7 +210,9 @@ protected observeMaidReply(reply:MaidReply):void {
     const notice=this.maids.observe(reply);
     if(notice?.publicDialogue){
       const dialogue=notice.publicDialogue;
-      this.emit('minecraft.chat',dialogue.text,false,{meta:{...dialogue.meta,...notice.meta}},dialogue.senderKey);
+      const world=readWorldIdentity(this.bridge?.bot),scope=JSON.stringify([world.key,world.revision]);
+      if(this.maids.acceptTypedSpeech(scope,dialogue))
+        this.emit('minecraft.chat',dialogue.text,false,{meta:{...dialogue.meta,...notice.meta}},dialogue.senderKey);
     }else if(notice)this.emit('minecraft.event',notice.text,notice.urgent,{meta:notice.meta});
   }
 protected castSpell(args: Record<string, unknown>): string | ToolOutcome {
@@ -255,6 +283,31 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
   protected override extensionCombatTuning() { return {arena:this.arenaFloor !== null}; }
   protected override extensionCombatSearchObjective() { return this.trialSearch.read(); }
   protected override extensionLowHealth(bot: Bot) { this.tryAutoSelfHeal(bot); }
+  protected override extensionServerRelayedChat(text: string): boolean {
+    const bot = this.bridge?.bot;
+    if (!bot) return false;
+    const relay = this.chatPolicy.nearbyRelay(text);
+    if (!relay) return false;
+    const world = readWorldIdentity(bot);
+    if (!world.key) return false;
+    const username = this.chatName();
+    const ownDisplay = (bot.players?.[username] as { displayName?: { toString(): string } } | undefined)
+      ?.displayName?.toString().replace(/§[0-9a-fk-orx]/gi, '').trim();
+    const label = relay.displayName.toLowerCase();
+    if ([username, bot.username, ownDisplay].some(name => name?.toLowerCase() === label)) return true;
+    const at = performance.now();
+    const previous = this.lastNearbyRelay;
+    if (previous?.text === text && previous.worldRevision === world.revision
+      && previous.connectionGeneration === this.connectionGeneration && at - previous.at < 500) return true;
+    this.lastNearbyRelay = { text, worldRevision: world.revision, connectionGeneration: this.connectionGeneration, at };
+    this.emit('minecraft.chat', `[MC 附近转述，身份未确认] ${relay.displayName}：${relay.body}`, true, {
+      meta: { channel: 'nearby', chatChannel: 'nearby', chatScope: 'same-world-range',
+        chatRadius: relay.radius, chatRoutingSource: 'server-nearby-relay', socialScope: 'minecraft-server',
+        relaySpeakerDisplayName: relay.displayName, body: relay.body, relayShoutPrefix: relay.shoutPrefix,
+        deliveryWorld: world, deliveryWorldKey: world.key },
+    });
+    return true;
+  }
   protected override extensionMessage(text: string): boolean {
     if (parseProtectReply(text)) return true;
     const bot = this.bridge?.bot;
@@ -301,6 +354,8 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
     const facts = super.requestFacts();
     if (!facts) return facts;
     const observations=facts.decision?.state?.identityObservations;
+    const nearbyRelayResponse = this.bridge?.connectionState?.ready
+      ? this.chatPolicy.nearbyRelayResponse(readWorldIdentity(this.bridge.bot).key) : null;
     const currentTrial=this.trialSearch.facts();
     const preparedSkillWithoutRule=this.preparedRuleGap();
     const gatherings=currentTrial.fresh && 'participant' in currentTrial && currentTrial.participant ? [] : this.adventureGatherings?.current() ?? [];
@@ -318,6 +373,7 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
       // Delegated execution uses the compact decision state on the supervisor.
       // Preserve ownership and lifecycle there, without expanding the NPC's inventory/history.
       ...(facts.decision?{decision:{...facts.decision,state:{...facts.decision.state,currentTrial,
+        ...(nearbyRelayResponse ? { nearbyRelayResponse } : {}),
         ...(preparedSkillWithoutRule?{preparedSkillWithoutRule}:{}),
         ...(gatherings.length?{adventureGatherings:gatherings}:{}),
         ...(companions.length?{companionObservations:companions}:{})}}}:{}) };
@@ -393,7 +449,9 @@ protected sendAutoCombatSpell(bot: Bot, spell: CombatSpell, ruleId?: string): bo
       else if(state.mana)this.combatSpells.noteMana(state.mana.current);
     });
   }
-  protected override extensionAdmission(steps: readonly SkillCall[]) { return portableStorageMisuseNote(this.bridge?.bot ?? null, steps); }
+  protected override extensionAdmission(steps: readonly SkillCall[]) {
+    return stashTakeAdmission(steps) ?? portableStorageMisuseNote(this.bridge?.bot ?? null, steps);
+  }
   protected override createBridge(options: ConstructorParameters<typeof QiandengjiBridge>[0]) { return new QiandengjiBridge(options); }
 }
 export function createEngine(options: MinecraftWorldOptions) { return new QiandengjiEngine(options); }

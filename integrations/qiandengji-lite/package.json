@@ -1,8 +1,8 @@
 {
   "name": "cortico-world-qiandengji-lite",
-  "version": "0.1.2",
+  "version": "0.2.1",
   "type": "module",
-  "description": "千灯纪-lite：官方 Minecraft World 的最小服务器接入扩展，提供私密自动登录、官网接入及只读服务器信息。",
+  "description": "千灯纪-lite：复用 agent-mc-world 共享内核的14工具远程接入扩展，保留私密登录、官网接入和只读诊断。",
   "license": "MIT",
   "main": "./dist/index.js",
   "exports": {
@@ -39,7 +39,10 @@
     "webUiStyle": "dist/webui.css"
   },
   "files": [
-    "dist",
+    "dist/index.js",
+    "dist/webui.js",
+    "dist/webui.css",
+    "dist/lite-environment.txt",
     "describe.json",
     "README.md",
     "CHANGELOG.md",
@@ -58,23 +61,21 @@
     "prepack": "node scripts/verify.mjs"
   },
   "dependencies": {
-    "mineflayer": "4.37.1",
-    "mineflayer-pathfinder": "2.4.5",
-    "prismarine-viewer": "1.33.0",
-    "vec3": "0.1.10"
+    "agent-mc-world": "0.5.7-rc.160-preview.142",
+    "agent-mc-qiandengji": "0.5.0-rc.50-preview.108"
   },
   "peerDependencies": {
-    "cortico": ">=0.2.11 <0.3.0"
+    "cortico": ">=0.2.17 <0.3.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
-    "cortico": "0.2.11",
+    "cortico": "0.2.17",
     "esbuild": "0.28.2",
     "typescript": "^5.7.2",
     "vitest": "2.1.8",
     "tsx": "^4.19.2",
     "jsdom": "30.0.1",
-    "agent-mc-world": "file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz",
-    "agent-mc-qiandengji": "file:../../vendor/agent-mc-qiandengji-0.5.0-rc.48-preview.1-480ecb28.tgz"
+    "agent-mc-world": "file:../../vendor/agent-mc-world-0.5.7-rc.160-preview.142-865cd324.tgz",
+    "agent-mc-qiandengji": "file:../../vendor/agent-mc-qiandengji-0.5.0-rc.50-preview.108-ce2d93fc.tgz"
   }
 }

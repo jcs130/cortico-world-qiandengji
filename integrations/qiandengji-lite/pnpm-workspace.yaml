@@ -4,6 +4,11 @@ allowBuilds:
   esbuild: true
   canvas: false
 minimumReleaseAgeExclude:
-  - cortico@0.2.11
+  - cortico@0.2.17
   - agent-mc-world
   - agent-mc-qiandengji
+
+overrides:
+  agent-mc-world: file:../../vendor/agent-mc-world-0.5.7-rc.160-preview.142-865cd324.tgz
+  agent-mc-qiandengji: file:../../vendor/agent-mc-qiandengji-0.5.0-rc.50-preview.108-ce2d93fc.tgz
+  vec3: 0.2.0

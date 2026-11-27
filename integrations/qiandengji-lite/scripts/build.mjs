@@ -1,97 +1,65 @@
-import { readFile, writeFile, mkdir, readdir, cp, realpath, unlink } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
-import { dirname, resolve, relative, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
-import { build, transform } from 'esbuild';
+import {readFile,writeFile,mkdir,lstat,rm} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {dirname,resolve,join} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {createRequire} from 'node:module';
+import {build} from 'esbuild';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),require=createRequire(import.meta.url);
-const officialPackage=dirname(require.resolve('cortico/package.json'));
-const officialSrc=join(officialPackage,'src'),official=join(officialSrc,'worlds/minecraft');
-const upstream=join(root,'src/upstream'),dist=join(root,'dist');
+const metadata=JSON.parse(await readFile(join(root,'package.json'),'utf8'));
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
-const packageMetadata=JSON.parse(await readFile(join(root,'package.json'),'utf8'));
-for(const [name,expected] of [['agent-mc-world','6d947a37592308810a558daaf71e8471638f1894124e1cd4250ab283fe170110'],['agent-mc-qiandengji','480ecb281c0e30a08b58511c5a457ac39ac4477ecf2fb727c0e63198d8dc2c95']]){
-  const spec=packageMetadata.devDependencies[name];if(!spec.startsWith('file:')||sha(await readFile(resolve(root,spec.slice(5))))!==expected)throw Error('Prepared SDK archive mismatch: '+name);
+const packages={},mismatches=[];
+// Inspect only public package metadata and public entry bytes. Never copy an upstream implementation.
+for(const [name,entry] of [['agent-mc-world','extension'],['agent-mc-qiandengji','portal'],['cortico',null]]){
+  const expected=name==='cortico'?metadata.devDependencies.cortico:metadata.dependencies[name];
+  let manifest,entryFile;
+  try{entryFile=entry?require.resolve(name+'/'+entry):null;
+    manifest=name==='agent-mc-qiandengji'?resolve(dirname(entryFile),'../package.json'):require.resolve(name+'/package.json');}
+  catch{packages[name]={package:name,expectedVersion:expected,missing:true};mismatches.push('Missing prepared dependency: '+name);continue;}
+  const bytes=await readFile(manifest),actual=JSON.parse(bytes);
+  packages[name]={package:name,version:actual.version,expectedVersion:expected,packageJsonSha256:sha(bytes),
+    ...(entryFile?{publicEntry:name+'/'+entry,publicEntrySha256:sha(await readFile(entryFile))}:{})};
+  if(actual.version!==expected)mismatches.push(`${name} installed ${actual.version}, expected ${expected}`);
 }
-const version=JSON.parse(await readFile(join(officialPackage,'package.json'),'utf8')).version;
-if(version!=='0.2.11')throw Error('Expected pinned official Cortico0.2.11');
-const once=(text,from,to)=>{if(text.split(from).length!==2)throw Error('Official patch anchor mismatch: '+from.slice(0,80));return text.replace(from,to);};
-const records=[];
-async function walk(dir){const out=[];for(const item of await readdir(dir,{withFileTypes:true})){const file=join(dir,item.name);out.push(...(item.isDirectory()?await walk(file):[file]));}return out;}
+async function record(describe,status){
+  await writeFile(join(root,'describe.json'),JSON.stringify(describe,null,2)+'\n');
+  await writeFile(join(root,'UPSTREAM.json'),JSON.stringify({schema:'qiandengji-lite-upstream/v2',status,packages,
+    namespace:{world:'minecraft to mymc-lite',tools:'mc_ to mymc_'},toolAllowlist:describe.tools.map(tool=>tool.name),
+    login:{confirmation:'mc-auth-success',source:'agent-mc-world/extension public connection state',
+      gate:'connection.ready && connection.worldReady && connection.serverLogin.authSuccessReceived'},
+    copiedOfficialWorldFiles:[],runtimeDependencies:metadata.dependencies,
+    ...(status==='pending-dependency-sync'?{pending:mismatches,notes:'Observed metadata only; old dev file references and locks await main Agent synchronization. Not a release build.'}:{})},null,2)+'\n');
+}
+if(process.argv.includes('--inspect')){
+  // Node 24 can strip the types in this thin, side-effect-free naming module. This is not a build bypass.
+  const {liteToolDeclarations}=await import('../src/shared-world.ts');
+  const {EXTRA_TOOLS}=await import('../src/extra-tools.ts');
+  const old=JSON.parse(await readFile(join(root,'describe.json'),'utf8'));
+  await record({tools:[...liteToolDeclarations(),...EXTRA_TOOLS],events:old.events??[]},'pending-dependency-sync');
+  console.log(JSON.stringify({status:'pending-dependency-sync',observedCore:packages['agent-mc-world'].version,mismatches,built:false}));
+  process.exit(0);
+}
+if(mismatches.length)throw Error('Prepared dependencies unavailable: '+mismatches.join('; ')+'; synchronize vendor archives and locks (no download performed).');
+const dist=join(root,'dist');
+// Clean only obsolete, generated World copies inside this Lite directory, never a linked source tree.
+for(const relative of ['src/upstream','dist/upstream']){
+  const path=join(root,relative);
+  try{const stat=await lstat(path);if(stat.isSymbolicLink()||!stat.isDirectory())throw Error('Refusing unexpected generated path: '+relative);await rm(path,{recursive:true});}
+  catch(error){if(error.code!=='ENOENT')throw error;}
+}
 await mkdir(dist,{recursive:true});
-try{await unlink(join(dist,'upstream/pathfinder-lib.d.js'));}catch(error){if(error.code!=='ENOENT')throw error;}
-for(const source of await walk(official)){
-  const name=relative(official,source).replaceAll('\\','/');
-  if(name==='AGENTS.md')continue;
-  const bytes=await readFile(source);let text=bytes.toString('utf8');const mechanical=[];
-  if(/\.(ts|md)$/.test(name)){
-    text=text.replace(/\bmc_/g,'mymc_').replaceAll('worlds.minecraft','worlds.mymc-lite').replaceAll('world:minecraft','world:mymc-lite');
-    for(const event of ['task.progress','task','chat','event','world.snapshot','world'])text=text.replaceAll(`'minecraft.${event}'`,`'mymc-lite.${event}'`);
-    text=text.replaceAll("readonly id = 'minecraft'","readonly id = 'mymc-lite'").replaceAll("id: 'minecraft'","id: 'mymc-lite'");
-    text=text.replaceAll("senderKey: 'minecraft'","senderKey: 'mymc-lite'").replaceAll("senderKey ?? 'minecraft'","senderKey ?? 'mymc-lite'");
-    text=text.replace(/((?:from\s*|import\s*(?:\(\s*)?)['"])(\.\.[^'"\r\n]+)(['"])/g,(all,prefix,spec,suffix)=>{
-      const absolute=resolve(dirname(source),spec);if(absolute.startsWith(official+('/').replace('/',process.platform==='win32'?'\\':'/')))return all;
-      if(!absolute.startsWith(officialSrc))throw Error('Unexpected outside framework dependency '+spec);
-      return prefix+'cortico/'+relative(officialSrc,absolute).replaceAll('\\','/')+suffix;
-    });
-  }
-  if(name==='bridge.ts'){
-    text="import { attachLiteConnection } from '../connection.js';\n"+text;
-    text=once(text,'interface BridgeOptions extends LinkTarget {','interface BridgeOptions extends LinkTarget {\n  liteBindingsFile: string;\n  liteStatusFile: string;\n  liteInstanceId: string;');
-    text=once(text,'  private _bot: mineflayer.Bot | null = null;','  private _bot: mineflayer.Bot | null = null;\n  private authentication: ReturnType<typeof attachLiteConnection> | null = null;');
-    text=once(text,'    return this._bot;','    return this.authentication?.ready() ? this._bot : null;');
-    text=once(text,'    this._bot = bot;','    this._bot = bot;\n    this.authentication = attachLiteConnection(bot, { server: `${host.toLowerCase()}:${port}`, username, bindingsFile: this.opts.liteBindingsFile, statusFile: this.opts.liteStatusFile, instanceId: this.opts.liteInstanceId, onReady: () => completeSpawn() });\n    this.bagFor(gen).register(\'server-authentication\', this.authentication.stop);');
-    text=once(text,"    bot.once('spawn', () => {","    let spawnCompleted = false;\n    const completeSpawn = () => {\n      if (spawnCompleted) return;\n      spawnCompleted = true;");
-    const end="    });\n\n    const onGone = (reason: string, failure: string) => {";
-    text=once(text,end,"    };\n\n    const onGone = (reason: string, failure: string) => {");
-    mechanical.push('install shared private authentication before native spawn','expose body and official spawn only after current-connection MC_AUTH_SUCCESS and loaded native world');
-  }
-  if(name==='world.ts'){
-    text=once(text,'      ...this.appliedTarget,','      ...this.appliedTarget,\n      liteBindingsFile: (this.cfg as unknown as Record<string,string>).liteBindingsFile,\n      liteStatusFile: (this.cfg as unknown as Record<string,string>).liteStatusFile,\n      liteInstanceId: (this.cfg as unknown as Record<string,string>).liteInstanceId,');
-    mechanical.push('pass private credential reference and connection status paths to bridge');
-  }
-  const generated=join(upstream,name);await mkdir(dirname(generated),{recursive:true});
-  await writeFile(generated,/\.(ts|md)$/.test(name)?text:bytes);
-  records.push({file:name,officialSha256:sha(bytes),adaptedSha256:sha(/\.(ts|md)$/.test(name)?text:bytes),mechanical});
-}
-const exportsExternal=['cortico/*','mineflayer','mineflayer-pathfinder','prismarine-viewer','prismarine-viewer/*','vec3','canvas'];
-// These selected public SDK APIs are pure libraries. Discard unrelated re-exported engines.
-const sdkRoots=await Promise.all(['agent-mc-world','agent-mc-qiandengji'].map(name=>realpath(join(root,'node_modules',name))));
-const sdkSlices=()=>({name:'public-sdk-slices',setup(b){b.onResolve({filter:/.*/},async args=>{
-  if(args.pluginData?.sdkResolved)return;
-  if(/^agent-mc-(?:world|qiandengji)(?:\/|$)/.test(args.path))return {path:require.resolve(args.path),sideEffects:false};
-  if(!sdkRoots.some(base=>args.importer.startsWith(base)))return;
-  const result=await b.resolve(args.path,{resolveDir:args.resolveDir,kind:args.kind,pluginData:{sdkResolved:true}});
-  return {...result,sideEffects:false};
-});}});
-for(const source of await walk(upstream)){
-  const name=relative(upstream,source),target=join(dist,'upstream',name.endsWith('.d.ts')?name:name.replace(/\.ts$/,'.js'));
-  await mkdir(dirname(target),{recursive:true});
-  if(name.endsWith('.ts')&&!name.endsWith('.d.ts')){
-    let text=await readFile(source,'utf8');
-    const js=(await transform(text,{loader:'ts',format:'esm',target:'node22'})).code
-      .replace(/(['"])(\.[^'"\r\n]+)\.ts\1/g,'$1$2.js$1');
-    await writeFile(target,js);
-  }else await cp(source,target);
-}
-await build({entryPoints:[join(root,'src/index.ts')],outfile:join(dist,'index.js'),bundle:true,packages:'external',platform:'node',format:'esm',target:'node22',external:[...exportsExternal,'./upstream/definition.ts'],plugins:[sdkSlices(),{name:'keep-official-entry',setup(b){b.onResolve({filter:/^\.\/upstream\/definition\.ts$/},()=>({path:'./upstream/definition.js',external:true}));}}],metafile:true}).then(r=>writeFile(join(root,'build-meta.json'),JSON.stringify(r.metafile,null,2)));
-await build({entryPoints:[join(root,'src/connection.ts')],outfile:join(dist,'connection.js'),bundle:true,packages:'external',platform:'node',format:'esm',target:'node22',external:exportsExternal,plugins:[sdkSlices()],metafile:true}).then(r=>writeFile(join(root,'connection-meta.json'),JSON.stringify(r.metafile,null,2)));
-await build({entryPoints:[join(root,'src/webui.ts')],outfile:join(dist,'webui.js'),bundle:true,platform:'browser',format:'esm',target:'es2022'});
-await cp(join(officialPackage,'LICENSE'),join(root,'LICENSE'));
-const notices=[['Agent MC World / Qiandengji server pack',await readFile(join(sdkRoots[0],'LICENSE'),'utf8')],['Official Qiandengji Agent Skill',await readFile(join(sdkRoots[1],'dist/portal/LICENSE-official-agent-skill.md'),'utf8')]];
-await writeFile(join(root,'THIRD-PARTY-NOTICES.md'),'<!-- Owner: scripts/build.mjs -->\n\n'+notices.map(([name,text])=>'# '+name+'\n\n'+text.trim()+'\n').join('\n'));
-await writeFile(join(root,'UPSTREAM.json'),JSON.stringify({schema:'qiandengji-lite-upstream/v1',official:{package:'cortico',version,repository:'https://github.com/Pal-AI-Lab/Cortico',mainChecked:'1de768a7670acb19ca4cd8d6181a95342e0cd233',npmIntegrity:'sha512-vOX5fgejXlC5l7oYpoy4LrsaFzZh6GpqkX5li6XjPeixhM+++hQkoOfetGGIDE8oCPUTsLFcRd/ytG85fjKJEw=='},genericAuthentication:{package:'agent-mc-world',version:'0.5.7-rc.150-preview.3',publicEntry:'agent-mc-world/client',archiveSha256:'6d947a37592308810a558daaf71e8471638f1894124e1cd4250ab283fe170110'},serverInformation:{package:'agent-mc-qiandengji',version:'0.5.0-rc.48-preview.1',publicEntries:['/portal','/engine'],archiveSha256:'480ecb281c0e30a08b58511c5a457ac39ac4477ecf2fb727c0e63198d8dc2c95'},namespace:'minecraft/mc_ to mymc/mymc_',files:records},null,2)+'\n');
-console.log(JSON.stringify({officialVersion:version,officialFiles:records.length,connectionPatches:records.filter(r=>r.mechanical.length).map(r=>r.file)}));
-const sdkEntry=require.resolve('agent-mc-world/client');
-const loginSource=await readFile(resolve(dirname(sdkEntry),'../../core/server-login.mjs'));
-const normalizedLoginSource=Buffer.from(loginSource.toString('utf8').replaceAll('\r\n','\n'));
-const loginBlob=createHash('sha1').update('blob '+normalizedLoginSource.length+String.fromCharCode(0)).update(normalizedLoginSource).digest('hex');
-if(loginBlob!=='b15bea989ed3fc0ad192b4c8a0cf78e97db1a9c1')throw Error('Public core authentication source changed');
-const provenanceFile=join(root,'UPSTREAM.json'),provenance=JSON.parse(await readFile(provenanceFile,'utf8'));
-provenance.genericAuthentication.publicSourceCommit='a45a4a40bd3097749fc24822a04b0a1e274747bd';
-provenance.genericAuthentication.publicSourceBlob=loginBlob;
-provenance.genericAuthentication.publicSourceNormalization='Git LF line endings';
-provenance.genericAuthentication.preparedFileSha256=sha(loginSource);
-provenance.namespace='World minecraft to mymc-lite; tools mc_ to mymc_';
-provenance.runtimeDependencies=packageMetadata.dependencies;
-await writeFile(provenanceFile,JSON.stringify(provenance,null,2)+'\n');
+await writeFile(join(dist,'lite-environment.txt'),
+  '你正在通过千灯纪-lite操作共享 Minecraft 身体；当前服务器、账号和世界事实以本连接读数为准。\n'
+  + '只使用本扩展实际声明的14个工具：mymc_do、mymc_scout、mymc_policy、mymc_goal、mymc_map、mymc_blueprint、mymc_check、mymc_view_map、mymc_bag、mymc_queue、mymc_blocked、mymc_stop、mymc_escape、mymc_server_info。参数以各工具声明为准。\n'
+  + '已明确的连续动作可放进一次 mymc_do 的 steps；queue:"append"续到队尾，救急短组可用queue:"now"。受理不等于完成，以原任务终态、实际落点和背包或方块净变化验收。未知结果不重放。\n'
+  + '观察用mymc_scout，背包、队列和失败原话分别用mymc_bag、mymc_queue、mymc_blocked；证据和现场未变化时不反复查询或原样重试。权限被拒时换路线或目标，不绕过服务器保护。\n'
+  + '密码只在操作者私密面板保存，不进入聊天、任务或模型参数。只有本连接明确的登录成功回执和当前脚下区块就绪才可行动。mymc_server_info未提供的职业、技能和玩家名单是未知，不能根据聊天猜成当前事实。\n');
+await build({entryPoints:[join(root,'src/index.ts')],outfile:join(dist,'index.js'),bundle:true,packages:'external',
+  platform:'node',format:'esm',target:'node22'});
+await build({entryPoints:[join(root,'src/webui.ts')],outfile:join(dist,'webui.js'),bundle:true,
+  platform:'browser',format:'esm',target:'es2022'});
+// The browser stylesheet is emitted by esbuild from the existing login.css import.
+const {QIANDENGJI_LITE}=await import(new URL('../dist/index.js',import.meta.url));
+const describe={...QIANDENGJI_LITE.describe,prompts:[{key:'worlds.mymc-lite.envPrompt',
+  title:'千灯纪-lite 游戏环境',role:'envPrompt',content:await readFile(join(dist,'lite-environment.txt'),'utf8')}]};
+await record(describe,'built');
+console.log(JSON.stringify({version:metadata.version,sharedWorldVersion:packages['agent-mc-world'].version,tools:describe.tools.length,copiedOfficialWorldFiles:0}));

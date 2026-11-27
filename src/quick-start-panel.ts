@@ -1,8 +1,15 @@
 import type { WebUiPanel } from 'cortico/web/shared/client-panel.ts';
 
+interface SetupSettings {
+  server?: string; host: string; port: number; username: string; auth: string; version: string; serverPack: string; viewerPort: number;
+}
 interface SetupState {
   available: boolean; mounted: boolean; enabled: boolean; provider: string; startupError?: string | null;
-  settings: { host: string; port: number; username: string; auth: string; version: string; serverPack: string; viewerPort: number };
+  settings: SetupSettings;
+  profiles?: Array<Partial<SetupSettings> & { id: string; label: string; selected: boolean; selectable: boolean }>;
+  connectedServer?: string | null;
+  connectedSettings?: SetupSettings | null;
+  connectedLoginName?: string | null;
   loginName: string; connection: { ready: boolean; phase: string } | null;
   assets?: { phase: string; completed: number; total: number } | null;
   assetError?: string | null; assetPreparing?: boolean;
@@ -26,6 +33,7 @@ export const quickStartPanel: WebUiPanel = {
     const identity = ui.msgline();
     const form = ui.h('div', 'mc-quick-form');
     form.append(ui.field('游戏类型', pack), ui.field('服务器地址', address), ui.field('账号 / 游戏名', username), ui.field('账号验证', auth));
+    let server: HTMLSelectElement | null = null;
     const more = ui.h('details', 'mc-fold'), summary = ui.h('summary', '', '可选设置');
     const version = ui.input({ value: 'auto', placeholder: 'auto' });
     const viewerPort = ui.input({ type: 'number', value: '7793' });
@@ -59,18 +67,24 @@ export const quickStartPanel: WebUiPanel = {
     manual.append(ui.h('summary', '', '已有服务器 / 手动连接'), form, identity, more, actions);
     card.body.append(portal, manual, msg, status, links);
     let current: SetupState | null = null, initialized = false, busy = false, reading = false;
-    const serverAddress = (s: SetupState['settings']) => s.host ? `${s.host.includes(':') ? `[${s.host}]` : s.host}:${s.port}` : '';
-    const sameSettings = () => !!current && address.value.trim() === serverAddress(current.settings)
+    const serverAddress = (s: Pick<SetupSettings, 'host' | 'port'>) => s.host ? `${s.host.includes(':') ? `[${s.host}]` : s.host}:${s.port}` : '';
+    const selectedProfile = () => current?.profiles?.find(profile => profile.id === server?.value);
+    const sameSettings = () => !!current && (server?.value ?? '') === (current.settings.server ?? '')
+      && (current.connectedServer === undefined || (server?.value ?? '') === current.connectedServer)
+      && address.value.trim() === serverAddress(current.settings)
       && username.value.trim() === current.settings.username && auth.value === current.settings.auth
       && (version.value.trim() || 'auto') === current.settings.version && pack.value === current.settings.serverPack
       && Number(viewerPort.value) === current.settings.viewerPort;
     const explainIdentity = () => {
-      identity.textContent = pack.value === 'qiandengji'
-        ? '千灯纪资料与玩法协议已选择；Agent 登录名前缀由资料包处理，已有角色沿用高级配置中的原登录名设置。'
-        : '连接你自己的 Minecraft Java 服务器，使用填写的账号；无需另配模型或安装观战客户端。';
+      identity.textContent = server?.value ? '使用运营者配置的服务器与账号；修改连接字段将切换到手动连接。'
+        : pack.value === 'qiandengji'
+          ? '千灯纪资料与玩法协议已选择；Agent 登录名前缀由资料包处理，已有角色沿用高级配置中的原登录名设置。'
+          : '连接你自己的 Minecraft Java 服务器，使用填写的账号；无需另配模型或安装观战客户端。';
     };
     const locks = () => {
-      start.disabled = save.disabled = busy || !current?.available;
+      const invalidProfile = !!server?.value && selectedProfile()?.selectable !== true;
+      start.disabled = save.disabled = busy || !current?.available || invalidProfile;
+      if (server) server.disabled = busy;
       stop.disabled = busy || !current?.enabled;
       retryAssets.hidden = !current?.assetError;
       retryAssets.disabled = busy || !current?.mounted || current?.assetPreparing === true;
@@ -82,22 +96,48 @@ export const quickStartPanel: WebUiPanel = {
         || current.portal?.state !== 'ready' || current.portal.gameAccountCreated !== true;
       invite.disabled = portalName.readOnly = current?.portal?.identitySaved === true;
     };
+    const fillSettings = (s: Partial<SetupSettings>) => {
+      address.value = serverAddress({ host: s.host ?? '', port: s.port ?? 25565 });
+      username.value = s.username ?? ''; auth.value = s.auth ?? 'offline'; version.value = s.version ?? 'auto';
+      pack.value = s.serverPack ?? 'none';
+      if (s.viewerPort !== undefined) viewerPort.value = String(s.viewerPort);
+    };
     const render = (state: SetupState) => {
       current = state;
+      if (state.profiles?.length && !server) {
+        server = ui.select({ options: [{ value: '', label: '手动连接' }] });
+        form.prepend(ui.field('命名服务器（可选）', server));
+        server.addEventListener('change', () => {
+          if (server!.value) { const profile = selectedProfile(); if (profile) fillSettings(profile); }
+          explainIdentity(); locks();
+        }, { signal: ctx.signal });
+      }
+      if (server) {
+        const selection = initialized ? server.value : state.settings.server ?? '';
+        const options = [ui.h('option', '', '手动连接')]; options[0].value = '';
+        for (const profile of state.profiles ?? []) {
+          const option = ui.h('option', '', profile.label); option.value = profile.id; option.disabled = !profile.selectable; options.push(option);
+        }
+        if (selection && !state.profiles?.some(profile => profile.id === selection)) {
+          const option = ui.h('option', '', '不可用的服务器'); option.value = selection; option.disabled = true; options.push(option);
+        }
+        server.replaceChildren(...options); server.value = selection;
+      }
       if (!initialized) {
-        const s = state.settings;
-        address.value = serverAddress(s);
-        username.value = s.username; auth.value = s.auth; version.value = s.version; pack.value = s.serverPack; viewerPort.value = String(s.viewerPort);
+        fillSettings(state.settings);
         initialized = true;
         explainIdentity();
-        portal.open = !s.host; manual.open = !!s.host;
+        portal.open = !state.settings.host; manual.open = !!state.settings.host || !!state.profiles?.length;
       }
-      status.textContent = state.connection?.ready ? `已进入游戏 · ${state.loginName}`
+      status.textContent = state.connection?.ready ? `已进入游戏 · ${state.connectedLoginName ?? state.loginName}`
         : state.mounted ? `World 已启动，等待进服与认证${state.lamps.length ? ` · ${state.lamps.map(l => l.hint || l.label).join('；')}` : ''}`
           : state.enabled ? '正在启动；是否进入游戏以连接状态为准。'
             : state.portal?.identitySaved ? (state.portal.state === 'ready' && state.portal.gameAccountCreated === true
               ? '网站账号已就绪，点击“使用此身份进入游戏”。' : '网站账号准备中；按上方结果继续，尚未连接游戏。')
               : '使用网站邀请接入，或展开“已有服务器 / 手动连接”。';
+      if (state.connection?.ready && state.connectedSettings
+        && ['server', 'host', 'port', 'username'].some(key => state.connectedSettings![key as keyof SetupSettings] !== state.settings[key as keyof SetupSettings]))
+        status.textContent += ' · 当前连接尚未切换，已保存的服务器配置需重新连接后生效。';
       if (!state.available) status.textContent = '宿主未提供快捷配置接口，请升级 Cortico 后使用。';
       if (state.startupError) status.textContent = `World 启动失败：${state.startupError}`;
       if (state.enabled && state.assets && state.assets.phase !== 'ready') status.textContent += state.assets.phase === 'copying'
@@ -132,15 +172,19 @@ export const quickStartPanel: WebUiPanel = {
       finally { reading = false; }
     };
     const act = async (method: 'save' | 'start' | 'stop') => {
-      if (busy || ctx.signal.aborted) return;
+      if (busy || ctx.signal.aborted || (method !== 'stop' && !!server?.value && selectedProfile()?.selectable !== true)) return;
       busy = true; locks();
       try {
         if ((method === 'stop' || (method === 'start' && !(current?.connection?.ready && sameSettings()))) && current?.mounted && !await ui.confirm({
           title: method === 'stop' ? '断开游戏？' : '重新连接游戏？', body: '当前身体任务会结束，会话和记忆保留。',
         })) return;
         msg.textContent = method === 'save' ? '正在保存…' : method === 'start' ? '正在连接…' : '正在断开…';
-        const result = await ctx.invoke<SetupState>(method, [{ address: address.value, username: username.value,
-          auth: auth.value, version: version.value, serverPack: pack.value, viewerPort: Number(viewerPort.value) }]);
+        const selection = server?.value ?? '';
+        const fields = selection ? { server: selection,
+          ...(Number(viewerPort.value) === selectedProfile()?.viewerPort ? {} : { viewerPort: Number(viewerPort.value) }) }
+          : { server: '', address: address.value, username: username.value,
+            auth: auth.value, version: version.value, serverPack: pack.value, viewerPort: Number(viewerPort.value) };
+        const result = await ctx.invoke<SetupState>(method, [fields]);
         if (ctx.signal.aborted) return;
         render(result);
         msg.textContent = method === 'save' ? '配置已保存，点击“进入游戏”连接。'
@@ -184,7 +228,9 @@ export const quickStartPanel: WebUiPanel = {
     };
     for (const [button, method] of [[prepare, 'portal-prepare'], [query, 'portal-status'], [importIdentity, 'portal-import'], [enterPortal, 'portal-start']] as const)
       button.addEventListener('click', () => { void portalAct(method); }, { signal: ctx.signal });
-    pack.addEventListener('change', explainIdentity, { signal: ctx.signal });
+    const manualInput = () => { if (server) server.value = ''; explainIdentity(); locks(); };
+    for (const input of [address, username, version]) input.addEventListener('input', manualInput, { signal: ctx.signal });
+    for (const input of [auth, pack]) input.addEventListener('change', manualInput, { signal: ctx.signal });
     locks(); void refresh(); ctx.interval(() => { void refresh(); }, 2000);
   },
 };

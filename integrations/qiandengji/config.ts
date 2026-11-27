@@ -1,8 +1,9 @@
 import { COMBAT_EXECUTION_DEFAULTS, type CombatExecutionPolicy } from './engine/combat-decision-types.ts';
-import { mountServerProfile, selectedServerId, type MinecraftServerProfile } from 'agent-mc-world/extension';
+import { mountServerProfile } from 'agent-mc-world/extension';
 import type { ConfigGroup } from 'agent-mc-world/contracts';
 import { COMBAT_DECISION_DEFAULTS } from 'agent-mc-world/decisions';
 import {
+  describeServerProfiles, selectedServerId,
   MINECRAFT_CLIENT_CONFIG_GROUP,
   MINECRAFT_CONFIG_GROUP,
   MINECRAFT_DEFAULTS,
@@ -10,6 +11,7 @@ import {
   MINECRAFT_PLAYER_CONFIG_GROUP,
   MINECRAFT_RHYTHM_CONFIG_GROUP,
   type MinecraftConfigSection,
+  type MinecraftServerProfile,
 } from 'agent-mc-world/extension';
 
 type RepeatSuccessFallback = {
@@ -38,7 +40,18 @@ export function bindServerProfile<T extends ProfileSelection>(config: T): T {
     key === 'serverPack' ? serverPack : Reflect.get(target, key, receiver) });
 }
 
-export type MymcConfigSection = MinecraftConfigSection & ProfileSelection & {
+export type MymcServerProfile = MinecraftServerProfile & {
+  serverPack?: 'none' | 'qiandengji';
+  preserveLoginName?: boolean;
+  spectatorMode?: 'auto' | 'web';
+  proximityVoice?: MinecraftConfigSection['proximityVoice'];
+  simpleVoiceChat?: MinecraftConfigSection['simpleVoiceChat'];
+};
+
+export type MymcConfigSection = MinecraftConfigSection & {
+  server?: string;
+  servers?: Record<string, MymcServerProfile>;
+  spectatorMode?: 'auto' | 'web';
   decisionService?: {enabled:boolean;endpoint:string;model:string;apiKeyEnv:string;timeoutMs:number};
   harness2?:{enabled:boolean;modelId?:string;worker:import('agent-mc-world/decisions').Harness2Options['worker'];
     budget:import('agent-mc-world/decisions').Harness2Job['budget']};
@@ -62,6 +75,38 @@ export type MymcConfigSection = MinecraftConfigSection & ProfileSelection & {
   repeatSuccessFallback: RepeatSuccessFallback;
   visual: MinecraftConfigSection['visual'] & { mode: 'auto' | 'structured' };
 };
+
+export function mymcSelectedServer(cfg: MymcConfigSection): string {
+  return selectedServerId(cfg) ?? '';
+}
+export function mymcServerConfig(cfg: MymcConfigSection): MymcConfigSection {
+  if (!cfg.servers && cfg.activeServer && cfg.server === cfg.activeServer) return cfg;
+  const id = mymcSelectedServer(cfg);
+  if (!id) return cfg;
+  const profile = cfg.servers && Object.hasOwn(cfg.servers, id) ? cfg.servers[id] : undefined;
+  if (!profile) throw new Error('Unknown Minecraft server profile: ' + id);
+  if (!mymcServerProfiles(cfg).some(value => value.id === id && value.selectable))
+    throw new Error('该命名服务器不可选择。');
+  // An omitted server pack must not inherit another server's RPG rules.
+  if (profile.spectatorMode !== undefined && !['auto', 'web'].includes(profile.spectatorMode)) throw new Error('未知观战模式。');
+  const resolved = bindServerProfile(cfg);
+  const overrides: Partial<MymcConfigSection> = { serverPack: profile.serverPack ?? 'none', spectatorMode: profile.spectatorMode ?? 'auto',
+    ...(profile.preserveLoginName === undefined ? {} : { preserveLoginName: profile.preserveLoginName }),
+    ...(profile.spectatorMode === 'web' ? { client: { ...resolved.client, enabled: false, autoSpectate: false },
+      player: { ...resolved.player, enabled: false } } : {}),
+    ...(profile.proximityVoice ? { proximityVoice: structuredClone(profile.proximityVoice) } : {}),
+    ...(profile.simpleVoiceChat ? { simpleVoiceChat: structuredClone(profile.simpleVoiceChat) } : {}) };
+  return new Proxy({ ...resolved, ...overrides }, { get(_target, key, receiver) {
+    return Object.hasOwn(overrides, key) ? Reflect.get(overrides, key) : Reflect.get(resolved, key, receiver);
+  } });
+}
+export function mymcServerProfiles(cfg: MymcConfigSection) {
+  const selected = mymcSelectedServer(cfg);
+  return describeServerProfiles(cfg).map(profile => ({
+    id: profile.id, label: profile.label, selected: profile.id === selected,
+    selectable: profile.selectable && profile.errors.length === 0,
+  }));
+}
 
 export function mymcLoginName(value: string, preserveLoginName = false): string {
   const name = value.trim();
@@ -104,8 +149,8 @@ const baseRepeatSuccessFallback = (MINECRAFT_DEFAULTS as {
 
 export const MYMC_DEFAULTS: MymcConfigSection = {
   ...structuredClone(MINECRAFT_DEFAULTS),
-  server: '', // Empty means no profile; preserve legacy explicit host selection.
   // Cortico requires every visible setting to have a concrete default.
+  server: '',
   // Mineflayer's existing omitted value is 'far' = 12 chunks; keep that behavior.
   viewDistance: 12,
   // Clearing this optional local reference path keeps external knowledge disabled.
@@ -153,6 +198,7 @@ export const SERVER_PACK_PROPERTY = {
 /** Public World defaults: no server identity, commands, channels or performance endpoints. */
 export const WORLD_DEFAULTS: MymcConfigSection = {
   ...structuredClone(MYMC_DEFAULTS), ...structuredClone(MINECRAFT_CLIENT_DEFAULTS),
+  server: '',
   // Concrete WebUI defaults; the empty identity is omitted at the core boundary.
   // The core only disables a stored skin for false, so true retains its auto behavior.
   memoryAgentId: '', localSkinEnabled: true,
@@ -164,6 +210,8 @@ export const MYMC_CONFIG_GROUP: ConfigGroup = {
   ...connectionGroup,
   schema: { ...connectionGroup.schema, properties: {
     ...connectionGroup.schema.properties,
+    'worlds.mymc.server': { type: 'string', title: '命名服务器（可选）', 'x-hot': false,
+      description: '填写已配置服务器的精确 ID；留空使用手动连接。也可在开始游戏面板选择运营者配置的服务器。保存不连接，进入游戏才重启 World。' },
     'worlds.mymc.toolParameterDescriptions': { type: 'string', enum: ['inline', 'on-demand'], title: '工具参数说明', 'x-hot': false,
       description: 'inline 在每次请求提供参数说明；on-demand 保留全部参数和校验约束，详细说明通过 mymc_tool_help 按需读取。更改后重新挂载 World。' },
     'worlds.mymc.serverPack': SERVER_PACK_PROPERTY,

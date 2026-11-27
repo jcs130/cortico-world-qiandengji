@@ -29,7 +29,7 @@
     },
     {
       "name": "mymc_bag",
-      "description": "Read inventory now, or compare requirements (required = total needed, keep = amount you choose to retain) to current stock. Shows how many of the 36 slots are used, what is in them, what is in your hand, and what armour you are wearing. Read-only and instant — it never moves you, never touches the world and never touches the work queue. Set item to a material ID, Chinese material name, or exact custom display name to count current carried stock. Use detail:\"storage\" with item to also locate equipment, open container and historical chest records. closed virtual backpacks are not included, and chest records are historical until reopened. Use detail:\"slots\" for both identifiers of each carried stack: inventorySlot for player inventory 0–35, windowSlot for the player window 9–44. Use the field required by the transfer. item optionally filters stacks; freeSlots always covers the entire carried inventory. Use detail:\"changes\" for the latest confirmed net change across carried slots, or item alone for a typed current carried quantity. Ask this instead of re-submitting a task to find out what you are carrying. Once per turn: asking again in the same turn returns a one-line pointer to the answer above.",
+      "description": "Read inventory now, or compare requirements (required = total needed, keep = amount you choose to retain) to current stock. Shows how many of the 36 slots are used, what is in them, what is in your hand, and what armour you are wearing. Read-only and instant — it never moves you, never touches the world and never touches the work queue. Set item to a material ID, Chinese material name, or exact custom display name to count current carried stock. Use detail:\"storage\" with item to also locate equipment, open container and historical chest records. Closed virtual backpacks are not included. Chest locations and counts are historical until reopened; they remain available when carried inventory is still syncing. Use detail:\"slots\" for both identifiers of each carried stack: inventorySlot for player inventory 0–35, windowSlot for the player window 9–44. Use the field required by the transfer. item optionally filters stacks; freeSlots always covers the entire carried inventory. Use detail:\"changes\" for the latest confirmed net change across carried slots, or item alone for a typed current carried quantity. Read game guidebooks and custom books in your synced inventory without opening them: detail:\"book\" lists books, then pass windowSlot and page (1-based) to read a page. Ask this instead of re-submitting a task to find out what you are carrying. Once per turn: asking again in the same turn returns a one-line pointer to the answer above.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -43,9 +43,21 @@
               "summary",
               "slots",
               "changes",
-              "storage"
+              "storage",
+              "book"
             ],
-            "description": "Default summary; slots reads the player window (9–44); changes returns latest net changes; storage with item also looks up historical containers."
+            "description": "Default summary; slots reads the player window (9–44); changes returns latest net changes; storage locates an item; book lists or reads carried books."
+          },
+          "windowSlot": {
+            "type": "integer",
+            "minimum": 9,
+            "maximum": 45,
+            "description": "detail:book only. Use the player window slot from the book list (45 is offhand)."
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "detail:book with windowSlot only. One book page, first page is 1."
           },
           "offset": {
             "type": "integer",
@@ -398,7 +410,7 @@
     },
     {
       "name": "mymc_combat_tactic",
-      "description": "Read or update combat spell rules and an agent-authored fast tactic program. {} reads it; omitted fields keep their current values; {samples:true} indexes recorded pre-program battlefields and retains returned IDs until availableUntil even as live samples rotate. Respect retention.omittedRecent at capacity; unavailable IDs require a new index, not inventing IDs or replaying live actions. {probe:{program,samples?:[id]}} compares your candidate with the recorded program on exactly those historical inputs, without controlling the body or changing the active tactic. This branch is available to background learning. A successful probe proves only menu validity, not survival or improvement; inspect candidate differences, then install with expectedRevision. {history:true} indexes retained tactic versions; {version:n} reads an exact saved version for comparison/rollback. {enabled:false} clears it. A spell list of server-listed combat spell IDs sets priority order while fighting; healAtOrBelow is the optional ability provider healing threshold, not a body lock; a cooling-down heal does not stop fast decisions. Without a provider it never sends a command. Nonempty rules replace the unconditional spell priority: ordered observed conditions are rechecked each combat tick and the first ready match wins; no match means no automatic offensive cast. rules:[] restores spells/default priority. The host selects candidates from {battlefield:true}; submit {choice:{candidate,tacticRevision,connectionGeneration}} for fresh validation. No inference runs in this extension. program:{name,code,params?} installs your JavaScript synchronous function body with frame and params; return {candidates,instructions}. frame.actionPool contains currently executable casts, engagements and collision-checked directions; you may select, reorder or relabel them, or construct step destinations 0.5 to 1.6 blocks away. Read actors from frame.battlefield.actors (relation, health, distance, lineOfSight); candidate kinds are cast, engage, step, retreat, track, search and method. Search, when offered, investigates real sound bearings or expiring last-seen locations through a checked native short-movement task without attacking. Default choices support proactive engage or retreat before injury; resumable body work pauses and resumes. Track is only an explicit authored action-pool primitive: it watches without attacking and stops current attacks. Follow tasks remain explicit body tasks. There is no frame.snapshot.enemies or melee candidate. The program constructs choices from fresh battlefield facts independently of the main model; the fast model chooses and the combat controller executes. Program ordering only changes the host-choice menu; it does not throttle the separate automatic spell rules. To conserve mana on automatic casts, edit the relevant rule when.manaAtLeast or when.reserveMana and verify casts[].source/ruleId/manaBefore in a combat report. routines:[{id,intent,procedure,params?,durationMs?}] registers exact saved mymc_script library references in the fast menu; routines:[] removes them. meleeWeapons:[\"trident\",\"iron_axe\"] sets your native melee preference for reactive/fast combat; unavailable entries are skipped, then the normal fallback applies. [] restores defaults and does NOT disable melee. It does not equip or start a fight. Read frame.loadout.choices for observed weapon modes. Tridents and maces support melee; native automatic ranged combat currently uses bows. Explicit throws or crossbows can be authored with mymc_script api:\"weapons\" and registered as versioned routines. Read and validate/save a method first. Registration checks its immutable version and does not execute it or claim it effective. A method option starts that existing script only when the body is free; its original run ID, SDK trace and terminal remain readable with mymc_script. An installed program may filter/reorder method options from actionPool; its returned priority order is preserved. Direct steps last at most 700ms and share the combat body lease; survival, task ownership and collisions remain checked. Use program:null to remove it. No imports, files, network or raw bot; 50ms worker execution budget, separate 500ms response deadline. A scheduling timeout (including cold startup) allows only one retry on a new sample at least one second later; otherwise revise the program. Built-in choices remain a fallback; budgets are not raised. {decisions:true} lists recent submitted choices; {decision:id} reads the receipt. Sending an action does not prove a successful encounter. Keep source and previous versions in your own methods library; compare combat reports before calling a revision an improvement. The World checks observed spell availability, mana, targets and announced cooldowns; server replies still decide success. Settings and the last five observed combat receipts persist per world across restarts. {} also reads current capability constraints and recent receipt IDs; {report:id} expands one receipt. Receipts are observations for reviewing and revising a tactic, not learned conclusions.",
+      "description": "Read or update combat spell rules and an agent-authored fast tactic program. {} reads it; omitted fields keep their current values; {samples:true} indexes recorded pre-program battlefields and retains returned IDs until availableUntil even as live samples rotate. Respect retention.omittedRecent at capacity; unavailable IDs require a new index, not inventing IDs or replaying live actions. {probe:{program,samples?:[id]}} compares your candidate with the recorded program on exactly those historical inputs, without controlling the body or changing the active tactic. This branch is available to background learning. A successful probe proves only menu validity, not survival or improvement; inspect candidate differences, then install with expectedRevision. {history:true} indexes retained tactic versions; {version:n} reads an exact saved version for comparison/rollback. {enabled:false} clears it. A spell list of server-listed combat spell IDs sets priority order while fighting; healAtOrBelow is the optional ability provider healing threshold, not a body lock; a cooling-down heal does not stop fast decisions. Without a provider it never sends a command. Nonempty rules replace the unconditional spell priority: ordered observed conditions are rechecked each combat tick and the first ready match wins; no match means no automatic offensive cast. rules:[] restores spells/default priority. The host selects candidates from {battlefield:true}; submit {choice:{candidate,tacticRevision,connectionGeneration}} for fresh validation. No inference runs in this extension. program:{name,code,params?} installs your JavaScript synchronous function body with frame and params; return {candidates,instructions}. frame.actionPool contains currently executable casts, engagements and collision-checked directions; you may select, reorder or relabel them, or construct step destinations 0.5 to 1.6 blocks away. Read actors from frame.battlefield.actors (relation, health, distance, lineOfSight); candidate kinds are cast, engage, step, retreat, track, search and method. Search, when offered, investigates real sound bearings or expiring last-seen locations through a checked native short-movement task without attacking. Default choices support proactive engage or retreat before injury; resumable body work pauses and resumes. Track is only an explicit authored action-pool primitive: it watches without attacking and stops current attacks. Follow tasks remain explicit body tasks. There is no frame.snapshot.enemies or melee candidate. The program constructs choices from fresh battlefield facts independently of the main model; the fast model chooses and the combat controller executes. Program ordering only changes the host-choice menu; it does not throttle the separate automatic spell rules. To conserve mana on automatic casts, edit the relevant rule when.manaAtLeast or when.reserveMana and verify casts[].source/ruleId/manaBefore in a combat report. routines:[{id,intent,procedure,params?,durationMs?}] registers exact saved mymc_script library references in the fast menu; routines:[] removes them. meleeWeapons:[\"trident\",\"iron_axe\"] sets your native melee preference for reactive/fast combat; unavailable entries are skipped, then the normal fallback applies. [] restores defaults and does NOT disable melee. It does not equip or start a fight. Read frame.loadout.ranged for the currently usable automatic ranged weapon and choices for explicit options. The native controller supports bows, crossbows and Loyalty tridents. Use attack mode:ranged with weapon:crossbow or weapon:trident to request one explicitly. Read and validate/save a method first. Registration checks its immutable version and does not execute it or claim it effective. A method option starts that existing script only when the body is free; its original run ID, SDK trace and terminal remain readable with mymc_script. An installed program may filter/reorder method options from actionPool; its returned priority order is preserved. Direct steps last at most 700ms and share the combat body lease; survival, task ownership and collisions remain checked. Use program:null to remove it. No imports, files, network or raw bot; 50ms worker execution budget, separate 500ms response deadline. A scheduling timeout (including cold startup) allows only one retry on a new sample at least one second later; otherwise revise the program. Built-in choices remain a fallback; budgets are not raised. {decisions:true} lists recent submitted choices; {decision:id} reads the receipt. Sending an action does not prove a successful encounter. Keep source and previous versions in your own methods library; compare combat reports before calling a revision an improvement. The World checks observed spell availability, mana, targets and announced cooldowns; server replies still decide success. Settings and the last five observed combat receipts persist per world across restarts. {} also reads current capability constraints and recent receipt IDs; {report:id} expands one receipt. Receipts are observations for reviewing and revising a tactic, not learned conclusions.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -747,10 +759,10 @@
         "properties": {
           "steps": {
             "type": "array",
-            "description": "steps 必须是实际 JSON 数组 [{\"skill\":...},...]，不要 stringify 成字符串。一步一个对象,skill 写技能名。* = 该字段适用的形态必填;? = 可选或条件参数。\n复杂形态、执行条件和完整示例用 mymc_help {\"skill\":\"技能名\"} 查询。\ncross_fire(at?,mode?,maxDamage?,reserveHealth?,dryRun?)\nfollow_route(waypoints*,avoid?,avoidBlocks?,radius?,timeoutMs?,dimension?,dryRun?)\ncontrol(keys*,durationMs?,mode?,orientation?,yawDeg?,pitchDeg?)\nlook(at*)\ngoto(at*,dimension?,exact?,walkOnly?,dryRun?)\ntransit(at*)\nswim(at*,dimension?,reserveOxygen?,maxDurationMs?,dryRun?)\ngoto_player(name*)\nfollow(name*)\nfind(target*,direction?,distance?,until?)\nflee(distance?)\nsurface()\nflight(at*,land?,dryRun?)\nland()\ncleanup(dryRun?)\ncollect(block*,count?,buried?,mature?,tool?) — 世界方块用 collect，block 填方块注册名；count 统计采集的方块。地面掉落物用 pickup。\nharvest(block*,at*,replant?,tool?)\nfish(at?)\ntunnel(at*,spiral?,dryRun?,tool?,until?)\nbuild(blueprint?,stopAfter?,rebindFrom?,confirm?,skipConflicts?,shape?,on?,anchors?,material*,temporary?,at?,fill?,dryRun?) — 材料放置：material+anchors（坐标数组）或 material+on（参照格/面）；单格可用 material+at，不能再给 anchors/on/shape。蓝图施工：blueprint+at，at 是蓝图原点。\nexcavate(shape*,anchors*,fill?,dryRun?,tool?)\nprobe(shape*,anchors*,fill?,slice?,where?) — 定位目标用 shape+anchors+where；空间切片用 shape:\"box\"+anchors+slice（x/y/z），不带 where，fill 省略或 solid。不要把两种观察混在同一步。\nobserve(mode*,sites?,bounds?,cursor?,format?,rays?)\nuse(item?,at?,target?,entityId?,index?,times?,open?,text?,back?,face?)\nride(target?,entityId?,to?,off?,recover?)\nlead(target?,to?,tolerance?,tie?,keep?,off?)\ncraft(item?,grid?,count?)\nsmelt(input*,count?,fuel*,at?)\nbrew(input*,bottle*,count?,fuel*,at?)\nenchant(at*,item*,pick?,index?)\nanvil(op*,item*,with?,name?,pick?,withPick?,at?)\ngrindstone(item*,with?,pick?,withPick?,at?)\neat(item*)\nattack(target*,entityId?,weapon?,mode?)\nequip(item?,pick?,hand?)\npickup(item?) — 地面掉落物用 pickup；item 可填物品注册名，省略则就近拾取。按入包增量验收。\ntoss(item*,count?,at?,pick?,target?)\nstow(item*,count?,pick?,at?,into?)\ncompact()\norganize(target?,includeHotbar?,sort?,dryRun?,rules?,at?,into?)\ntake(item?,count?,at?,from?,all?,pick?)\nserver_travel(command*,at*,within?,dimension?) — 用已知传送落点作 at，地标、按钮或入口设施可在旁边；已在范围内时命令未发送。查询、加入、启动等非传送命令用 chat.text。\nchat(text*)\ngesture(name*,motion*)\nmenu_click(slot?,name?,button?)\nmenu_close()\nswap_hands()\n坐标写成 [x,y,z];at 是一个坐标,anchors 是一串坐标。\n每个分量是绝对数字,或 \"~\"/\"~-3\" 相对写法——原点是**这一步开始执行那一刻**我脚下那一格,\n所以 goto 之后接 \"~\" 指的是那个 goto 的落点。没有前后左右的写法。\n回执一律报解析后的绝对坐标。\n方块/物品/实体一律用英文 id(oak_log、cobblestone、skeleton);target 也收玩家名。\n类别名有两套:target/block/material 认 log、planks、ore、wool 这样的裸名(它们本身不是物品 id),把所有同类算进去;\nuntil 名单认带井号的 #ores/#logs/#leaves/#chests/#liquids/#beds。\n**写一个真实物品 id 就只认它自己**:obsidian 不会拿哭泣的黑曜石顶,torch 不是灵魂火把,\nchest 不是末影箱,dirt 不是土径 —— 要\"随便哪种木板\"就写裸类别名 planks。\ncount 一律 1-64;distance:flee 1-128,find 1-1024(不给 direction 时站着扫,最远 48)。\n\"needs\" 声明这一步依赖哪些更早的步(序号 1 起);\"needs\":[] = 独立步。缺省见字段说明。\n容器窗口在每单结束时关闭；from/into:\"open\" 的搬运和开窗步骤须在同一次 mymc_do.steps 中，不能跨单沿用窗口。\n每一步都会核验:判据由执行器按 (skill, 参数) 推,达成与落空都写进回执\n(「该步按『背包内原木 ≥5』核验:达成(实测 7)」)。",
+            "description": "steps 必须是实际 JSON 数组 [{\"skill\":...},...]，不要 stringify 成字符串。一步一个对象,skill 写技能名。* = 该字段适用的形态必填;? = 可选或条件参数。\n复杂形态、执行条件和完整示例用 mymc_help {\"skill\":\"技能名\"} 查询。\ncross_fire(at?,mode?,maxDamage?,reserveHealth?,dryRun?)\nfollow_route(waypoints*,avoid?,avoidBlocks?,radius?,timeoutMs?,dimension?,dryRun?)\ncontrol(keys*,durationMs?,mode?,orientation?,yawDeg?,pitchDeg?)\nlook(at*)\ngoto(at*,dimension?,exact?,walkOnly?,dryRun?)\ntransit(at*)\nswim(at*,dimension?,reserveOxygen?,maxDurationMs?,dryRun?)\ngoto_player(name*)\nfollow(name*)\nfind(target*,direction?,distance?,until?)\nflee(distance?)\nsurface()\nflight(at*,land?,dryRun?)\nland()\ncleanup(dryRun?)\ncollect(block*,count?,buried?,mature?,tool?) — 世界方块用 collect，block 填方块注册名；count 统计采集的方块。地面掉落物用 pickup。\nharvest(block*,at*,replant?,tool?)\nfish(at?)\ntunnel(at*,spiral?,dryRun?,tool?,until?)\nbuild(blueprint?,stopAfter?,rebindFrom?,confirm?,skipConflicts?,shape?,on?,anchors?,material*,temporary?,at?,fill?,dryRun?) — 材料放置：material+anchors（坐标数组）或 material+on（参照格/面）；单格可用 material+at，不能再给 anchors/on/shape。蓝图施工：blueprint+at，at 是蓝图原点。\nexcavate(shape*,anchors*,fill?,dryRun?,tool?)\nprobe(shape*,anchors*,fill?,slice?,where?) — 定位目标用 shape+anchors+where；空间切片用 shape:\"box\"+anchors+slice（x/y/z），不带 where，fill 省略或 solid。不要把两种观察混在同一步。\nobserve(mode*,sites?,bounds?,cursor?,format?,rays?)\nuse(item?,at?,target?,entityId?,index?,times?,open?,text?,back?,face?)\nride(target?,entityId?,to?,off?,recover?)\nlead(target?,to?,tolerance?,tie?,keep?,off?)\ncraft(item?,grid?,count?)\nsmelt(input*,count?,fuel*,at?)\nbrew(input*,bottle*,count?,fuel*,at?)\nenchant(at*,item*,pick?,index?)\nbook(pages*,windowSlot?,title?) — 游戏里的书与笔；pages 为完整书页，填 title 才署名。\nanvil(op*,item*,with?,name?,pick?,withPick?,at?)\ngrindstone(item*,with?,pick?,withPick?,at?)\neat(item*)\nattack(target*,entityId?,weapon?,mode?)\nequip(item?,pick?,hand?)\npickup(item?) — 地面掉落物用 pickup；item 可填物品注册名，省略则就近拾取。按入包增量验收。\ntoss(item*,count?,at?,pick?,target?)\nstow(item*,count?,pick?,at?,into?)\ncompact()\norganize(target?,includeHotbar?,sort?,dryRun?,rules?,at?,into?)\ntake(item?,count?,at?,from?,all?,pick?)\nserver_travel(command*,at*,within?,dimension?) — 用已知传送落点作 at，地标、按钮或入口设施可在旁边；已在范围内时命令未发送。查询、加入、启动等非传送命令用 chat.text。\nchat(text*)\ngesture(name*,motion*)\nmenu_click(slot?,name?,button?)\nmenu_close()\nswap_hands()\n坐标写成 [x,y,z];at 是一个坐标,anchors 是一串坐标。\n每个分量是绝对数字,或 \"~\"/\"~-3\" 相对写法——原点是**这一步开始执行那一刻**我脚下那一格,\n所以 goto 之后接 \"~\" 指的是那个 goto 的落点。没有前后左右的写法。\n回执一律报解析后的绝对坐标。\n方块/物品/实体一律用英文 id(oak_log、cobblestone、skeleton);target 也收玩家名。\n类别名有两套:target/block/material 认 log、planks、ore、wool 这样的裸名(它们本身不是物品 id),把所有同类算进去;\nuntil 名单认带井号的 #ores/#logs/#leaves/#chests/#liquids/#beds。\n**写一个真实物品 id 就只认它自己**:obsidian 不会拿哭泣的黑曜石顶,torch 不是灵魂火把,\nchest 不是末影箱,dirt 不是土径 —— 要\"随便哪种木板\"就写裸类别名 planks。\ncount 一律 1-64;distance:flee 1-128,find 1-1024(不给 direction 时站着扫,最远 48)。\n\"needs\" 声明这一步依赖哪些更早的步(序号 1 起);\"needs\":[] = 独立步。缺省见字段说明。\n容器窗口在每单结束时关闭；from/into:\"open\" 的搬运和开窗步骤须在同一次 mymc_do.steps 中，不能跨单沿用窗口。\n每一步都会核验:判据由执行器按 (skill, 参数) 推,达成与落空都写进回执\n(「该步按『背包内原木 ≥5』核验:达成(实测 7)」)。",
             "items": {
               "type": "object",
-              "description": "build: 材料放置：material+anchors（坐标数组）或 material+on（参照格/面）；单格可用 material+at，不能再给 anchors/on/shape。蓝图施工：blueprint+at，at 是蓝图原点。\nprobe: 定位目标用 shape+anchors+where；空间切片用 shape:\"box\"+anchors+slice（x/y/z），不带 where，fill 省略或 solid。不要把两种观察混在同一步。\nserver_travel: 用已知传送落点作 at，地标、按钮或入口设施可在旁边；已在范围内时命令未发送。查询、加入、启动等非传送命令用 chat.text。",
+              "description": "build: 材料放置：material+anchors（坐标数组）或 material+on（参照格/面）；单格可用 material+at，不能再给 anchors/on/shape。蓝图施工：blueprint+at，at 是蓝图原点。\nprobe: 定位目标用 shape+anchors+where；空间切片用 shape:\"box\"+anchors+slice（x/y/z），不带 where，fill 省略或 solid。不要把两种观察混在同一步。\nbook: 游戏里的书与笔；pages 为完整书页，填 title 才署名。\nserver_travel: 用已知传送落点作 at，地标、按钮或入口设施可在旁边；已在范围内时命令未发送。查询、加入、启动等非传送命令用 chat.text。",
               "properties": {
                 "skill": {
                   "type": "string",
@@ -785,6 +797,7 @@
                     "smelt",
                     "brew",
                     "enchant",
+                    "book",
                     "anvil",
                     "grindstone",
                     "eat",
@@ -805,16 +818,24 @@
                   ]
                 },
                 "at": {
-                  "type": "array",
+                  "type": [
+                    "array",
+                    "string"
+                  ],
                   "items": {
-                    "type": "number"
+                    "type": [
+                      "number",
+                      "string"
+                    ]
                   },
                   "minItems": 2,
                   "maxItems": 3,
                   "description": "用于 cross_fire / look(要面向的目标格，支持相对坐标和已登记路标。) / goto(只写 [x,z] = 到附近可达落脚点(不强制爬屋顶);指定楼层请给 [x,y,z];给字符串 = mymc_map 路标名) / transit(当前维度里的一格传送门方块;给字符串 = 当前维度的 mymc_map 路标名) / swim / flight / harvest / fish / tunnel(通道终点) / build(蓝图施工时是原点；无 blueprint 的单格材料放置可作 anchors:[at] 别名，不与 anchors/on/shape 同用) / use(世界里要点击的方块绝对坐标，点击已有方块不要求背包有同名物品；face 指它的表面；放置目标用 build.anchors；与 target 二选一) / smelt(指定用哪一座炉子) / brew(指定用哪一座酿造台) / enchant / anvil(指定用哪一座铁砧;不写用最近的) / grindstone(指定用哪一座砂轮;不写用最近的) / toss(朝那一格扔；不写优先选已测较开阔方向，没有已测空隙则按当前朝向丢弃并报告未知) / stow(只存进指定箱子;与 into:open 二选一) / organize(rules 的 stow 只存指定箱子；与 into 互斥) / take(点名哪一格容器) / server_travel"
                 },
                 "mode": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "enum": [
                     "auto",
                     "walk",
@@ -844,7 +865,9 @@
                   "description": "用于 cross_fire"
                 },
                 "dryRun": {
-                  "type": "boolean",
+                  "type": [
+                    "boolean"
+                  ],
                   "description": "用于 cross_fire / follow_route / goto / swim / flight(只试算当前已加载路线；回报预计毫秒、速度来源和当前许可) / cleanup / tunnel(试算施工材料。水平和斜向通道同时检查预定脚格的支撑、液体和未知格，有缺口时报告背包垫材。) / build / excavate / organize(只读计划，不点击、不存放或丢弃)"
                 },
                 "waypoints": {
@@ -915,7 +938,9 @@
                   "description": "用于 follow_route"
                 },
                 "dimension": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "description": "用于 follow_route(当前维度前置条件，不符不移动) / goto(可选的当前维度前置条件(overworld/the_nether/the_end)) / swim(当前维度前置条件，不符不移动) / server_travel(可选的落点维度(overworld/the_nether/the_end)；与 goto 的当前维度前置条件不同)"
                 },
                 "keys": {
@@ -981,11 +1006,15 @@
                   "description": "用于 swim"
                 },
                 "name": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "description": "用于 goto_player / follow / anvil(rename 必写；repair/combine 可选:同时改成此名字，不写保留原名) / gesture / menu_click"
                 },
                 "target": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "description": "用于 find(当前连接的方块或实体英文 id，方块可用 log 等名称匹配；不支持 hostile/tree 类别，# 名单只用于 until；未命中不能证明区域安全) / use(要右键的活物名称，不是方块或背包物品；与 at 二选一。点击世界里的方块只给 at，不填 target) / ride(骑上哪种(实体英文 id:pig/boat/horse…);已骑着时可省) / lead(拴哪种(实体英文 id);已经牵着时可省) / attack / toss(可见玩家的完整名字；与at互斥) / organize(默认 inventory；open 整理当前真实储物窗口)"
                 },
                 "direction": {
@@ -1003,15 +1032,21 @@
                   "description": "用于 find(给了就边走边找;不给就站着扫)"
                 },
                 "distance": {
-                  "type": "integer",
+                  "type": [
+                    "integer"
+                  ],
                   "minimum": 1,
                   "maximum": 1024,
                   "description": "用于 find / flee(1-128)"
                 },
                 "until": {
-                  "type": "array",
+                  "type": [
+                    "array"
+                  ],
                   "items": {
-                    "type": "string"
+                    "type": [
+                      "string"
+                    ]
                   },
                   "maxItems": 12,
                   "description": "用于 find(边走边找时:路上碰到这里头任何一样就停) / tunnel(挖的路上碰到这里头任何一样就停)"
@@ -1021,11 +1056,15 @@
                   "description": "用于 flight(false=抵达后悬停；省略或true=平台落地)"
                 },
                 "block": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "description": "用于 collect / harvest"
                 },
                 "count": {
-                  "type": "integer",
+                  "type": [
+                    "integer"
+                  ],
                   "minimum": 1,
                   "maximum": 64,
                   "description": "用于 collect / craft(item=要新增的产物个数(按配方产量向上取整);grid=配方重复次数。不是原料数。) / smelt / brew(1-3;放几瓶(三个瓶位)) / toss / stow / take(定量取物必须显式写;不默认数量)"
@@ -1039,7 +1078,9 @@
                   "description": "用于 collect"
                 },
                 "tool": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "description": "用于 collect(只覆盖本步;不写时节约耐久) / harvest / tunnel(只覆盖本步;不写时节约耐久) / excavate(只覆盖本步;不写时节约耐久)"
                 },
                 "replant": {
@@ -1078,7 +1119,9 @@
                   "description": "用于 build(retrofit 有冲突时:留着冲突格,先放能放的)"
                 },
                 "shape": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "enum": [
                     "line",
                     "rect",
@@ -1129,7 +1172,9 @@
                   "description": "用于 build(贴着 at 那一格的 face 面放;与 anchors 二选一)"
                 },
                 "anchors": {
-                  "type": "array",
+                  "type": [
+                    "array"
+                  ],
                   "items": {
                     "type": [
                       "array",
@@ -1157,7 +1202,9 @@
                   "description": "用于 build(只用于材料/锚点或贴面形态；本次确认的临时支撑用完后 cleanup，已有方块不接管)"
                 },
                 "fill": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "enum": [
                     "solid",
                     "outline",
@@ -1196,7 +1243,7 @@
                       "maximum": 30000000
                     }
                   },
-                  "description": "用于 observe(sites only: 1..4 absolute integer block cells [x,y,z], no default. body.clear tests 0.6×1.8 clearance, not permission or reachability.)"
+                  "description": "用于 observe(sites only: 1..4 absolute integer block cells [x,y,z], no default. For a slab or stair, landing.next gives the measured feet cell as an exact goto or walk-only probe. body.clear tests 0.6×1.8 clearance; it does not prove a route or placement permission.)"
                 },
                 "bounds": {
                   "type": "array",
@@ -1262,17 +1309,23 @@
                   "description": "用于 observe(rays only: [relative pitch degrees,relative yaw degrees,range blocks]; [0,0] looks ahead. Each result includes its worldBearing. Default 3×5 fan at 24 blocks. Collision rays stop at glass even though vision can pass through it.)"
                 },
                 "item": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "description": "用于 use(从背包拿在手里使用的物品，不是被点击对象的名字。填原版英文 id 或 mymc_bag 的自定义显示名；有 at 时不写 = 腾空主手右键方块，有 target 时不写 = 用当前手持物) / craft(已知目标物品优先使用;按游戏配方表摆;与 grid 二选一) / enchant / anvil / grindstone / eat / equip(自定义物品可用 mymc_bag 中的显示名;不写 = 把指定手腾空，默认主手) / pickup(不写就近扫并避开2分钟内刚主动丢弃的已识别掉落物；明确写物品可取回) / toss / stow / take(定量取物时与 count 一起写)"
                 },
                 "entityId": {
-                  "type": "integer",
+                  "type": [
+                    "integer"
+                  ],
                   "minimum": 0,
                   "maximum": 2147483647,
                   "description": "用于 use(可选；本连接里观察到的实体 ID，与 target 一起给，精确点该实体，不退回最近者) / ride(与target一起指定本连接实体ID；只骑这只，不退回同类最近者) / attack(可选；与 target 一起精确指定本连接观察到的实体 ID；省略时选最近同类，指定后不改选其他实体)"
                 },
                 "index": {
-                  "type": "integer",
+                  "type": [
+                    "integer"
+                  ],
                   "minimum": 1,
                   "maximum": 99,
                   "description": "用于 use / enchant(1-3;不写 = 只看报价;写了 = 按那一档下手)"
@@ -1288,7 +1341,9 @@
                   "description": "用于 use(门、活板门、栅栏门的期望状态；true 开、false 关，已符合不点击；与 at 一起给)"
                 },
                 "text": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "maxLength": 256,
                   "description": "用于 use(写在告示牌上的字,\\n 分行;最多 4 行、每行 45 字符) / chat"
                 },
@@ -1324,7 +1379,9 @@
                   "description": "用于 ride(驾着去哪;猪、炽足兽和船能驾，马科暂不支持驾驶) / lead(牵去哪)"
                 },
                 "off": {
-                  "type": "boolean",
+                  "type": [
+                    "boolean"
+                  ],
                   "description": "用于 ride(下坐骑;与 target/to 互斥) / lead(松开;与 target/to/tie/keep 互斥)"
                 },
                 "recover": {
@@ -1370,11 +1427,15 @@
                   "description": "用于 craft(与 item 二选一)"
                 },
                 "input": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "description": "用于 smelt / brew"
                 },
                 "fuel": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "description": "用于 smelt / brew"
                 },
                 "bottle": {
@@ -1382,8 +1443,31 @@
                   "description": "用于 brew"
                 },
                 "pick": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "description": "用于 enchant(同 id 的几件里挑哪一件:写清单括号里的字(「无限」「效率IV」,英文附魔 id 也认);不写 = 撞上哪件算哪件。按内容匹配,不是序号,存掉一件不影响其余几件怎么写) / anvil(同 id 的几件里挑哪一件:写清单括号里的字(「无限」「效率IV」,英文附魔 id 也认);不写 = 撞上哪件算哪件。按内容匹配,不是序号,存掉一件不影响其余几件怎么写) / grindstone / equip / toss(按显示名、耐久或附魔子串筛选同 ID 的物品) / stow / take"
+                },
+                "pages": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 100,
+                  "items": {
+                    "type": "string",
+                    "maxLength": 1023
+                  },
+                  "description": "用于 book"
+                },
+                "windowSlot": {
+                  "type": "integer",
+                  "minimum": 9,
+                  "maximum": 45,
+                  "description": "用于 book(背包书目中的物品槽位；省略时只使用主手)"
+                },
+                "title": {
+                  "type": "string",
+                  "maxLength": 32,
+                  "description": "用于 book(署名成书的书名，省略保留可编辑稿)"
                 },
                 "op": {
                   "type": "string",
@@ -1395,16 +1479,20 @@
                   "description": "用于 anvil"
                 },
                 "with": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "description": "用于 anvil(repair/combine 必写:右格放什么) / grindstone(合修:同种的另一件)"
                 },
                 "withPick": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "description": "用于 anvil(同 pick,筛的是 with 那一格) / grindstone"
                 },
                 "weapon": {
                   "type": "string",
-                  "description": "用于 attack(可选；本步近战武器英文 ID；仅 auto/melee，失去后不替换。省略则按默认选择。)"
+                  "description": "用于 attack(可选；auto/melee 指定近战物品英文 ID；ranged/kite 指定 bow、crossbow 或 trident。失去后不替换。)"
                 },
                 "hand": {
                   "type": "string",
@@ -1415,7 +1503,9 @@
                   "description": "用于 equip(不写 = 按物品分槽)"
                 },
                 "into": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "enum": [
                     "open"
                   ],
@@ -3163,7 +3253,7 @@
                             "maximum": 30000000
                           }
                         },
-                        "description": "sites only: 1..4 absolute integer block cells [x,y,z], no default. body.clear tests 0.6×1.8 clearance, not permission or reachability."
+                        "description": "sites only: 1..4 absolute integer block cells [x,y,z], no default. For a slab or stair, landing.next gives the measured feet cell as an exact goto or walk-only probe. body.clear tests 0.6×1.8 clearance; it does not prove a route or placement permission."
                       },
                       "needs": {
                         "type": "array",
@@ -3685,6 +3775,49 @@
                     "additionalProperties": false
                   }
                 ],
+                "book": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "skill": {
+                        "type": "string",
+                        "const": "book"
+                      },
+                      "pages": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 100,
+                        "items": {
+                          "type": "string",
+                          "maxLength": 1023
+                        }
+                      },
+                      "windowSlot": {
+                        "type": "integer",
+                        "minimum": 9,
+                        "maximum": 45,
+                        "description": "背包书目中的物品槽位；省略时只使用主手"
+                      },
+                      "title": {
+                        "type": "string",
+                        "maxLength": 32,
+                        "minLength": 1,
+                        "description": "署名成书的书名，省略保留可编辑稿"
+                      },
+                      "needs": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    },
+                    "required": [
+                      "skill"
+                    ],
+                    "additionalProperties": false
+                  }
+                ],
                 "anvil": [
                   {
                     "type": "object",
@@ -3856,7 +3989,7 @@
                       "weapon": {
                         "type": "string",
                         "minLength": 1,
-                        "description": "可选；本步近战武器英文 ID；仅 auto/melee，失去后不替换。省略则按默认选择。"
+                        "description": "可选；auto/melee 指定近战物品英文 ID；ranged/kite 指定 bow、crossbow 或 trident。失去后不替换。"
                       },
                       "mode": {
                         "type": "string",
@@ -5403,7 +5536,7 @@
     },
     {
       "name": "mymc_knowledge",
-      "description": "Read versioned vanilla Minecraft knowledge on demand: food/cooking/health, bed/sleep, night shelter, equipment, base, storage, farming, items, mining blocks and crafting. search returns summaries; get(id) reads one entry. Offline local lookup, no model/network/action. Baseline reference only; mymc_memory holds historical experience. Main semantic target Java 1.21.1. action:sources describes optional MineDojo indexes; source:minedojo queries only an explicitly configured local index. Historical references never grant action authority.",
+      "description": "Read versioned vanilla Minecraft knowledge on demand: food/cooking/health, bed/sleep, night shelter, equipment, base, storage, farming, items, mining blocks and crafting. For current recipes search by item ID/name or a partial Chinese name, e.g. {source:\"recipe_book\",query:\"铁胸\"}. A connected kind:recipe search prefers observed server results and labels vanilla fallback. No game writes. Other searches return summaries; get(id) reads one reference. Baseline reference only; mymc_memory holds historical experience. Main semantic target Java 1.21.1. For a server menu, shops, ranks, travel or skills, use source:server for the active profile guide. action:sources lists references. References never grant action authority.",
       "parameters": {
         "type": "object",
         "additionalProperties": false,
@@ -5423,9 +5556,10 @@
             "enum": [
               "vanilla",
               "minedojo",
-              "server"
+              "server",
+              "recipe_book"
             ],
-            "description": "Use server for the active server guide. Default vanilla. MineDojo is a separately prepared historical reference index, never player memory."
+            "description": "recipe_book: only the connected server’s declared/unlocked recipe data. server: active profile guide. Explicit vanilla reads only reference data."
           },
           "query": {
             "type": "string",
@@ -6274,7 +6408,7 @@
                 "maximum": 30000000
               }
             },
-            "description": "sites only: 1..4 absolute integer block cells [x,y,z], no default. body.clear tests 0.6×1.8 clearance, not permission or reachability."
+            "description": "sites only: 1..4 absolute integer block cells [x,y,z], no default. For a slab or stair, landing.next gives the measured feet cell as an exact goto or walk-only probe. body.clear tests 0.6×1.8 clearance; it does not prove a route or placement permission."
           },
           "rays": {
             "type": "array",
@@ -6668,6 +6802,11 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 128
+              },
+              "offset": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Optional continuation offset from next_safe_read. Omit for the first page."
               }
             }
           },
@@ -6701,7 +6840,7 @@
     },
     {
       "name": "mymc_query_receipt",
-      "description": "Read a previously returned server query receipt by its exact requestId. Never sends a command. Unknown IDs have unknown results.",
+      "description": "Read a previously returned server query receipt by exact requestId. For oversized results follow next_safe_read with the returned offset. Reads never send a command. Unknown IDs have unknown results.",
       "parameters": {
         "type": "object",
         "additionalProperties": false,
@@ -6713,6 +6852,11 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 128
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Optional continuation offset from next_safe_read. Omit for the first page."
           }
         }
       },
@@ -6869,16 +7013,24 @@
                   ]
                 },
                 "at": {
-                  "type": "array",
+                  "type": [
+                    "array",
+                    "string"
+                  ],
                   "items": {
-                    "type": "number"
+                    "type": [
+                      "number",
+                      "string"
+                    ]
                   },
                   "minItems": 2,
                   "maxItems": 3,
                   "description": "用于 cross_fire / goto(只写 [x,z] = 到附近可达落脚点(不强制爬屋顶);指定楼层请给 [x,y,z];给字符串 = mymc_map 路标名) / swim / flight / tunnel(通道终点) / build(蓝图施工时是原点；无 blueprint 的单格材料放置可作 anchors:[at] 别名，不与 anchors/on/shape 同用) / organize(rules 的 stow 只存指定箱子；与 into 互斥)"
                 },
                 "mode": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "enum": [
                     "auto",
                     "walk",
@@ -6902,7 +7054,9 @@
                   "description": "用于 cross_fire"
                 },
                 "dryRun": {
-                  "type": "boolean",
+                  "type": [
+                    "boolean"
+                  ],
                   "description": "用于 cross_fire / follow_route / goto / swim / flight(只试算当前已加载路线；回报预计毫秒、速度来源和当前许可) / cleanup / tunnel(试算施工材料。水平和斜向通道同时检查预定脚格的支撑、液体和未知格，有缺口时报告背包垫材。) / build / excavate / organize(只读计划，不点击、不存放或丢弃)"
                 },
                 "waypoints": {
@@ -6973,7 +7127,9 @@
                   "description": "用于 follow_route"
                 },
                 "dimension": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "description": "用于 follow_route(当前维度前置条件，不符不移动) / goto(可选的当前维度前置条件(overworld/the_nether/the_end)) / swim(当前维度前置条件，不符不移动)"
                 },
                 "exact": {
@@ -7005,7 +7161,9 @@
                   "description": "用于 tunnel(正上/正下时改挖 2×2 螺旋楼梯(上下都能走))"
                 },
                 "tool": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "description": "用于 tunnel(只覆盖本步;不写时节约耐久) / excavate(只覆盖本步;不写时节约耐久)"
                 },
                 "until": {
@@ -7044,7 +7202,9 @@
                   "description": "用于 build(retrofit 有冲突时:留着冲突格,先放能放的)"
                 },
                 "shape": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "enum": [
                     "line",
                     "rect",
@@ -7095,7 +7255,9 @@
                   "description": "用于 build(贴着 at 那一格的 face 面放;与 anchors 二选一)"
                 },
                 "anchors": {
-                  "type": "array",
+                  "type": [
+                    "array"
+                  ],
                   "items": {
                     "type": [
                       "array",
@@ -7123,7 +7285,9 @@
                   "description": "用于 build(只用于材料/锚点或贴面形态；本次确认的临时支撑用完后 cleanup，已有方块不接管)"
                 },
                 "fill": {
-                  "type": "string",
+                  "type": [
+                    "string"
+                  ],
                   "enum": [
                     "solid",
                     "outline",
@@ -7162,7 +7326,7 @@
                       "maximum": 30000000
                     }
                   },
-                  "description": "用于 observe(sites only: 1..4 absolute integer block cells [x,y,z], no default. body.clear tests 0.6×1.8 clearance, not permission or reachability.)"
+                  "description": "用于 observe(sites only: 1..4 absolute integer block cells [x,y,z], no default. For a slab or stair, landing.next gives the measured feet cell as an exact goto or walk-only probe. body.clear tests 0.6×1.8 clearance; it does not prove a route or placement permission.)"
                 },
                 "bounds": {
                   "type": "array",
@@ -8482,7 +8646,7 @@
                             "maximum": 30000000
                           }
                         },
-                        "description": "sites only: 1..4 absolute integer block cells [x,y,z], no default. body.clear tests 0.6×1.8 clearance, not permission or reachability."
+                        "description": "sites only: 1..4 absolute integer block cells [x,y,z], no default. For a slab or stair, landing.next gives the measured feet cell as an exact goto or walk-only probe. body.clear tests 0.6×1.8 clearance; it does not prove a route or placement permission."
                       },
                       "needs": {
                         "type": "array",
@@ -9168,7 +9332,7 @@
     },
     {
       "name": "mymc_visual",
-      "description": "Observe the current Minecraft scene. Image-capable hosts receive the real screenshot; otherwise return timestamped game facts. No independent vision model is required. This does not move the body or establish unseen geometry.",
+      "description": "Observe the current Minecraft scene. A nearby wall that fills the view yields voxel evidence without a screenshot; force_image:true requests an image for surface details. Image-capable hosts can receive the real screenshot; otherwise return timestamped game facts. No body motion or unseen geometry.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -9330,6 +9494,10 @@
             "type": "boolean",
             "description": "Return the image directly instead of a separate focused observation. Default false."
           },
+          "force_image": {
+            "type": "boolean",
+            "description": "Skip the nearby-wall voxel preflight. Useful for a sign, surface detail or targeted still image."
+          },
           "background": {
             "type": "boolean",
             "description": "Accept a background observation job and deliver its actual result in a minecraft.visual event. Analyzed reports retain saved image references; raw or fallback results include the image. Omitted follows the World visual.background setting (default false). Explicit false waits for the result. Local background waiting is capped at 75 seconds; a model request already running may finish later."
@@ -9404,10 +9572,15 @@
     },
     {
       "name": "mymc_window",
-      "description": "Read the server window/menu that is open right now (plugin GUIs such as /menu, /rtp, /linggen): its title and every container slot with item id, display name and lore lines. Read-only and instant — it clicks nothing. Also reports when the server still has a window open that the client could not model (commands are then refused). Use the slot numbers with mymc_do {\"skill\":\"menu_click\",\"slot\":N}; close with {\"skill\":\"menu_close\"}.",
+      "description": "Read the server window/menu that is open right now: its title and every container slot with item id, display name and lore lines. Read-only and instant — it clicks nothing. Also reports when the server still has a window open that the client could not model (commands are then refused). For an opened book set bookPage to its 1-based page number; for carried books use mymc_bag detail:book. Use the slot numbers with mymc_do {\"skill\":\"menu_click\",\"slot\":N}; close with {\"skill\":\"menu_close\"}.",
       "parameters": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "bookPage": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
         "required": []
       },
       "tags": [

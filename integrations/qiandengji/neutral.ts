@@ -3,8 +3,9 @@ export { MymcAgentRuntime } from './runtime.ts';
 export { MymcWorld } from './world.ts';
 export { JavaMymcWorld } from './java-world.ts';
 export { GenericMymcWorld } from './generic-world.ts';
-export { MYMC_DEFAULTS, WORLD_DEFAULTS, bindServerProfile, mymcCoreConfig, mymcEngineConfig, mymcLoginName } from './config.ts';
-export type { MymcConfigSection } from './config.ts';
+export { MYMC_DEFAULTS, WORLD_DEFAULTS, bindServerProfile, mymcCoreConfig, mymcEngineConfig, mymcLoginName,
+  mymcServerConfig, mymcServerProfiles, mymcSelectedServer } from './config.ts';
+export type { MymcConfigSection, MymcServerProfile } from './config.ts';
 export { assertMymcReady } from './guard.ts';
 export { validateHostCombat } from './host/combat-driver.ts';
 export { QIANDENGJI_PACK } from './data-packs/qiandengji/manifest.ts';

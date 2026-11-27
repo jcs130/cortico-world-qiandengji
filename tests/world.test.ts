@@ -399,6 +399,39 @@ describe('Mymc World contract', () => {
     await world.stop();
   });
 
+  it('passes nearby text and speech-start position to the host and historical inbox', async () => {
+    const fake = fakeEngine(), outer = fakeHost();
+    const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, fake.engine);
+    const receivedAt = '2026-11-21T11:00:09.000Z';
+    const origin = { uuid: '11111111-1111-4111-8111-111111111111', name: 'Alex', displayName: '村民阿莱克斯',
+      world: 'minecraft:overworld', worldUuid: '22222222-2222-4222-8222-222222222222',
+      observedAt: Date.parse('2026-11-21T11:00:00.000Z'), position: { x: -7.25, y: 67, z: 15.5 } };
+    const textOrigin = { ...origin, observedAt: Date.parse(receivedAt) };
+    const deliveryWorldKey = 'listening-world';
+    const speech = { channel: 'nearby-voice', source: 'mcagent:voice/nearby_voice', transcript: true,
+      utteranceId: '33333333-3333-4333-8333-333333333333', speakerOrigin: origin };
+    const nearbyText = { channel: 'nearby', chatChannel: 'nearby', chatTransport: 'chat',
+      identityEvidence: 'packet-sender', speakerOrigin: textOrigin };
+    await world.start(outer.host);
+    try {
+      for (const row of [{ meta: nearbyText, text: '[MC] Alex: 这里有小路' },
+        { meta: speech, text: '[MC 附近语音] Alex: 这里有小路' }]) {
+        const meta = { uname: 'Alex', senderUuid: origin.uuid, sourceWorld: origin.world, deliveryWorldKey,
+          chatBody: '这里有小路', ...row.meta };
+        const event = { ts: receivedAt, type: 'minecraft.chat', source: 'minecraft', senderKey: 'Alex',
+          text: row.text + '\n[说话时的服务端位置] (-7.25, 67, 15.5)', meta };
+        await fake.bridge().pushEvent(event);
+        expect(outer.stored.at(-1)).toMatchObject({ ...event, type: 'mymc.chat', source: 'mymc' });
+      }
+      const tool = world.tools().find(entry => entry.name === 'mymc_messages')!;
+      const result = await tool.handler({ action: 'read', ids: ['message_1', 'message_2'] }, { role: 'main', log: {} as never });
+      expect(result).toMatchObject({ meta: { speakerObservations: [
+        { messageId: 'message_1', receivedAt, deliveryWorldKey, historical: true, speakerOrigin: textOrigin },
+        { messageId: 'message_2', receivedAt, deliveryWorldKey, historical: true, speakerOrigin: origin },
+      ] } });
+    } finally { await world.stop(); }
+  });
+
   it('projects native skill changes before event delivery and invalidates current status on reconnection', async () => {
     const fake = fakeEngine(), outer = fakeHost();
     Object.assign(fake.engine, { requestFacts: () => ({ text: '当前世界', snapshotTypes: [], parts: [{ key: 'connection', text: 'online' }] }) });

@@ -1,5 +1,5 @@
 import type { CorticoConfig, MymcWorldDefinition } from './public-contract.js';
-import { WORLD_DEFAULTS, bindServerProfile, mymcCoreConfig, type MymcConfigSection } from './config.ts';
+import { WORLD_DEFAULTS, bindServerProfile, mymcCoreConfig, mymcServerConfig, mymcLoginName, type MymcConfigSection } from './config.ts';
 import { assertMinecraftReady, MINECRAFT_CLIENT_DEFAULTS,extendWorldHost,mapWorldOutcomeNamespace } from 'agent-mc-world/extension';
 import { GenericMymcWorld } from './generic-world.ts';
 import { validateHostCombat } from './host/combat-driver.ts';
@@ -15,6 +15,11 @@ import {corticoWorldStorage,withCorticoStorage} from './cortico-storage.ts';
 import {withCorticoDecisionService,publicHostDecisions,validateDecisionService,DECISION_SERVICE_DEFAULTS} from './cortico-decisions.ts';
 import { CorticoNumenWorld, assertNumenBinding, numenConfigGroup } from './cortico-numen.ts';
 import { withCorticoCommandFeedback } from './cortico-command-feedback.ts';
+
+const PERSONAL_STASH_OPENER = {
+  command: '/mycli arena stash',
+  titles: Array.from({ length: 10 }, (_, page) => `个人试炼箱 · ${page + 1}/10`),
+};
 
 /** API 6 names the browser contribution webUi. Keep the API 5 method for
  * explicitly built local compatibility packages, with one implementation. */
@@ -82,9 +87,11 @@ export const MYMC: MymcWorldDefinition = {
     numen: { driverDirectory: '', python: '', bridgeConfig: '' },
     decisionService:structuredClone(DECISION_SERVICE_DEFAULTS),harness2:structuredClone(PRACTICE_DEFAULTS) }),
   preflight: ctx => {
-    const bound = bindServerProfile(ctx.cfg);
-    if (bound.provider === 'numen') { selectedServerPack(bound); assertNumenBinding(bound.numen); return; }
-    const cfg = bound as CorticoConfig & MymcConfigSection;
+    if (ctx.cfg.provider === 'numen') {
+      const bound = bindServerProfile(ctx.cfg);
+      selectedServerPack(bound); assertNumenBinding(bound.numen); return;
+    }
+    const cfg = mymcServerConfig(ctx.cfg as CorticoConfig & MymcConfigSection) as CorticoConfig & MymcConfigSection;
     validateDecisionService(cfg);
     const coreCfg = mymcCoreConfig(cfg);
     if (cfg.provider === 'java-client') { selectedServerPack(cfg); assertMinecraftReady(coreCfg); return; }
@@ -96,10 +103,14 @@ export const MYMC: MymcWorldDefinition = {
     }
   },
   create: ctx => {
-    const bound = bindServerProfile(ctx.cfg);
-    if (bound.provider === 'numen') return withWebUi(new CorticoNumenWorld({ ...ctx, cfg: bound }), bound);
-    const clientCfg = bound as CorticoConfig & MymcConfigSection;
-    const storage=corticoWorldStorage(ctx.dataDir);
+    if (ctx.cfg.provider === 'numen') {
+      const bound = bindServerProfile(ctx.cfg);
+      return withWebUi(new CorticoNumenWorld({ ...ctx, cfg: bound }), bound);
+    }
+    const clientCfg = mymcServerConfig(ctx.cfg as CorticoConfig & MymcConfigSection) as CorticoConfig & MymcConfigSection;
+    const serviceScope={realm:`weak:${clientCfg.host}:${clientCfg.port}|`,account:`${clientCfg.auth??'offline'}:${mymcLoginName(clientCfg.username,clientCfg.preserveLoginName)}`,
+      agent:clientCfg.memoryAgentId?.trim()||ctx.botName};
+    const storage=corticoWorldStorage(ctx.dataDir,serviceScope);
     const scopedContext={...ctx,cfg:clientCfg,dataDir:storage.directory};
     let preparedViewer: string | null = null;
     const templateDir = () => clientCfg.viewerAssetsDir.trim() || MINECRAFT_CLIENT_DEFAULTS.viewerAssetsDir;
@@ -108,11 +119,12 @@ export const MYMC: MymcWorldDefinition = {
       ? preparedViewer ?? templateDir() : key==='hostDecisions'?publicHostDecisions(clientCfg):Reflect.get(target, key, receiver) });
     const setup = <T extends World>(world: T) => withCorticoStorage(withQuickStart(
       withCorticoDecisionService(withCorticoPractice(world,()=>clientCfg.harness2,storage.directory),()=>clientCfg,name=>ctx.secret(name)),
-      scopedContext, candidate => MYMC.preflight?.({ ...ctx, cfg: { ...ctx.cfg, ...candidate } }),
+      { ...scopedContext, cfg: ctx.cfg as CorticoConfig & MymcConfigSection }, candidate => MYMC.preflight?.({ ...ctx, cfg: { ...ctx.cfg, ...candidate } }),
       { templateDir, setDirectory: value => { preparedViewer = value; } }),storage,()=>ctx.restart());
     if (clientCfg.provider === 'java-client') return setup(withWebUi(new JavaMymcWorld({ ...scopedContext, cfg }),clientCfg));
     const World = selectedServerPack(clientCfg) === 'qiandengji' ? MymcWorld : GenericMymcWorld;
     return setup(withWebUi(new World({ cfg, botDir: ctx.botDir,
+      ...(World === MymcWorld ? { detachedStorageOpeners: [PERSONAL_STASH_OPENER] } : {}),
       timezone: ctx.timezone, botName: ctx.botName, dataDir: storage.directory }), clientCfg));
   },
 };

@@ -1,38 +1,36 @@
-<!-- Owner: src/index.ts, src/connection.ts, src/credentials.ts, scripts/build.mjs -->
+<!-- Owner: src/index.ts, src/shared-world.ts, src/connection.ts, src/credentials.ts, scripts/build.mjs -->
 # 千灯纪-lite
 
-基于官方 Cortico 0.2.11 的 Minecraft World。动作、导航、合成、战斗、任务队列与游戏记忆沿用官方实现；差异是千灯纪接入流程、独立认证通道、只读信息和适用于远程玩家的界面。完整来源和每个文件的 SHA-256 见 UPSTREAM.json。
+0.2.1 是同一 `agent-mc-world` 内核的轻量接入，不再复制官方 Cortico Minecraft World。执行、导航、合成、战斗、真实队列、取消和终态均由共享 MinecraftClientWorld 处理；Lite 只负责命名、14 工具白名单、账号接入和公共连接诊断。需官方 Cortico >=0.2.17 <0.3.0、Node.js 22.15+ 或 24 LTS。运行时固定共享游戏内核 preview.142 和 Qiandengji preview.108；本候选未宣称发布或真实入服成功。准备依赖和构建见 BUILDING.md。
 
-需官方 Cortico >=0.2.11 <0.3.0，建议使用 0.2.12 与 Node.js 24 LTS。官方 0.2.12 使用 Node 22.14 时会因缺少 `node:module.registerHooks` 而无法启动。0.1.2 已发布到 npm，可在扩展页输入 `cortico-world-qiandengji-lite@0.1.2` 安装，重启后启用 World `mymc-lite`。同一角色只启用一份 Minecraft 连接，先停用旧的 Minecraft／联机版 World。沿用原有 username、host、port 和协议版本；人设、Memory 和原游戏账本目录保持原样。配置段是 `worlds.mymc-lite`，游戏工具沿用 `mymc_` 前缀。原官方账本可使用原目录；其他引擎的账本保留作历史记录，不推断格式兼容。
+已验证发行包可在原 Cortico 的 `extensions/` 独立工作区安装，或按官方流程选择预编译本机包目录。不要直接把待同步依赖的开发目录当作发行包。同一角色只启用一个 Minecraft 连接，先正常停止旧 World。沿用原 username、host、port、版本、部署 data、游戏账本目录和 Memory；不新建 Bot、人设、任务 worker 或模型循环。配置段仍为 `worlds.mymc-lite`，World id=`mymc-lite`，工具 `mc_` 映射为 `mymc_`。
 
-正式版同时提供 npm 包和 GitHub Release 预编译包，两处 0.1.2 的归档字节一致。在 Cortico 的 `extensions/` 目录安装：
+从 0.1.0 升级时，正常停止原 Cortico，再执行 `node client/migrate-lite-config.mjs <原部署目录/config.json>`，只迁移旧 `worlds.mymc_lite` 配置键，保留备份并拒绝覆盖冲突目标。0.1.1／0.1.2 已使用新键，无需重复迁移；不删除原身份、凭据、历史账本或个人记忆。历史账本保留，不推断不同引擎存储格式兼容。
 
-```sh
-pnpm add cortico-world-qiandengji-lite@0.1.2 --registry=https://registry.npmjs.org/
-```
+## 账号与当前连接
 
-首次创建 `extensions/` 时按官方文档放置独立工作区文件 `pnpm-workspace.yaml`（`packages: []`），避免把扩展装进 Cortico 主工程。WebUI 的 npm 包名输入框支持上面的包名；[GitHub 固定归档](https://github.com/jcs130/cortico-world-qiandengji/releases/tag/qiandengji-lite-v0.1.2)也继续提供，网页 URL 安装命令须在终端执行。
+login/client/log 面板保留。账号页“注册并进入游戏”通过公开 portal 首次接入，无需邀请码；按当前 Agent 名称建议 `ag_` 账号，后缀为 1–13 位英文、数字或下划线，不静默改写中文或长名字。撞名显示真实错误，不自动换身份。网站建号后私密绑定并启动同一个 World，不运行额外自主循环。
 
-也可以下载 Release 的 zip，解压后在包目录运行 `pnpm install --prod`，再从 WebUI 扩展页选择该本机目录。官方 0.2.12 的本机目录校验只允许 ASCII 字符，中文用户名或下载目录会被拒绝；请改用全英文解压路径，或使用上面的 npm 包名。安装后重启原 Cortico 实例，保留原部署目录；打开“账号登录”完成下述注册或原账号登录，插件会配置并启动同一个 World。不要新建 Bot 或另一份自主循环。GitHub 附件保留固定版本；npm 安装可使用正常的包更新流程。
+已有角色选择“登录已有账号”，沿用原账号和服务器密码；留空使用原凭据。高级入口可导入原官网私密身份，配置或身份属于另一角色时拒绝覆盖。私密目录仍为 `secrets/qiandengji-lite/`，credential 格式、绑定文件和 Windows DPAPI 不变。密码/API Key 不进入模型、普通工具、聊天、游戏任务队列或日志。
 
-从 0.1.0 升级时，先正常停止原 Cortico，再在解压包中执行 `node client/migrate-lite-config.mjs <原部署目录/config.json>`，将旧的 `worlds.mymc_lite` 改为 `worlds.mymc-lite`。工具保留原配置备份，目标键已存在时拒绝覆盖。原服务器、用户名、密码文件、部署 data 和 Memory 目录不变，游戏工具仍为 `mymc_`；不要新建角色或删除原部署。全新安装无需迁移。
+Lite 设置 `cfg.loginConfigFile=credentials.bindingFile`、`cfg.loginConfirmation='mc-auth-success'`。认证与自然重连由共享内核独占；Lite 不监听原生聊天、payload、bridge 或 bot，也不落盘 native 状态。仅使用 `console().invoke('connection','state',[])` 的公共当前读数，严格要求 `connection.ready && connection.worldReady && connection.serverLogin.authSuccessReceived`，并核对公共 server 的 host/port/username 与当前 Lite 实例／生命周期。缺读数、错账号、旧实例、停止或超过 5 秒的缓存都不 ready，不从 start 返回值、spawn 或网站建号推断已登录。
 
-在“账号登录”页确认游戏账号名，点击“注册并进入游戏”。通过插件首次接入无需邀请码；插件生成并私密保存身份和游戏凭据，完成网站建号后自动配置同一个 World 并连接，不另建 Bot 或模型循环。名字优先建议使用当前 Agent 的名字；服务器账号使用 `ag_` 前缀，后缀为 1–13 位英文、数字或下划线。中文昵称不被悄悄改写或截断，请用户填写游戏账号名，人设与个人记忆不变。撞名时显示真实错误，不自动换一个名字重试。
+只读诊断 timer 同步 onboarding.nativeReady；停止立即释放 timer、清缓存并拒绝迟到响应。重复点击不重复接入；超时和未知结果保留原身份及请求号，只查询原请求。不会更换账号、重放任务或降低门槛。
 
-已有角色选择“登录已有账号”，使用原账号与原服务器密码；密码留空会沿用已保存凭据。已有官网身份可以在高级入口导入原私密身份文件，再使用同一个登录按钮。原角色已配置时，本流程拒绝用另一个名字覆盖它。密码和 API 凭据不进入模型上下文、工具、聊天或普通任务队列。
+## 工具与能力差异
 
-“注册处理中”“游戏账号已就绪”“已提交游戏登录”“当前连接已认证且世界就绪”分别显示。只有当前连接收到系统 `MC_AUTH_SUCCESS`、角色实体有效且实际世界区块已加载，才开放游戏身体并显示入服成功。网络超时和结果未知保留原身份和请求号，只查询原请求，不换身份、重放建号或降低认证条件。关闭页面不会丢失已保存的身份；继续接入使用原请求。建连和自然重连继续从私密配置读取原凭据。
+仅暴露以下 14 项，声明和实际处理器使用同一白名单，原参数必填、枚举、分支和取消 signal 原样转交共享工具：
 
-Lite 不管理本地服务器，不提供 OP、作弊、存档生成或服务器控制台入口；游戏权限由千灯纪服务器决定。通用官方 Minecraft World 的本地建服功能保持在原官方 World 中。配置页仅保留必要的接入地址、端口、账号和版本。
+`mymc_do`、`mymc_scout`、`mymc_policy`、`mymc_goal`、`mymc_map`、`mymc_blueprint`、`mymc_check`、`mymc_view_map`、`mymc_bag`、`mymc_queue`、`mymc_blocked`、`mymc_stop`、`mymc_escape`、`mymc_server_info`。
 
-`mymc_server_info` 读取本连接认证、职业／技能最新观测、玩家名单和官网入口。职业／技能信息超过 15 秒就返回未知；玩家名单不声称距离或可见性。没有新增自动规划、模型循环、语音或隐式技能施放。
+不暴露共享核心其他工具，不额外添加 worker、persona、hidden 模型循环或技能施放。do/scout/escape 等身体动作须通过当前连接门禁；stop 始终允许交给真实队列取消，read 工具保留原始终态。队列受理不等于完成，终态、事件、附件和游戏证据不被文字替换或编造。
 
-发行包包含所需的共享认证与服务器投影代码，不要求安装未发布的 SDK 候选包。构建依赖和锁文件记录其归档来源；生产游戏引擎仍是官方版本。Prismarine 向量统一锁定到其公共依赖范围内的 vec3 0.1.10，支持默认 pnpm 独立消费。需 Cortico >=0.2.11 <0.3.0、Node.js 22.15+ 或 24 LTS（建议 24 LTS）。世界扩展不包含 Minecraft Java 图形客户端或服务端插件。
+`mymc_server_info` 的 section 仍为 auth/profile/skills/players/help。当前公开 connection 接口没有 Lite 可消费的职业、技能和原生玩家名单读数，因此 profile/skills 返回 `null`，players 返回 `[]`。这与旧 Lite 的原生 RPG/payload 拦截不同：没有读数不猜职业、不从 skillIds 推导技能、不声称名单距离或可见性。可显式用普通 chat 步骤询问服务器游戏内帮助。将来只可消费明确公开且当前的读数，不能恢复私有协议访问。
+
+Lite 只连远程服务器，不管理本地服务端；强制 external、关闭 startWithWorld/cheats，配置页仅有 host/port/username/version，拒绝旧 access、控制台、OP、存档和作弊管理调用。escape 只是保留共享工具，是否获准由远端服务器决定，Lite 不授予权限。
 
 ## 配套 Java 客户端
 
-Lite 的“Java 客户端”页提供 [官网当前客户端下载](https://mc.kangqiang.site/downloads.html#game-clients)，供真人游玩或另一个账号观战。按官网当前说明下载整合包并在自己的启动器中导入，Java、Minecraft、模组、YSM 和模型链版本以官网当期配套为准；不从旧 World 归档强制安装某个图形客户端或降级现役 YSM。
+client 面板链接到 [官网当前下载页](https://mc.kangqiang.site/downloads.html#game-clients)。Java、Minecraft、模组、YSM 及模型链版本以官网当期配套为准，不从旧归档强制安装或降级第三方客户端。
 
-普通玩家使用原用户名；观战使用符合规则的 `xxx_eye` 账号（总长最多 16 位），旁观与相机权限由服务器分配。Agent World 和 Java 图形客户端同时在线时使用不同账号，避免把原连接挤下线。不要把本机保留的特殊 live 账号当作新用户模板。
-
-World 包不包含 Java 游戏二进制、第三方模组、模型原包、账号、密码、私人身份文件、Agent 记忆或模型 Key。配套客户端在官网分别下载；`client/README.md` 保留接入说明。本次发布不等于第三方 ag_yiyilin 已部署，也不替代账号本人对真实入服结果的验收。
+真人沿用原用户名；观战使用 `xxx_eye` 规则账号（总长最多 16 位），权限由服务器分配。Agent 与 Java 客户端同时在线需不同账号，避免挤下线，不把私人 live 账号当模板。包不包含游戏二进制、第三方模组、模型、账号、配置、密码、私密身份、记忆或 Key；`client/README.md` 保留接入说明。

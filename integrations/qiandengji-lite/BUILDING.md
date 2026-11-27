@@ -1,10 +1,14 @@
 <!-- Owner: scripts/build.mjs, scripts/stage.mjs, pnpm-lock.yaml -->
 # 构建和发行
 
-官方源码来自 `cortico@0.2.11` 的固定 npm 归档。共享认证从 `agent-mc-world/client` 公开入口消费，服务器资料从 `agent-mc-qiandengji/portal` 与 `/engine` 公开入口消费；不从相邻源码目录抽取或修改实现。
+0.2.1 仅从 `agent-mc-world/extension` 消费共享 MinecraftClientWorld、默认配置与 namespace 包装，从 `agent-mc-qiandengji/portal` 消费官网接入。不复制官方 Minecraft World、不修改 bridge、不读取私有 core 源码或 bot。
 
-当前构建候选 SDK 尚未发布 npm。按 package.json 的文件依赖准备 `../../vendor/` 下的两个归档，完整 SHA-256 在 UPSTREAM.json；构建器会校验。共享认证文件另外核对公开核心提交 `a45a4a40bd3097749fc24822a04b0a1e274747bd` 的 Git blob SHA `b15bea989ed3fc0ad192b4c8a0cf78e97db1a9c1`，保证所用认证实现与公开源码一致。发行目录内已嵌入这些小型公开接口，安装者不需要候选 SDK。
+运行时依赖固定为 `agent-mc-world@0.5.7-rc.160-preview.142`、`agent-mc-qiandengji@0.5.0-rc.50-preview.108`；开发依赖官方 `cortico@0.2.17`。Mineflayer、pathfinder、viewer、vec3 由共享核心拥有，Lite 没有直接运行时依赖，不锁旧版本或降级。
 
-在本目录执行 `pnpm install --frozen-lockfile`、`pnpm build`、`pnpm typecheck` 和 `pnpm test`。`node scripts/check-loopback-login.mjs` 仅连接本机临时协议测试端，不连接真实服务器，不调用模型。
+开发的 `file:../../vendor/...` 引用、override 和锁文件已同步到经过实际 SHA256 核对的 preview.142 / preview.108 归档；发行声明使用版本号。构建会在已安装版本不符或包缺失时明确失败，不能通过私有 core 路径或去掉认证门槛绕过。本轮仅准备本地候选，尚未发布或连接真实服务器。
 
-用官方 Cortico 的 `describe:extension` 与 `check:extension` 更新并验收自描述。随后执行 `pnpm release:stage`，从打印的发行目录运行 `npm pack`。发行目录去除构建专用 devDependencies，保留全部运行时依赖，适合 npm 包安装和解压后的本地目录安装。不要将开发目录直接当作预编译发行包分发。
+依赖已同步后，在本目录运行 `pnpm build`、`pnpm typecheck`、`pnpm test` 和 `node scripts/verify.mjs`。构建只编译 Lite 代码和浏览器 UI，不联网、不连接 Bot、不运行模型。describe.json 从实际共享工具声明的白名单生成，参数结构、必填项、枚举和分支保持原样。UPSTREAM.json 记录实际安装包版本、公开 package.json 与 entry 字节 SHA-256，不记录主源码绝对路径或私密凭据。当前 pending 元数据不是发行验证成功。用 Node 24 运行 `node scripts/build.mjs --inspect` 只刷新实际已安装公开包及白名单的诊断元数据，status 固定 pending，不生成发行产物、不通过版本校验。
+
+单元测试使用假 World、EventEmitter 和临时私密 fixture。`node scripts/check-loopback-login.mjs`、`node scripts/check-loopback-ready.mjs` 使用本机临时 TCP 回环的假公共 connection 状态，不启动 Mineflayer、真实游戏服务器或模型。真实 MC_AUTH_SUCCESS 的解析和原生登录回归由共享内核负责，Lite 测试只验证公共读数消费与门禁。
+
+`pnpm release:stage` 先验证已构建产物，然后仅写入本 Lite 目录的 `release-staging/`，已有目录时拒绝覆盖。发行内容采用显式文件白名单，保留两个 SDK 的运行时依赖；不打包源码、旧 World 副本、dev file 路径、配置、secrets、账号、账本或根工程。stage 不安装、不运行 Bot、不自动发布或 Git commit/push。
