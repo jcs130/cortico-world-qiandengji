@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 import {describe,it,expect} from 'vitest';
 import type {WebUiPanelContext} from 'cortico/web/shared/client-panel.ts';
-const runtimeEntry='../dist/webui.js';
-const {mountLogin,mountClient}=await import(runtimeEntry) as typeof import('../src/webui.ts');
+import {mountLogin,mountClient,mountLog} from '../src/webui.ts';
 const wait=async(fn:()=>boolean)=>{for(let i=0;i<100&&!fn();i++)await new Promise(r=>setTimeout(r,10));expect(fn()).toBe(true);};
 describe('single-click account UI',()=>{
   it('uses the Agent name, requires no invitation and never treats API preparation as actual entry',async()=>{
@@ -47,6 +46,19 @@ describe('single-click account UI',()=>{
       await wait(()=>root.textContent!.includes('Agent：After'));expect(name.value).toBe('ag_After');
       name.value='MyChoice';name.dispatchEvent(new Event('input'));agent='Renamed';tick();
       await wait(()=>root.textContent!.includes('Agent：Renamed'));expect(name.value).toBe('MyChoice');
+    }finally{abort.abort();}
+  });
+  it('keeps incremental log lanes, hides private commands and stops after unmount',async()=>{
+    const root=document.createElement('div'),abort=new AbortController(),calls:any[]=[];let tick:()=>void=()=>{};
+    const ctx={root,signal:abort.signal,interval:(callback:()=>void)=>{tick=callback;return {dispose(){}};},invoke:async(method:string,args:any[])=>{
+      calls.push({method,args});expect(method).toBe('entries');return {entries:args[0]===0?
+        [{seq:1,ts:'fixture',lane:'task',msg:'done <script>no html</script>'},{seq:2,ts:'fixture',lane:'link',msg:'/login fixture-password'}]:[]};
+    }} as unknown as WebUiPanelContext;
+    try{mountLog(ctx);await wait(()=>root.textContent!.includes('done <script>no html</script>'));
+      expect(root.querySelector('script')).toBe(null);expect(root.textContent).not.toContain('fixture-password');
+      expect(root.querySelectorAll('input[type="checkbox"]')).toHaveLength(12);
+      tick();await wait(()=>calls.length===2);expect(calls[1].args).toEqual([2]);
+      abort.abort();tick();expect(calls).toHaveLength(2);
     }finally{abort.abort();}
   });
   it('keeps the Java client as an official-site download and preserves the observer account rule',()=>{

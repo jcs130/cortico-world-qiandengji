@@ -88,6 +88,7 @@ type MaidRecord={maidId:string;ownerId:string;name:string;sampledAt:string;sourc
   conversation:{observedAt:string;nearbyRange:number|null;addressExample:string;ownerWorkCommand:string}|null};
 type MaidNotice={text:string;urgent:boolean;meta:Record<string,unknown>;
   publicDialogue?:{text:string;senderKey:string;meta:Record<string,unknown>}};
+type MaidDialogue=NonNullable<MaidNotice['publicDialogue']>;
 const observedTime=(value:unknown,sampledAt:string)=>typeof value==='string'&&Number.isFinite(Date.parse(value))
   &&Date.parse(value)<=Date.parse(sampledAt)?value:null;
 const laterTime=(...values:(string|null|undefined)[])=>values.filter((v):v is string=>!!v)
@@ -113,7 +114,10 @@ export class MaidState {
   private notices=new Set<string>();
   private scene: string | undefined;
   private sceneChangedAt=0;
-  reset(){this.rows.clear();this.notices.clear();this.scene=undefined;this.sceneChangedAt=0;}
+  private captions=new Map<string,{kind:'caption'|'typed';at:number;timer?:NodeJS.Timeout}>();
+  reset(){this.rows.clear();this.notices.clear();this.scene=undefined;this.sceneChangedAt=0;
+    for(const row of this.captions.values())clearTimeout(row.timer);
+    this.captions.clear();}
   /** Source-owned supervisor summary; full inventory and task lists stay on demand. */
   summary(){return [...this.rows.values()].slice(0,4).map(row=>({maidId:row.maidId,ownerId:row.ownerId,name:row.name,
     ownerRelation:'self-is-owner' as const,controlNote:'本人是此角色的服务端登记主人，可经 mc_maids chat 下工作指令并查询 receipt；公开聊天不自动等于工作指令。',
@@ -157,6 +161,57 @@ export class MaidState {
     if(!row)return null;
     return {uuid:row.maidId,kind:'maid',name:row.name,label:row.name,
       ownerUuid:row.ownerId,source:'qiandengji-maids/v1',observedAt:row.sampledAt};
+  }
+  /** Match the literal server presentation format against a current native entity.
+   * This is nearby scene speech, not an ASR transcript or a managed dialogue receipt. */
+  nearbySceneSpeech(notice: string, currentEntityUuids: ReadonlySet<string>): MaidNotice['publicDialogue'] {
+    const match = /^\[MC (?:系统|插件)\] \[附近·女仆\] ([^：:\r\n]{1,160})[：:]([^\r\n]{1,500})$/u.exec(notice);
+    if (!match) return;
+    const body = match[2].trim();
+    if (!body) return;
+    const known = [...this.rows.values()].filter(row => row.name === match[1]);
+    if (known.length !== 1 || !currentEntityUuids.has(known[0].maidId.toLowerCase())) return;
+    const { maidId, name } = known[0];
+    return { text: notice, senderKey: `maid:${maidId}`,
+      meta: { from:name, body, senderUuid:maidId, senderKind:'companion', channel:'public',
+        socialScope:'minecraft-server', identityEvidence:'qiandengji-maids/v1',
+        chatChannel:'nearby', chatScope:'same-world-range', chatRoutingSource:'native-maid-scene' } };
+  }
+  private speechKey(scope:string,dialogue:MaidDialogue):string {
+    return JSON.stringify([scope,dialogue.senderKey,dialogue.meta.body]);
+  }
+  private recentSpeech(key:string) {
+    const now=Date.now();
+    for(const [saved,row] of this.captions)if(!row.timer&&now-row.at>2500)this.captions.delete(saved);
+    return this.captions.get(key);
+  }
+  /** The server sends the public caption immediately before its typed dialogue
+   * receipt. Give that receipt preference without delaying normal HUD events. */
+  queueSceneSpeech(scope:string,dialogue:MaidDialogue,deliver:()=>void):boolean {
+    const key=this.speechKey(scope,dialogue), recent=this.recentSpeech(key);
+    if(recent){if(recent.kind==='typed')this.captions.delete(key);return true;}
+    if(this.captions.size>=64)return false;
+    const row:{kind:'caption';at:number;timer?:NodeJS.Timeout}={kind:'caption',at:Date.now()};
+    row.timer=setTimeout(()=>{
+      if(this.captions.get(key)!==row)return;
+      delete row.timer;
+      row.at=Date.now();
+      deliver();
+    },400);
+    row.timer.unref();
+    this.captions.set(key,row);
+    return true;
+  }
+  acceptTypedSpeech(scope:string,dialogue:MaidDialogue):boolean {
+    const key=this.speechKey(scope,dialogue),recent=this.recentSpeech(key);
+    if(recent?.kind==='caption'){
+      this.captions.delete(key);
+      if(!recent.timer)return false;
+      clearTimeout(recent.timer);
+      return true;
+    }
+    if(!recent && this.captions.size<64)this.captions.set(key,{kind:'typed',at:Date.now()});
+    return true; // Native operation IDs are independently deduplicated in observe().
   }
   /** Legacy additive note; new consumers should carry identity() as the primary label. */
   identityNote(entityUuid:string|undefined):string|null {

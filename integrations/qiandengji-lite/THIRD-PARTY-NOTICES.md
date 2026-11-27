@@ -1,4 +1,6 @@
-<!-- Owner: scripts/build.mjs -->
+<!-- Owner: package.json, scripts/build.mjs -->
+
+0.2.0 consumes agent-mc-world and agent-mc-qiandengji as external runtime packages through their public entries. No official Cortico Minecraft World implementation is copied or bundled. Runtime packages retain their own license notices; the historical MIT acknowledgements below are preserved.
 
 # Agent MC World / Qiandengji server pack
 

@@ -1,14 +1,70 @@
+## 0.4.1-rc.71-preview.134
+
+Integrate profile-scoped World and runtime feedback with the shared core.
+
+## 0.4.1-rc.71-preview.133
+
+- Consume the core explosion-packet boundary fix while preserving TIG service scope, fresh storage and Web-only operation.
+
+## 0.4.1-rc.71-preview.132
+
+- Consume core connection-error stack diagnostics while preserving the existing TIG service-scope storage and Web-only profile behavior.
+
+## 0.4.1-rc.71-preview.131
+
+- Isolate runtime World storage by canonical server/account/agent identity. Named servers use fresh scoped directories; legacy `data/mymc` remains untouched and is never auto-migrated.
+
+## 0.4.1-rc.71-preview.130
+
+Preserve explicit Web-only spectator mode and game voice settings per server profile. Web-only profiles disable automatic Java clients and reject native client launches; other profiles retain their configured capabilities. Consume stable server/account facts for cross-server task isolation.
+
+## 0.4.1-rc.71-preview.129
+
+Resolve named server profiles before World validation and construction. Keep generic TIG/1.21.11 and Tangerine/26.2 connections separate from the explicitly selected Qiandengji pack; add operator profile selection without automatic login. Preserve the prior query, storage, Numen and command-recovery integration.
+
+## 0.4.1-rc.71-preview.128
+
+Integrate the Numen body and shared command feedback with production query paging, nearby speaker attribution, exact trial settlement and detached personal-stash recovery. Keep the official Cortico Core unchanged.
+
+## 0.4.1-rc.71-preview.127
+
+- Resume eligible checkpoint work after environmental escape releases the shared body.
+
+## 0.4.1-rc.71-preview.126
+
+- Recognize the detached personal trial stash opened by the bare browse command and recover it after inactivity.
+
+## 0.4.1-rc.71-preview.125
+
+- Consume measured landing geometry and exact walk-only routes from Agent MC World.
+
+## 0.4.1-rc.71-preview.124
+
+- Consume native ranged combat mode discovery and per-weapon evidence from Agent MC World.
+
+## 0.4.1-rc.71-preview.123
+
+- Validate current personal reward stash slots before action admission and recognize the guaranteed reward in native slot 8.
+- Report the exact completed trial instance to the host and preserve native values in paged server query receipts.
+
+## 0.4.1-rc.71-preview.122
+
+- Consume the shared nearby speaker observations for Java text and SVC transcripts. Preserve the speaker's location at sampling time separately from the listener's delivery world.
+
+
 ## 0.4.1-rc.71-preview.121.pack.1
 
 Bind the guide, body and tool surface to the selected server profile. Announce the Qiandengji controller only through its own authenticated connection.
 
 ## 0.4.1-rc.71-preview.121
 
-Use the same core command repetition guard in the Cortico World for Mineflayer, Java and Numen. Require real observation before reconsidering repeated commands and run the body contract suite during packaging.
+- Keep EssentialsX nearby chat relays separate from server feedback while retaining their unverified display names and current World scope.
+- Use the same core command repetition guard for Mineflayer, Java and Numen, with observation-based recovery.
 
 ## 0.4.1-rc.71-preview.120
 
-Add the Numen body backend to the public Cortico World. Use the existing authorized driver, keep legacy tool calls and action receipts, and share the MC core's tool and observation contract.
+- Consume the companion speech projection from the server interface for relevant nearby remarks.
+- Add the Numen body backend using the existing authorized driver and shared tool and observation contracts.
 
 ## 0.4.1-rc.71-preview.119
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ServerQueryLane } from 'agent-mc-world/extension';
+import { ServerQueryLane, SERVER_QUERY_RECEIPT_TOOL } from 'agent-mc-world/extension';
 import { QIANDENGJI_SERVER_QUERIES } from '../integrations/qiandengji/engine/server-query.ts';
 import { QiandengjiEngine } from '../integrations/qiandengji/engine/world.ts';
 import { MymcWorld, MYMC_TOOL_DECLS } from '../integrations/qiandengji/world.ts';
@@ -140,7 +140,7 @@ describe('explicit Qiandengji read-only server query definitions', () => {
     const read = world.tools().find(tool => tool.name === 'mymc_query_receipt')!;
     expect(read.parameters).toEqual(MYMC_TOOL_DECLS.find(tool => tool.name === read.name)?.parameters);
     expect(read.parameters).toMatchObject({required:['requestId'],additionalProperties:false});
-    expect(Object.keys((read.parameters as any).properties)).toEqual(['requestId']);
+    expect(Object.keys(read.parameters.properties ?? {})).toEqual(Object.keys(SERVER_QUERY_RECEIPT_TOOL.parameters.properties));
     expect(mounted.parameters.properties).not.toHaveProperty('requestId');
     expect(mounted.description).toContain('mymc_query_receipt');
     expect(mounted.barrierAfter).not.toBe(true);
@@ -269,5 +269,22 @@ describe('explicit Qiandengji read-only server query definitions', () => {
     expect(body).not.toHaveBeenCalled();
     expect(result).toEqual({ text: '[mymc_query] result; use mymc_query with requestId',
       meta: { serverQuery: { requestId: 'query-fixture', state: 'completed', data: state } } });
+  });
+
+  it('aliases the next receipt read without rewriting native items or exact JSON chunks', async () => {
+    const requestId = 'query-fixture';
+    const native = { requestId, reply: { data: { items: ['mc_test minecraft.old worlds.minecraft.name'] } } };
+    const next = { tool: 'mc_query_receipt', arguments: { requestId, offset: 1 } };
+    const pages = [{ requestId, reply: native.reply }, { requestId, jsonChunk: JSON.stringify(native) }];
+    const read = vi.fn(async () => ({ text: 'Receipt page.\n' + JSON.stringify({ ...pages.shift(), next_safe_read: next }), data: native }));
+    const engine = { tools: () => [{ ...SERVER_QUERY_RECEIPT_TOOL, handler: read }] };
+    const world = new MymcWorld({ cfg: structuredClone(MYMC_DEFAULTS) }, engine as never);
+    const tool = world.tools().find(item => item.name === 'mymc_query_receipt')!;
+    const context = { role: 'main', log: {} as never };
+    for (const expected of [...pages]) {
+      const result = await tool.handler({ requestId }, context);
+      expect(result).toMatchObject({ data: native,
+        text: 'Receipt page.\n' + JSON.stringify({ ...expected, next_safe_read: { ...next, tool: tool.name } }) });
+    }
   });
 });

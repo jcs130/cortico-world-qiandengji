@@ -1,79 +1,76 @@
-import { EventEmitter } from 'node:events';
-import { randomUUID } from 'node:crypto';
-import { writeFileSync, renameSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { installServerLogin, serverLoginFailureText } from 'agent-mc-world/client';
-import { nativeRpgMessage, readNativeRpgPacket, readNativeRpgStatus, readNativeSkills,
-  type NativeRpgProfile, type NativeSkills } from 'agent-mc-qiandengji/engine';
+import type { AccountScope } from './credentials.ts';
+import { accountScope } from './credentials.ts';
 
-export interface ConnectionOptions { server:string; username:string; bindingsFile:string; statusFile:string; instanceId:string; onReady():void }
-export interface NativeBot extends EventEmitter { chat(text:string):void; entity?:{position:{x:number;y:number;z:number}}; world?:{getColumnAt(pos:unknown):unknown}; players?:Record<string,unknown>; _client?:EventEmitter }
-const authCode=/^(?:\[(MC_AUTH_[A-Z_]+)\]|(MC_AUTH_[A-Z_]+))(?:\s|$)/;
-const knownCodes=new Set(['MC_AUTH_LOGIN','MC_AUTH_SUCCESS','MC_AUTH_STATE','MC_AUTH_DENIED','MC_AUTH_FAILED','MC_AUTH_PASSWORD_ERROR','MC_AUTH_BAD_PASSWORD','MC_AUTH_LOCKED','MC_AUTH_2FA_REQUIRED','MC_AUTH_TOTP_REQUIRED']);
-export function attachLiteConnection(bot:NativeBot, options:ConnectionOptions) {
-  const epoch=randomUUID(); const events=new EventEmitter() as EventEmitter & {chat(text:string):void};
-  events.chat=text=>bot.chat(text);
-  let closed=false,spawned=false,success=false,announced=false,controller:ReturnType<typeof installServerLogin>|undefined;
-  let serverFailure:string|null=null;
-  const failureText:Record<string,string>={MC_AUTH_BAD_PASSWORD:'服务器拒绝密码',MC_AUTH_PASSWORD_ERROR:'服务器拒绝密码',MC_AUTH_2FA_REQUIRED:'服务器要求二步验证',MC_AUTH_TOTP_REQUIRED:'服务器要求动态验证码',MC_AUTH_LOCKED:'账号已被服务器锁定',MC_AUTH_FAILED:'服务器拒绝本次认证'};
-  let profile:{value:NativeRpgProfile;at:string;source:string}|null=null,skills:NativeSkills|null=null;
-  const remember=(value:NativeRpgProfile,source:string)=>{
-    if(!value.available||profile?.value.classId!==value.classId)skills=null;
-    profile={value,source,at:new Date().toISOString()};
-  };
-  const worldReady=()=>spawned&&!!bot.entity&&[bot.entity.position.x,bot.entity.position.y,bot.entity.position.z].every(Number.isFinite)
-    &&!!bot.world?.getColumnAt(bot.entity.position);
-  const ready=()=>!closed&&success&&worldReady();
-  const snapshot=()=>({schema:'qiandengji-lite-connection/v1',at:new Date().toISOString(),epoch,instanceId:options.instanceId,server:options.server,username:options.username,
-    pid:process.pid,stage:closed?'closed':ready()?'authenticated':success?'waiting_world':controller?.detail().stage??'waiting_prompt',
-    reason:ready()?null:controller?.detail().reason??null,serverFailure,failure:ready()?null:serverFailure?failureText[serverFailure]??'服务器拒绝本次认证':serverLoginFailureText(controller?.detail().reason),
-    submitted:controller?.status().attempted??false,authSuccessReceived:success,worldReady:worldReady(),ready:ready(),
-    profile:ready()?profile:null,skills:ready()?skills:null,playerRoster:ready()?Object.keys(bot.players??{}).slice(0,64):[]});
-  const publish=()=>{
-    if(!options.statusFile)return;
-    const file=options.statusFile,temp=file+'.'+process.pid+'.tmp';
-    try{mkdirSync(dirname(file),{recursive:true,mode:0o700});writeFileSync(temp,JSON.stringify(snapshot())+'\n',{mode:0o600});renameSync(temp,file);}catch{/* The in-memory authentication gate remains authoritative. */}
-  };
-  const settle=()=>{if(ready()&&!announced){announced=true;options.onReady();}publish();};
-  const message=(msg:{toString():string},position:unknown)=>{
-    if(closed||position!=='system')return;
-    const value=msg.toString().replace(/§[0-9a-fk-or]/gi,'').trimStart();
-    const match=authCode.exec(value);
-    if(match){
-      const code=match[1]??match[2];
-      if(!knownCodes.has(code))return;
-      const suffix=value.slice(match[0].length).trim();
-      if(suffix.startsWith('{')){try{const data=JSON.parse(suffix);if(data.username!==undefined&&data.username!==options.username)return;}catch{return;}}
-      if(code==='MC_AUTH_SUCCESS'){
-        const tail=value.slice(match[0].length).trim();
-        if(tail.startsWith('{')){try{const data=JSON.parse(tail);if(data.username!==undefined&&data.username!==options.username)return;}catch{return;}}
-        else if(tail&&/^[A-Za-z0-9_]{1,16}$/.test(tail)&&tail!==options.username)return;
-        success=true;
-        serverFailure=null;
-      }else if(code==='MC_AUTH_STATE'){
-        // A state snapshot alone cannot replace this connection's MC_AUTH_SUCCESS receipt.
-        try{const data=JSON.parse(value.slice(match[0].length));if(data.username!==undefined&&data.username!==options.username)return;if(data.authorized===false)success=false;else return;}catch{return;}
-      }else if(code==='MC_AUTH_DENIED'||/^MC_AUTH_(?:FAILED|PASSWORD_ERROR|BAD_PASSWORD|LOCKED|2FA|TOTP)/.test(code)){success=false;serverFailure=code;}
-      const receipt=Object.hasOwn(failureText,code)?'MC_AUTH_FAILED':value;
-      events.emit('message',{toString:()=>receipt},'system');settle();return;
-    }
-    // Only the native server system message can request login, never forwarded player chat.
-    if(!/^(?:\[[^\]\r\n]+\]\s*)?<[^>\r\n]+>\s/.test(value)&&/\/login\b/i.test(value))events.emit('message',{toString:()=>value},'system');
-    const data=nativeRpgMessage(value);
-    if(data&&(data.username===undefined||data.username===options.username)){
-      const current=readNativeRpgStatus(data);if(current)remember(current,'MC_RPG');
-      else if(profile?.value.available)skills=readNativeSkills(data,new Date().toISOString())??skills;
-    }
-  };
-  const packet=(data:{channel?:unknown;data?:unknown})=>{if(!closed){
-    if(Buffer.isBuffer(data.data)){try{const value=JSON.parse(data.data.toString('utf8'));if(value.username!==undefined&&value.username!==options.username)return;}catch{return;}}
-    const current=readNativeRpgPacket(data.channel,data.data);if(current)remember(current,'mcagent:state.profession');
-  }};
-  const stop=()=>{if(closed)return;closed=true;success=false;controller?.stop();clearInterval(timer);bot.off('message',message);bot.off('spawn',onSpawn);bot.off('chunkColumnLoad',settle);bot._client?.off('custom_payload',packet);publish();};
-  const onSpawn=()=>{spawned=true;settle();};
-  controller=installServerLogin(events,{server:options.server,username:options.username,configFile:options.bindingsFile,report:()=>queueMicrotask(settle)});
-  bot.prependListener('message',message);bot.on('spawn',onSpawn);bot.on('chunkColumnLoad',settle);bot._client?.on('custom_payload',packet);
-  bot.once('end',stop);bot.once('kicked',stop);
-  const timer=setInterval(settle,1000);timer.unref();publish();
-  return {ready,snapshot,stop};
+export interface ConnectionScope extends AccountScope { instanceId:string }
+export interface ConnectionSnapshot {
+  server:string; username:string; instanceId:string; at:string|null;
+  ready:boolean; worldReady:boolean; authSuccessReceived:boolean; submitted:boolean;
+  stage:string; reason:string|null; failure:string|null;
+  profile:null; skills:null; playerRoster:string[];
+}
+const MAX_AGE_MS = 5000;
+const stages = new Set(['idle','connecting','waiting_prompt','submitted','retrying','required','blocked','closed','waiting_world','authenticated']);
+const reasons = new Set(['request-not-detected','credential-read-timeout','confirmation-timeout','server-rejected','configuration-invalid','credential-unavailable','connection-closed']);
+function unknown(scope:ConnectionScope, stage='unknown'):ConnectionSnapshot {
+  return {server:`${scope.host.toLowerCase()}:${scope.port}`, username:scope.username, instanceId:scope.instanceId,
+    at:null, ready:false, worldReady:false, authSuccessReceived:false, submitted:false, stage,
+    reason:'本连接状态尚未同步', failure:null, profile:null, skills:null, playerRoster:[]};
+}
+/** Read the documented operator response; never parse chat, access a bot or persist a native status journal. */
+export function publicConnection(value:unknown, scope:ConnectionScope, sampledAt:number, now=Date.now()):ConnectionSnapshot {
+  const result = unknown(scope);
+  if (!Number.isFinite(sampledAt) || now-sampledAt > MAX_AGE_MS || now-sampledAt < -1000) return result;
+  const state = value as {server?:{host?:unknown;port?:unknown;username?:unknown};connection?:{
+    ready?:unknown;worldReady?:unknown;phase?:unknown;serverLogin?:{authSuccessReceived?:unknown;attempted?:unknown;stage?:unknown;reason?:unknown}}}|null;
+  if (!state?.server || typeof state.server.host !== 'string' || state.server.host.toLowerCase() !== scope.host.toLowerCase()
+    || state.server.port !== scope.port || state.server.username !== scope.username) return result;
+  const connection = state.connection, login = connection?.serverLogin;
+  const worldReady = connection?.worldReady === true, authSuccessReceived = login?.authSuccessReceived === true;
+  const ready = connection?.ready === true && worldReady && authSuccessReceived;
+  const stage = ready ? 'authenticated' : authSuccessReceived && !worldReady ? 'waiting_world'
+    : typeof login?.stage === 'string' && stages.has(login.stage) && login.stage !== 'authenticated' ? login.stage : 'unknown';
+  return {...result, at:new Date(sampledAt).toISOString(), ready, worldReady, authSuccessReceived,
+    submitted:login?.attempted === true, stage,
+    reason:ready ? null : typeof login?.reason === 'string' && reasons.has(login.reason) ? login.reason : '等待本连接认证与世界就绪'};
+}
+
+/** Diagnostic refresh only. An instance/lifetime/scope-bound cache cannot grant readiness after stop or a stale RPC. */
+export class LiteConnection {
+  private timer:ReturnType<typeof setInterval>|undefined;
+  private generation=0;
+  private active=false;
+  private cached:{scope:ConnectionScope;generation:number;sampledAt:number;state:ConnectionSnapshot}|undefined;
+  private pending:{generation:number;promise:Promise<ConnectionSnapshot>}|undefined;
+  constructor(private readonly options:{target():AccountScope;instanceId:string;read():Promise<unknown>;now?():number}){}
+  private now(){return this.options.now?.()??Date.now();}
+  private scope():ConnectionScope { const {host,port,username}=this.options.target();return {host,port,username,instanceId:this.options.instanceId}; }
+  private same(a:ConnectionScope,b:ConnectionScope){
+    return a.instanceId===b.instanceId && a.host.toLowerCase()===b.host.toLowerCase() && a.port===b.port && a.username===b.username;
+  }
+  snapshot():ConnectionSnapshot {
+    const scope=this.scope(), cached=this.cached;
+    if (!this.active || !cached || cached.generation!==this.generation || !this.same(scope,cached.scope)
+      || this.now()-cached.sampledAt>MAX_AGE_MS || this.now()-cached.sampledAt < -1000) return unknown(scope, this.active?'unknown':'closed');
+    return {...cached.state, playerRoster:[...cached.state.playerRoster]};
+  }
+  start(onRefresh?: (state:ConnectionSnapshot)=>Promise<unknown>|unknown){
+    this.stop();this.active=true;const generation=this.generation;
+    const tick=()=>{void this.refresh().then(()=>{if(this.active&&generation===this.generation)return onRefresh?.(this.snapshot());}).catch(()=>{/* Diagnostics never log private errors. */});};
+    this.timer=setInterval(tick,1000);this.timer.unref();tick();
+  }
+  refresh():Promise<ConnectionSnapshot> {
+    if (!this.active) return Promise.resolve(this.snapshot());
+    const generation=this.generation;
+    if(this.pending?.generation===generation)return this.pending.promise;
+    const scope=this.scope(),sampledAt=this.now();
+    const promise=(async()=>{
+      let value:unknown;
+      try { accountScope(scope);value=await this.options.read(); } catch {/* Unknown is not ready; raw errors may contain secrets. */}
+      if (!this.active || generation!==this.generation || !this.same(scope,this.scope())) return this.snapshot();
+      const state=publicConnection(value,scope,sampledAt,this.now());
+      this.cached={scope,generation,sampledAt,state};return this.snapshot();
+    })().finally(()=>{if(this.pending?.generation===generation)this.pending=undefined;});
+    this.pending={generation,promise};return promise;
+  }
+  stop(){this.active=false;this.generation++;if(this.timer)clearInterval(this.timer);this.timer=undefined;this.cached=undefined;this.pending=undefined;}
 }

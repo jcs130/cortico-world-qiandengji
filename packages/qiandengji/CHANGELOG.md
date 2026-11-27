@@ -1,3 +1,27 @@
+## 0.5.0-rc.50-preview.108
+
+Expose the updated shared portal, social and storage contracts.
+
+## 0.5.0-rc.50-preview.107
+
+Keep spectator and game voice configuration local to each selected server, with explicit Web-only policy for hosts that do not support a native spectator client.
+
+## 0.5.0-rc.50-preview.106
+
+Expose server-profile resolution at the World configuration boundary, defaulting named generic servers to no Qiandengji pack. Consume the same shared core as the full and Lite adapters.
+
+## 0.5.0-rc.50-preview.105
+
+- Validate numeric, account-local reward stash slots before a command is enqueued. Include native slot 8 when determining whether reward rows have arrived.
+
+## 0.5.0-rc.50-preview.104
+
+- Parse the native nearby chat relay format with an observed nearby policy. Forward it with current scope and without a player UUID or account claim.
+
+## 0.5.0-rc.50-preview.103
+
+Attribute verified nearby companion captions to the currently observed native companion. Preserve the one authoritative conversation input when the server also sends a matched typed reply.
+
 ## 0.5.0-rc.50-preview.102
 
 Consume the core that verifies modeled dry-drop landings and keeps runtime collision checks authoritative.

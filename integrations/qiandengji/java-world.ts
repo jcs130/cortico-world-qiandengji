@@ -57,6 +57,9 @@ export class JavaMymcWorld implements World {
   tools(): ToolDef[] {
     const tools = this.body.tools().filter(tool => !(this.opts.cfg.javaHostControl?.enabled && tool.name === 'mc_control')).map(tool => ({ ...tool, name: tool.name.replace(/^mc_/, 'mymc_'), description: names(tool.description), ...(this.opts.cfg.serverPack === 'qiandengji' ? {workSubjects:(args:Record<string,unknown>)=>activitySubjects(tool.name,args)} : {}), handler: async (args, ctx) => {
       const result = await tool.handler(args, ctx);
+      const workState = tool.name === 'mc_query' && args.query === 'trial.status' && !args.requestId
+        ? this.activities.trialQueryObservation(result, this.body.requestFacts()?.experience?.scope) : undefined;
+      if (workState && typeof result !== 'string') return {...result, meta:{...result.meta, nativeWorkStates:[workState]}};
       return !['mc_help', 'mc_script'].includes(tool.name) || tool.name === 'mc_script' && !args.api ? result : typeof result === 'string' ? this.helpText(result) : { ...result, text: this.helpText(result.text) };
     } } satisfies ToolDef));
     tools.push(createMinecraftChoiceTool(() => this.host, () => this.requestFacts(), () => this.opts.cfg.hostDecisions?.choice?.decisionProvider?.trim() || undefined));
@@ -86,13 +89,13 @@ export class JavaMymcWorld implements World {
       await this.body.start(new Proxy(named,{get:(target,key)=>{if(key!=='pushEvent')return Reflect.get(target,key,target);
         return async (event:Parameters<WorldHost['pushEvent']>[0], options?:Parameters<WorldHost['pushEvent']>[1]) => {
         const mapped = mapWorldEventNamespace(event,'minecraft','mymc');
-        if (event.type === 'minecraft.client.disconnected') this.catalog.resetConnection();
+        if (event.type === 'minecraft.client.disconnected') { this.catalog.resetConnection(); this.activities.reset(); }
         const queryText = this.opts.cfg.serverPack === 'qiandengji'
           ? queryObservation(event, mymcLoginName(this.opts.cfg.username, this.opts.cfg.preserveLoginName)) : null;
         if (queryText) {
           this.guildProgress?.observe(queryText, event.ts);
           this.catalog.observe(queryText, event.ts);
-          const workBindings = this.activities.observe(queryText, this.body.requestFacts()?.experience?.scope);
+          const workBindings = this.activities.observe(queryText, this.body.requestFacts()?.experience?.scope, event.ts);
           if (workBindings.length) mapped.meta = {...mapped.meta, workBindings};
         }
         if (['minecraft.client.message', 'minecraft.chat'].includes(event.type) && this.opts.cfg.serverPack === 'qiandengji' && !event.meta?.overlay) {
@@ -115,7 +118,11 @@ export class JavaMymcWorld implements World {
           // player's quotation, private message, HUD or unknown channel to state.
           if (event.meta?.kind === 'system' && !sender && !outgoing && !whisper) {
             this.guildProgress?.observe('[MC 系统] ' + event.text, event.ts);
-            const workBindings=this.activities.observe('[MC 系统] '+event.text,this.body.requestFacts()?.experience?.scope);
+            const text = '[MC 系统] ' + event.text;
+            const scope = this.body.requestFacts()?.experience?.scope;
+            const workBindings=this.activities.observe(text, scope, event.ts);
+            const trialResult = this.activities.observeTrialResult(text, scope, event.ts);
+            if (trialResult) mapped.meta = {...mapped.meta, nativeWorkStates:[trialResult]};
             if(workBindings.length)mapped.meta={...mapped.meta,workBindings};
           }
           try {

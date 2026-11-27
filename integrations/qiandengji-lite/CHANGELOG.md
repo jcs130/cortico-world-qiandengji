@@ -1,3 +1,16 @@
+## 0.2.1
+
+- 跟进共享游戏内核的多服务器与连接生命周期修复，仍保留14个工具和本连接严格登录门槛。
+- 不把完整版的跨服选择、千灯纪资料包或额外游戏登录加入 Lite。
+
+## 0.2.0
+
+- 14 项 Lite 工具复用 `agent-mc-world/extension` 的 MinecraftClientWorld；移除官方 World 源码复制、bridge 补丁和 Lite 原生登录 controller／状态文件。
+- 私密绑定格式、账号身份、onboarding、login/client/log 面板不变；明确使用共享内核的 `mc-auth-success` 确认模式。
+- 严格依赖公共连接 ready、worldReady、authSuccessReceived 三项读数；过期、错账号、旧实例和 stop 均不 ready，取消仍交给真实队列。
+- 职业、技能和玩家名单缺少公共当前读数时返回 null／[]，不再拦截原生协议或推导能力。
+- 运行时固定 World preview.131、Qiandengji preview.105；官方 Cortico 开发依赖更新为 0.2.17。旧 dev 文件依赖及锁文件待主 Agent 同步归档；未宣称已发布或真实入服验收。
+
 ## 0.1.2
 
 - 账号页提供免邀请码注册并登录入口，按 Agent 名称建议合规账号，允许用户输入；已有角色沿用原身份与私密凭据。

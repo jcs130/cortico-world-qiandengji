@@ -4,35 +4,28 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  agent-mc-world: file:../../vendor/agent-mc-world-0.5.7-rc.160-preview.142-865cd324.tgz
+  agent-mc-qiandengji: file:../../vendor/agent-mc-qiandengji-0.5.0-rc.50-preview.108-ce2d93fc.tgz
+  vec3: 0.2.0
+
 importers:
 
   .:
     dependencies:
-      mineflayer:
-        specifier: 4.37.1
-        version: 4.37.1
-      mineflayer-pathfinder:
-        specifier: 2.4.5
-        version: 2.4.5
-      prismarine-viewer:
-        specifier: 1.33.0
-        version: 1.33.0
-      vec3:
-        specifier: 0.1.10
-        version: 0.1.10
+      agent-mc-qiandengji:
+        specifier: file:../../vendor/agent-mc-qiandengji-0.5.0-rc.50-preview.108-ce2d93fc.tgz
+        version: file:../../vendor/agent-mc-qiandengji-0.5.0-rc.50-preview.108-ce2d93fc.tgz(agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.160-preview.142-865cd324.tgz)
+      agent-mc-world:
+        specifier: file:../../vendor/agent-mc-world-0.5.7-rc.160-preview.142-865cd324.tgz
+        version: file:../../vendor/agent-mc-world-0.5.7-rc.160-preview.142-865cd324.tgz
     devDependencies:
       '@types/node':
         specifier: ^22.10.0
         version: 22.20.5
-      agent-mc-qiandengji:
-        specifier: file:../../vendor/agent-mc-qiandengji-0.5.0-rc.48-preview.1-480ecb28.tgz
-        version: file:../../vendor/agent-mc-qiandengji-0.5.0-rc.48-preview.1-480ecb28.tgz(agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz)
-      agent-mc-world:
-        specifier: file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz
-        version: file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz
       cortico:
-        specifier: 0.2.11
-        version: 0.2.11
+        specifier: 0.2.17
+        version: 0.2.17
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
@@ -715,16 +708,16 @@ packages:
   aes-js@3.1.2:
     resolution: {integrity: sha512-e5pEa2kBnBOgR4Y/p20pskXI74UEz7de8ZGVo58asOtvSVG5YAbJeELPZxOmt+Bnz3rX753YKhfIn4X4l1PPRQ==}
 
-  agent-mc-qiandengji@file:../../vendor/agent-mc-qiandengji-0.5.0-rc.48-preview.1-480ecb28.tgz:
-    resolution: {integrity: sha512-i3bgtChzUxXqzRaCKHiVPTG/j9yZEr6I9yDBtr7X/nTIPBDaweeM4NetZOrzL7HqMb2mLjipQClWRx35RvASWA==, tarball: file:../../vendor/agent-mc-qiandengji-0.5.0-rc.48-preview.1-480ecb28.tgz}
-    version: 0.5.0-rc.48-preview.1
+  agent-mc-qiandengji@file:../../vendor/agent-mc-qiandengji-0.5.0-rc.50-preview.108-ce2d93fc.tgz:
+    resolution: {integrity: sha512-eaJzjxpqEOyNFSXeuAndcb1z8CirOh/mcBImDMOOdtFzpsmVOrjo8Hc/7b5iuWkcD8Dzj3UqB7QODEsiIkM+sQ==, tarball: file:../../vendor/agent-mc-qiandengji-0.5.0-rc.50-preview.108-ce2d93fc.tgz}
+    version: 0.5.0-rc.50-preview.108
     engines: {node: '>=22'}
     peerDependencies:
-      agent-mc-world: ^0.5.7-rc.150-preview.3
+      agent-mc-world: ^0.5.7-rc.160-preview.142
 
-  agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz:
-    resolution: {integrity: sha512-sJRvUxeSZnEHfC86rZBMWR4sG4VN9SpHk3gTQEKkVnM9yAhuJJ2VcltsKKCESuHGSkVF0PohP1XmJkbkmGlMDg==, tarball: file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz}
-    version: 0.5.7-rc.150-preview.3
+  agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.160-preview.142-865cd324.tgz:
+    resolution: {integrity: sha512-48k16E3Ad0SPRuFGb89ZeVg8TquXhT+zLNsC5aQVkYJdPdPKXzUfQI7XMWvCmjsjwTG/wDeI7S4XReZv/c/0lw==, tarball: file:../../vendor/agent-mc-world-0.5.7-rc.160-preview.142-865cd324.tgz}
+    version: 0.5.7-rc.160-preview.142
     engines: {node: '>=22'}
     hasBin: true
 
@@ -891,8 +884,8 @@ packages:
     resolution: {integrity: sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw==}
     engines: {node: '>= 0.10'}
 
-  cortico@0.2.11:
-    resolution: {integrity: sha512-vOX5fgejXlC5l7oYpoy4LrsaFzZh6GpqkX5li6XjPeixhM+++hQkoOfetGGIDE8oCPUTsLFcRd/ytG85fjKJEw==}
+  cortico@0.2.17:
+    resolution: {integrity: sha512-PuoOt2C0GIzi0f8p2BU51withLCtFSbSgscWK1Of3vh/xvpeQwQD3FZxwWsILTunJwVgHGDiaeDovHLxLfKDwA==}
     engines: {node: '>=22'}
 
   cross-spawn@7.0.6:
@@ -1296,8 +1289,8 @@ packages:
   mineflayer-pathfinder@2.4.5:
     resolution: {integrity: sha512-Jh3JnUgRLwhMh2Dugo4SPza68C41y+NPP5sdsgxRu35ydndo70i1JJGxauVWbXrpNwIxYNztUw78aFyb7icw8g==}
 
-  mineflayer@4.37.1:
-    resolution: {integrity: sha512-kchZCJb1znzz8ZhE0+gLQ3e2t/9xUsqUy/IM/sGfceINxi3h6KXKY9luaUEa59vnD/x0OKwYdERY4sscm0ErNQ==}
+  mineflayer@4.39.0:
+    resolution: {integrity: sha512-HptE++dIG55aRmT7GIj3QComS6MhEXstE3RJSuYMFhLtobsQhJJsqWmY9ObfiLp84MrS6Q4Em+wUH0rVQMXLJw==}
     engines: {node: '>=22'}
 
   mojangson@2.1.0:
@@ -1813,9 +1806,6 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
-  vec3@0.1.10:
-    resolution: {integrity: sha512-Sr1U3mYtMqCOonGd3LAN9iqy0qF6C+Gjil92awyK/i2OwiUo9bm7PnLgFpafymun50mOjnDcg4ToTgRssrlTcw==}
-
   vec3@0.2.0:
     resolution: {integrity: sha512-jOjU4zbCNWOKOGLHop1I0J2Ar4h5Zz76455LJhJKhiOJwI21QP6d5TnKklNZDKG+c5h71zWtPAbd9wh+Va57OQ==}
 
@@ -1965,8 +1955,8 @@ packages:
     peerDependencies:
       zod: ^3.25.28 || ^4
 
-  zod@4.6.5:
-    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
+  zod@4.6.6:
+    resolution: {integrity: sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==}
 
 snapshots:
 
@@ -2192,7 +2182,7 @@ snapshots:
       heap-js: 2.7.1
       tslib: 2.8.1
 
-  '@modelcontextprotocol/sdk@1.32.1(zod@4.6.5)':
+  '@modelcontextprotocol/sdk@1.32.1(zod@4.6.6)':
     dependencies:
       '@hono/node-server': 2.1.5(hono@4.13.14)
       ajv: 8.20.0
@@ -2209,8 +2199,8 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 4.6.5
-      zod-to-json-schema: 3.25.2(zod@4.6.5)
+      zod: 4.6.6
+      zod-to-json-schema: 3.25.2(zod@4.6.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -2440,19 +2430,19 @@ snapshots:
 
   aes-js@3.1.2: {}
 
-  agent-mc-qiandengji@file:../../vendor/agent-mc-qiandengji-0.5.0-rc.48-preview.1-480ecb28.tgz(agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz):
+  agent-mc-qiandengji@file:../../vendor/agent-mc-qiandengji-0.5.0-rc.50-preview.108-ce2d93fc.tgz(agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.160-preview.142-865cd324.tgz):
     dependencies:
-      agent-mc-world: file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz
+      agent-mc-world: file:../../vendor/agent-mc-world-0.5.7-rc.160-preview.142-865cd324.tgz
       vec3: 0.2.0
 
-  agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.150-preview.3-6d947a37.tgz:
+  agent-mc-world@file:../../vendor/agent-mc-world-0.5.7-rc.160-preview.142-865cd324.tgz:
     dependencies:
       '@mcap/core': 2.3.0
-      '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.5)
+      '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.6)
       ajv: 8.20.0
       flatbuffers: 25.9.23
-      minecraft-data: 3.112.0
-      mineflayer: 4.37.1
+      minecraft-data: 3.119.0
+      mineflayer: 4.39.0
       mineflayer-pathfinder: 2.4.5
       playwright-core: 1.63.0
       prismarine-auth: 3.1.1
@@ -2464,7 +2454,7 @@ snapshots:
       socket.io: 4.8.3
       socket.io-client: 4.8.3
       vec3: 0.2.0
-      zod: 4.6.5
+      zod: 4.6.6
     transitivePeerDependencies:
       - '@cfworker/json-schema'
       - bufferutil
@@ -2639,7 +2629,7 @@ snapshots:
       object-assign: 4.1.1
       vary: 1.1.2
 
-  cortico@0.2.11:
+  cortico@0.2.17:
     dependencies:
       '@types/express': 4.17.25
       '@types/react': 19.3.0
@@ -3180,11 +3170,11 @@ snapshots:
       prismarine-item: 1.18.0
       prismarine-nbt: 2.8.0
       prismarine-physics: 1.11.1
-      vec3: 0.1.10
+      vec3: 0.2.0
     transitivePeerDependencies:
       - supports-color
 
-  mineflayer@4.37.1:
+  mineflayer@4.39.0:
     dependencies:
       minecraft-data: 3.119.0
       minecraft-protocol: 1.68.0
@@ -3204,7 +3194,7 @@ snapshots:
       protodef: 1.19.0
       typed-emitter: 1.4.0
       uuid-1345: 1.0.2
-      vec3: 0.1.10
+      vec3: 0.2.0
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -3328,7 +3318,7 @@ snapshots:
       prismarine-registry: 1.12.0
       smart-buffer: 4.2.0
       uint4: 0.1.2
-      vec3: 0.1.10
+      vec3: 0.2.0
       xxhash-wasm: 0.4.2
     transitivePeerDependencies:
       - supports-color
@@ -3338,7 +3328,7 @@ snapshots:
       prismarine-chat: 1.13.0
       prismarine-item: 1.18.0
       prismarine-registry: 1.12.0
-      vec3: 0.1.10
+      vec3: 0.2.0
     transitivePeerDependencies:
       - supports-color
 
@@ -3392,7 +3382,7 @@ snapshots:
       socket.io-client: 4.8.4
       three: 0.128.0
       three.meshline: 1.4.0
-      vec3: 0.1.10
+      vec3: 0.2.0
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -3408,7 +3398,7 @@ snapshots:
 
   prismarine-world@3.7.0:
     dependencies:
-      vec3: 0.1.10
+      vec3: 0.2.0
 
   process@0.11.10: {}
 
@@ -3867,8 +3857,6 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vec3@0.1.10: {}
-
   vec3@0.2.0: {}
 
   vite-node@2.1.8(@types/node@22.20.5):
@@ -3995,8 +3983,8 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  zod-to-json-schema@3.25.2(zod@4.6.5):
+  zod-to-json-schema@3.25.2(zod@4.6.6):
     dependencies:
-      zod: 4.6.5
+      zod: 4.6.6
 
-  zod@4.6.5: {}
+  zod@4.6.6: {}

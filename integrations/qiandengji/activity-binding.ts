@@ -1,4 +1,4 @@
-import type { WorkBinding } from 'agent-mc-world/contracts';
+import { compareWorkBindings, type WorkBinding, type WorkState } from 'agent-mc-world/contracts';
 
 type Scope = WorkBinding['scope'];
 const id = (v: unknown): v is string => typeof v === 'string' && /^[a-z][a-z0-9_-]{0,63}$/.test(v);
@@ -9,12 +9,13 @@ export class ActivityBindings {
   private subjects = new Set<string>(['trial_tower']);
   private current = new Map<string, string>();
   constructor(private readonly username: string) {}
-  reset() { this.current.clear(); }
+  private activeTrial?: WorkState;
+  reset() { this.current.clear(); this.activeTrial = undefined; }
   bindings(scope: Scope): WorkBinding[] {
     return [...this.subjects].map(subject => ({scope: {...scope}, subject,
       ...(this.current.has(subject) ? {instance: this.current.get(subject)!} : {})}));
   }
-  observe(text: string, scope: Scope | undefined): WorkBinding[] {
+  observe(text: string, scope: Scope | undefined, at?: string): WorkBinding[] {
     if (!scope || !text.startsWith('[MC 系统] ')) return [];
     const line = text.slice(8), match = /^(MC_SITE_DUNGEON_STATE|MC_SITE_DUNGEON_INFO|MC_TRIAL_STATE) (\{.*\})$/.exec(line);
     if (!match) return [];
@@ -29,10 +30,53 @@ export class ActivityBindings {
     if (match[1] === 'MC_SITE_DUNGEON_INFO') return [{scope: {...scope}, subject}];
     const owns = v.participant === true && (dungeon ? v.lifecycle === 'active' && v.participantRun === v.run : v.active === true);
     if (owns && run(v.run)) this.current.set(subject, v.run); else this.current.delete(subject);
+    if (!dungeon && owns && at) {
+      const state = trialWorkState(v, scope, at, text, 'active');
+      if (state && (!this.activeTrial || this.activeTrial.instance !== state.instance
+        || state.revision >= this.activeTrial.revision)) this.activeTrial = state;
+    }
     // A response containing current and historical outcomes is not a single-run receipt.
     // Preserve all original bytes; only tag the common subject here.
     return [{scope: {...scope}, subject}];
   }
+  /** Attach to the direct query response only when its full validated native reply
+   * equals the active observation admitted by this connection. */
+  trialQueryObservation(response: unknown, scope: Scope | undefined): WorkState | undefined {
+    const r = record(response), data = record(r?.data), reply = record(data?.reply);
+    const active = this.activeTrial;
+    if (!scope || !active || r?.failed === true || data?.phase !== 'replied' || data.query !== 'trial.status'
+      || data.username !== this.username || reply?.ok !== true || reply.textTruncated !== false
+      || '[MC 系统] ' + reply.text !== active.evidence.text
+      || this.current.get('trial_tower') !== active.instance
+      || compareWorkBindings(active, {scope, subject:'trial_tower', instance:active.instance}) !== 'exact') return;
+    return active;
+  }
+  observeTrialResult(text: string, scope: Scope | undefined, at: string): WorkState | undefined {
+    const active = this.activeTrial;
+    if (!scope || !active || !text.startsWith('[MC 系统] MC_TRIAL_RESULT ')) return;
+    let payload: unknown;
+    try { payload = JSON.parse(text.slice('[MC 系统] MC_TRIAL_RESULT '.length)); } catch { return; }
+    const v = record(payload);
+    if (!v || v.recipient !== this.username || v.status !== 'completed' || v.outcome !== 'won' || v.reason !== 'cleared'
+      || !Number.isSafeInteger(v.endedAt) || Number(v.endedAt) <= 0) return;
+    const result = trialWorkState(v, scope, at, text, 'completed');
+    if (!result || result.revision <= active.revision || Date.parse(result.observedAt) < Date.parse(active.observedAt)
+      || compareWorkBindings(active, result) !== 'exact') return;
+    this.activeTrial = undefined;
+    if (this.current.get('trial_tower') === result.instance) this.current.delete('trial_tower');
+    return result;
+  }
+}
+
+function record(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
+}
+
+function trialWorkState(v: Record<string, unknown>, scope: Scope, at: string, text: string, status: 'active' | 'completed'): WorkState | undefined {
+  if (v.schemaVersion !== 1 || v.activityType !== 'trial_tower' || !run(v.run)
+    || !Number.isSafeInteger(v.revision) || Number(v.revision) < 0 || !Number.isFinite(Date.parse(at))) return;
+  return {scope: {...scope}, subject:'trial_tower', instance:v.run, revision:Number(v.revision), status,
+    observedAt:at, evidence:{source:'server', reference:'trial:' + v.run + ':' + v.revision, text}};
 }
 
 /** Known native command grammar only; never infer activity from prose or coordinates. */

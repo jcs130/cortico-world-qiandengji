@@ -2,7 +2,7 @@ import type { World, WorldConsoleDecl } from 'agent-mc-world/contracts';
 import { parseMinecraftServerAddress, prepareMinecraftViewerAssets, type ViewerAssetProgress } from 'agent-mc-world/client';
 import { join } from 'node:path';
 import type { MymcConfigSection } from './config.ts';
-import { mymcLoginName } from './config.ts';
+import { mymcLoginName, mymcServerConfig, mymcServerProfiles, mymcSelectedServer } from './config.ts';
 import type { WorldContext } from '../../adapters/cortico/types.ts';
 import { QiandengjiPortalAccess } from './portal-access.ts';
 
@@ -13,6 +13,7 @@ export function withQuickStart<T extends World>(world: T, ctx: WorldContext<Mymc
   const base = world.console?.bind(world);
   const start = world.start.bind(world), stop = world.stop.bind(world);
   let mounted = false, mutation: Promise<unknown> | null = null;
+  let mountedConfig: MymcConfigSection | null = null;
   let assets: ViewerAssetProgress | null = null, assetError: string | null = null, startupError: string | null = null;
   let phase: 'stopped' | 'preparing-assets' | 'starting' | 'running' | 'failed' = 'stopped', revision = 0;
   let assetTemplate: string | null = null;
@@ -53,19 +54,22 @@ export function withQuickStart<T extends World>(world: T, ctx: WorldContext<Mymc
   };
   world.start = async host => {
     const current = ++revision;
-    mounted = false; phase = 'preparing-assets'; startupError = null;
+    mounted = false; mountedConfig = null; phase = 'preparing-assets'; startupError = null;
     await cancelAssets();
     try {
       if (current !== revision || !ctx.cfg.enabled) throw new Error('启动已取消。');
+      const cfg = mymcServerConfig(ctx.cfg);
+      validate(cfg);
+      const startingConfig = { ...cfg };
       assets = null; assetError = null;
-      const templateDir = viewer?.templateDir() ?? ctx.cfg.viewerAssetsDir;
-      assetTemplate = ctx.cfg.provider !== 'java-client' && ctx.cfg.viewerPort > 0 && templateDir ? templateDir : null;
+      const templateDir = viewer?.templateDir() ?? cfg.viewerAssetsDir;
+      assetTemplate = cfg.provider !== 'java-client' && cfg.viewerPort > 0 && templateDir ? templateDir : null;
       if (assetTemplate) await beginAssets(assetTemplate);
       if (current !== revision || !ctx.cfg.enabled) throw new Error('启动已取消。');
       phase = 'starting';
       await start(host);
       if (current !== revision || !ctx.cfg.enabled) { await stop(); throw new Error('启动已取消。'); }
-      mounted = true; phase = 'running';
+      mounted = true; mountedConfig = startingConfig; phase = 'running';
     } catch (error) {
       if (current === revision) {
         phase = 'failed'; startupError = error instanceof Error ? error.message : 'World 启动失败。';
@@ -75,19 +79,37 @@ export function withQuickStart<T extends World>(world: T, ctx: WorldContext<Mymc
     }
   };
   world.stop = async () => {
-    const current = ++revision; mounted = false; phase = 'stopped'; startupError = null;
+    const current = ++revision; mounted = false; mountedConfig = null; phase = 'stopped'; startupError = null;
     const settling = cancelAssets();
     try { await stop(); } finally {
       await settling;
       if (current === revision) { assets = null; assetError = null; assetTemplate = null; }
     }
   };
+  const publicSettings = (cfg: MymcConfigSection, server = mymcSelectedServer(cfg)) => ({ server,
+    host: cfg.host, port: cfg.port, username: cfg.username, auth: cfg.auth, version: cfg.version,
+    serverPack: cfg.serverPack ?? 'none', viewerPort: cfg.viewerPort });
+  const effectiveSettings = () => {
+    try { return mymcServerConfig(ctx.cfg); }
+    catch { return { ...ctx.cfg, host: '', username: '', serverPack: 'none' as const }; }
+  };
   const state = async () => {
-    const cfg = ctx.cfg, declaration = base?.();
-    return { available: !!ctx.persist && !!ctx.restart, mounted, enabled: cfg.enabled, provider: cfg.provider,
+    const cfg = effectiveSettings(), declaration = base?.();
+    const profiles = mymcServerProfiles(ctx.cfg).map(profile => {
+      try {
+        const effective = mymcServerConfig({ ...ctx.cfg, server: profile.id });
+        if (mymcSelectedServer(effective) !== profile.id) return { ...profile, selectable: false };
+        validate(effective);
+        return { ...publicSettings(effective), ...profile };
+      } catch { return { ...profile, selectable: false }; }
+    });
+    return { available: !!ctx.persist && !!ctx.restart, mounted, enabled: ctx.cfg.enabled, provider: cfg.provider,
       phase, startupError, assets, assetError, assetPreparing: !!assetJob,
-      settings: { host: cfg.host, port: cfg.port, username: cfg.username, auth: cfg.auth, version: cfg.version,
-        serverPack: cfg.serverPack ?? 'none', viewerPort: cfg.viewerPort },
+      settings: publicSettings(cfg), profiles,
+      connectedServer: mountedConfig ? mountedConfig.activeServer ?? mountedConfig.server ?? '' : null,
+      connectedSettings: mountedConfig ? publicSettings(mountedConfig, mountedConfig.activeServer ?? mountedConfig.server ?? '') : null,
+      connectedLoginName: mountedConfig ? mountedConfig.serverPack === 'qiandengji'
+        ? mymcLoginName(mountedConfig.username, mountedConfig.preserveLoginName) : mountedConfig.username : null,
       loginName: cfg.serverPack === 'qiandengji' ? mymcLoginName(cfg.username, cfg.preserveLoginName) : cfg.username,
       connection: declaration?.connection ?? null, lamps: declaration?.lamps ?? [], links: declaration?.links ?? [],
       portal: portal ? await portal.state().catch(() => ({ available: false, state: 'unknown', message: '网站身份文件未验证；原游戏连接保留。' })) : null };
@@ -95,38 +117,54 @@ export function withQuickStart<T extends World>(world: T, ctx: WorldContext<Mymc
   const patchFrom = (value: unknown): Partial<MymcConfigSection> => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('请填写服务器地址和账号。');
     const form = value as Record<string, unknown>;
-    if (typeof form.address !== 'string' || typeof form.username !== 'string') throw new Error('请填写服务器地址和账号。');
-    let address: { host: string; port: number };
-    try { address = parseMinecraftServerAddress(form.address); }
-    catch { throw new Error('服务器地址格式不正确，请填写主机名或 主机名:端口；IPv6 使用 [地址]:端口。'); }
-    const patch: Partial<MymcConfigSection> = { ...address, username: form.username.trim() };
-    if (form.auth !== undefined) {
-      if (form.auth !== 'offline' && form.auth !== 'microsoft') throw new Error('账号验证请选择离线或微软正版。');
-      patch.auth = form.auth;
+    if (form.server !== undefined && typeof form.server !== 'string') throw new Error('未知命名服务器。');
+    const server = typeof form.server === 'string' ? form.server : '';
+    let patch: Partial<MymcConfigSection>;
+    if (server) {
+      const profile = mymcServerProfiles(ctx.cfg).find(value => value.id === server);
+      if (!profile) throw new Error('未知命名服务器。');
+      if (!profile.selectable) throw new Error('该命名服务器不可选择。');
+      if (mymcSelectedServer({ ...ctx.cfg, server }) !== server) throw new Error('进程的 AGENT_MC_SERVER 覆盖了此选择，请先修改进程配置再重连。');
+      patch = { server };
+    } else {
+      if (typeof form.address !== 'string' || typeof form.username !== 'string') throw new Error('请填写服务器地址和账号。');
+      let address: { host: string; port: number };
+      try { address = parseMinecraftServerAddress(form.address); }
+      catch { throw new Error('服务器地址格式不正确，请填写主机名或 主机名:端口；IPv6 使用 [地址]:端口。'); }
+      patch = { server: '', ...address, username: form.username.trim() };
+      if (form.auth !== undefined) {
+        if (form.auth !== 'offline' && form.auth !== 'microsoft') throw new Error('账号验证请选择离线或微软正版。');
+        patch.auth = form.auth;
+      }
+      if (form.version !== undefined) {
+        if (typeof form.version !== 'string') throw new Error('协议版本须为 auto 或明确版本号。');
+        patch.version = form.version.trim() || 'auto';
+      }
+      if (form.serverPack !== undefined) {
+        if (form.serverPack !== 'none' && form.serverPack !== 'qiandengji') throw new Error('未知服务器资料包。');
+        patch.serverPack = form.serverPack;
+      }
     }
-    if (form.version !== undefined) {
-      if (typeof form.version !== 'string') throw new Error('协议版本须为 auto 或明确版本号。');
-      patch.version = form.version.trim() || 'auto';
-    }
-    if (form.serverPack !== undefined) {
-      if (form.serverPack !== 'none' && form.serverPack !== 'qiandengji') throw new Error('未知服务器资料包。');
-      patch.serverPack = form.serverPack;
-    }
+    const effective = mymcServerConfig({ ...ctx.cfg, ...patch });
     if (form.viewerPort !== undefined) {
       if (!Number.isInteger(form.viewerPort) || (form.viewerPort as number) < 0 || (form.viewerPort as number) > 65535)
         throw new Error('观战端口须为 0–65535 的整数。');
-      patch.viewerPort = form.viewerPort as number;
+      if (!server || form.viewerPort !== effective.viewerPort) patch.viewerPort = form.viewerPort as number;
     }
     validate({ ...ctx.cfg, ...patch });
     return patch;
   };
   const invoke = async (panel: string, method: string, args: unknown[]) => {
     if (panel !== 'quick-start') {
-      if (panel === 'connection' && method === 'state' && !mounted) return {
-        preparation: { phase, detail: startupError, assets, assetError },
-        server: { host: ctx.cfg.host, port: ctx.cfg.port, requestedVersion: ctx.cfg.version, actualVersion: null },
-        connection: null, accounts: {}, clients: {},
-      };
+      if ((mountedConfig ?? effectiveSettings()).spectatorMode === 'web'
+        && ['mount', 'connection'].includes(panel) && ['client.start', 'observer.start', 'player.start'].includes(method))
+        throw new Error('当前服务器仅使用 Web 观战，不启动 Java 客户端。');
+      if (panel === 'connection' && method === 'state' && !mounted) {
+        const cfg = effectiveSettings();
+        return { preparation: { phase, detail: startupError, assets, assetError },
+          server: { host: cfg.host, port: cfg.port, requestedVersion: cfg.version, actualVersion: null },
+          connection: null, accounts: {}, clients: {} };
+      }
       const parent = base?.();
       if (!parent?.invoke) throw new Error('World 面板暂不可用。');
       return parent.invoke(panel, method, args);
@@ -156,23 +194,28 @@ export function withQuickStart<T extends World>(world: T, ctx: WorldContext<Mymc
       mutation = run(); try { return await mutation; } finally { mutation = null; }
     }
     const execute = async () => {
-    // Validation precedes configuration changes or interruption. Allowlist form fields only.
-    const starting = method === 'start' || method === 'portal-start';
-    if (starting && ctx.cfg.provider === 'java-client') throw new Error('当前使用原生客户端，请在高级配置中连接；快捷启动用于 Mineflayer。');
-    let patch: Partial<MymcConfigSection>;
-    if (method === 'portal-start') {
-      const settings = await portal!.connectionSettings();
-      patch = { ...patchFrom({ address: `${settings.host}:${settings.port}`, username: settings.username,
-        version: settings.version, auth: settings.auth, serverPack: 'qiandengji' }),
-        preserveLoginName: true, loginConfigFile: settings.loginConfigFile };
-      validate({ ...ctx.cfg, ...patch });
-    } else patch = method === 'stop' ? {} : patchFrom(args[0]);
-    // Opening an App that is already connected must not cancel its body task.
-    // A failed/disconnected connection remains retryable through the same button.
-    if (starting && ctx.cfg.enabled && mounted && (await state()).connection?.ready === true
-      && Object.entries(patch).every(([key, value]) => Object.is(ctx.cfg[key as keyof MymcConfigSection], value))) {
-      return { saved: true, requested: method, alreadyConnected: true, ...await state() };
-    }
+      // Validation precedes configuration changes or interruption. Allowlist form fields only.
+      const starting = method === 'start' || method === 'portal-start';
+      if (starting && effectiveSettings().provider === 'java-client') throw new Error('当前使用原生客户端，请在高级配置中连接；快捷启动用于 Mineflayer。');
+      let patch: Partial<MymcConfigSection>;
+      if (method === 'portal-start') {
+        const settings = await portal!.connectionSettings();
+        patch = { ...patchFrom({ address: `${settings.host}:${settings.port}`, username: settings.username,
+          version: settings.version, auth: settings.auth, serverPack: 'qiandengji' }),
+          preserveLoginName: true, loginConfigFile: settings.loginConfigFile };
+        validate({ ...ctx.cfg, ...patch });
+      } else patch = method === 'stop' ? {} : patchFrom(args[0]);
+      // Compare against the body, not the saved selection: save never replaces a live body.
+      if (starting && ctx.cfg.enabled && mounted && mountedConfig && (await state()).connection?.ready === true) {
+        const candidate = mymcServerConfig({ ...ctx.cfg, ...patch });
+        const keys = ['server', 'activeServer', 'host', 'port', 'username', 'auth', 'version', 'serverPack', 'viewerPort',
+          'preserveLoginName', 'loginConfigFile', 'loginConfirmation', 'viewerAssetsDir', 'provider',
+          'fakeHost', 'publicDnsFallback', 'connectTimeoutMs', 'maxReconnectAttempts', 'spectatorMode'] as const;
+        const compoundKeys = ['connectAddresses', 'dohResolvers', 'serverSafety', 'proximityVoice', 'simpleVoiceChat'] as const;
+        if (keys.every(key => Object.is(candidate[key], mountedConfig![key]))
+          && compoundKeys.every(key => JSON.stringify(candidate[key]) === JSON.stringify(mountedConfig![key])))
+          return { saved: true, requested: method, alreadyConnected: true, ...await state() };
+      }
       if (method === 'stop') assetJob?.controller.abort(new Error('启动已取消。'));
       ctx.persist!({ ...patch, ...(method === 'save' ? {} : { enabled: starting }) });
       if (method !== 'save') await ctx.restart!();

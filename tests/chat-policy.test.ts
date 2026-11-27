@@ -1,5 +1,10 @@
-import {expect,it} from 'vitest';
+import {EventEmitter} from 'node:events';
+import {expect,it,vi} from 'vitest';
+import {nullLogger} from 'agent-mc-world/client';
+import {installWorldIdentity} from 'agent-mc-world/extension';
 import {ChatPolicyState} from '../integrations/qiandengji/engine/chat-policy.ts';
+import {QiandengjiEngine} from '../integrations/qiandengji/engine/world.ts';
+import {MYMC_DEFAULTS} from '../src/config.ts';
 const uuid='12345678-1111-2222-3333-123456789abc';
 const payload={schemaVersion:1,playerUuid:uuid,observedAt:Date.parse('2026-10-29T16:00:00Z'),communication:{
   schema:'agent-mc/chat-policy/v1',provider:'EssentialsXChat',defaultChannel:'nearby',
@@ -19,6 +24,49 @@ it('reads incoming scope only from the server-rendered prefix, never the player 
   expect(r.audience('hello','[附近] [主世界] Alex: hello','incoming')).toEqual({channel:'nearby',scope:'same-world-range',source:'server-decoration'});
   expect(r.audience('hello','[大喇叭] [下界] Alex: hello','incoming')).toMatchObject({channel:'shout',scope:'server'});
   expect(r.audience('!body','[附近] [主世界] Alex: !body','incoming')?.channel).toBe('nearby');
+});
+it('separates the observed nearby relay from server notices without assigning a player account',()=>{
+  const policy = new ChatPolicyState();
+  const text = '[附近] 旅行者：你好，要不要去广场走走？';
+  expect(policy.nearbyRelay(text)).toBeNull();
+  policy.observe(line(payload), uuid);
+  expect(policy.nearbyRelay(text)).toEqual({ displayName: '旅行者', body: '你好，要不要去广场走走？', shoutPrefix: '!', radius: 48 });
+  expect(policy.nearbyRelayResponse('trial:ice')).toEqual({ worldKey: 'trial:ice', shoutPrefix: '!', channel: 'nearby' });
+  expect(policy.nearbyRelay('[附近] [主世界] Traveler: 下午好')).toMatchObject({ displayName: 'Traveler', body: '下午好' });
+  expect(policy.nearbyRelay('[服务器公告] 试炼塔今晚维护')).toBeNull();
+  expect(policy.nearbyRelay('[附近·女仆] 同伴：下雨了')).toBeNull();
+  expect(policy.nearbyRelay('[私聊] 旅行者：你好')).toBeNull();
+  expect(policy.nearbyRelay('聊天记录：' + text)).toBeNull();
+  policy.reset();
+  expect(policy.nearbyRelay(text)).toBeNull();
+  expect(policy.nearbyRelayResponse('trial:ice')).toBeNull();
+});
+it('delivers an observed relay once to the live world without binding its display label to a player',()=>{
+  const engine = new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
+  const bot = Object.assign(new EventEmitter(),{
+    _client:Object.assign(new EventEmitter(),{state:'play'}), entities:{},
+    game:{dimension:'overworld'}, username:'TestBot', players:{TestBot:{displayName:'探险家'}},
+  });
+  const dispose = installWorldIdentity(bot as never);
+  const pushEvent = vi.fn(async (_event: { type?: string })=>{});
+  const internal = engine as unknown as {chatPolicy:ChatPolicyState; extensionServerRelayedChat(text:string):boolean};
+  Object.assign(engine,{host:{pushEvent,log:nullLogger()},bridge:{bot,connected:true}});
+  bot._client.emit('login',{worldState:{name:'trial:ice'}});
+  internal.chatPolicy.observe(line(payload),uuid);
+  try {
+    expect(internal.extensionServerRelayedChat('[附近] 旅行者：有空一起去广场么？')).toBe(true);
+    expect(internal.extensionServerRelayedChat('[附近] 旅行者：有空一起去广场么？')).toBe(true);
+    expect(internal.extensionServerRelayedChat('[附近] 探险家：下午好呀')).toBe(true);
+    expect(internal.extensionServerRelayedChat('[服务器公告] 试炼塔维护')).toBe(false);
+    const rows = pushEvent.mock.calls.filter(([event])=> (event as {type?:string}).type==='minecraft.chat');
+    expect(rows).toHaveLength(1);
+    expect(rows[0][0]).toMatchObject({ type:'minecraft.chat', senderKey:'minecraft', meta:{
+      channel:'nearby',chatRoutingSource:'server-nearby-relay',relaySpeakerDisplayName:'旅行者',
+      body:'有空一起去广场么？',deliveryWorldKey:'trial:ice',relayShoutPrefix:'!',
+    }});
+    expect((rows[0][0] as {meta:Record<string,unknown>}).meta).not.toHaveProperty('senderUuid');
+    expect((rows[0][0] as {meta:Record<string,unknown>}).meta).not.toHaveProperty('executionFeedback');
+  }finally{dispose();}
 });
 it('preserves dynamic server defaults and invalidates an old policy when the provider becomes unknown',()=>{
   const r=new ChatPolicyState();r.observe(line({...payload,communication:{...payload.communication,defaultChannel:'server',nearby:{scope:'same-world-range',radius:0}}}),uuid);

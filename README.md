@@ -1,6 +1,8 @@
 # 联机版我的世界 / 千灯纪资料包
 
-**当前发行（2026-11-02）**：完整版 `cortico-world-qiandengji@0.4.1-rc.70` 已在 npm `next` 发布，使用核心 `0.5.7-rc.153` 和服务器包 `0.5.0-rc.49`。仅从 npm 安装 World 的独立消费者已通过界面、官方 Cortico 0.2.12 自描述和 SDK/MCP 验收；公开归档哈希与验收包一致。见[本批分发回执](docs/npm-release-20261102.json)。市场当前卡片仍显示旧 `latest`，安装完整版新版请输入 `cortico-world-qiandengji@next`。
+**源码整理（2026-11-26）**：完整版候选 `0.4.1-rc.71-preview.128` 已整合生产侧的分页、附近发言归属、试炼实例验收和个人箱恢复，以及主干的 Numen 与命令防重。通用执行能力继续只消费 `agent-mc-world`，不修改官方 Cortico Core。候选构建、发布、部署和真实游戏验收分别记录；下方是历史发行信息，不代表候选已经发布。
+
+**上次记录的发行（2026-11-02）**：完整版 `cortico-world-qiandengji@0.4.1-rc.70` 已在 npm `next` 发布，使用核心 `0.5.7-rc.153` 和服务器包 `0.5.0-rc.49`。仅从 npm 安装 World 的独立消费者已通过界面、官方 Cortico 0.2.12 自描述和 SDK/MCP 验收；公开归档哈希与验收包一致。见[本批分发回执](docs/npm-release-20261102.json)。市场当前卡片仍显示旧 `latest`，安装完整版新版请输入 `cortico-world-qiandengji@next`。
 
 **官方实现最小接入**：[千灯纪-lite 0.1.2](integrations/qiandengji-lite/README.md) 已在 npm 与 Cortico 市场发布，包名 `cortico-world-qiandengji-lite`，提供免邀请码注册、原账号私密登录及官网 Java 客户端入口。一个角色只启用一个 Minecraft World，继续沿用原账号、模型、目标和记忆。
 

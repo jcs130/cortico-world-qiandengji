@@ -1,12 +1,30 @@
-import type { InventoryArrivalMatcher, ServerQueryDefinition } from 'agent-mc-world/extension';
+import type { InventoryArrivalMatcher, ServerQueryDefinition, SkillCall } from 'agent-mc-world/extension';
+
+const stashTakePrefix = /^\/mycli\s+arena\s+stash\s+take(?:\s|$)/i;
+
+function stashTakeArguments(command: string): { slot: number; limit: number } | null {
+  const request = /^\/mycli[ \t]+arena[ \t]+stash[ \t]+take[ \t]+(\+?\d+)(?:[ \t]+(\+?\d+))?$/i.exec(command.trim());
+  if (!request) return null;
+  const slot = Number(request[1]);
+  const limit = Number(request[2] ?? 64);
+  return slot >= 1 && slot <= 540 && limit >= 1 && limit <= 64 ? { slot, limit } : null;
+}
+
+export function stashTakeAdmission(steps: readonly SkillCall[]): string | null {
+  const index = steps.findIndex(step => {
+    if (step.skill === 'server_travel') return stashTakePrefix.test(step.command.trim());
+    return step.skill === 'chat' && stashTakePrefix.test(step.text.trim()) && !stashTakeArguments(step.text);
+  });
+  if (index < 0) return null;
+  return `第 ${index + 1} 步未发送。用 chat.text 发送 /mycli arena stash take <全局箱槽 1–540> [数量 1–64]。先用 storage.stash 查询对应页的物品和实际槽号。`
+    + '待入箱物品先按服务端回执打开指定页，再查询已入箱的槽号。待领奖励列表中的槽号不能用于取个人箱。';
+}
 
 /** The personal-stash transfer is a write with no client nonce. Match its source slot and quantity. */
 export function stashTakeArrival(command: string): InventoryArrivalMatcher | undefined {
-  const request = /^\/mycli\s+arena\s+stash\s+take\s+([1-9]\d{0,2})(?:\s+([1-9]\d?))?$/i.exec(command.trim());
+  const request = stashTakeArguments(command);
   if (!request) return;
-  const slot = Number(request[1]);
-  const limit = Number(request[2] ?? 64);
-  if (slot > 540 || limit > 64) return;
+  const { slot, limit } = request;
   return line => {
     if (line === `MC_STASH_TAKE slot=${slot} moved=0 reason=empty`) return { rejected: `个人箱槽 ${slot} 已空，未取出物品。` };
     const receipt = /^MC_STASH_TAKE slot=(\d{1,3}) id=minecraft:([a-z0-9_]+) moved=(\d{1,2})$/.exec(line);
@@ -41,9 +59,9 @@ function itemRow(text: string, marker: string): Row | null {
     displayName: m[4] === '-' ? null : m[4], enchantments: m[5] === '-' ? null : m[5] } : null;
 }
 
-// DungeonManager.rewardCommand lists pending rewards before they enter the personal stash.
+// DungeonManager.rewardCommand lists nine standard slots (0–8; copper at 8), then up to nine bonus slots (9–17).
 const pendingTrialRewards: ServerQueryDefinition = {
-  id: 'trial.rewards', argumentsSchema: noArgs, maxReplyParts: 17,
+  id: 'trial.rewards', argumentsSchema: noArgs, maxReplyParts: 18,
   description: '只读本人试炼待入箱奖励与可见物品。三个计数全零即可结束本次领奖核查；已入箱的库存另查 storage.overview。查询不耗魔力、不打开窗口。',
   command: args => args.length ? null : '/mycli arena rewards list',
   matchReply(text, args, username, parts = []) {
@@ -51,7 +69,8 @@ const pendingTrialRewards: ServerQueryDefinition = {
     const item = itemRow(text, 'MC_REWARD');
     if (item) {
       const slot = item.slot;
-      if (!integer(slot) || slot === 8 || slot > 17 || parts.some(p => object(p) && p.slot === slot)) return null;
+      if (!integer(slot) || (slot === 8 && item.id !== 'minecraft:copper_ingot') || slot > 17
+        || parts.some(p => object(p) && p.slot === slot)) return null;
       return { partial: true, data: item };
     }
     const summary = /^MC_REWARD_SUMMARY visible=(\d+) queuedBonus=(\d+) queuedPhotos=(\d+)$/.exec(text);

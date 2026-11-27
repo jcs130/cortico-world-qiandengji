@@ -4,6 +4,7 @@ import { MYMC } from '../integrations/qiandengji/cortico.ts';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {corticoContext} from './cortico-context.ts';
+import { execFileSync } from 'node:child_process';
 import browserBundle from '../src/console-client.ts';
 
 describe('current Cortico World release contract', () => {
@@ -37,6 +38,13 @@ describe('current Cortico World release contract', () => {
     expect(metadata.events.every(event=>event.type.startsWith('mymc.'))).toBe(true);
     expect(JSON.stringify(metadata)).not.toMatch(/AIza[\w-]{20}|sk-sp-[\w.-]{20}/);
   });
+  it('ships the public profile helpers imported by the compiled host adapter', () => {
+    const entry = new URL('../packages/qiandengji/dist/neutral.js', import.meta.url).href;
+    const code = `const neutral = await import(${JSON.stringify(entry)}); console.log(JSON.stringify(['mymcServerConfig','mymcServerProfiles','mymcSelectedServer'].map(key => typeof neutral[key])));`;
+    const result = execFileSync(process.execPath, ['--input-type=module', '-e', code], { encoding: 'utf8' });
+    expect(JSON.parse(result)).toEqual(['function', 'function', 'function']);
+  });
+
   it('publishes API 6 self-description and the supported Cortico version range', () => {
     const pkg = JSON.parse(readFileSync(resolve('integrations/qiandengji/package.json'), 'utf8'));
     expect(pkg.cortico.api).toBe(6);

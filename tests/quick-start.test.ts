@@ -22,6 +22,130 @@ function fixture(dataDir = '') {
   return { cfg, world, ctx, invoke, persist, restart, setConnection: (value: unknown) => { connection = value; } };
 }
 
+import { mymcServerConfig, MYMC_CONFIG_GROUP } from '../integrations/qiandengji/config.ts';
+import { corticoWorldStorage } from '../integrations/qiandengji/cortico-storage.ts';
+import { operationScopeKey } from 'agent-mc-world/client';
+
+function profileFixture() {
+  const f = fixture();
+  const profiles = {
+    tig: { label: 'TIG 1.21.11', host: 'tig.fixture.invalid', port: 25565, username: 'TigFixture', auth: 'offline', version: '1.21.11' },
+    tangerine: { label: 'Tangerine 26.2', host: 'tangerine.fixture.invalid', port: 25566, username: 'Tangerine', auth: 'offline', version: '26.2', serverPack: 'none' },
+    qiandengji: { label: 'Qiandengji', host: 'qiandengji.fixture.invalid', port: 25567, username: 'ExistingRole', auth: 'offline', version: '1.21.1',
+      serverPack: 'qiandengji', preserveLoginName: true, loginConfigFile: 'private-login-fixture' },
+  };
+  Object.assign(f.cfg, { servers: profiles });
+  return { ...f, profiles };
+}
+
+describe('operator-selected named server profiles', () => {
+  it('isolates generic packs from old top-level Qiandengji settings without mutating raw config', () => {
+    const f = profileFixture();
+    Object.assign(f.cfg, { server: 'tig', serverPack: 'qiandengji', host: 'old.fixture.invalid', username: 'OldRole', preserveLoginName: true });
+    const before = structuredClone(f.cfg), cfg = mymcServerConfig(f.cfg);
+    expect(cfg).toMatchObject({ server: 'tig', host: 'tig.fixture.invalid', username: 'TigFixture', serverPack: 'none', preserveLoginName: true });
+    expect(f.cfg).toEqual(before); expect(cfg).not.toBe(f.cfg);
+    Object.assign(f.cfg, { server: 'tangerine', viewerAssetsDir: 'old-viewer-fixture' });
+    Object.assign(f.profiles.tangerine, { viewerAssetsDir: 'tangerine-viewer-fixture', preserveLoginName: false });
+    expect(mymcServerConfig(f.cfg)).toMatchObject({ serverPack: 'none', preserveLoginName: false, viewerAssetsDir: 'tangerine-viewer-fixture' });
+    expect(f.cfg.viewerAssetsDir).toBe('old-viewer-fixture');
+    Object.assign(f.cfg, { server: 'qiandengji', preserveLoginName: false });
+    expect(mymcServerConfig(f.cfg)).toMatchObject({ serverPack: 'qiandengji', preserveLoginName: true, username: 'ExistingRole' });
+  });
+  it.each(['tig', 'tangerine', 'qiandengji'])('preflights effective %s despite empty top-level host and username', server => {
+    const f = profileFixture(); Object.assign(f.cfg, { server, serverPack: 'qiandengji' });
+    expect(f.cfg.host).toBe(''); expect(f.cfg.username).toBe('');
+    expect(() => MYMC.preflight?.({ cfg: f.cfg })).not.toThrow();
+  });
+  it('keeps web-only viewing and game voice capabilities scoped to the selected server', async () => {
+    const f = profileFixture();
+    Object.assign(f.profiles.tig, { spectatorMode: 'web', proximityVoice: { ...f.cfg.proximityVoice, enabled: false } });
+    Object.assign(f.profiles.qiandengji, { spectatorMode: 'auto', proximityVoice: { ...f.cfg.proximityVoice, enabled: true } });
+    await f.invoke('save', { server: 'tig' });
+    expect(mymcServerConfig(f.cfg)).toMatchObject({ spectatorMode: 'web', proximityVoice: { enabled: false },
+      client: { enabled: false, autoSpectate: false }, player: { enabled: false } });
+    for (const [panel, method] of [['mount', 'client.start'], ['connection', 'observer.start'], ['connection', 'player.start']])
+      await expect(f.world.console!().invoke!(panel, method, [])).rejects.toThrow('仅使用 Web');
+    expect(f.restart).not.toHaveBeenCalled();
+    await f.invoke('save', { server: 'qiandengji' });
+    expect(mymcServerConfig(f.cfg)).toMatchObject({ spectatorMode: 'auto', proximityVoice: { enabled: true } });
+    expect(await f.world.console!().invoke!('mount', 'client.start', [])).toEqual({ panel: 'mount', method: 'client.start' });
+  });
+
+  it('has a concrete optional selection default and valid schema documentation', () => {
+    expect(MYMC.defaults().server).toBe('');
+    expect(MYMC_CONFIG_GROUP.schema.properties['worlds.mymc.server']).toMatchObject({ type: 'string', 'x-hot': false });
+  });
+  it('saves only the exact selection, ignores forged connection fields, and exposes safe profile state', async () => {
+    const f = profileFixture(), before = structuredClone(f.cfg);
+    const result = await f.invoke('save', { server: 'qiandengji', address: 'forged.fixture.invalid', username: 'Intruder', auth: 'typo', serverPack: 'none', password: 'ignored' });
+    expect(f.persist).toHaveBeenCalledOnce(); expect(f.persist).toHaveBeenCalledWith({ server: 'qiandengji' });
+    expect(f.restart).not.toHaveBeenCalled(); expect(f.cfg).toEqual({ ...before, server: 'qiandengji' });
+    expect(result).toMatchObject({ mounted: false, loginName: 'ExistingRole', settings: { server: 'qiandengji', host: 'qiandengji.fixture.invalid' },
+      profiles: [{ id: 'tig' }, { id: 'tangerine' }, { id: 'qiandengji', selected: true }] });
+    expect(JSON.stringify(result)).not.toMatch(/private-login|private-password|loginConfigFile|password|hostDecisions/);
+    expect(f.profiles.qiandengji.username).toBe('ExistingRole');
+  });
+  it('reuses the mounted profile but reconnects after saving a different selection', async () => {
+    const f = profileFixture(); await f.invoke('start', { server: 'tig' }); f.setConnection({ ready: true, phase: 'online' });
+    f.persist.mockClear(); f.restart.mockClear();
+    expect(await f.invoke('start', { server: 'tig' })).toMatchObject({ alreadyConnected: true, connectedServer: 'tig' });
+    expect(f.persist).not.toHaveBeenCalled(); expect(f.restart).not.toHaveBeenCalled();
+    expect(await f.invoke('save', { server: 'tangerine' })).toMatchObject({ connectedServer: 'tig',
+      connectedSettings: { server: 'tig', host: 'tig.fixture.invalid', username: 'TigFixture' }, connectedLoginName: 'TigFixture',
+      settings: { server: 'tangerine', host: 'tangerine.fixture.invalid' } });
+    expect(f.restart).not.toHaveBeenCalled();
+    expect(await f.invoke('start', { server: 'tangerine' })).not.toHaveProperty('alreadyConnected');
+    expect(f.restart).toHaveBeenCalledOnce();
+  });
+  it('restarts the same named server when its pinned authentication policy changes', async () => {
+    const f = profileFixture(); await f.invoke('start', { server: 'tig' }); f.setConnection({ ready: true, phase: 'online' });
+    f.restart.mockClear();
+    Object.assign(f.profiles.tig, { loginConfirmation: 'mc-auth-success' });
+    expect(await f.invoke('start', { server: 'tig' })).not.toHaveProperty('alreadyConnected');
+    expect(f.restart).toHaveBeenCalledOnce();
+  });
+
+  it.each(['missing', '__proto__', 'blocked', 'invalid'])('rejects %s before persistence or interruption', async server => {
+    const f = profileFixture(); Object.assign(f.profiles, {
+      blocked: { ...f.profiles.tig, selectable: false }, invalid: { ...f.profiles.tig, host: '', username: '' },
+    });
+    const before = structuredClone(f.cfg);
+    await expect(f.invoke('start', { server })).rejects.toThrow();
+    await expect(f.invoke('save', { server })).rejects.toThrow();
+    expect(f.cfg).toEqual(before); expect(f.persist).not.toHaveBeenCalled(); expect(f.restart).not.toHaveBeenCalled();
+    expect(() => MYMC.preflight?.({ cfg: { ...f.cfg, server } })).toThrow();
+    const state: any = await f.invoke('state');
+    expect(state.profiles.filter((p: any) => ['blocked', 'invalid'].includes(p.id)).every((p: any) => p.selectable === false)).toBe(true);
+  });
+  it('clears named selection for manual input and leaves configured profiles untouched', async () => {
+    const f = profileFixture(); await f.invoke('save', { server: 'tig' }); f.persist.mockClear();
+    const profiles = structuredClone(f.profiles);
+    await f.invoke('save', { address: 'manual.fixture.invalid:25570', username: 'ManualFixture', serverPack: 'none' });
+    expect(f.cfg).toMatchObject({ server: '', host: 'manual.fixture.invalid', username: 'ManualFixture' });
+    expect(f.profiles).toEqual(profiles); expect(f.restart).not.toHaveBeenCalled();
+  });
+});
+
+describe('service-scoped World storage', () => {
+  it('uses distinct runtime directories and never auto-migrates legacy mymc data', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'world-storage-scope-'));
+    try {
+      await mkdir(join(root, 'mymc'), { recursive: true });
+      await writeFile(join(root, 'mymc/minecraft-chests.json'), 'legacy');
+      const tig = { realm: 'weak:play.simpfun.cn:42539|', account: 'offline:ag_cormy', agent: 'Fixture' };
+      const qiandengji = { realm: 'weak:192.168.3.163:25565|', account: 'offline:ag_CorMy', agent: 'Fixture' };
+      const a = corticoWorldStorage(root, tig), b = corticoWorldStorage(root, qiandengji);
+      expect(a.directory).not.toBe(b.directory);
+      expect(a.directory).toContain(`mymc-${operationScopeKey(tig).slice(0, 40)}`);
+      expect((await a.plan()).required).toBe(false);
+      await a.prepare();
+      expect(await readFile(join(root, 'mymc/minecraft-chests.json'), 'utf8')).toBe('legacy');
+      expect(await readFile(join(a.directory, '.world-storage.json'), 'utf8')).toContain('"mode": "fresh"');
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+});
+
 describe('operator quick setup through official WorldContext ports', () => {
   it('prepares a website identity without touching a live connection, then adopts only a fresh ready account',async()=>{
     const directory=await mkdtemp(join(tmpdir(),'world-portal-')),api=portalApiFixture();vi.stubGlobal('fetch',api.fetch);

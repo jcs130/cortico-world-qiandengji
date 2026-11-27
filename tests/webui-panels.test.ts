@@ -18,6 +18,85 @@ function mount(invoke: WebUiPanelContext['invoke']) {
   return { root, controller, tick: () => timers.forEach(fn => fn()) };
 }
 const flush = async () => { await Promise.resolve(); await Promise.resolve(); };
+
+function mountQuickStart(state: any) {
+  const root = document.createElement('div'), controller = new AbortController(), confirm = vi.fn(async () => true);
+  const invoke = vi.fn(async () => state), refresh = vi.fn(async () => {});
+  const h = (tag: string, cls?: string, text?: string) => {
+    const el = document.createElement(tag); if (cls) el.className = cls; if (text) el.textContent = text; return el;
+  };
+  const ctx = { root, signal: controller.signal, invoke, refresh, interval: () => ({ dispose() {} }), ui: {
+    h, confirm, msgline: () => h('div'), button: (text: string) => h('button', '', text), actions: () => h('div'),
+    input: (options: any) => { const input = h('input') as HTMLInputElement; Object.assign(input, options); return input; },
+    select: ({ options }: any) => { const select = h('select') as HTMLSelectElement;
+      options.forEach((item: any) => { const option = h('option', '', item.label) as HTMLOptionElement; option.value = item.value; select.append(option); }); return select; },
+    field: (label: string, input: HTMLElement) => { const field = h('label', '', label); field.append(input); return field; },
+    sheet: ({ title }: any) => { const el = h('section'), body = h('div'); el.append(h('h3', '', title), body); return { el, body }; },
+  } } as unknown as WebUiPanelContext;
+  bundle.panels['quick-start'].mount(ctx);
+  const button = (label: string) => Array.from(root.querySelectorAll('button')).find(button => button.textContent === label)!;
+  return { root, controller, invoke, confirm, button };
+}
+function quickState(named = true) {
+  const settings = { server: named ? 'tig' : '', host: 'tig.fixture.invalid', port: 25565, username: 'Fixture', auth: 'offline', version: '1.21.11', serverPack: 'none', viewerPort: 0 };
+  return { available: true, mounted: true, enabled: true, provider: 'mineflayer', connectedServer: named ? 'tig' : '', settings,
+    loginName: 'Fixture', connection: { ready: true, phase: 'online' }, lamps: [], links: [],
+    ...(named ? { profiles: [
+      { ...settings, id: 'tig', label: 'TIG 1.21.11', selected: true, selectable: true },
+      { ...settings, id: 'tangerine', label: 'Tangerine 26.2', host: 'tangerine.fixture.invalid', version: '26.2', selected: false, selectable: true },
+      { id: 'blocked', label: 'Disabled profile', selected: false, selectable: false },
+    ] } : {}),
+  };
+}
+describe('optional quick-start profile menu', () => {
+  it('keeps the original no-profile form and does not mutate on mount', async () => {
+    const r = mountQuickStart(quickState(false)); await flush();
+    expect(r.root.querySelectorAll('select')).toHaveLength(2); expect(r.root.textContent).not.toContain('命名服务器');
+    expect(r.invoke.mock.calls).toEqual([['state']]); r.controller.abort();
+  });
+  it('reuses the active profile without reconnect confirmation and sends only its id', async () => {
+    const r = mountQuickStart(quickState()); await flush(); r.invoke.mockClear();
+    r.button('进入已连接的游戏').click(); await flush();
+    expect(r.confirm).not.toHaveBeenCalled(); expect(r.invoke).toHaveBeenCalledWith('start', [{ server: 'tig' }]); r.controller.abort();
+  });
+  it('saves a switch without confirmation, then confirms before reconnecting the mounted profile', async () => {
+    const state = quickState(), r = mountQuickStart(state); await flush();
+    const server = r.root.querySelector('select')!; server.value = 'tangerine'; server.dispatchEvent(new Event('change'));
+    r.invoke.mockClear(); r.button('保存配置').click(); await flush();
+    expect(r.confirm).not.toHaveBeenCalled(); expect(r.invoke).toHaveBeenCalledWith('save', [{ server: 'tangerine' }]);
+    r.confirm.mockResolvedValueOnce(false); r.invoke.mockClear();
+    r.button('进入已连接的游戏').click(); await flush();
+    expect(r.confirm).toHaveBeenCalledOnce(); expect(r.invoke).not.toHaveBeenCalled(); r.controller.abort();
+  });
+  it('keeps the actual connected identity when another profile has only been saved', async () => {
+    const before = quickState();
+    const state = { ...before, connectedSettings: before.settings, connectedLoginName: 'OriginalRole', loginName: 'NextRole',
+      settings: { ...before.settings, server: 'tangerine', host: 'tangerine.fixture.invalid', username: 'NextRole' } };
+    const r = mountQuickStart(state); await flush();
+    expect(r.root.textContent).toContain('已进入游戏 · OriginalRole');
+    expect(r.root.textContent).toContain('当前连接尚未切换');
+    expect(r.root.textContent).not.toContain('已进入游戏 · NextRole');
+    r.controller.abort();
+  });
+
+  it('disables unavailable selections and clears selection on ordinary manual edits', async () => {
+    const r = mountQuickStart(quickState()); await flush(); const server = r.root.querySelector('select')!;
+    expect(server.querySelector<HTMLOptionElement>('option[value="blocked"]')!.disabled).toBe(true);
+    server.value = 'blocked'; server.dispatchEvent(new Event('change'));
+    expect(r.button('进入已连接的游戏').disabled).toBe(true); expect(r.button('保存配置').disabled).toBe(true);
+    const address = r.root.querySelector<HTMLInputElement>('input[placeholder="例如 mc.example.com:25565"]')!;
+    address.value = 'manual.fixture.invalid:25565'; address.dispatchEvent(new Event('input'));
+    expect(server.value).toBe(''); expect(r.button('保存配置').disabled).toBe(false);
+    r.invoke.mockClear(); r.button('保存配置').click(); await flush();
+    expect(r.invoke).toHaveBeenCalledWith('save', [expect.objectContaining({ server: '', address: 'manual.fixture.invalid:25565' })]); r.controller.abort();
+  });
+  it('renders an unknown active selection as unavailable rather than falling back to another profile', async () => {
+    const state = quickState(); state.settings.server = 'missing';
+    const r = mountQuickStart(state); await flush();
+    expect(r.root.querySelector('select')!.value).toBe('missing'); expect(r.button('进入已连接的游戏').disabled).toBe(true);
+    r.controller.abort();
+  });
+});
 describe('published WebUI panel coverage and practice lifecycle', () => {
   it('renders enabled/empty and disabled states without starting a model or a game action', async () => {
     const invoke = vi.fn().mockResolvedValueOnce({ enabled: true, jobs: [] }).mockResolvedValue({ enabled: false, jobs: [] });

@@ -11,7 +11,8 @@ import {readServerGuide} from '../integrations/qiandengji/server-guide.ts';
 import {TacticalMinecraftWorld} from 'agent-mc-world/tactics';
 import {inspectToolCall} from 'agent-mc-world/contracts';
 import {nullLogger} from 'agent-mc-world/client';
-import {observedEntityIdentity,observedEntityLabel} from 'agent-mc-world/extension';
+import {installWorldIdentity,observedEntityIdentity,observedEntityLabel} from 'agent-mc-world/extension';
+import {executionFeedbackContext} from 'agent-mc-world/context';
 import {Vec3} from 'vec3';
 const owner='11111111-1111-4111-8111-111111111111',id='22222222-2222-4222-8222-222222222222';
 const at='2026-11-06T14:25:34Z';
@@ -33,6 +34,76 @@ it('preserves server follow thresholds with their own timestamp without refreshi
 });
 const context={maidId:id,ownerId:owner,name:'同行者',lifeState:'alive',loaded:true,health:20,maxHealth:20,taskId:'touhou_little_maid:idle',dialogueMode:'native_model'};
 const reply=(action='context',data:Record<string,unknown>=context,requestId='query-1',sampledAt=at)=>({schema:1 as const,protocol:'qiandengji-maids/v1' as const,recipientUuid:owner,action,requestId,ok:true,sampledAt,data});
+function maidSpeechFixture(){
+  const engine=new QiandengjiEngine({cfg:structuredClone(MYMC_DEFAULTS) as never});
+  const bot=Object.assign(new EventEmitter(),{_client:Object.assign(new EventEmitter(),{state:'play'}),
+    entities:{2:{uuid:id,isValid:true}},game:{dimension:'overworld'}});
+  const dispose=installWorldIdentity(bot as never);
+  bot._client.emit('login',{worldState:{name:'trial:ice'}});
+  const pushEvent=vi.fn(async()=>{});
+  Object.assign(engine,{host:{pushEvent,log:nullLogger()},bridge:{bot,connected:true}});
+  (engine as any).observeMaidReply(reply());
+  pushEvent.mockClear();
+  const caption='[MC 系统] [附近·女仆] 同行者：那只骷髅贴得真近，留两步给我转身呀！';
+  const emit=(text=caption,provenance=executionFeedbackContext(text))=>(engine as any).emit('minecraft.chat',text,false,
+    {trigger:'piggyback',meta:{executionFeedback:provenance}});
+  const structured=(requestId:string)=>(engine as any).observeMaidReply(reply('chat-result',{maidId:id,operationId:requestId,status:'replied',
+    observation:{maidId:id,conversation:'nearby_visitor',reply:'那只骷髅贴得真近，留两步给我转身呀！'}},requestId));
+  return {engine,bot,pushEvent,emit,structured,dispose};
+}
+
+it('carries a genuine nearby caption from the active connection as attributed text, not ASR or action feedback',async()=>{
+  vi.useFakeTimers();
+  const f=maidSpeechFixture();
+  try{
+    f.emit();
+    expect(f.pushEvent).toHaveBeenCalledTimes(0);
+    await vi.advanceTimersByTimeAsync(400);
+    expect(f.pushEvent).toHaveBeenCalledTimes(1);
+    expect(f.pushEvent).toHaveBeenCalledWith(expect.objectContaining({
+      senderKey:`maid:${id}`,
+      meta:expect.objectContaining({from:'同行者',senderUuid:id,senderKind:'companion',
+        channel:'public',chatChannel:'nearby',chatRoutingSource:'native-maid-scene',
+        body:'那只骷髅贴得真近，留两步给我转身呀！',deliveryWorldKey:'trial:ice'}),
+    }),expect.anything());
+    const [event]=f.pushEvent.mock.calls[0] as unknown as [{meta:Record<string,unknown>}];
+    expect(event.meta).not.toHaveProperty('utteranceId');
+    expect(event.meta).not.toHaveProperty('executionFeedback');
+  }finally{f.dispose();vi.useRealTimers();}
+});
+
+it.each(['caption-first','typed-first','typed-late'])('forwards one native utterance when both receipt and caption arrive %s',async order=>{
+  vi.useFakeTimers();
+  const f=maidSpeechFixture();
+  try{
+    if(order==='typed-first')f.structured('speech-001');
+    f.emit();
+    if(order==='typed-late')await vi.advanceTimersByTimeAsync(800);
+    if(order!=='typed-first')f.structured('speech-001');
+    await vi.advanceTimersByTimeAsync(450);
+    expect(f.pushEvent).toHaveBeenCalledTimes(1);
+    const [event]=f.pushEvent.mock.calls[0] as unknown as [{meta:Record<string,unknown>}];
+    expect(event.meta.chatRoutingSource).toBe(order==='typed-late'?'native-maid-scene':'native-maid-reply');
+  }finally{f.dispose();vi.useRealTimers();}
+});
+
+it('does not promote an untrusted or unloaded speaker caption, or forward one after changing worlds',async()=>{
+  vi.useFakeTimers();
+  const f=maidSpeechFixture();
+  try{
+    f.emit(undefined,executionFeedbackContext('another original'));
+    f.bot.entities[2].isValid=false;
+    f.emit();
+    expect(f.pushEvent.mock.calls).toEqual(Array.from({length:2},()=>[expect.objectContaining({
+      senderKey:'minecraft',meta:expect.objectContaining({channel:'system'}),
+    }),expect.anything()]));
+    f.bot.entities[2].isValid=true;
+    f.emit();
+    f.bot._client.emit('respawn',{worldState:{name:'trial:desert'}});
+    await vi.advanceTimersByTimeAsync(500);
+    expect(f.pushEvent).toHaveBeenCalledTimes(2);
+  }finally{f.dispose();vi.useRealTimers();}
+});
 it('joins current companion perception by UUID and invalidates pre-teleport geometry without inferring absence',()=>{
   const state=new MaidState();state.observe(reply('context',{...context,position:[1,64,2],dimension:'minecraft:overworld'}));
   const now=Date.parse(at)+1000;state.decisionSummary(now,[],'old-place');

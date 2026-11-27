@@ -1,17 +1,17 @@
 {
-  "version": "0.5.7-rc.160-preview.127.pack.1",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.127.pack.1.tgz",
-  "sha256": "3561e405a2de798d0e24742723cef1d0331008eaca8602bd9493a86a7ebeb928",
+  "version": "0.5.7-rc.160-preview.142",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.142-865cd324.tgz",
+  "sha256": "865cd32411aae98b83a7a16b490b032df0203e8239a86525c2966aa5f5395892",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "78ef6df6c7dd1407bf138477b8315859d383b46c",
+  "sourceCommit": "477ac37bc80566e51e8581434202a4716aee7fe6",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
   "viewerIncluded": false,
   "viewer": {
-    "mode": "existing-external-assets-preserved"
+    "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Pin the profile-scoped guide and authenticated server-ready extension hook."
+  "rebuildNote": "Integrate the scoped profiles, inventory, interaction and feedback contracts."
 }

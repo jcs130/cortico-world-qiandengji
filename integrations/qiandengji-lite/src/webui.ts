@@ -1,5 +1,4 @@
 import type { WebUiPanelContext } from 'cortico/web/shared/client-panel.ts';
-import {logPanel} from './upstream/webui/log.ts';
 import {newAgentUsername} from './names.ts';
 import './login.css';
 
@@ -86,4 +85,39 @@ export function mountClient(ctx:WebUiPanelContext){
   const accounts=document.createElement('p');accounts.textContent='真人玩家使用自己的账号；观战账号使用 xxx_eye，旁观权限由服务器分配。Agent World 和图形客户端请使用不同账号同时在线。';
   ctx.root.append(heading,intro,download,accounts);
 }
-export default {panels:{login:{mount:mountLogin},client:{mount:mountClient},log:logPanel}};
+// Render the shared World's public incremental log port; no official World UI source is copied.
+export function mountLog(ctx:WebUiPanelContext){
+  const heading=document.createElement('h3');heading.textContent='游戏日志';
+  const controls=document.createElement('div'),count=document.createElement('p'),output=document.createElement('pre');
+  output.style.maxHeight='320px';output.style.overflow='auto';output.textContent='等待游戏日志';
+  const hidden=new Set<string>();
+  type Entry={seq:number;ts:string;lane:string;msg:string;taskId?:number;durMs?:number};
+  let entries:Entry[]=[],cursor=0,busy=false;
+  const redraw=()=>{
+    const shown=entries.filter(entry=>!hidden.has(entry.lane));count.textContent=`${shown.length} 条日志，隐藏 ${hidden.size} 个泳道`;
+    output.textContent=shown.map(entry=>`[${entry.ts}] ${entry.lane}${entry.taskId?` #${entry.taskId}`:''} | ${entry.msg}${entry.durMs===undefined?'':` (${entry.durMs}ms)`}`).join('\n')||'等待游戏日志';
+  };
+  for(const lane of ['tool','event','task','skill','craft','inventory','path','body','reflex','combat','link','world']){
+    const label=document.createElement('label'),box=document.createElement('input');box.type='checkbox';box.checked=true;
+    label.append(box,document.createTextNode(lane));controls.append(label);
+    box.addEventListener('change',()=>{if(box.checked)hidden.delete(lane);else hidden.add(lane);redraw();},{signal:ctx.signal});
+  }
+  const end=document.createElement('button');end.textContent='滚动到底部';controls.append(end);
+  end.addEventListener('click',()=>{output.scrollTop=output.scrollHeight;},{signal:ctx.signal});
+  ctx.root.append(heading,controls,count,output);
+  const poll=async()=>{
+    if(busy||ctx.signal.aborted)return;busy=true;
+    try{
+      const value=await ctx.invoke<{entries?:Entry[]}>('entries',[cursor]);if(ctx.signal.aborted)return;
+      const fresh=(Array.isArray(value?.entries)?value.entries:[]).filter(entry=>Number.isFinite(entry.seq)&&entry.seq>cursor
+        &&typeof entry.ts==='string'&&typeof entry.lane==='string'&&typeof entry.msg==='string');
+      const atEnd=output.scrollHeight-output.scrollTop-output.clientHeight<40;
+      for(const entry of fresh)cursor=Math.max(cursor,entry.seq);
+      entries=entries.concat(fresh.map(entry=>({...entry,msg:/\/(?:login|l|register|reg|changepassword|changepass|unregister)(?:\s|$)|\b(?:password|credentialFile|credentialEnv|gamePassword|apiKey|token)\b/i.test(entry.msg)?'[私密认证内容已隐藏]':entry.msg}))).slice(-2000);
+      redraw();if(atEnd)output.scrollTop=output.scrollHeight;
+    }catch{/* Retry the read-only log port next tick without displaying private errors. */}
+    finally{busy=false;}
+  };
+  ctx.interval(()=>{void poll();},2000);void poll();
+}
+export default {panels:{login:{mount:mountLogin},client:{mount:mountClient},log:{mount:mountLog}}};

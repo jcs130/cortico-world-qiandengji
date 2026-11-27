@@ -43,6 +43,21 @@ export class ChatPolicyState {
     return p.defaultChannel==='nearby'?{channel:'nearby',scope:'same-world-range',radius:p.nearby.radius,source:'server-policy',observedAt:p.observedAt}
       :{channel:'server-default',scope:p.defaultChannel==='server'?'server':'unknown',source:'server-policy',observedAt:p.observedAt};
   }
+  /** This server's rendered relay carries a display name, not a packet sender. */
+  nearbyRelay(text: string): { displayName: string; body: string; shoutPrefix: string; radius: number } | null {
+    const policy = this.value;
+    if (!policy || policy.defaultChannel !== 'nearby' || text.length > 2048 || /[\r\n]/u.test(text)) return null;
+    const line = text.replace(/§[0-9a-fk-orx]/gi, '');
+    const match = /^\[附近\]\s+(?:\[[^\]\r\n]{1,80}\]\s+)?([\p{L}\p{N}_. -]{1,32})\s*[:：]\s*(\S.*)$/u.exec(line);
+    if (!match) return null;
+    const displayName = match[1].trim();
+    if (!/[\p{L}\p{N}_]/u.test(displayName)) return null;
+    return { displayName, body: match[2], shoutPrefix: policy.shout.prefix, radius: policy.nearby.radius };
+  }
+  nearbyRelayResponse(worldKey: string | null) {
+    return worldKey && this.value?.defaultChannel === 'nearby'
+      ? { worldKey, shoutPrefix: this.value.shout.prefix, channel: 'nearby' as const } : null;
+  }
   brief():string {
     const p=this.value;if(!p)return this.unknownAt?'[聊天频道服务端观测] '+this.unknownAt+'；当前频道提供方或范围未知，不沿用旧范围；未自动改用喊话或私聊。':'';
     const permission=(value:boolean|null)=>value===true?'本人已获权限':value===false?'本人无权限':'本人权限未知';

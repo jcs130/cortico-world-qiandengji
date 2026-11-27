@@ -1,5 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import { ServerQueryLane } from 'agent-mc-world/extension';
+import { MYMC_DEFAULTS } from '../integrations/qiandengji/config.ts';
+import { QiandengjiEngine } from '../integrations/qiandengji/engine/world.ts';
 import { STORAGE_TRADE_QUERIES as defs, stashTakeArrival } from '../integrations/qiandengji/engine/storage-trade-query.ts';
 it('matches only the issued stash transfer slot, quantity and exact server reply shape', () => {
   const match = stashTakeArrival('/mycli arena stash take 92 2')!;
@@ -10,7 +12,45 @@ it('matches only the issued stash transfer slot, quantity and exact server reply
     '<player> MC_STASH_TAKE slot=92 id=minecraft:iron_helmet moved=1', 'MC_STORAGE_MAGIC id=personal_stash mana=2']) expect(match(wrong)).toBeNull();
   for (const command of ['hello', '/mycli arena stash list 2', '/mycli arena stash putslot 25 1',
     '/mycli arena stash take 541', '/mycli arena stash take 92 65']) expect(stashTakeArrival(command)).toBeUndefined();
+  expect(stashTakeArrival('/MYCLI arena stash take +0092 02')?.('MC_STASH_TAKE slot=92 id=minecraft:iron_helmet moved=2'))
+    .toEqual({ item: 'iron_helmet', moved: 2 });
 });
+
+it('rejects invalid stash transfers and wrong tool routing without inserting their batch', async () => {
+  class OfflineEngine extends QiandengjiEngine {
+    protected override createBridge(): ReturnType<QiandengjiEngine['createBridge']> {
+      return { start: vi.fn(), stop: vi.fn() } as unknown as ReturnType<QiandengjiEngine['createBridge']>;
+    }
+  }
+  const cfg = structuredClone(MYMC_DEFAULTS);
+  cfg.client.enabled = false;
+  cfg.player.enabled = false;
+  const engine = new OfflineEngine({ cfg });
+  const log = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), emit: vi.fn() };
+  const ctx = { role: 'main' as const, log: log as never };
+  await engine.start({ log } as never);
+  try {
+    const tools = engine.tools();
+    const submit = tools.find(tool => tool.name === 'mc_do')!.handler;
+    const queue = tools.find(tool => tool.name === 'mc_queue')!.handler;
+    const before = await queue({}, ctx);
+    const badCommands = ['iron_leggings', 'arrows', '0', '541', '92 0', '92 65', '92 2 extra', ''];
+    for (const suffix of badCommands) {
+      const result = await submit({ queue: 'replace', steps: [
+        { skill: 'chat', text: '/mycli arena stash list 2' },
+        { skill: 'chat', text: `/mycli arena stash take ${suffix}`.trim() },
+      ] }, ctx);
+      expect(result).toMatchObject({ failed: true, data: { reason: 'extension.admission', completed: 0, goal_completed: false },
+        meta: { admission: { accepted: false } } });
+      expect(result).toHaveProperty('text', expect.stringContaining('第 2 步未发送'));
+      expect(result).toHaveProperty('text', expect.stringContaining('storage.stash'));
+    }
+    const misrouted = await submit({ steps: [{ skill: 'server_travel', command: '/mycli arena stash take 92 1', at: [10, 64, 10] }] }, ctx);
+    expect(misrouted).toHaveProperty('text', expect.stringContaining('用 chat.text'));
+    expect(await queue({}, ctx)).toEqual(before);
+  } finally { await engine.stop(); }
+});
+
 const q = (id: string) => defs.find(d => d.id === id)!;
 const setup = (id: string, args: string[] = []) => {
   const terminal = vi.fn(), lane = new ServerQueryLane({ onTerminal: terminal });
@@ -46,6 +86,30 @@ it('separates visible stacks from total queued bonus items and photos', () => {
   expect(match('MC_REWARD_SUMMARY visible=10 queuedBonus=12 queuedPhotos=0',shown)).toMatchObject({
     ok:true,data:{hasPending:true,visible:10,queuedBonus:12,items:shown},
   });
+});
+
+it('uses the native copper slot for both partial and fully populated reward pages', () => {
+  const copper = 'MC_REWARD slot=8 id=minecraft:copper_ingot count=4 name=- enchants=-';
+  const rewardRows = ['emerald', 'iron_ingot', 'bread', 'experience_bottle', 'golden_apple', 'lapis_lazuli', 'arrow', 'diamond']
+    .map((item, slot) => `MC_REWARD slot=${slot} id=minecraft:${item} count=1 name=- enchants=-`);
+  const r = setup('trial.rewards');
+  try {
+    for (const line of rewardRows.slice(0, 3)) expect(r.receive(line)).toBe(true);
+    // Live c2756815/16. The terminal row has four visible stacks, including slot 8.
+    expect(r.receive(copper)).toBe(true);
+    expect(r.receive(copper)).toBe(false);
+    expect(r.receive('MC_REWARD_SUMMARY visible=4 queuedBonus=0 queuedPhotos=0')).toBe(true);
+    expect(r.read().data).toMatchObject({ phase: 'replied', reply: { data: { visible: 4,
+      items: expect.arrayContaining([{ slot: 8, id: 'minecraft:copper_ingot', count: 4, displayName: null, enchantments: null }]) } } });
+  } finally { r.close(); }
+
+  const full = setup('trial.rewards');
+  try {
+    const bonusRows = Array.from({ length: 9 }, (_, i) => row(9 + i).replace('MC_STASH ', 'MC_REWARD '));
+    for (const line of [...rewardRows, copper, ...bonusRows]) expect(full.receive(line)).toBe(true);
+    expect(full.receive('MC_REWARD_SUMMARY visible=18 queuedBonus=10 queuedPhotos=0')).toBe(true);
+    expect(full.read().data).toMatchObject({ phase: 'replied', reply: { data: { visible: 18, queuedBonus: 10 } } });
+  } finally { full.close(); }
 });
 const econ = (action: string, rest = {}) => 'MC_ARENA_ECONOMY ' + JSON.stringify({ schemaVersion: 1,
   requestId: 'server-batch-id', action, queryOnly: true, success: true, balance: 52, currency: '金币', pending: false, ...rest });

@@ -1,53 +1,95 @@
-import {describe,it,expect} from 'vitest';
-import {EventEmitter} from 'node:events';
-import {mkdtemp,writeFile,rm} from 'node:fs/promises';
+import {describe,it,expect,vi,afterEach} from 'vitest';
+import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import type {NativeBot} from '../src/connection.ts';
-const runtimeEntry='../dist/connection.js';
-const {attachLiteConnection}=await import(runtimeEntry) as typeof import('../src/connection.ts');
-import {Credentials,accountScope,privateJson} from '../src/credentials.ts';
-import {publicConnection,sensitiveCommand} from '../src/extra-tools.ts';
-
-async function fixture(){
-  const directory=await mkdtemp(join(tmpdir(),'qiandengji-lite-fixture-'));
-  const file=join(directory,'credential');await writeFile(file,'fixture-password',{mode:0o600});
-  const bindingsFile=join(directory,'bindings.json');
-  await writeFile(bindingsFile,JSON.stringify({enabled:true,accounts:[{server:'fixture.invalid:25565',username:'fixture_player',command:'login',credentialFile:file,credentialFormat:'file',timeoutMs:1000}]}),{mode:0o600});
-  const bot=new EventEmitter() as NativeBot;let sent=0,readyCount=0,loaded=true,correctLogin=false;
-  bot.chat=text=>{sent++;correctLogin=text==='/login fixture-password';};bot.entity={position:{x:0,y:64,z:0}};bot.world={getColumnAt:()=>loaded?{}:null};bot._client=new EventEmitter();bot.players={fixture_player:{}};
-  const options={server:'fixture.invalid:25565',username:'fixture_player',bindingsFile,statusFile:join(directory,'status.json'),instanceId:'fixture-instance',onReady:()=>{readyCount++;}};
-  const login=attachLiteConnection(bot,options);
-  return {bot,options,login,get sent(){return sent;},get correctLogin(){return correctLogin;},get readyCount(){return readyCount;},setLoaded:(value:boolean)=>{loaded=value;},
-    message:(text:string,position='system')=>bot.emit('message',{toString:()=>text},position),
-    async close(){login.stop();await rm(directory,{recursive:true,force:true});}};
-}
-const settle=async(fn:()=>boolean)=>{for(let i=0;i<100&&!fn();i++)await new Promise(r=>setTimeout(r,10));expect(fn()).toBe(true);};
-describe('native connection authentication',()=>{
-  it('sends one private login before spawn and before any ordinary work queue',async()=>{
-    const r=await fixture();try{r.message('MC_AUTH_LOGIN');r.message('MC_AUTH_LOGIN');await settle(()=>r.sent===1);expect(r.login.snapshot().stage).toBe('submitted');expect(r.login.ready()).toBe(false);expect(r.readyCount).toBe(0);}finally{await r.close();}
+import {LiteConnection,publicConnection,type ConnectionScope} from '../src/connection.ts';
+import {Credentials,accountScope} from '../src/credentials.ts';
+import {sensitiveCommand,publicLogEntries} from '../src/extra-tools.ts';
+const scope:ConnectionScope={host:'fixture.invalid',port:25565,username:'fixture_player',instanceId:'current'};
+const receipt=(patch:Record<string,unknown>={})=>({server:{host:scope.host,port:scope.port,username:scope.username},
+  connection:{ready:true,worldReady:true,serverLogin:{authSuccessReceived:true,stage:'authenticated'},...patch}});
+afterEach(()=>vi.useRealTimers());
+describe('public shared World connection readiness',()=>{
+  it.each([[false,true,true],[true,false,true],[true,true,false],[true,true,true]])('requires ready=%s worldReady=%s authSuccess=%s',(ready,worldReady,success)=>{
+    expect(publicConnection(receipt({ready,worldReady,serverLogin:{authSuccessReceived:success}}),scope,1000,1000).ready).toBe(ready&&worldReady&&success);
   });
-  it('requires both current connection MC_AUTH_SUCCESS and loaded native world',async()=>{
-    const r=await fixture();try{r.message('MC_AUTH_SUCCESS');expect(r.login.ready()).toBe(false);r.setLoaded(false);r.bot.emit('spawn');expect(r.login.ready()).toBe(false);r.setLoaded(true);r.bot.emit('chunkColumnLoad');expect(r.login.ready()).toBe(true);expect(r.readyCount).toBe(1);r.bot.emit('chunkColumnLoad');expect(r.readyCount).toBe(1);}finally{await r.close();}
+  it('rejects missing public readings even if an old native journal claims ready',()=>{
+    expect(publicConnection({schema:'qiandengji-lite-connection/v1',ready:true,worldReady:true,authSuccessReceived:true},scope,1000,1000).ready).toBe(false);
+    expect(publicConnection(receipt({worldReady:undefined}),scope,1000,1000).ready).toBe(false);
+    expect(publicConnection(receipt({serverLogin:{authSuccessReceived:undefined}}),scope,1000,1000).ready).toBe(false);
   });
-  it('does not treat native spawn as authentication',async()=>{const r=await fixture();try{r.bot.emit('spawn');expect(r.login.ready()).toBe(false);expect(r.readyCount).toBe(0);}finally{await r.close();}});
-  it('accepts a genuine translated server success after session authorization without resubmitting a password',async()=>{const r=await fixture();r.login.stop();const next=attachLiteConnection(r.bot,{...r.options,bindingsFile:''});try{r.bot.emit('spawn');expect(next.ready()).toBe(false);r.message('[MC_AUTH_SUCCESS] 登录成功，欢迎回来。');expect(next.ready()).toBe(true);expect(r.sent).toBe(0);expect(next.snapshot().failure).toBe(null);}finally{next.stop();await r.close();}});
-  it('settles a late real success on the same connection after confirmation timeout without replay',async()=>{const r=await fixture();try{r.message('MC_AUTH_LOGIN');await settle(()=>r.sent===1);await new Promise(resolve=>setTimeout(resolve,1050));expect(r.login.snapshot().stage).toBe('retrying');r.message('MC_AUTH_SUCCESS');r.bot.emit('spawn');expect(r.login.ready()).toBe(true);expect(r.sent).toBe(1);}finally{await r.close();}});
-  it.each(['Successful login!','MC_AUTH_SUCCESS_EXTRA','MC_AUTH_STATE {"authorized":true,"status":"authenticated"}','<other_player> MC_AUTH_SUCCESS','MC_AUTH_SUCCESS {"username":"other_player"}'])('rejects a non-authoritative success: %s',async text=>{const r=await fixture();try{r.bot.emit('spawn');r.message(text);expect(r.login.ready()).toBe(false);expect(r.readyCount).toBe(0);}finally{await r.close();}});
-  it('rejects player-channel auth prompts and success messages',async()=>{const r=await fixture();try{r.bot.emit('spawn');r.message('MC_AUTH_LOGIN','chat');r.message('MC_AUTH_SUCCESS','chat');await new Promise(resolve=>setTimeout(resolve,20));expect(r.sent).toBe(0);expect(r.login.ready()).toBe(false);}finally{await r.close();}});
-  it('preserves a rejected password as failure rather than ready',async()=>{const r=await fixture();try{r.message('MC_AUTH_LOGIN');await settle(()=>r.sent===1);r.message('MC_AUTH_BAD_PASSWORD');r.bot.emit('spawn');expect(r.login.snapshot().reason).toBe('server-rejected');expect(r.login.ready()).toBe(false);}finally{await r.close();}});
-  it('clears success on disconnection and requires a fresh receipt for a new connection',async()=>{const r=await fixture();try{r.message('MC_AUTH_SUCCESS');r.bot.emit('spawn');expect(r.login.ready()).toBe(true);r.bot.emit('end');expect(r.login.ready()).toBe(false);const next=attachLiteConnection(r.bot,r.options);try{r.bot.emit('spawn');expect(next.ready()).toBe(false);expect(next.snapshot().epoch).not.toBe(r.login.snapshot().epoch);}finally{next.stop();}}finally{await r.close();}});
-  it('revokes the body on a current native authorization denial',async()=>{const r=await fixture();try{r.message('MC_AUTH_SUCCESS');r.bot.emit('spawn');expect(r.login.ready()).toBe(true);r.message('MC_AUTH_DENIED');expect(r.login.ready()).toBe(false);}finally{await r.close();}});
-  it('does not expose the submitted command or credential in state files',async()=>{const r=await fixture();try{r.message('MC_AUTH_LOGIN');await settle(()=>r.sent===1);const state=JSON.stringify(await privateJson(r.options.statusFile));expect(state).not.toContain('fixture-password');expect(state).not.toContain('/login ');expect(state).not.toContain('credentialFile');}finally{await r.close();}});
-  it('reports a confirmation timeout as unknown outcome rather than wrong password',async()=>{const r=await fixture();try{r.message('MC_AUTH_LOGIN');await settle(()=>r.sent===1);await new Promise(resolve=>setTimeout(resolve,1050));expect(r.login.snapshot().stage).toBe('retrying');expect(r.login.snapshot().reason).toBe('confirmation-timeout');expect(r.login.snapshot().failure).not.toContain('错误密码');}finally{await r.close();}});
-  it('uses the stored private credential on a new connection without copying it into bindings',async()=>{const r=await fixture();let next:ReturnType<typeof attachLiteConnection>|undefined;try{r.login.stop();const store=new Credentials(join(r.options.bindingsFile,'..'));await store.save({host:'fixture.invalid',port:25565,username:'fixture_player'},'fixture-password');const binding=JSON.stringify(await privateJson(store.bindingFile));expect(binding).not.toContain('fixture-password');next=attachLiteConnection(r.bot,r.options);r.message('MC_AUTH_LOGIN');await settle(()=>r.sent===1);expect(r.correctLogin).toBe(true);expect(next.snapshot().stage).toBe('submitted');}finally{next?.stop();await r.close();}},15000);
+  it.each([{host:'foreign.invalid'},{port:25566},{username:'another'},{username:null}])('rejects foreign or unknown server identity %j',patch=>{
+    const value=receipt();Object.assign(value.server,patch);
+    expect(publicConnection(value,scope,1000,1000).ready).toBe(false);
+  });
+  it('rejects expired, future or invalid observations',()=>{
+    for(const sampledAt of [0,8000,NaN])expect(publicConnection(receipt(),scope,sampledAt,6000).ready).toBe(false);
+  });
+  it('does not expose arbitrary secrets, raw diagnostic messages or invented RPG skills',()=>{
+    const value={...receipt({serverLogin:{authSuccessReceived:true,reason:'fixture-password',stage:'/login fixture-password'}}),password:'fixture-password',
+      profile:{level:99,skillIds:['invented'],password:'fixture-password'},skills:{secret:'fixture-password'},playerRoster:['guessed']};
+    const result=publicConnection(value,scope,1000,1000);
+    expect(result).toMatchObject({ready:true,profile:null,skills:null,playerRoster:[]});
+    expect(JSON.stringify(result)).not.toContain('fixture-password');
+  });
+  it('a successful start alone never establishes readiness; stop clears the timer and cache',async()=>{
+    vi.useFakeTimers();const read=vi.fn(async()=>receipt({worldReady:false}));
+    const connection=new LiteConnection({target:()=>scope,instanceId:scope.instanceId,read});
+    connection.start();await connection.refresh();expect(connection.snapshot().ready).toBe(false);
+    read.mockResolvedValue(receipt());await connection.refresh();expect(connection.snapshot().ready).toBe(true);
+    connection.stop();expect(connection.snapshot()).toMatchObject({ready:false,stage:'closed'});
+    const count=read.mock.calls.length;await vi.advanceTimersByTimeAsync(10000);expect(read).toHaveBeenCalledTimes(count);expect(vi.getTimerCount()).toBe(0);
+  });
+  it('does not call an onboarding refresh from a stopped timer generation',async()=>{
+    vi.useFakeTimers();let release!:(value:unknown)=>void;
+    const refreshed=vi.fn(),connection=new LiteConnection({target:()=>scope,instanceId:scope.instanceId,
+      read:()=>new Promise(resolve=>{release=resolve;})});
+    connection.start(refreshed);const pending=connection.refresh();connection.stop();release(receipt());await pending;
+    await vi.advanceTimersByTimeAsync(1000);expect(refreshed).not.toHaveBeenCalled();expect(connection.snapshot().ready).toBe(false);
+  });
+  it('invalidates the cache when host, port or account changes and on expiry',async()=>{
+    let target={...scope},now=1000;
+    const connection=new LiteConnection({target:()=>target,instanceId:scope.instanceId,read:async()=>receipt(),now:()=>now});
+    connection.start();await connection.refresh();expect(connection.snapshot().ready).toBe(true);
+    for(const patch of [{host:'other.invalid'},{port:25566},{username:'other'}]){target={...scope,...patch};expect(connection.snapshot().ready).toBe(false);}
+    target={...scope};now=7001;expect(connection.snapshot().ready).toBe(false);connection.stop();
+  });
+  it('ignores a pending result after stop, restart, instance replacement or scope change',async()=>{
+    let release!:(value:unknown)=>void,target={...scope};
+    const read=vi.fn(()=>new Promise<unknown>(resolve=>{release=resolve;}));
+    const previous=new LiteConnection({target:()=>target,instanceId:'previous',read});
+    previous.start();const pending=previous.refresh();previous.stop();release(receipt());await pending;expect(previous.snapshot().ready).toBe(false);
+    const current=new LiteConnection({target:()=>target,instanceId:'current',read:async()=>receipt({worldReady:false})});
+    current.start();await current.refresh();expect(current.snapshot()).toMatchObject({instanceId:'current',ready:false});current.stop();
+    previous.start();const old=previous.refresh(),first=release;previous.stop();previous.start();const fresh=previous.refresh(),second=release;
+    first(receipt());await old;expect(previous.snapshot().ready).toBe(false);
+    target={...scope,username:'other'};second(receipt());await fresh;expect(previous.snapshot().ready).toBe(false);previous.stop();
+  });
+  it('does not rejuvenate a slow RPC and redacts a private read error',async()=>{
+    let now=1000,release!:(value:unknown)=>void;
+    const connection=new LiteConnection({target:()=>scope,instanceId:scope.instanceId,now:()=>now,
+      read:()=>new Promise(resolve=>{release=resolve;})});
+    connection.start();const pending=connection.refresh();now=7000;release(receipt());await pending;expect(connection.snapshot().ready).toBe(false);connection.stop();
+    const failed=new LiteConnection({target:()=>scope,instanceId:scope.instanceId,read:async()=>{throw Error('/login fixture-private-password');}});
+    failed.start();expect(JSON.stringify(await failed.refresh())).not.toContain('fixture-private-password');failed.stop();
+  });
 });
-describe('account scope and information',()=>{
-  it('separates server, port and role credentials',()=>{const a=accountScope({host:'fixture.invalid',port:25565,username:'fixture_player'});expect(accountScope({...a,port:25566}).key).not.toBe(a.key);expect(accountScope({...a,username:'another_player'}).key).not.toBe(a.key);expect(accountScope({...a,host:'other.invalid'}).key).not.toBe(a.key);});
-  it('rejects unsafe credentials and never writes them into the account binding',async()=>{const directory=await mkdtemp(join(tmpdir(),'qiandengji-lite-secret-'));try{const store=new Credentials(directory);await expect(store.save({host:'fixture.invalid',port:25565,username:'fixture_player'},'bad\npassword')).rejects.toThrow();expect((await store.state({host:'fixture.invalid',port:25565,username:'fixture_player'})).passwordSet).toBe(false);}finally{await rm(directory,{recursive:true,force:true});}});
-  it('blocks credential commands but preserves ordinary public chat',()=>{expect(sensitiveCommand({steps:[{skill:'chat',text:'/login secret'}]})).toBe(true);expect(sensitiveCommand({steps:[{skill:'chat',text:'一起组队吧'}]})).toBe(false);});
-  it('rejects a foreign or stale connection even when it claims ready',()=>{const scope={server:'fixture.invalid:25565',username:'fixture_player'},state={schema:'qiandengji-lite-connection/v1',...scope,at:new Date().toISOString(),ready:true};expect(publicConnection({...state,username:'another'},scope).ready).toBe(false);expect(publicConnection({...state,at:new Date(Date.now()-6000).toISOString()},scope).ready).toBe(false);});
-  it('drops stale RPG observations while keeping current authentication',()=>{const scope={server:'fixture.invalid:25565',username:'fixture_player'},state={schema:'qiandengji-lite-connection/v1',...scope,at:new Date().toISOString(),ready:true,profile:{at:new Date(Date.now()-16000).toISOString(),value:{level:99}}};expect(publicConnection(state,scope).profile).toBe(null);});
-  it('does not expose arbitrary fields from the status journal',()=>{const scope={server:'fixture.invalid:25565',username:'fixture_player'},state={schema:'qiandengji-lite-connection/v1',...scope,at:new Date().toISOString(),ready:true,authSuccessReceived:false,worldReady:true,password:'fixture-private'};const result=publicConnection(state,scope);expect(result.ready).toBe(false);expect(JSON.stringify(result)).not.toContain('fixture-private');});
-  it('rejects a journal from the previous World instance',()=>{const scope={server:'fixture.invalid:25565',username:'fixture_player',instanceId:'current'},state={schema:'qiandengji-lite-connection/v1',...scope,instanceId:'previous',at:new Date().toISOString(),ready:true,authSuccessReceived:true,worldReady:true};expect(publicConnection(state,scope).ready).toBe(false);});
+describe('private account scope',()=>{
+  it('separates server, port and role credentials',()=>{const a=accountScope(scope);for(const patch of [{port:25566},{username:'another'},{host:'other.invalid'}])expect(accountScope({...a,...patch}).key).not.toBe(a.key);});
+  it('rejects unsafe credentials without storing them',async()=>{
+    const directory=await mkdtemp(join(tmpdir(),'qiandengji-lite-secret-'));
+    try{const store=new Credentials(directory);await expect(store.save(scope,'bad\npassword')).rejects.toThrow();expect((await store.state(scope)).passwordSet).toBe(false);}
+    finally{await rm(directory,{recursive:true,force:true});}
+  });
+  it('whitelists public log fields and redacts private command aliases and diagnostics',()=>{
+    const source={entries:[{seq:1,ts:'now',lane:'link',msg:'/l fixture-private-password',password:'fixture-private-password',data:{credentialFile:'private-path'}},
+      {seq:2,ts:'now',lane:'task',msg:'completed',taskId:7,durMs:10},
+      {seq:3,ts:'now',lane:'link',msg:'password = fixture-private-password'}],token:'private-token'};
+    const result=publicLogEntries(source);expect(JSON.stringify(result)).not.toMatch(/fixture-private-password|private-path|private-token/);
+    expect(result.entries[1]).toEqual({seq:2,ts:'now',lane:'task',msg:'completed',taskId:7,durMs:10});
+  });
+  it('blocks credential commands without changing ordinary public chat',()=>{
+    expect(sensitiveCommand({steps:[{skill:'chat',text:'/login fixture-secret'}]})).toBe(true);
+    expect(sensitiveCommand({steps:[{skill:'chat',text:'一起组队吧'}]})).toBe(false);
+  });
 });

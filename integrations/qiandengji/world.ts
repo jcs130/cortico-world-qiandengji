@@ -55,6 +55,21 @@ function toMymcText(text: string): string {
     .replaceAll('worlds.minecraft.', 'worlds.mymc.');
 }
 
+/** Rename a continuation tool without rewriting server replies or exact JSON chunks. */
+function queryReceiptText(outcome: ToolOutcome): string {
+  const split = outcome.text.indexOf('\n');
+  if (split >= 0 && typeof outcome.data?.requestId === 'string') {
+    let receipt: Record<string, unknown>;
+    try { receipt = JSON.parse(outcome.text.slice(split + 1)); }
+    catch { return toMymcText(outcome.text); }
+    if (receipt?.requestId === outcome.data.requestId) {
+      const mapped = mapToolRecovery({ text: '', data: receipt }, toMymcText);
+      return toMymcText(outcome.text.slice(0, split)) + '\n' + JSON.stringify(mapped.data);
+    }
+  }
+  return toMymcText(outcome.text);
+}
+
 function mapSchema(value: unknown): unknown {
   if (typeof value === 'string') return toMymcText(value);
   if (Array.isArray(value)) return value.map(mapSchema);
@@ -242,7 +257,10 @@ function mymcHost(host: WorldHost, catalog: SkillCatalog, progress: TrialProgres
       prospect.observe(observation, mapped.ts);
       progress.observe(observation, mapped.ts);
       guild.observe(observation, mapped.ts);
-      const workBindings = activities.observe(observation, scope()?.scope);
+      const boundScope = scope()?.scope;
+      const workBindings = activities.observe(observation, boundScope, mapped.ts);
+      const trialResult = channel === 'system' && mapped.meta?.channel === 'system' ? activities.observeTrialResult(observation, boundScope, mapped.ts) : undefined;
+      if (trialResult) mapped.meta = {...mapped.meta, nativeWorkStates:[trialResult]};
       if(workBindings.length) mapped.meta = {...mapped.meta, workBindings};
       heading = catalog.observe(observation, mapped.ts);
     }
@@ -451,6 +469,8 @@ export class MymcWorld implements World {
           ? routeViaServerCommand(args as Record<string, unknown>, this.opts.cfg.serverTravel?.enabled === true)
           : { args, note: null };
         const result = await tool.handler(planned.args, ctx);
+        const workState = tool.name === 'mc_query' && args.query === 'trial.status' && !args.requestId
+          ? this.activities.trialQueryObservation(result, this.engine.requestFacts?.()?.experience?.scope) : undefined;
         const addNote = (value: string): string => {
           const combatNote = tool.name === 'mc_combat_tactic' ? combatTacticNote(value) : null;
           return [...guidance, combatNote, planned.note, value].filter(Boolean).join('\n');
@@ -458,7 +478,9 @@ export class MymcWorld implements World {
         return typeof result === 'string'
           ? addNote(toMymcText(result))
           : { ...mapToolRecovery(result as ToolOutcome, name => toMymcText(name), toMymcText),
-            text: addNote(toMymcText((result as ToolOutcome).text)) };
+            text: addNote(tool.name === 'mc_query' || tool.name === 'mc_query_receipt'
+              ? queryReceiptText(result as ToolOutcome) : toMymcText((result as ToolOutcome).text)),
+            ...(workState ? {meta:{...result.meta, nativeWorkStates:[workState]}} : {}) };
       },
     }));
     const queueTool = mapped.find((tool) => tool.name === 'mymc_do');
