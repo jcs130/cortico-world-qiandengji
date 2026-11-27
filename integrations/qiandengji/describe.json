@@ -753,7 +753,7 @@
     },
     {
       "name": "mymc_do",
-      "description": "Queue Minecraft actions, get a task ID on acceptance and check the terminal minecraft.task event for completion or obstruction. Submit known steps together. Queued work continues in the background. Link a timed permission command and its movement with needs in one group. Flight waits up to 2 seconds for the server to confirm permission after sending the command. Default submission waits for combat and replaces pending tasks. Use queue:\"now\" for immediate food or escape. Start with eat, flee or surface to take control during low-health combat. Environmental rescue still has priority. Use queue:\"append\" to add work, or queue:\"afterCheckpoint\" for a safe detour that resumes the original task. Container and transaction groups finish their operation first. A blocked task leaves later tasks queued. A single plain chat or vanilla /msg, /tell, /w to a named player with default queue and no needs/expect sends immediately while movement continues. Send independent replies separately from a long goto. Other commands and chat inside multi-step groups retain queue order.",
+      "description": "Queue Minecraft actions, get a task ID on acceptance and check the terminal minecraft.task event for completion or obstruction. Submit known steps together. Queued work continues in the background. Link a timed permission command and its movement with needs in one group. Flight waits up to 2 seconds for the server to confirm permission after sending the command. Default submission waits for combat and replaces pending tasks. Use queue:\"now\" for immediate food or escape. Start with eat, flee or surface to take control during low-health combat. Environmental rescue still has priority. Use queue:\"append\" to add work, or queue:\"afterCheckpoint\" for a safe detour that resumes the original task. Container and transaction groups finish their operation first. A blocked task leaves later tasks queued. A single plain chat or vanilla /msg, /tell, /w to a named player with default queue and no needs/expect sends immediately while movement continues. Send independent replies separately from a long goto. Other commands and chat inside multi-step groups retain queue order. 自主探路可单独传 explore；系统一选方向或判断指定终点并直接提交寻路，只需一次调用。",
       "parameters": {
         "type": "object",
         "properties": {
@@ -4634,6 +4634,46 @@
               "afterCheckpoint"
             ],
             "description": "这一单跟队列的关系。不写 = replace:撤掉排着的那些,接在正在做的那件后面(回执点名撤了谁);append:排到队尾,排着的都保留;now:中断正在做的那件、插到队头立刻开做,排着的保留(低血战斗可让位给首步 eat/flee/surface;已在执行的逃命、进食或环境自保不抢);afterCheckpoint:当前任务到安全检查点后先做这一单,再续做原任务;容器存取、交易等完整操作段结束前等待,不抢救命动作"
+          },
+          "explore": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "direction": {
+                "type": "string",
+                "enum": [
+                  "north",
+                  "south",
+                  "east",
+                  "west",
+                  "northeast",
+                  "northwest",
+                  "southeast",
+                  "southwest"
+                ],
+                "description": "大致探索方位；省略方向和终点时由快决策选方向。"
+              },
+              "distance": {
+                "type": "integer",
+                "minimum": 4,
+                "maximum": 256,
+                "description": "方位探索的距离（格），默认 32。"
+              },
+              "at": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 3,
+                "items": {
+                  "type": "integer"
+                },
+                "description": "固定目的地 [x,z] 或精确落脚格 [x,y,z]；与方向、距离互斥。"
+              },
+              "goal": {
+                "type": "string",
+                "maxLength": 160,
+                "description": "本次探索意图，如寻找可落脚的林地。"
+              }
+            }
           }
         },
         "examples": [
@@ -4654,9 +4694,7 @@
             ]
           }
         ],
-        "required": [
-          "steps"
-        ]
+        "required": []
       },
       "tags": [
         "act"

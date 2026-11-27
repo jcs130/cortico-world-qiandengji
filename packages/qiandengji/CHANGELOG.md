@@ -1,3 +1,7 @@
+## 0.5.0-rc.50-preview.109
+
+Expose the shared fast exploration action in the full profile host mapping.
+
 ## 0.5.0-rc.50-preview.108
 
 Expose the updated shared portal, social and storage contracts.

@@ -57,7 +57,9 @@ it('mounts compact parameters with full renamed help and leaves the engine catal
   const tools = world.tools();
   const projected = tools.find(tool => tool.name === 'mymc_do')!;
   expect((projected.parameters.properties as any).steps.description).toBeUndefined();
-  expect(projected.parameters.required).toEqual(['steps']);
+  expect(projected.parameters.required).not.toContain('steps');
+  expect((projected.parameters.properties as any).explore.properties.direction.enum).toContain('east');
+  expect(schema.required).toEqual(['steps']);
   const help = await tools.find(tool => tool.name === 'mymc_tool_help')!.handler(
     { name: 'mymc_do', path: '/properties/steps', full: true }, { role: 'test', log: nullLogger() });
   expect(JSON.parse(typeof help === 'string' ? help : help.text).schema).toEqual(schema.properties.steps);
