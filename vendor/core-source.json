@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.142",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.142-865cd324.tgz",
-  "sha256": "865cd32411aae98b83a7a16b490b032df0203e8239a86525c2966aa5f5395892",
+  "version": "0.5.7-rc.160-preview.143",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.143-cf602c5b.tgz",
+  "sha256": "cf602c5b9f70c315e23e67157f6d5f607f1b835a29cd5902417ca4c518317a66",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "477ac37bc80566e51e8581434202a4716aee7fe6",
+  "sourceCommit": "202c5cf9e4a5333c61dbbb15082b768551fc9698",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Integrate the scoped profiles, inventory, interaction and feedback contracts."
+  "rebuildNote": "Preserve public chat senders, resolve registry find categories, prefer reachable visible resources."
 }
