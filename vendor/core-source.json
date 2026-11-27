@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.145",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.145-154b8bd3.tgz",
-  "sha256": "154b8bd30ecb57a5c14146b632ebfa754655d088c3d0fe6f156a38cc0cfb5dd2",
+  "version": "0.5.7-rc.160-preview.146",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.146-59ed4ba8.tgz",
+  "sha256": "59ed4ba86a81eea3ba31bda92bdad3847200c1389c4d94f6f10e878c8b589293",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "8b2ee41483996bac3337cb9769883cf90aae99a8",
+  "sourceCommit": "ea34b9d69c60e141cfe0cac3ebf3859a52a5a7d3",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Report full goal-board capacity before validating plan details."
+  "rebuildNote": "Measured post-drop retreat and exact crop observation."
 }
