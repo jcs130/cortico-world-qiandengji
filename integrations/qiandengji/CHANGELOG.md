@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.139
+
+Consume core preview.146 for measured post-drop retreat and exact crop collection.
+
 ## 0.4.1-rc.71-preview.138
 
 Expose the mounted snapshot names in current facts for generic Mineflayer and Java clients, so consumers can recognize and retire earlier readings of the same stream.
