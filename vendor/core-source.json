@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.146",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.146-59ed4ba8.tgz",
-  "sha256": "59ed4ba86a81eea3ba31bda92bdad3847200c1389c4d94f6f10e878c8b589293",
+  "version": "0.5.7-rc.160-preview.147",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.147-4bf7198d.tgz",
+  "sha256": "4bf7198dfc89e6166180afabf590bdea7dd746f8b422e3df15dcc45fbd20d447",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "ea34b9d69c60e141cfe0cac3ebf3859a52a5a7d3",
+  "sourceCommit": "fe378614d82d734ca070fcb0f7f746a82393f5c9",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Measured post-drop retreat and exact crop observation."
+  "rebuildNote": "Observe a safe retreat in crop rows before choosing a throw direction."
 }

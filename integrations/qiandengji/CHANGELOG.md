@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.140
+
+Pin core preview.147 for direction selection and retreat on farmland.
+
 ## 0.4.1-rc.71-preview.139
 
 Consume core preview.146 for measured post-drop retreat and exact crop collection.
