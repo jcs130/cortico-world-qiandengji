@@ -1,6 +1,6 @@
 import { HostCombatDriver, validateHostCombat, combatAttentionEvent, type HostCombatConfig } from 'agent-mc-world/decisions';
 import { fileURLToPath } from 'node:url';
-import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, mapToolRecovery, namespaceWorldHost, namespaceWorldStorage, type MinecraftWorldOptions } from 'agent-mc-world/extension';
+import { MinecraftClientWorld, WorldOperationLearning, withToolHelp, mapToolRecovery, mapWorldEventNamespace, namespaceWorldHost, namespaceWorldStorage, type MinecraftWorldOptions } from 'agent-mc-world/extension';
 import type { WorldHost } from 'agent-mc-world/contracts';
 import { mymcGroup, mymcCoreConfig, SERVER_PACK_PROPERTY, MYMC_CONFIG_GROUP, type MymcConfigSection } from './config.ts';
 
@@ -27,6 +27,11 @@ export class GenericMymcWorld extends MinecraftClientWorld {
   }
   protected override choiceProvider() { return this.adapterOptions.cfg.hostDecisions?.choice?.decisionProvider?.trim() || undefined; }
   protected override messageQueryName() { return 'mymc_messages'; }
+  override requestFacts() {
+    const facts = super.requestFacts();
+    return facts && { ...facts, snapshotTypes: (facts.snapshotTypes ?? []).map(type =>
+      mapWorldEventNamespace({type}, 'minecraft', this.id).type) };
+  }
   override tools() {
     return withToolHelp(this.learning.tools(super.tools().map(tool => ({ ...tool,
       name: tool.name.replace(/^mc_/, 'mymc_'), description: adapterText(tool.description),
