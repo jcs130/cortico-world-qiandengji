@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.151",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.151-5d89962f.tgz",
-  "sha256": "5d89962f2f17cdd4b8a56d3adbb7ea5e24cfecc97726ed0370c79306f8be43f6",
+  "version": "0.5.7-rc.160-preview.152",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.152-69bb810d.tgz",
+  "sha256": "69bb810d3655700cc207e31767ab097bc80b88af3377838208f65537293d4417",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "e3d0ade18ea79e5dd949fdf4b56555cb93abfdd2",
+  "sourceCommit": "e107078019c6410531f4b0b1e57a43c0bea2fd16",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Native tool aliases and profile-scoped voice UDP port."
+  "rebuildNote": "Speaker-scoped nearby audio receiver and optional ASR."
 }
