@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.161",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.161-ceb62227.tgz",
-  "sha256": "ceb622270181e96158878d4a244ad39a828c47f69ca65030f9e28ed3517d68fe",
+  "version": "0.5.7-rc.160-preview.162",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.162-ee595baf.tgz",
+  "sha256": "ee595baf495b5be833f91f22e0e091a44886e317c3d233ee79b599303bcba456",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "9877589de179a3c4015905d409df40d39dcbaf9c",
+  "sourceCommit": "8ed8d8ca1e23206d65f8be55a6bd959bde278e49",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Preserve item and container scope when correcting bulk withdrawal arguments."
+  "rebuildNote": "Forward server-issued self skin facts for the connected account."
 }
