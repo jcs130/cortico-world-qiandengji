@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.152",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.152-69bb810d.tgz",
-  "sha256": "69bb810d3655700cc207e31767ab097bc80b88af3377838208f65537293d4417",
+  "version": "0.5.7-rc.160-preview.153",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.153-1998a8bd.tgz",
+  "sha256": "1998a8bd18d3f5059783507f29550e95c8a7e43b2d3ddece0894f3b054ca5931",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "e107078019c6410531f4b0b1e57a43c0bea2fd16",
+  "sourceCommit": "828534fc461e964e53d7938802d9f628841566e9",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Speaker-scoped nearby audio receiver and optional ASR."
+  "rebuildNote": "Single native Mineflayer calls share the existing canonical executor and request ledger."
 }
