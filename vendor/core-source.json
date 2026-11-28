@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.169",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.169-51923ceb.tgz",
-  "sha256": "51923cebb705f64bb5a9223c637709ebdcf983489f33a79282ea1101548dd2f3",
+  "version": "0.5.7-rc.160-preview.170",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.170-690e9187.tgz",
+  "sha256": "690e918706421b985f44f226eb1a81ae8b8aa6c62b2d414908bc3ddaab21c3e3",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "0966d3ff650bcbf5f7043ec9657deb0d411a05b1",
+  "sourceCommit": "309941708ad94a654e04274226a736f0ded82b21",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Honor selected hand and swing limit for player bouts and record the observed hand and opponent."
+  "rebuildNote": "Support verified sleep in a nearby registered camp and resume an exact worker stage."
 }
