@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.152
+
+Respect queue ownership and consume the core with scoped digging plans and incremental SVC frames.
+
 ## 0.4.1-rc.71-preview.151
 
 Support synchronous native observations and include small program results in completion events.
