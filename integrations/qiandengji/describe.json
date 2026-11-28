@@ -1562,7 +1562,7 @@
                 },
                 "all": {
                   "type": "boolean",
-                  "description": "用于 take(at+all:true 取指定容器;炉子有原料时保留原料和燃料)"
+                  "description": "用于 take(整箱取。只想取一种物品用 item+count 并省略 all；炉子有原料时保留原料和燃料)"
                 },
                 "command": {
                   "type": "string",

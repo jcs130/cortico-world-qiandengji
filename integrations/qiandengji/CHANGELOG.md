@@ -1,5 +1,9 @@
 ## 0.4.1-rc.71-preview.153
 
+## 0.4.1-rc.71-preview.154
+
+Pin the shared core that preserves item filters when correcting container withdrawals.
+
 Expose the optional independent nearby vocal performance and receipt controls from the native SVC core.
 
 ## 0.4.1-rc.71-preview.152

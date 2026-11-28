@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.160",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.160-d1b9c96e.tgz",
-  "sha256": "d1b9c96ef1669517f79715c6262eeee8cb3bc1efa54679e2168b283ed58ded67",
+  "version": "0.5.7-rc.160-preview.161",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.161-ceb62227.tgz",
+  "sha256": "ceb622270181e96158878d4a244ad39a828c47f69ca65030f9e28ed3517d68fe",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "673b3bb6e98e44eb7b3aaea99432a8c9352d308b",
+  "sourceCommit": "9877589de179a3c4015905d409df40d39dcbaf9c",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Expose interruptible vocal performances over the existing native SVC microphone."
+  "rebuildNote": "Preserve item and container scope when correcting bulk withdrawal arguments."
 }
