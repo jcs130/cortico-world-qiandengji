@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.166",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.166-0cd2d01d.tgz",
-  "sha256": "0cd2d01d60aa95b544a89fbbf7f89b9249ba30e3ba38b30d802205987cc12213",
+  "version": "0.5.7-rc.160-preview.167",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.167-a6951e83.tgz",
+  "sha256": "a6951e83ed447c149b09b403e0b488983fa7d3ba1c836f6e7c6c8679a9639f16",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "87222a4bd522e44f20d4c522644e26e096f33ec7",
+  "sourceCommit": "b3043ba8bc1aca30448ee2d3e70523c3f30aa760",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Recall server-specific skills, original trial evidence and changed rule entries during a relevant task."
+  "rebuildNote": "Check material shortages before discarding, and surface recent empty results for the same manual crafting layout."
 }
