@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.149
+
+Use the active server voice transport for explicit speech as well as public text.
+
 ## 0.4.1-rc.71-preview.148
 
 Consume preview.155 for continuous crafting programs and confirmed public text to native SVC.
