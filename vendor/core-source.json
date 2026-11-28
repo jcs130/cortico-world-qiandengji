@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.153",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.153-1998a8bd.tgz",
-  "sha256": "1998a8bd18d3f5059783507f29550e95c8a7e43b2d3ddece0894f3b054ca5931",
+  "version": "0.5.7-rc.160-preview.154",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.154-b0c7d5d4.tgz",
+  "sha256": "b0c7d5d41845623b6cc4a4fb27a118a2bb8fe89254d24e17d2ce3cedd180de87",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "828534fc461e964e53d7938802d9f628841566e9",
+  "sourceCommit": "9bb95edabb056dd779444f057dcd523b051d42e7",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Single native Mineflayer calls share the existing canonical executor and request ledger."
+  "rebuildNote": "Model-authored Mindcraft programs use the same connection, owned body and script receipts."
 }

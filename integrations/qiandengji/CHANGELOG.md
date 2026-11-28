@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.147
+
+Consume preview.154 for the Mindcraft program library on the same Mineflayer body.
+
 ## 0.4.1-rc.71-preview.146
 
 Consume core preview.153 for direct single-method dispatch on the active body.
