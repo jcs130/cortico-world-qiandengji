@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.153
+
+Expose the optional independent nearby vocal performance and receipt controls from the native SVC core.
+
 ## 0.4.1-rc.71-preview.152
 
 Respect queue ownership and consume the core with scoped digging plans and incremental SVC frames.
