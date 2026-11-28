@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.145
+
+Consume core preview.152 for optional on-client transcription of nearby voice.
+
 ## 0.4.1-rc.71-preview.144
 
 Consume core preview.151 with native tool aliases and per-server SVC UDP routing.
