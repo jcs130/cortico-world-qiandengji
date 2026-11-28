@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.148",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.148-3c936dec.tgz",
-  "sha256": "3c936dec8efa9cc986021ad3d33df12b11bc38d9b5677e47b53566779f16b400",
+  "version": "0.5.7-rc.160-preview.149",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.149-e794640e.tgz",
+  "sha256": "e794640eb36e0b0e85abed02a94bd4d696eec0b7ee4dc55fcc92ce7b61080515",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "3d85627b644a10b2431cb79baec6eccefb9deb08",
+  "sourceCommit": "88833e43fd108679725d2bb7ec0c3dfd422e84bb",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Route prefix reconciliation and native inventory read recovery."
+  "rebuildNote": "Separate passive inventory observations from explicit tool continuations."
 }

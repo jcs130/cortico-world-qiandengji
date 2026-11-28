@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.142
+
+Consume core preview.149 to keep passive inventory observations free of instance-specific tool names.
+
 ## 0.4.1-rc.71-preview.141
 
 Consume core preview.148 for in-flight route extension and native inventory reads.
