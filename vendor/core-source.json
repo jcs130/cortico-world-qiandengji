@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.165",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.165-8519882e.tgz",
-  "sha256": "8519882eb5518d54c8a5cfd5e2641bb06ceb9012c82e5c5923f5ebff3f7c3d1b",
+  "version": "0.5.7-rc.160-preview.166",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.166-0cd2d01d.tgz",
+  "sha256": "0cd2d01d60aa95b544a89fbbf7f89b9249ba30e3ba38b30d802205987cc12213",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "aa0cd713c012034de4bd370e7368c6d7b5b15e5b",
+  "sourceCommit": "87222a4bd522e44f20d4c522644e26e096f33ec7",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Coordinate chase gaze, lateral investigation and combat target changes."
+  "rebuildNote": "Recall server-specific skills, original trial evidence and changed rule entries during a relevant task."
 }

@@ -9105,6 +9105,31 @@
                   "maxLength": 400
                 }
               },
+              "rule": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "profile": {
+                    "type": "string"
+                  },
+                  "entryId": {
+                    "type": "string"
+                  },
+                  "revision": {
+                    "type": "string"
+                  },
+                  "digest": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "profile",
+                  "entryId",
+                  "revision",
+                  "digest"
+                ],
+                "description": "Optional on adoption. Copy rule from mymc_knowledge source:server get for the active guide entry."
+              },
               "expectedAdopted": {
                 "type": [
                   "string",
