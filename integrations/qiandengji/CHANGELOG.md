@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.143
+
+Consume core preview.150 to resume normal backoff after all pre-socket candidates fail.
+
 ## 0.4.1-rc.71-preview.142
 
 Consume core preview.149 to keep passive inventory observations free of instance-specific tool names.

@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.149",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.149-e794640e.tgz",
-  "sha256": "e794640eb36e0b0e85abed02a94bd4d696eec0b7ee4dc55fcc92ce7b61080515",
+  "version": "0.5.7-rc.160-preview.150",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.150-871f50c9.tgz",
+  "sha256": "871f50c9ea3a961b19f47f2b34451357172dcd6bf001aebbff6378160ad3fbe9",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "88833e43fd108679725d2bb7ec0c3dfd422e84bb",
+  "sourceCommit": "6079522919ce349af10d3c4de2dacdd8ccf63841",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Separate passive inventory observations from explicit tool continuations."
+  "rebuildNote": "Reconnect on pre-socket candidate exhaustion and discard stale dial results."
 }
