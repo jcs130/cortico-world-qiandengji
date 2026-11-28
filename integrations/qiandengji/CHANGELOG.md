@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.157
+
+接入通用核心的营地与物资查询，按当前服务器、世界和角色隔离。
+
 ## 0.4.1-rc.71-preview.156
 
 公开 mymc_appearance，按当前连接核对任意 Agent 自有皮肤。已确认支持 SkinsRestorer 的档案可准备恢复步骤。

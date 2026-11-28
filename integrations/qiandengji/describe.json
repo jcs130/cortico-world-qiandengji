@@ -70,7 +70,7 @@
     },
     {
       "name": "mymc_bag",
-      "description": "Read inventory now, or compare requirements (required = total needed, keep = amount you choose to retain) to current stock. Shows how many of the 36 slots are used, what is in them, what is in your hand, and what armour you are wearing. Read-only and instant — it never moves you, never touches the world and never touches the work queue. Set item to a material ID, Chinese material name, or exact custom display name to count current carried stock. Use detail:\"storage\" with item to also locate equipment, open container and historical chest records. Closed virtual backpacks are not included. Chest locations and counts are historical until reopened; they remain available when carried inventory is still syncing. Use detail:\"slots\" for both identifiers of each carried stack: inventorySlot for player inventory 0–35, windowSlot for the player window 9–44. Use the field required by the transfer. item optionally filters stacks; freeSlots always covers the entire carried inventory. Use detail:\"changes\" for the latest confirmed net change across carried slots, or item alone for a typed current carried quantity. Read game guidebooks and custom books in your synced inventory without opening them: detail:\"book\" lists books, then pass windowSlot and page (1-based) to read a page. Ask this instead of re-submitting a task to find out what you are carrying. Once per turn: asking again in the same turn returns a one-line pointer to the answer above.",
+      "description": "Read inventory now, or compare requirements (required = total needed, keep = amount you choose to retain) to current stock. Shows how many of the 36 slots are used, what is in them, what is in your hand, and what armour you are wearing. Read-only and instant — it never moves you, never touches the world and never touches the work queue. Use detail:\"camp\" to list durable camps, then pass camp by name for last-observed facilities and storage, optional item and offset. These positions are not proof of ownership or live stock. Set item to a material ID, Chinese material name, or exact custom display name to count current carried stock. Use detail:\"storage\" with item to also locate equipment, open container and historical chest records. Closed virtual backpacks are not included. Chest locations and counts are historical until reopened; they remain available when carried inventory is still syncing. Use detail:\"slots\" for both identifiers of each carried stack: inventorySlot for player inventory 0–35, windowSlot for the player window 9–44. Use the field required by the transfer. item optionally filters stacks; freeSlots always covers the entire carried inventory. Use detail:\"changes\" for the latest confirmed net change across carried slots, or item alone for a typed current carried quantity. Read game guidebooks and custom books in your synced inventory without opening them: detail:\"book\" lists books, then pass windowSlot and page (1-based) to read a page. Ask this instead of re-submitting a task to find out what you are carrying. Once per turn: asking again in the same turn returns a one-line pointer to the answer above.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -85,9 +85,15 @@
               "slots",
               "changes",
               "storage",
-              "book"
+              "book",
+              "camp"
             ],
             "description": "Default summary; slots reads the player window (9–44); changes returns latest net changes; storage locates an item; book lists or reads carried books."
+          },
+          "camp": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Registered camp name for detail:camp."
           },
           "windowSlot": {
             "type": "integer",
@@ -103,8 +109,7 @@
           "offset": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 71,
-            "description": "For a changes continuation, copy the offset and revision from next_safe_read."
+            "description": "For a changes continuation, copy offset and revision; for camp pass nextOffset."
           },
           "revision": {
             "type": "string",
@@ -5905,11 +5910,40 @@
     },
     {
       "name": "mymc_map",
-      "description": "Register dimension-tagged named places in this world: home, bed, chest, workstation, danger zone, resource spot, portal, farm, landmark — up to 24. Call with no fields to read them all back with the bearing and distance for places in your current dimension. Tied to the current world and empty after a restart or a world change, so the lasting copy belongs in your own notes. Rejected done requests are marked failed and include the missing evidence. Every request checks current conditions. Repeated rejection does not close the host decision turn or change the goal.",
+      "description": "Use camp:{name,pos,radius} to persist a named camp in the current server/world/account. Read its observed facilities and container contents via mymc_bag detail:camp. Register dimension-tagged named places in this world: home, bed, chest, workstation, danger zone, resource spot, portal, farm, landmark — up to 24. Call with no fields to read them all back with the bearing and distance for places in your current dimension. Tied to the current world and empty after a restart or a world change, so the lasting copy belongs in your own notes. Rejected done requests are marked failed and include the missing evidence. Every request checks current conditions. Repeated rejection does not close the host decision turn or change the goal.",
       "parameters": {
         "type": "object",
         "description": "一次只受理一件事。set 收数组 = 一次把笔记里那份地图整个装载回来。",
         "properties": {
+          "camp": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "pos": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "Defaults to your current block."
+              },
+              "radius": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 128,
+                "description": "3D radius in blocks, default 24."
+              }
+            }
+          },
           "set": {
             "type": "array",
             "items": {

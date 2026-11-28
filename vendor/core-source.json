@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.163",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.163-5940873d.tgz",
-  "sha256": "5940873d0f3039bf4b978162d49cfaabfc14ef06c2cc62d65bfbfa29e2f18f07",
+  "version": "0.5.7-rc.160-preview.164",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.164-66512170.tgz",
+  "sha256": "66512170517976aea564f62088bcc276ac74befc70562acd2e01142e615aa42f",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "ceb8bfbdaa0d963c3e4db9b2a809d5944046dcb3",
+  "sourceCommit": "82adaddb33fb2246aee06557ad8e1284cb83ff7a",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Reuse the shared appearance tool for any configured character and connection."
+  "rebuildNote": "Durable scoped camp facilities and last-observed container stocks."
 }
