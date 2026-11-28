@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.156",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.156-ae270eb7.tgz",
-  "sha256": "ae270eb74ea7bea371553cd0e59d3e9b5640ace71cee082f5e514b96ce14d615",
+  "version": "0.5.7-rc.160-preview.157",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.157-c653a2d5.tgz",
+  "sha256": "c653a2d57b6712f610e2b6477951592514c1b9ffdd14134826a49b08dec71700",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "b80c649da65c267030f9873c52992152cd0cf990",
+  "sourceCommit": "ee18ae5fb3858a97cfa269d7bcaa8aa9ecd9cf1c",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Route explicit local-voice speech through native SVC on SVC-only server profiles."
+  "rebuildNote": "Run Mindcraft-labelled JavaScript through the owned program executor and retain native SVC routes."
 }
