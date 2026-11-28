@@ -9258,7 +9258,7 @@
     },
     {
       "name": "mymc_svc",
-      "description": "Native Simple Voice Chat client on the current authenticated connection. This is not mymc_voice / mcagent:voice. {} reports handshake state. {action:\"upload\",audio_handle,requestId?} sends a PCM16 WAV (0.1–30s) as official 48 kHz 20 ms Opus frames after request_secret and UDP auth. sent means frames were written to UDP, not that anyone heard them. Cancel with AbortSignal via the host; close() leaves no UDP socket. Disabled by default. Requires an Opus codec (official SVC jar Concentus, or a provided codec).",
+      "description": "Native Simple Voice Chat client on the current authenticated connection. This is not mymc_voice / mcagent:voice. {} reports handshake state. {action:\"upload\",audio_handle,requestId?} sends a PCM16 WAV (0.1–30s) as official 48 kHz 20 ms Opus frames after request_secret and UDP auth. For nearby singing, songs lists available vocal track IDs; perform(trackId,requestId) returns immediately; status/cancel use that same requestId. Speech takes microphone priority and the song resumes. No body lease. sent means frames were written to UDP, not that anyone heard them. Cancel with AbortSignal via the host; close() leaves no UDP socket. Disabled by default. Requires an Opus codec (official SVC jar Concentus, or a provided codec).",
       "parameters": {
         "type": "object",
         "additionalProperties": false,
@@ -9267,8 +9267,15 @@
             "type": "string",
             "enum": [
               "status",
-              "upload"
+              "upload",
+              "songs",
+              "perform",
+              "cancel"
             ]
+          },
+          "trackId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
           },
           "audio_handle": {
             "type": "string",

@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.159",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.159-06453663.tgz",
-  "sha256": "0645366381d1b04e1403cf1ebfd18e9c06e7b10408ebaac950f8f078c7faf8d4",
+  "version": "0.5.7-rc.160-preview.160",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.160-d1b9c96e.tgz",
+  "sha256": "d1b9c96ef1669517f79715c6262eeee8cb3bc1efa54679e2168b283ed58ded67",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "c614dd64e58891b905c347e81cacb406ecdecc7b",
+  "sourceCommit": "673b3bb6e98e44eb7b3aaea99432a8c9352d308b",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Keep active program ownership for queued work; provide scoped dig planning and incremental native SVC transmission."
+  "rebuildNote": "Expose interruptible vocal performances over the existing native SVC microphone."
 }
