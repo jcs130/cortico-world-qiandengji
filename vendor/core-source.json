@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.150",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.150-871f50c9.tgz",
-  "sha256": "871f50c9ea3a961b19f47f2b34451357172dcd6bf001aebbff6378160ad3fbe9",
+  "version": "0.5.7-rc.160-preview.151",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.151-5d89962f.tgz",
+  "sha256": "5d89962f2f17cdd4b8a56d3adbb7ea5e24cfecc97726ed0370c79306f8be43f6",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "6079522919ce349af10d3c4de2dacdd8ccf63841",
+  "sourceCommit": "e3d0ade18ea79e5dd949fdf4b56555cb93abfdd2",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Reconnect on pre-socket candidate exhaustion and discard stale dial results."
+  "rebuildNote": "Native tool aliases and profile-scoped voice UDP port."
 }

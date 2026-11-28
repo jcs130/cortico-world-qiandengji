@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.144
+
+Consume core preview.151 with native tool aliases and per-server SVC UDP routing.
+
 ## 0.4.1-rc.71-preview.143
 
 Consume core preview.150 to resume normal backoff after all pre-socket candidates fail.
