@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.141
+
+Consume core preview.148 for in-flight route extension and native inventory reads.
+
 ## 0.4.1-rc.71-preview.140
 
 Pin core preview.147 for direction selection and retreat on farmland.

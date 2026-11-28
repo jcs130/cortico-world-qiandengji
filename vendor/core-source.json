@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.147",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.147-4bf7198d.tgz",
-  "sha256": "4bf7198dfc89e6166180afabf590bdea7dd746f8b422e3df15dcc45fbd20d447",
+  "version": "0.5.7-rc.160-preview.148",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.148-3c936dec.tgz",
+  "sha256": "3c936dec8efa9cc986021ad3d33df12b11bc38d9b5677e47b53566779f16b400",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "fe378614d82d734ca070fcb0f7f746a82393f5c9",
+  "sourceCommit": "3d85627b644a10b2431cb79baec6eccefb9deb08",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Observe a safe retreat in crop rows before choosing a throw direction."
+  "rebuildNote": "Route prefix reconciliation and native inventory read recovery."
 }
