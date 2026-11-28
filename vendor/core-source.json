@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.166",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.166-0cd2d01d.tgz",
-  "sha256": "0cd2d01d60aa95b544a89fbbf7f89b9249ba30e3ba38b30d802205987cc12213",
+  "version": "0.5.7-rc.160-preview.168",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.168-6ec233d1.tgz",
+  "sha256": "6ec233d1c96194aaeb7e6f1b62e6362ad13773e7a9dbd0f0fadb5a73eb2372a6",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "87222a4bd522e44f20d4c522644e26e096f33ec7",
+  "sourceCommit": "dbac4476211792ff584ef34feffcdd419c7d137a",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Recall server-specific skills, original trial evidence and changed rule entries during a relevant task."
+  "rebuildNote": "Read native inventory slot snapshots in scripts and check crafting readiness before discards."
 }
