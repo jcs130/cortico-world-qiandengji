@@ -1,6 +1,47 @@
 {
   "tools": [
     {
+      "name": "mymc_appearance",
+      "description": "Read the connected account’s server-issued vanilla skin. Optionally compare with the owner’s textureHash and slim/classic model. Missing native evidence is unknown. With a confirmed SkinsRestorer server, prepareRestore returns a suggested self-only chat step on mismatch. This tool does not execute it.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "prepareRestore": {
+            "type": "string",
+            "enum": [
+              "skinsrestorer"
+            ],
+            "description": "Only when this server supports SkinsRestorer. Requires expected."
+          },
+          "expected": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "textureHash",
+              "model"
+            ],
+            "properties": {
+              "textureHash": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40,64}$"
+              },
+              "model": {
+                "type": "string",
+                "enum": [
+                  "slim",
+                  "classic"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "tags": [
+        "read"
+      ]
+    },
+    {
       "name": "mymc_attention",
       "description": "Read up to 3 directly visible highlights. Optional mode changes only observation focus (combat: threats; peaceful: people/life plus urgent threats; explore: nearby variety). Does not alter tasks, combat policy or movement. Occlusion/unknown chunks fail closed. Hearing and predictions are separate on-demand tools.",
       "parameters": {

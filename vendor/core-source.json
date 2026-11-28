@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.162",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.162-ee595baf.tgz",
-  "sha256": "ee595baf495b5be833f91f22e0e091a44886e317c3d233ee79b599303bcba456",
+  "version": "0.5.7-rc.160-preview.163",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.163-5940873d.tgz",
+  "sha256": "5940873d0f3039bf4b978162d49cfaabfc14ef06c2cc62d65bfbfa29e2f18f07",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "8ed8d8ca1e23206d65f8be55a6bd959bde278e49",
+  "sourceCommit": "ceb8bfbdaa0d963c3e4db9b2a809d5944046dcb3",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Forward server-issued self skin facts for the connected account."
+  "rebuildNote": "Reuse the shared appearance tool for any configured character and connection."
 }

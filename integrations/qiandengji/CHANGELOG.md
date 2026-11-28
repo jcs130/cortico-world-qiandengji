@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.156
+
+公开 mymc_appearance，按当前连接核对任意 Agent 自有皮肤。已确认支持 SkinsRestorer 的档案可准备恢复步骤。
+
 ## 0.4.1-rc.71-preview.155
 
 同步核心的只读本人皮肤信息。材质缺失和断线时保留未知。
