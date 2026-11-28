@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.146
+
+Consume core preview.153 for direct single-method dispatch on the active body.
+
 ## 0.4.1-rc.71-preview.145
 
 Consume core preview.152 for optional on-client transcription of nearby voice.
