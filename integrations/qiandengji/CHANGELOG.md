@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.158
+
+Use the shared combat controller that coordinates chase, target changes and side steps.
+
 ## 0.4.1-rc.71-preview.157
 
 接入通用核心的营地与物资查询，按当前服务器、世界和角色隔离。
