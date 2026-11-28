@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.148
+
+Consume preview.155 for continuous crafting programs and confirmed public text to native SVC.
+
 ## 0.4.1-rc.71-preview.147
 
 Consume preview.154 for the Mindcraft program library on the same Mineflayer body.
