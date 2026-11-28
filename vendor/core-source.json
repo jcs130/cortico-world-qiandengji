@@ -1,10 +1,10 @@
 {
-  "version": "0.5.7-rc.160-preview.170",
-  "file": "agent-mc-world-0.5.7-rc.160-preview.170-690e9187.tgz",
-  "sha256": "690e918706421b985f44f226eb1a81ae8b8aa6c62b2d414908bc3ddaab21c3e3",
+  "version": "0.5.7-rc.160-preview.171",
+  "file": "agent-mc-world-0.5.7-rc.160-preview.171-97194098.tgz",
+  "sha256": "971940985380980e150f6e098428da0106573d905b183c7e3ce8c0e2fe474ccb",
   "repository": "https://github.com/jcs130/minecraft-ai-friend",
   "sourceDirectory": "packages/agent-mc-world",
-  "sourceCommit": "309941708ad94a654e04274226a736f0ded82b21",
+  "sourceCommit": "f12da612313900efb340b02b6cdc14f5277fddcd",
   "integrationBranch": "main",
   "sourcePushed": true,
   "channel": "unpublished-candidate",
@@ -13,5 +13,5 @@
     "mode": "explicit-versioned-viewer-assets"
   },
   "registryPublished": false,
-  "rebuildNote": "Support verified sleep in a nearby registered camp and resume an exact worker stage."
+  "rebuildNote": "Report missing notebook revision fields and check all supported horizontal unsticking exits."
 }
