@@ -1,3 +1,7 @@
+## 0.4.1-rc.71-preview.151
+
+Support synchronous native observations and include small program results in completion events.
+
 ## 0.4.1-rc.71-preview.150
 
 Run authored programs with an explicit Mindcraft library selector; retain read-only help.
